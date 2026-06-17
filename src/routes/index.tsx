@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { AudioCard } from "../components/AudioCard";
 import { EpisodeListItem } from "../components/EpisodeListItem";
 import { useTodayFeed } from "../hooks/use-episodes";
@@ -20,14 +21,22 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
+function todayLabel() {
+  return new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
 function Skeleton() {
   return (
-    <div className="px-4 pb-6 pt-5">
-      <div className="h-4 w-20 animate-pulse rounded bg-white/5" />
-      <div className="mt-2 h-8 w-40 animate-pulse rounded bg-white/5" />
-      <div className="mt-6 h-[260px] animate-pulse rounded-3xl bg-card" />
+    <div className="pb-6 pt-4">
+      <div className="h-4 w-32 animate-pulse rounded bg-white/5" />
+      <div className="mt-3 h-10 w-56 animate-pulse rounded bg-white/5" />
+      <div className="mt-6 h-[300px] animate-pulse rounded-3xl bg-card" />
       <div className="mt-6 flex gap-3">
-        <div className="h-32 w-[78%] shrink-0 animate-pulse rounded-3xl bg-card" />
+        <div className="h-40 w-[78%] shrink-0 animate-pulse rounded-3xl bg-card" />
       </div>
     </div>
   );
@@ -37,74 +46,83 @@ function Home() {
   const { data, isLoading } = useTodayFeed();
   if (isLoading || !data) return <Skeleton />;
   const { episodes, tonight } = data;
-  if (episodes.length === 0) {
-    return (
-      <div className="px-4 pb-6 pt-5">
-        <h1 className="text-2xl font-extrabold tracking-tight">Full Time</h1>
-        <p className="mt-4 text-sm text-muted-foreground">
-          No recaps yet. Check back after tomorrow morning's drop.
-        </p>
-      </div>
-    );
-  }
-
-  const hero: Episode = episodes[0];
-  const rest: Episode[] = episodes.slice(1);
 
   return (
-    <div className="px-4 pb-6 pt-5">
-      <header className="mb-5 flex items-center justify-between">
-        <div>
-          <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">
-            Today
-          </div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Full Time</h1>
-        </div>
-        <div className="grid h-10 w-10 place-items-center rounded-full bg-card text-sm font-bold">
-          ⚽
-        </div>
-      </header>
+    <div className="pb-6 pt-4">
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+      >
+        <div className="eyebrow">Today · {todayLabel()}</div>
+        <h1 className="mt-2 text-[34px] font-semibold leading-[1.05] tracking-tight">
+          The morning drop.
+        </h1>
+        <p className="mt-2 max-w-[28ch] text-sm leading-snug text-muted-foreground">
+          Yesterday's biggest stories from the Big Five, narrated in 60-second cuts.
+        </p>
+      </motion.div>
 
-      <AudioCard episode={hero} hero />
+      {episodes.length === 0 ? (
+        <p className="mt-10 text-sm text-muted-foreground">
+          No recaps yet. Check back after tomorrow's drop at 7am.
+        </p>
+      ) : (
+        <>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.05 }}
+            className="mt-6"
+          >
+            <AudioCard episode={episodes[0] as Episode} hero />
+          </motion.div>
 
-      {rest.length > 0 && (
-        <section className="mt-7">
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-base font-bold">Today's goals</h2>
-            <span className="text-xs text-muted-foreground">{rest.length} recaps</span>
-          </div>
-          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
-            {rest.map((ep) => (
-              <div key={ep.id} className="w-[78%] shrink-0 snap-start">
-                <AudioCard episode={ep} />
+          {episodes.length > 1 && (
+            <section className="mt-8">
+              <div className="mb-3 flex items-baseline justify-between">
+                <div className="eyebrow">Today's recaps</div>
+                <span className="text-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                  {episodes.length - 1} more
+                </span>
               </div>
-            ))}
-          </div>
-        </section>
+              <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
+                {episodes.slice(1).map((ep) => (
+                  <div key={ep.id} className="w-[80%] shrink-0 snap-start">
+                    <AudioCard episode={ep} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
 
       {tonight.length > 0 && (
-        <section className="mt-7">
-          <h2 className="mb-3 text-base font-bold">Tonight</h2>
-          <ul className="flex flex-col gap-2">
-            {tonight.map((t) => (
+        <section className="mt-8">
+          <div className="eyebrow mb-3">Tonight</div>
+          <ul className="flex flex-col">
+            {tonight.map((t, i) => (
               <li
                 key={t.id}
-                className="flex items-center justify-between rounded-2xl border border-white/5 bg-card/60 px-4 py-3"
+                className="flex items-center justify-between border-b border-[var(--pitch-line)] py-3 last:border-b-0"
+                style={i === 0 ? { borderTop: "1px solid var(--pitch-line)" } : undefined}
               >
-                <span className="text-sm font-semibold">{t.label}</span>
-                <span className="text-xs tabular-nums text-muted-foreground">{t.kickoff}</span>
+                <span className="text-sm font-semibold tracking-tight">{t.label}</span>
+                <span className="text-mono text-xs uppercase tracking-[0.16em] text-muted-foreground tabular-nums">
+                  {t.kickoff}
+                </span>
               </li>
             ))}
           </ul>
         </section>
       )}
 
-      {rest.length > 0 && (
-        <section className="mt-7">
-          <h2 className="mb-3 text-base font-bold">Up next in the feed</h2>
-          <div className="flex flex-col gap-2">
-            {rest.slice(0, 2).map((ep) => (
+      {episodes.length > 1 && (
+        <section className="mt-8">
+          <div className="eyebrow mb-3">Up next in the feed</div>
+          <div className="flex flex-col gap-1">
+            {episodes.slice(1, 3).map((ep) => (
               <EpisodeListItem key={ep.id} episode={ep} />
             ))}
           </div>

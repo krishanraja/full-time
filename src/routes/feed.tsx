@@ -18,9 +18,11 @@ export const Route = createFileRoute("/feed")({
 function Feed() {
   const { data, isLoading } = useTodayFeed();
   return (
-    <div className="px-4 pb-6 pt-5">
-      <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">Feed</div>
-      <h1 className="mb-5 text-2xl font-extrabold tracking-tight">All recaps today</h1>
+    <div className="pb-6 pt-4">
+      <div className="eyebrow">Feed</div>
+      <h1 className="mb-6 mt-2 text-[30px] font-semibold leading-tight tracking-tight">
+        Every recap from today.
+      </h1>
       {isLoading || !data ? (
         <div className="flex flex-col gap-2">
           {[0, 1, 2, 3].map((i) => (
@@ -30,7 +32,7 @@ function Feed() {
       ) : data.episodes.length === 0 ? (
         <p className="text-sm text-muted-foreground">No recaps yet today.</p>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           {data.episodes.map((ep) => (
             <EpisodeListItem key={ep.id} episode={ep} />
           ))}
