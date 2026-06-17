@@ -15,24 +15,35 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/5 bg-background/85 backdrop-blur"
-      style={{ paddingBottom: "max(env(safe-area-inset-bottom), 8px)" }}
+      className="fixed inset-x-0 bottom-0 z-40 backdrop-blur-xl"
+      style={{
+        paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
+        background:
+          "linear-gradient(to top, color-mix(in oklab, var(--background) 96%, transparent), color-mix(in oklab, var(--background) 70%, transparent))",
+        borderTop: "1px solid var(--pitch-line)",
+      }}
     >
       <ul className="mx-auto grid max-w-md grid-cols-4">
         {ITEMS.map(({ to, label, Icon }) => {
           const active = pathname === to;
           return (
-            <li key={to}>
+            <li key={to} className="relative">
               <Link
                 to={to}
                 onClick={() => haptic("tap")}
                 className={cn(
-                  "tap flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors",
-                  active ? "text-primary" : "text-muted-foreground",
+                  "tap relative flex flex-col items-center gap-1 py-2.5 text-mono text-[10px] uppercase tracking-[0.16em] transition-colors",
+                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground/80",
                 )}
               >
-                <Icon className={cn("h-5 w-5", active && "fill-primary/20")} />
+                <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.25 : 1.75} />
                 <span>{label}</span>
+                {active && (
+                  <span
+                    className="absolute -top-px left-1/2 h-[2px] w-8 -translate-x-1/2 rounded-full bg-[var(--lime)]"
+                    style={{ boxShadow: "0 0 10px var(--lime)" }}
+                  />
+                )}
               </Link>
             </li>
           );

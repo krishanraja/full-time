@@ -1,5 +1,4 @@
-import { useFollowed } from "../lib/follow-store";
-import { useToggleFollow } from "../lib/follow-store";
+import { useFollowed, useToggleFollow } from "../lib/follow-store";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Plus } from "lucide-react";
 import { HapticButton } from "./HapticButton";
@@ -14,10 +13,10 @@ export function FollowButton({ id, label }: { id: string; label?: string }) {
       hapticPattern={on ? "soft" : "double"}
       onClick={() => toggle(id)}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold",
+        "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-tight transition-colors",
         on
-          ? "bg-primary text-primary-foreground"
-          : "border border-white/15 bg-transparent text-foreground",
+          ? "border border-[color:color-mix(in_oklab,var(--lime)_55%,transparent)] bg-[color:color-mix(in_oklab,var(--lime)_12%,transparent)] text-[var(--lime)]"
+          : "border border-[var(--pitch-line)] bg-transparent text-foreground hover:border-foreground/30",
       )}
     >
       <AnimatePresence mode="wait" initial={false}>
