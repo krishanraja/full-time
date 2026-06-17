@@ -74,11 +74,15 @@ export const playerStore = {
   },
   onComplete(cb: (ep: Episode) => void) {
     completedListeners.add(cb);
-    return () => completedListeners.delete(cb);
+    return () => {
+      completedListeners.delete(cb);
+    };
   },
   subscribe(l: () => void) {
     listeners.add(l);
-    return () => listeners.delete(l);
+    return () => {
+      listeners.delete(l);
+    };
   },
   get() {
     return state;
@@ -100,10 +104,5 @@ export function usePlayer() {
 }
 
 export function useOnComplete(cb: (ep: Episode) => void) {
-  useEffect(() => {
-    const off = playerStore.onComplete(cb);
-    return () => {
-      off;
-    };
-  }, [cb]);
+  useEffect(() => playerStore.onComplete(cb), [cb]);
 }

@@ -18,7 +18,9 @@ export const followStore = {
   },
   subscribe(l: () => void) {
     listeners.add(l);
-    return () => listeners.delete(l);
+    return () => {
+      listeners.delete(l);
+    };
   },
   get() {
     return followed;
