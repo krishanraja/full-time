@@ -100,5 +100,10 @@ export function usePlayer() {
 }
 
 export function useOnComplete(cb: (ep: Episode) => void) {
-  useEffect(() => playerStore.onComplete(cb), [cb]);
+  useEffect(() => {
+    const off = playerStore.onComplete(cb);
+    return () => {
+      off;
+    };
+  }, [cb]);
 }
