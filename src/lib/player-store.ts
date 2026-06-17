@@ -135,12 +135,13 @@ export const playerStore = {
     emit();
   },
   toggle() {
-    if (!state.episode) return;
+    const ep = state.episode;
+    if (!ep) return;
     const next = !state.isPlaying;
     state = { ...state, isPlaying: next };
     haptic(next ? "tap" : "soft");
     const audio = getAudio();
-    if (audio && state.episode.audioUrl) {
+    if (audio && ep.audioUrl) {
       if (next) audio.play().catch(() => startFallback());
       else audio.pause();
     } else {
@@ -150,11 +151,12 @@ export const playerStore = {
     emit();
   },
   seek(p: number) {
-    if (!state.episode) return;
+    const ep = state.episode;
+    if (!ep) return;
     const clamped = Math.max(0, Math.min(1, p));
     state = { ...state, progress: clamped };
     const audio = getAudio();
-    if (audio && state.episode.audioUrl && audio.duration) {
+    if (audio && ep.audioUrl && audio.duration) {
       audio.currentTime = clamped * audio.duration;
     }
     emit();
