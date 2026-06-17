@@ -1,16 +1,18 @@
+import { useFollowed } from "../lib/follow-store";
+import { useToggleFollow } from "../lib/follow-store";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Plus } from "lucide-react";
-import { followStore, useFollowed } from "../lib/follow-store";
 import { HapticButton } from "./HapticButton";
 import { cn } from "../lib/utils";
 
 export function FollowButton({ id, label }: { id: string; label?: string }) {
   const followed = useFollowed();
+  const toggle = useToggleFollow();
   const on = followed.has(id);
   return (
     <HapticButton
       hapticPattern={on ? "soft" : "double"}
-      onClick={() => followStore.toggle(id)}
+      onClick={() => toggle(id)}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold",
         on

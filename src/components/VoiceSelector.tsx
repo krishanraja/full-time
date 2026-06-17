@@ -1,5 +1,4 @@
 import { Check } from "lucide-react";
-import { useState } from "react";
 import { HapticButton } from "./HapticButton";
 import { cn } from "../lib/utils";
 
@@ -9,17 +8,25 @@ const VOICES = [
   { id: "concise", name: "Ultra concise", blurb: "Sixty seconds. No fluff. Just facts." },
 ] as const;
 
-export function VoiceSelector() {
-  const [active, setActive] = useState<string>("classic");
+type VoiceId = (typeof VOICES)[number]["id"];
+
+export function VoiceSelector({
+  active,
+  onChange,
+}: {
+  active?: VoiceId;
+  onChange?: (id: VoiceId) => void;
+}) {
+  const current = active ?? "classic";
   return (
     <div className="flex flex-col gap-2">
       {VOICES.map((v) => {
-        const on = v.id === active;
+        const on = v.id === current;
         return (
           <HapticButton
             key={v.id}
             hapticPattern="soft"
-            onClick={() => setActive(v.id)}
+            onClick={() => onChange?.(v.id)}
             className={cn(
               "flex items-start gap-3 rounded-2xl border p-4 text-left",
               on ? "border-primary bg-primary/10" : "border-white/8 bg-card",
