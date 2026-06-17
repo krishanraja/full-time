@@ -1,22 +1,36 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { FollowButton } from "../components/FollowButton";
-import { LEAGUES, TEAMS } from "../data/mockEpisodes";
-import { useFollowed } from "../lib/follow-store";
+import { useFollowed, useFollowSync } from "../lib/follow-store";
+import { getTeamsAndLeagues } from "../lib/api/feed.functions";
 
 export const Route = createFileRoute("/following")({
   head: () => ({
     meta: [
-      { title: "Following • GoalBot Radio" },
+      { title: "Following • Full Time" },
       { name: "description", content: "Pick the teams and leagues you actually care about." },
+      { property: "og:title", content: "Following • Full Time" },
+      { property: "og:url", content: "/following" },
     ],
+    links: [{ rel: "canonical", href: "/following" }],
   }),
   component: Following,
 });
 
 function Following() {
+  useFollowSync();
   const followed = useFollowed();
   const hasFollows = followed.size > 0;
+  const fetchTL = useServerFn(getTeamsAndLeagues);
+  const { data } = useQuery({
+    queryKey: ["teams-leagues"],
+    queryFn: () => fetchTL(),
+    staleTime: 5 * 60_000,
+  });
+  const teams = data?.teams ?? [];
+  const leagues = data?.leagues ?? [];
 
   return (
     <div className="px-4 pb-6 pt-5">
@@ -45,8 +59,8 @@ function Following() {
           Teams
         </h2>
         <div className="flex flex-wrap gap-2">
-          {TEAMS.map((t) => (
-            <FollowButton key={t.id} id={t.id} label={t.name} />
+          {teams.map((t) => (
+            <FollowButton key={t.id} id={`team:${t.id}`} label={t.name} />
           ))}
         </div>
       </section>
@@ -56,8 +70,8 @@ function Following() {
           Leagues
         </h2>
         <div className="flex flex-wrap gap-2">
-          {LEAGUES.map((l) => (
-            <FollowButton key={l} id={`league:${l}`} label={l} />
+          {leagues.map((l) => (
+            <FollowButton key={l.id} id={`league:${l.id}`} label={l.name} />
           ))}
         </div>
       </section>

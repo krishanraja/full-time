@@ -12,7 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as FollowingRouteImport } from './routes/following'
 import { Route as FeedRouteImport } from './routes/feed'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LegalTermsRouteImport } from './routes/legal.terms'
+import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
+import { Route as ApiPublicCronDailyDropRouteImport } from './routes/api/public/cron.daily-drop'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -29,44 +33,105 @@ const FeedRoute = FeedRouteImport.update({
   path: '/feed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LegalTermsRoute = LegalTermsRouteImport.update({
+  id: '/legal/terms',
+  path: '/legal/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
+  id: '/legal/privacy',
+  path: '/legal/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCronDailyDropRoute = ApiPublicCronDailyDropRouteImport.update({
+  id: '/api/public/cron/daily-drop',
+  path: '/api/public/cron/daily-drop',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/feed': typeof FeedRoute
   '/following': typeof FollowingRoute
   '/settings': typeof SettingsRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
+  '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/feed': typeof FeedRoute
   '/following': typeof FollowingRoute
   '/settings': typeof SettingsRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
+  '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/feed': typeof FeedRoute
   '/following': typeof FollowingRoute
   '/settings': typeof SettingsRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
+  '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/feed' | '/following' | '/settings'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/feed'
+    | '/following'
+    | '/settings'
+    | '/legal/privacy'
+    | '/legal/terms'
+    | '/api/public/cron/daily-drop'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/feed' | '/following' | '/settings'
-  id: '__root__' | '/' | '/feed' | '/following' | '/settings'
+  to:
+    | '/'
+    | '/auth'
+    | '/feed'
+    | '/following'
+    | '/settings'
+    | '/legal/privacy'
+    | '/legal/terms'
+    | '/api/public/cron/daily-drop'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/feed'
+    | '/following'
+    | '/settings'
+    | '/legal/privacy'
+    | '/legal/terms'
+    | '/api/public/cron/daily-drop'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   FeedRoute: typeof FeedRoute
   FollowingRoute: typeof FollowingRoute
   SettingsRoute: typeof SettingsRoute
+  LegalPrivacyRoute: typeof LegalPrivacyRoute
+  LegalTermsRoute: typeof LegalTermsRoute
+  ApiPublicCronDailyDropRoute: typeof ApiPublicCronDailyDropRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -92,6 +157,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -99,14 +171,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/legal/terms': {
+      id: '/legal/terms'
+      path: '/legal/terms'
+      fullPath: '/legal/terms'
+      preLoaderRoute: typeof LegalTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/privacy': {
+      id: '/legal/privacy'
+      path: '/legal/privacy'
+      fullPath: '/legal/privacy'
+      preLoaderRoute: typeof LegalPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/daily-drop': {
+      id: '/api/public/cron/daily-drop'
+      path: '/api/public/cron/daily-drop'
+      fullPath: '/api/public/cron/daily-drop'
+      preLoaderRoute: typeof ApiPublicCronDailyDropRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   FeedRoute: FeedRoute,
   FollowingRoute: FollowingRoute,
   SettingsRoute: SettingsRoute,
+  LegalPrivacyRoute: LegalPrivacyRoute,
+  LegalTermsRoute: LegalTermsRoute,
+  ApiPublicCronDailyDropRoute: ApiPublicCronDailyDropRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

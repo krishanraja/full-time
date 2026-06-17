@@ -1,6 +1,7 @@
-// Minimal global player state. No external state lib — just a tiny pub/sub
-// so the MiniPlayer can sit in __root and any screen can control it.
-// TODO: replace simulated timer with real <audio> element + streaming URL.
+// Real-audio-first player store with simulated-timer fallback when an
+// episode has no audio URL yet (pre-AI-pipeline seed data). MediaSession
+// metadata + action handlers are wired so lock-screen controls work in
+// the installed PWA.
 
 import { useEffect, useSyncExternalStore } from "react";
 import type { Episode } from "../data/mockEpisodes";
@@ -14,37 +15,94 @@ type State = {
 
 let state: State = { episode: null, isPlaying: false, progress: 0 };
 const listeners = new Set<() => void>();
-let timer: ReturnType<typeof setInterval> | null = null;
 const completedListeners = new Set<(ep: Episode) => void>();
+let audioEl: HTMLAudioElement | null = null;
+let fallbackTimer: ReturnType<typeof setInterval> | null = null;
+const trackEvent = (name: string, props?: Record<string, unknown>) => {
+  if (typeof window === "undefined") return;
+  type Plausible = (event: string, opts?: { props?: Record<string, unknown> }) => void;
+  const fn = (window as unknown as { plausible?: Plausible }).plausible;
+  if (typeof fn === "function") fn(name, props ? { props } : undefined);
+};
 
 function emit() {
   listeners.forEach((l) => l());
 }
 
+function getAudio(): HTMLAudioElement | null {
+  if (typeof window === "undefined") return null;
+  if (!audioEl) {
+    audioEl = new Audio();
+    audioEl.preload = "metadata";
+    audioEl.addEventListener("timeupdate", () => {
+      if (!audioEl || !state.episode || !audioEl.duration) return;
+      state = { ...state, progress: audioEl.currentTime / audioEl.duration };
+      emit();
+    });
+    audioEl.addEventListener("ended", () => {
+      handleComplete();
+    });
+    audioEl.addEventListener("pause", () => {
+      if (!state.episode) return;
+      state = { ...state, isPlaying: false };
+      emit();
+    });
+    audioEl.addEventListener("play", () => {
+      if (!state.episode) return;
+      state = { ...state, isPlaying: true };
+      emit();
+    });
+  }
+  return audioEl;
+}
+
+function handleComplete() {
+  if (!state.episode) return;
+  const ep = state.episode;
+  state = { ...state, progress: 1, isPlaying: false };
+  stopFallback();
+  haptic("success");
+  trackEvent("complete", { id: ep.id });
+  completedListeners.forEach((l) => l(ep));
+  emit();
+}
+
 function tick() {
   if (!state.episode || !state.isPlaying) return;
-  const step = 1 / (state.episode.durationSec * 4); // 4 ticks/sec feel
+  const step = 1 / (state.episode.durationSec * 4);
   const next = state.progress + step;
   if (next >= 1) {
-    const ep = state.episode;
-    state = { ...state, progress: 1, isPlaying: false };
-    stopTimer();
-    haptic("success");
-    completedListeners.forEach((l) => l(ep));
-    emit();
+    handleComplete();
     return;
   }
   state = { ...state, progress: next };
   emit();
 }
 
-function startTimer() {
-  if (timer) return;
-  timer = setInterval(tick, 250);
+function startFallback() {
+  if (fallbackTimer) return;
+  fallbackTimer = setInterval(tick, 250);
 }
-function stopTimer() {
-  if (timer) clearInterval(timer);
-  timer = null;
+function stopFallback() {
+  if (fallbackTimer) clearInterval(fallbackTimer);
+  fallbackTimer = null;
+}
+
+function setMediaSession(ep: Episode) {
+  if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: ep.title,
+    artist: `${ep.homeTeam} ${ep.homeScore}–${ep.awayScore} ${ep.awayTeam}`,
+    album: `Full Time • ${ep.competition}`,
+  });
+  navigator.mediaSession.setActionHandler("play", () => playerStore.toggle());
+  navigator.mediaSession.setActionHandler("pause", () => playerStore.toggle());
+  navigator.mediaSession.setActionHandler("seekbackward", () =>
+    playerStore.seek(Math.max(0, state.progress - 0.1)),
+  );
+  navigator.mediaSession.setActionHandler("seekforward", () =>
+    playerStore.seek(Math.min(1, state.progress + 0.1)),
+  );
 }
 
 export const playerStore = {
@@ -56,20 +114,51 @@ export const playerStore = {
       progress: same && state.progress < 1 ? state.progress : 0,
     };
     haptic("tap");
-    startTimer();
+    trackEvent("play", { id: ep.id });
+    setMediaSession(ep);
+
+    const audio = getAudio();
+    if (audio && ep.audioUrl) {
+      stopFallback();
+      if (!same || audio.src !== ep.audioUrl) {
+        audio.src = ep.audioUrl;
+        if (audio.duration) audio.currentTime = 0;
+      }
+      audio.play().catch((err) => {
+        console.warn("[player] play failed, falling back to timer", err);
+        startFallback();
+      });
+    } else {
+      if (audio) audio.pause();
+      startFallback();
+    }
     emit();
   },
   toggle() {
-    if (!state.episode) return;
-    state = { ...state, isPlaying: !state.isPlaying };
-    haptic(state.isPlaying ? "tap" : "soft");
-    if (state.isPlaying) startTimer();
-    else stopTimer();
+    const ep = state.episode;
+    if (!ep) return;
+    const next = !state.isPlaying;
+    state = { ...state, isPlaying: next };
+    haptic(next ? "tap" : "soft");
+    const audio = getAudio();
+    if (audio && ep.audioUrl) {
+      if (next) audio.play().catch(() => startFallback());
+      else audio.pause();
+    } else {
+      if (next) startFallback();
+      else stopFallback();
+    }
     emit();
   },
   seek(p: number) {
-    if (!state.episode) return;
-    state = { ...state, progress: Math.max(0, Math.min(1, p)) };
+    const ep = state.episode;
+    if (!ep) return;
+    const clamped = Math.max(0, Math.min(1, p));
+    state = { ...state, progress: clamped };
+    const audio = getAudio();
+    if (audio && ep.audioUrl && audio.duration) {
+      audio.currentTime = clamped * audio.duration;
+    }
     emit();
   },
   onComplete(cb: (ep: Episode) => void) {

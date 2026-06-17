@@ -1,0 +1,23 @@
+name: Full Time — Daily Drop
+
+on:
+  schedule:
+    # 06:30 UTC daily. GitHub cron is best-effort; expect ±10 min.
+    - cron: "30 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  drop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger daily drop
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            -X POST "$FULL_TIME_URL/api/public/cron/daily-drop" \
+            -H "Content-Type: application/json" \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            -d '{}'
+        env:
+          FULL_TIME_URL: ${{ secrets.FULL_TIME_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
