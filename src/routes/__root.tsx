@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BottomNav } from "../components/BottomNav";
 import { MiniPlayer } from "../components/MiniPlayer";
 import { CompletionToast } from "../components/CompletionToast";
+import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -60,6 +61,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+const PLAUSIBLE_DOMAIN = import.meta.env.VITE_PLAUSIBLE_DOMAIN as string | undefined;
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
@@ -69,20 +72,38 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1",
       },
       { name: "theme-color", content: "#0a0a0c" },
-      { title: "GoalBot Radio" },
+      { title: "Full Time — Daily football recaps, narrated" },
       {
         name: "description",
-        content: "Daily AI-narrated football recaps. Tap once. Listen on the move.",
+        content: "Daily AI-narrated football recaps. Big 5 leagues, 60 seconds each. Tap once, listen on the move.",
       },
-      { property: "og:title", content: "GoalBot Radio" },
+      { property: "og:title", content: "Full Time" },
       {
         property: "og:description",
-        content: "Daily AI-narrated football recaps. Tap once. Listen on the move.",
+        content: "Daily AI-narrated football recaps. Big 5 leagues, 60 seconds each.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Full Time" },
       { name: "twitter:card", content: "summary" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "Full Time" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "icon", href: "/icon-192.png", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/icon-192.png" },
+    ],
+    scripts: PLAUSIBLE_DOMAIN
+      ? [
+          {
+            src: "https://plausible.io/js/script.js",
+            defer: true,
+            "data-domain": PLAUSIBLE_DOMAIN,
+          } as unknown as { src: string },
+        ]
+      : [],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -106,6 +127,16 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      router.invalidate();
+      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [router, queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -1,35 +1,84 @@
-# GoalBot Radio
+# Full Time
 
-Daily AI-narrated football recaps. Mobile-first, single-tap habit app.
+Daily AI-narrated football recaps. Big-5 leagues. ~60 seconds per match. One morning drop. Optional account, optional push.
 
-## Run
+## Stack
 
-```bash
-bun install
-bun dev
-```
-
-Open at the preview URL on a phone (or 390px-wide DevTools).
+- TanStack Start (React 19) + Tailwind v4 + Framer Motion
+- Lovable Cloud (Postgres + Storage + Auth + Realtime)
+- Lovable AI Gateway (`google/gemini-3-flash-preview`) for script generation
+- ElevenLabs (`eleven_turbo_v2_5`) for TTS
+- Web Push via VAPID
+- Plausible analytics (cookieless)
+- PWA (manifest + push service worker)
 
 ## Architecture
 
-- **Framework:** TanStack Start (file-based routing, SSR-ready) + React 19, Tailwind v4, shadcn-style tokens.
-- **State:** zero external state lib. Tiny pub/sub stores in `src/lib/player-store.ts` and `src/lib/follow-store.ts` exposed via `useSyncExternalStore`.
-- **Audio:** simulated with a 4Hz timer that advances a `progress` value (0..1). Swap for a real `<audio>` element when the streaming API is ready.
-- **Haptics:** `src/lib/haptics.ts` wraps the Vibration API. iOS Safari is a silent no-op.
-- **Mock data:** `src/data/mockEpisodes.ts`. Replace this single file with an API client.
-- **Routes:** `/` (Today), `/feed`, `/following`, `/settings`. Persistent `MiniPlayer` + `BottomNav` live in `__root.tsx`.
+```
+GitHub Actions cron (06:30 UTC, daily)
+  └─ POST /api/public/cron/daily-drop   (auth: apikey header = SUPABASE_PUBLISHABLE_KEY)
+       ├─ pick finished Big-5 matches without an episode
+       ├─ for each:
+       │     1. Lovable AI → 120-word recap script (banned-terms regex filter, retry once)
+       │     2. ElevenLabs TTS → mp3
+       │     3. Upload to Supabase Storage bucket `episodes/yyyy-mm-dd/<id>.mp3`
+       │     4. INSERT into `episodes` (triggers Realtime → live UI update)
+       └─ Web Push fan-out via `push_subscriptions`
+```
 
-## Components
+## Data model
 
-`AudioCard`, `MiniPlayer`, `ExpandedPlayer`, `EpisodeListItem`, `FollowButton`, `HapticButton`, `VoiceSelector`, `BottomNav`, `CompletionToast`.
+| Table | Notes |
+|---|---|
+| `leagues`, `teams`, `matches` | Reference + match results, public-read |
+| `episodes` | One per match; service-role writes only, public read |
+| `profiles` | Auto-created on signup; voice style preference |
+| `follows` | Teams / leagues per user |
+| `push_subscriptions` | VAPID endpoints per user |
+| `listens` | Play analytics; anon inserts allowed |
 
-## Next 7 build steps to a live MVP
+RLS on every table. User-owned tables scope to `auth.uid()`. Audio bucket public-read, write only via service role.
 
-1. **Real audio playback** — replace the simulated timer in `player-store.ts` with an `<HTMLAudioElement>` and stream from `episode.audioUrl`.
-2. **Episode API** — replace `src/data/mockEpisodes.ts` with `GET /api/episodes/today` (returns the same `Episode[]` shape).
-3. **AI narration pipeline** — nightly cron: pull final scores → generate 30–90s script per match → TTS → upload mp3 → enqueue into the feed.
-4. **Voice + follow persistence** — store `voiceStyle` and followed team ids in localStorage now, server-side once accounts exist.
-5. **Web Push** — opt-in from Settings, fire at 7:30am with a deep link into the Today hero card.
-6. **Lock-screen controls** — wire MediaSession metadata (title, artwork, play/pause/seek handlers) so it behaves like a real podcast app.
-7. **Ship as a PWA** — manifest + service worker, standalone display, install prompt after second session.
+## Mid-build secrets needed
+
+| Secret | Purpose |
+|---|---|
+| `ELEVENLABS_API_KEY` | TTS (auto-synced by Lovable connector) |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Web Push fan-out |
+| `VAPID_SUBJECT` | `mailto:hello@yourdomain.com` |
+
+Generate VAPID keys locally with: `npx web-push generate-vapid-keys`
+
+## Cron setup
+
+In your GitHub repo, add these Actions secrets:
+- `FULL_TIME_URL` — `https://project--{project-id}.lovable.app`
+- `SUPABASE_PUBLISHABLE_KEY` — the publishable/anon key
+
+The workflow in `.github/workflows/daily-drop.yml` triggers at 06:30 UTC daily and can be run manually for testing.
+
+## Local dev
+
+Routes (TanStack file-based):
+- `/` — Today (hero + carousel + tonight)
+- `/feed` — All recaps today
+- `/following` — Pick teams + leagues
+- `/settings` — Voice, notifications, account
+- `/auth` — Magic-link sign in
+- `/legal/privacy`, `/legal/terms`
+- `/api/public/cron/daily-drop` — cron endpoint
+
+Server functions live in `src/lib/api/*.functions.ts`.
+
+## Content safety
+
+- System prompt forbids: real-broadcaster impressions, transfer rumours, betting language, injury speculation, political commentary, slurs.
+- Banned-terms regex runs on every generated script; one retry on hit, otherwise the episode is skipped.
+- AI disclosure surfaced in Settings.
+
+## What's NOT in v1
+
+- Live match data (mock seed; API-Football adapter slots in via `matches` table)
+- Native apps
+- Required login
+- Payments / comments / standings
