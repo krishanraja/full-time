@@ -14,7 +14,6 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BottomNav } from "../components/BottomNav";
 import { MiniPlayer } from "../components/MiniPlayer";
 import { CompletionToast } from "../components/CompletionToast";
-import { AppHeader } from "../components/AppHeader";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -72,13 +71,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1",
       },
-      { name: "theme-color", content: "#0b0d0c" },
-      { title: "Full Time — Daily football recaps, narrated" },
+      { name: "theme-color", content: "#0a0a0c" },
+      { title: "Full Time - Daily football recaps, narrated" },
       {
         name: "description",
         content: "Daily AI-narrated football recaps. Big 5 leagues, 60 seconds each. Tap once, listen on the move.",
       },
-      { property: "og:title", content: "Full Time" },
+      { property: "og:title", content: "Full Time - Daily football recaps, narrated" },
       {
         property: "og:description",
         content: "Daily AI-narrated football recaps. Big 5 leagues, 60 seconds each.",
@@ -89,19 +88,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "apple-mobile-web-app-title", content: "Full Time" },
+      { name: "twitter:title", content: "Full Time - Daily football recaps, narrated" },
+      { name: "description", content: "Listen to daily AI-narrated football goal and match recaps with a simple, mobile-first audio feed." },
+      { property: "og:description", content: "Listen to daily AI-narrated football goal and match recaps with a simple, mobile-first audio feed." },
+      { name: "twitter:description", content: "Listen to daily AI-narrated football goal and match recaps with a simple, mobile-first audio feed." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/be3e992b-b460-4fc8-ac03-5079bc09c31d/id-preview-16fb946e--909f628d-2539-43c1-a276-809849a2eeb8.lovable.app-1781696715077.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/be3e992b-b460-4fc8-ac03-5079bc09c31d/id-preview-16fb946e--909f628d-2539-43c1-a276-809849a2eeb8.lovable.app-1781696715077.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "icon", href: "/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { rel: "icon", href: "/favicon-16.png", sizes: "16x16", type: "image/png" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap",
-      },
+      { rel: "icon", href: "/icon-192.png", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/icon-192.png" },
     ],
     scripts: PLAUSIBLE_DOMAIN
       ? [
@@ -149,8 +147,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <CompletionToast />
-      <div className="mx-auto min-h-screen max-w-md px-4 pb-[150px]">
-        <AppHeader />
+      <div className="mx-auto min-h-screen max-w-md pb-[150px]">
         <Outlet />
       </div>
       <MiniPlayer />
