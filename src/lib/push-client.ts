@@ -2,11 +2,11 @@
 import { supabase } from "@/integrations/supabase/client";
 import { savePushSubscription, deletePushSubscription, getVapidPublicKey } from "./api/push.functions";
 
-function urlBase64ToUint8Array(base64: string): Uint8Array {
+function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
   const base64Std = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
   const raw = atob(base64Std);
-  const buf = new Uint8Array(raw.length);
+  const buf = new Uint8Array(new ArrayBuffer(raw.length));
   for (let i = 0; i < raw.length; i++) buf[i] = raw.charCodeAt(i);
   return buf;
 }
