@@ -11,9 +11,10 @@ export const Route = createFileRoute("/legal/terms")({
     links: [{ rel: "canonical", href: "/legal/terms" }],
   }),
   component: () => (
-    <article className="prose prose-invert mx-auto max-w-md px-4 py-6 text-sm leading-relaxed">
-      <Link to="/settings" className="text-xs text-muted-foreground">← Back</Link>
-      <h1 className="mt-2 text-2xl font-extrabold tracking-tight">Terms</h1>
+    <article className="prose prose-invert py-6 text-sm leading-relaxed">
+      <Link to="/settings" className="text-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">← Back</Link>
+      <div className="eyebrow mt-4">Legal</div>
+      <h1 className="mt-2 text-[28px] font-semibold leading-tight tracking-tight">Terms</h1>
       <p className="mt-4 text-muted-foreground">
         Full Time is a free service that publishes AI-generated audio recaps of football matches.
         Recaps are produced from publicly available match data. Voices are synthetic. We do not use
