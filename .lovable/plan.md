@@ -1,124 +1,107 @@
-# Production Build Plan
+# Full Time — Visual Rebrand + Documentation Suite
 
-**Pick a name first** — I'll bake it into copy, manifest, OG tags, and the morning push template. My top three: **Full Time**, **Touchline FM**, **Three Minutes**. Reply with one (or your own) and I'll start.
+Two parallel workstreams: (1) install the new brand assets and elevate the visual system to feel modern and sophisticated, (2) author a comprehensive `/docs` suite addressed to specialist AI agents.
 
-## Locked decisions
+---
 
-| Area | Choice |
-|---|---|
-| Stack | TanStack Start (current project) + Tailwind v4 + Framer Motion |
-| Backend | Lovable Cloud (Postgres + Storage + Auth) |
-| Data source | Mocked at v1; structured so a real API-Football adapter slots in later |
-| LLM | Lovable AI Gateway → `google/gemini-3-flash-preview` |
-| TTS | ElevenLabs (connector) — `eleven_turbo_v2_5`, 1 voice per style |
-| Recap length | ~60 seconds / 120–150 words |
-| Coverage | Big 5 leagues only |
-| Drop cadence | One 7am morning drop |
-| Cron | External cron (GitHub Actions) hitting a signed `/api/public/cron/daily-drop` route |
-| Storage | Supabase Storage bucket `episodes`, public read |
-| Auth | Optional email magic-link via Lovable Cloud |
-| Push | Web Push (VAPID) for installed PWA users |
-| Monetization | None at launch |
-| Analytics | Plausible (script tag + a couple custom events) |
-| Scale target | 1k–10k users |
-| Safety | Conservative LLM output filtering (no rumours, profanity filter, no real-commentator impressions) |
-| Install | Manifest-only PWA, dark theme, `display: standalone`, custom icons |
+## Part 1 — Brand & visual system
 
-## Architecture
+### Assets
+- Upload the two PNGs to Lovable Assets (CDN) so they're not committed as binaries.
+- Use the **icon** (`full_time_logo_2.png`) for:
+  - `favicon` (32, 16 derived), `apple-touch-icon` (180), PWA `icon-192`/`icon-512` (replacing the current placeholders), `theme-color` meta.
+- Use the **wordmark** (`full_time_wordmark-white.png`) for:
+  - Top-left of the app shell (header on every route), small height (~22–24px), with the icon as a square mark to its left on home.
+  - Open Graph image will be regenerated separately (icon + wordmark on dark) as a leaf-route polish task later — not in this plan.
 
-```text
-[GitHub Actions cron 06:30 UTC]
-        │  HMAC-signed POST
-        ▼
-/api/public/cron/daily-drop ── verifies signature
-        │
-        ├─► pull yesterday's Big-5 results from `matches` table
-        │   (seeded from mock data in v1; adapter-ready for API-Football)
-        │
-        ├─► for each match:
-        │     1. Lovable AI → 120-word script (system prompt enforces style, no rumours)
-        │     2. Safety pass: profanity filter + banned-terms regex
-        │     3. ElevenLabs TTS → mp3 → Supabase Storage (`episodes/yyyy-mm-dd/<id>.mp3`)
-        │     4. INSERT into `episodes` (title, hook, script, audio_url, duration, badge…)
-        │
-        ├─► pick "Biggest moment" via simple score (goals + late goals + rivalry weight)
-        │
-        └─► fan-out web push to subscribers via `push_subscriptions` table
-                "Today's recaps are live. 4 min total."
+### Design tokens (rewrite `src/styles.css`)
+Pivot the whole palette to lean into the lime/electric-green identity, paired with deep near-black surfaces and a single warm signal color for live/important moments.
+
+- `--pitch`: `oklch(0.16 0.01 240)` — base background (near-black with a cool tilt, not pure #000).
+- `--pitch-raised`: `oklch(0.20 0.012 240)` — cards.
+- `--pitch-line`: `oklch(0.26 0.012 240)` — hairlines.
+- `--chalk`: `oklch(0.98 0.005 240)` — primary text.
+- `--chalk-muted`: `oklch(0.68 0.01 240)` — secondary text.
+- `--lime` (primary/accent, from logo): `oklch(0.88 0.24 135)`.
+- `--lime-glow`: `oklch(0.92 0.22 135)` — for halos/shadows.
+- `--ember` (live/important badge only): `oklch(0.72 0.20 35)`.
+- `--gradient-lime`: `linear-gradient(135deg, var(--lime), var(--lime-glow))`.
+- `--shadow-lime`: `0 10px 40px -12px color-mix(in oklab, var(--lime) 45%, transparent)`.
+- All shadcn semantic tokens (`--background`, `--foreground`, `--primary`, `--primary-foreground`, `--ring`, etc.) re-map to the above via `@theme inline`. No component-level color hardcodes touched.
+
+### Typography
+Move off whatever defaults are currently rendering. Load via `<link>` in `__root.tsx` (per Tailwind v4 rule — never `@import` URLs in CSS):
+- **Display**: `Geist` (semi-bold/medium, tight tracking) for hero match scores and big numerals — feels engineered, not sporty-cliché.
+- **Body**: `Geist` regular for UI, `Geist Mono` for kickoff times, scores, durations, badge labels (the "engineered ticker" feel that matches the logo's mono-ish wordmark).
+- Bind in `@theme`: `--font-display`, `--font-sans`, `--font-mono`. Removes any `Inter`/`Poppins` defaults.
+
+### Component-level moves (no business-logic changes)
+- **App header**: persistent sticky top bar (h-14), wordmark left, single thin lime hairline underneath, frosted blur over scrolling content.
+- **Hero (Today)**: editorial layout — oversized mono score (`5-2`) as the visual anchor, team names in display weight underneath, lime accent reserved for the play affordance and the "BIGGEST MOMENT" badge.
+- **Cards**: remove gradient-on-white "AI look"; use `--pitch-raised` surfaces, hairline borders, lime focus rings, and a single lime glow on the currently-playing card via `--shadow-lime`.
+- **Player (mini + expanded)**: lime progress bar with a subtle glow trail, monospaced timecode, larger touch targets.
+- **Badges** ("BIGGEST MOMENT", "LATE DRAMA", etc.): mono uppercase, hairline outline in lime, no fill — feels like a UI you'd find in a pro broadcast tool, not a content app.
+- **Bottom nav**: same hairline language, active tab marked with a 2px lime underline rather than a filled pill.
+- **Motion**: keep framer-motion but reduce to two signature moments — hero enter (score counts up, badge slides in) and play-state transition (lime glow ramps). No micro-interactions everywhere.
+
+### Files touched
+- `src/styles.css` — full token rewrite + `@theme inline` mapping.
+- `src/routes/__root.tsx` — font `<link>` tags, favicon/apple-touch-icon/theme-color, manifest theme color.
+- `public/manifest.webmanifest` — point to new icons, update `theme_color` and `background_color`.
+- Replace `public/icon-192.png` / `public/icon-512.png` via lovable-assets pipeline (or regenerated from uploaded logo).
+- `src/components/BottomNav.tsx`, `MiniPlayer.tsx`, `ExpandedPlayer.tsx`, `AudioCard.tsx`, `EpisodeListItem.tsx` — token swaps, badge restyle, header insertion.
+- New `src/components/AppHeader.tsx` — wordmark + hairline.
+- New `src/components/Wordmark.tsx` and `src/components/LogoMark.tsx` — pulling from the asset pointers.
+
+No data, server-function, or schema changes.
+
+---
+
+## Part 2 — Documentation suite (`/docs`)
+
+A `/docs` folder at the repo root, each file written *for* an AI agent operating in that role on this codebase. Every doc cross-links to the others and to the relevant source files.
+
+```
+docs/
+  README.md                  ← index + how to use these docs
+  00-product.md              ← vision, target user, value prop, success metrics
+  01-brand.md                ← logo usage, palette tokens, type, voice & tone, do/don't
+  02-developer.md            ← stack, file map, conventions, run/build, gotchas
+  03-architecture.md         ← data flow, server fns, cron, push, AI pipeline diagrams
+  04-data-model.md           ← every table, column, RLS policy, realtime channel
+  05-content-safety.md       ← system prompt, banned terms, retry policy, AI disclosure
+  06-ops.md                  ← runbooks: cron failing, TTS failing, push fanout, rotating secrets, restoring storage
+  07-marketing.md            ← positioning, channels, launch checklist, copy bank, SEO/OG strategy
+  08-sales.md                ← (free-for-now context) future monetization options, partnership angles, what to say to rights-holders
+  09-growth.md               ← referral loops, retention levers, push opt-in playbook, Plausible event taxonomy
+  10-support.md              ← common user issues, FAQ source-of-truth, escalation
+  11-legal.md                ← AI disclosure stance, data retention, GDPR posture, rights/IP guardrails (no broadcaster impressions, etc.)
+  12-roadmap.md              ← what's v1, what's explicitly out, what's next, decision log
+  13-agent-handoff.md        ← "if you are an AI agent picking this up cold, start here"
 ```
 
-Browser side: same UX you have now, but Episode/Team/Tonight come from Cloud, the player uses a real `<audio>` element with MediaSession metadata, and a `useEpisodes()` hook subscribes to realtime inserts so the morning drop animates in if the user is already on the page.
+### Authoring rules applied to every doc
+- Top of each file: **Role**, **When to read this**, **When NOT to read this**.
+- Concrete file paths (e.g. `src/lib/api/episode-pipeline.functions.ts:42`) instead of vague references.
+- Decision log entries use the format `Decision · Context · Tradeoff · Reversible?`.
+- No marketing fluff in dev docs; no implementation details in sales/marketing docs.
+- All docs reference the same source-of-truth tables (palette, tokens, table list) by linking to `01-brand.md` / `04-data-model.md` rather than duplicating.
 
-## Database (Postgres / Lovable Cloud)
+### What gets pulled OUT of the current `README.md`
+The root `README.md` shrinks to: one-paragraph "what is this", quickstart, link to `docs/README.md`. Everything else moves into the role-specific files. `.lovable/plan.md` stays as the build artifact; `docs/12-roadmap.md` becomes the living version.
 
-| Table | Purpose | Key columns |
-|---|---|---|
-| `teams` | Big-5 club registry | id, name, short, league, color, crest_url |
-| `leagues` | Reference list | id, name, country |
-| `matches` | Match results | id, home_team_id, away_team_id, home_score, away_score, kickoff_at, status, importance_score |
-| `episodes` | Generated recaps | id, match_id, voice_style, title, hook, script, audio_url, duration_sec, badge, published_at |
-| `profiles` | Optional user profile | id (=auth.users.id), display_name, voice_style_pref |
-| `follows` | Which teams/leagues a user follows | user_id, entity_type, entity_id |
-| `push_subscriptions` | Web Push endpoints | user_id, endpoint, p256dh, auth |
-| `listens` | Analytics: completed plays | user_id, episode_id, completed, listened_at |
+---
 
-RLS: `episodes`, `matches`, `teams`, `leagues` are public-read. `follows`, `push_subscriptions`, `listens`, `profiles` are user-scoped via `auth.uid()`. `episodes` writes only via service role (cron).
+## Out of scope for this plan
+- Generating a custom OG share image (separate small task once brand lands).
+- Any change to server functions, schema, AI pipeline behavior, or cron.
+- Adding new product features.
 
-## Server functions & routes
+## Order of execution
+1. Upload assets to CDN, wire favicon/manifest/wordmark in header.
+2. Rewrite `src/styles.css` tokens + load fonts in `__root.tsx`.
+3. Restyle header, cards, player, badges, bottom nav using new tokens.
+4. Write all 14 docs in parallel.
+5. Trim root `README.md` to a pointer.
 
-- `getTodayFeed` (server fn, public via publishable client) — hero + carousel + tonight in one call.
-- `getEpisode(id)` — single episode + signed audio URL.
-- `toggleFollow` (auth required) — write to `follows`.
-- `recordListen` (auth or anonymous device id) — write to `listens`.
-- `subscribeToPush` (auth required) — store VAPID subscription.
-- `POST /api/public/cron/daily-drop` — HMAC-verified, the orchestrator above.
-- `POST /api/public/webhooks/match-finished` (future) — when real-time data lands.
-
-## Frontend changes
-
-- Replace mock store reads with TanStack Query against server fns; keep the same component shapes.
-- Real `<audio>` element + MediaSession (lock-screen play/pause/seek, artwork).
-- PWA manifest, theme color, app icons (generated), install prompt after second visit.
-- Auth screen: single-screen magic-link, deferred until user taps "Sync across devices" or "Get the morning nudge".
-- Notification opt-in card on Following screen.
-- Plausible script + 4 events: `play`, `complete`, `follow`, `push_opt_in`.
-- Realtime channel on `episodes` so the morning drop animates in.
-- `/legal/privacy`, `/legal/terms`, AI-disclosure already lives on Settings.
-
-## Content safety
-
-- System prompt commits to: no quoting real broadcasters, no transfer speculation, no injuries beyond confirmed, no betting language, no political commentary, no slurs.
-- Banned-terms regex run on every generated script; on hit, regenerate once, then skip the episode.
-- `profanity-filter` npm pass as second net.
-- AI disclosure on Settings + a small "🤖 AI-narrated" tag under each player.
-
-## Things I will NOT do at v1
-
-- Real match data wiring (you said mock for now; adapter interface ready)
-- Native apps
-- Login required
-- Payments
-- Comments / social features
-- Stats / tables / league standings
-
-## Build order (single session)
-
-1. Enable Lovable Cloud, generate migrations for all tables, seed Big-5 teams + 1 day of demo matches & episodes.
-2. Server functions (`getTodayFeed`, follows, listens) + swap frontend reads off mocks. App still looks identical, now powered by DB.
-3. Real `<audio>` playback + MediaSession + actual `audio_url` from Storage. I'll use a short demo mp3 in the seed.
-4. AI pipeline: Lovable AI script gen → ElevenLabs TTS → Storage upload — wired as a single server function `generateEpisodeForMatch(matchId)`.
-5. Cron route `/api/public/cron/daily-drop` with HMAC, plus a GitHub Actions workflow file (`.github/workflows/daily-drop.yml`) you can enable when you connect the repo.
-6. Auth (magic link), follows persisted to DB, settings persisting voice style.
-7. Web Push: VAPID keys (I'll prompt you to add them as secrets), service worker for push delivery, opt-in card, fan-out from cron.
-8. PWA manifest + generated icon + install prompt.
-9. Plausible + privacy/terms pages + final polish + README rewrite + publish.
-
-## Where I'll need things from you mid-build
-
-- **Name** — before I start.
-- **ElevenLabs connection** — I'll trigger the connector flow when we hit step 4.
-- **VAPID public/private keys for Web Push** — I'll add secrets when we hit step 7; one command to generate.
-- **GitHub repo connected** — only needed to actually run the cron; the workflow file ships either way.
-- **Plausible domain** — quick paste at step 9.
-
-Reply with the name (e.g. "Full Time") and I'll execute the plan end-to-end.
+Reply **go** and I'll execute end-to-end without pausing.

@@ -36,20 +36,23 @@ function AuthPage() {
   };
 
   return (
-    <div className="px-4 pb-6 pt-5">
+    <div className="pb-6 pt-4">
       <button
         onClick={() => navigate({ to: "/settings" })}
-        className="mb-4 text-xs text-muted-foreground"
+        className="text-mono mb-6 text-[10px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
       >
         ← Back
       </button>
-      <h1 className="text-2xl font-extrabold tracking-tight">Sync across devices</h1>
+      <div className="eyebrow">Account</div>
+      <h1 className="mt-2 text-[30px] font-semibold leading-tight tracking-tight">
+        Sync across devices.
+      </h1>
       <p className="mt-2 text-sm text-muted-foreground">
         Optional. Saves your follows, voice, and notification preference.
       </p>
 
       {sent ? (
-        <div className="mt-8 rounded-2xl border border-primary/40 bg-primary/10 p-5 text-sm">
+        <div className="mt-8 rounded-[var(--radius-lg)] border border-[color:color-mix(in_oklab,var(--lime)_45%,transparent)] bg-[color:color-mix(in_oklab,var(--lime)_8%,transparent)] p-5 text-sm">
           Check your inbox for the sign-in link. You can close this tab.
         </div>
       ) : (
@@ -61,11 +64,11 @@ function AuthPage() {
             placeholder="you@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded-2xl border border-white/8 bg-card px-4 py-3 text-sm outline-none focus:border-primary"
+            className="surface rounded-[var(--radius-lg)] px-4 py-3 text-sm outline-none focus:border-[var(--lime)]"
           />
           <HapticButton
             disabled={busy}
-            className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+            className="glow-lime rounded-full bg-[var(--lime)] px-5 py-3 text-sm font-semibold tracking-tight text-[var(--primary-foreground)] disabled:opacity-50"
           >
             {busy ? "Sending…" : "Email me a magic link"}
           </HapticButton>

@@ -28,21 +28,23 @@ export function VoiceSelector({
             hapticPattern="soft"
             onClick={() => onChange?.(v.id)}
             className={cn(
-              "flex items-start gap-3 rounded-2xl border p-4 text-left",
-              on ? "border-primary bg-primary/10" : "border-white/8 bg-card",
+              "flex items-start gap-3 rounded-[var(--radius-lg)] border p-4 text-left transition-colors",
+              on
+                ? "border-[color:color-mix(in_oklab,var(--lime)_55%,transparent)] bg-[color:color-mix(in_oklab,var(--lime)_8%,transparent)]"
+                : "border-[var(--pitch-line)] bg-card hover:border-foreground/20",
             )}
           >
             <div
               className={cn(
-                "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border",
-                on ? "border-primary bg-primary" : "border-white/30",
+                "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors",
+                on ? "border-[var(--lime)] bg-[var(--lime)]" : "border-white/30",
               )}
             >
-              {on && <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />}
+              {on && <Check className="h-3 w-3 text-[var(--primary-foreground)]" strokeWidth={3} />}
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-semibold">{v.name}</div>
-              <div className="text-xs text-muted-foreground">{v.blurb}</div>
+              <div className="text-sm font-semibold tracking-tight">{v.name}</div>
+              <div className="mt-0.5 text-xs text-muted-foreground">{v.blurb}</div>
             </div>
           </HapticButton>
         );

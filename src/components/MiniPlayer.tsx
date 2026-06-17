@@ -19,18 +19,27 @@ export function MiniPlayer() {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 80, opacity: 0 }}
         transition={{ type: "spring", stiffness: 320, damping: 30 }}
-        className="tap fixed inset-x-3 bottom-[78px] z-40 flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-card/95 p-2.5 pl-3 text-left shadow-[0_20px_60px_-20px_rgba(0,0,0,0.7)] backdrop-blur"
+        className="tap surface fixed inset-x-3 bottom-[78px] z-40 flex items-center gap-3 overflow-hidden rounded-[var(--radius-xl)] p-2.5 pl-3 text-left backdrop-blur"
       >
-        <div className="absolute inset-x-0 bottom-0 h-0.5 bg-white/5">
+        <div className="absolute inset-x-0 bottom-0 h-[2px] bg-white/5">
           <div
-            className="h-full bg-primary transition-[width] duration-200"
-            style={{ width: `${progress * 100}%` }}
+            className="h-full bg-[var(--lime)] transition-[width] duration-200"
+            style={{
+              width: `${progress * 100}%`,
+              boxShadow: isPlaying ? "0 0 8px var(--lime)" : undefined,
+            }}
           />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[11px] text-muted-foreground">{episode.competition}</div>
-          <div className="truncate text-sm font-semibold">
-            {episode.homeTeam} {episode.homeScore}–{episode.awayScore} {episode.awayTeam}
+          <div className="text-mono truncate text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            {episode.competition} · Now playing
+          </div>
+          <div className="truncate text-sm font-semibold tracking-tight">
+            {episode.homeTeam}{" "}
+            <span className="text-mono text-[var(--lime)]">
+              {episode.homeScore}–{episode.awayScore}
+            </span>{" "}
+            {episode.awayTeam}
           </div>
         </div>
         <HapticButton
@@ -39,7 +48,7 @@ export function MiniPlayer() {
             playerStore.toggle();
           }}
           aria-label={isPlaying ? "Pause" : "Play"}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--lime)] text-[var(--primary-foreground)]"
         >
           {isPlaying ? (
             <Pause className="h-4 w-4" fill="currentColor" />

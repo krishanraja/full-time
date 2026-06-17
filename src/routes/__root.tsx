@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BottomNav } from "../components/BottomNav";
 import { MiniPlayer } from "../components/MiniPlayer";
 import { CompletionToast } from "../components/CompletionToast";
+import { AppHeader } from "../components/AppHeader";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -71,7 +72,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1",
       },
-      { name: "theme-color", content: "#0a0a0c" },
+      { name: "theme-color", content: "#0b0d0c" },
       { title: "Full Time — Daily football recaps, narrated" },
       {
         name: "description",
@@ -92,8 +93,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "icon", href: "/icon-192.png", type: "image/png" },
-      { rel: "apple-touch-icon", href: "/icon-192.png" },
+      { rel: "icon", href: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { rel: "icon", href: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap",
+      },
     ],
     scripts: PLAUSIBLE_DOMAIN
       ? [
@@ -141,7 +149,8 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <CompletionToast />
-      <div className="mx-auto min-h-screen max-w-md pb-[150px]">
+      <div className="mx-auto min-h-screen max-w-md px-4 pb-[150px]">
+        <AppHeader />
         <Outlet />
       </div>
       <MiniPlayer />
