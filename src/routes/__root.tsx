@@ -93,8 +93,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Listen to daily AI-narrated football goal and match recaps with a simple, mobile-first audio feed." },
       { property: "og:description", content: "Listen to daily AI-narrated football goal and match recaps with a simple, mobile-first audio feed." },
       { name: "twitter:description", content: "Listen to daily AI-narrated football goal and match recaps with a simple, mobile-first audio feed." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/be3e992b-b460-4fc8-ac03-5079bc09c31d/id-preview-16fb946e--909f628d-2539-43c1-a276-809849a2eeb8.lovable.app-1781696715077.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/be3e992b-b460-4fc8-ac03-5079bc09c31d/id-preview-16fb946e--909f628d-2539-43c1-a276-809849a2eeb8.lovable.app-1781696715077.png" },
+      { property: "og:image", content: "https://full-time-alpha.vercel.app/icon-512.png" },
+      { name: "twitter:image", content: "https://full-time-alpha.vercel.app/icon-512.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
