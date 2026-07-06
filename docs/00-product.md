@@ -44,25 +44,14 @@ Not the target: hardcore stats fans, fantasy players, bettors.
 
 Mechanism lives in `02-developer.md`. What matters here: the promise is load-bearing and the product keeps it.
 
-## Money
+## Access ladder (and money)
 
-Free stays free. The daily drop, the whole morning of recaps with real audio, is free with no account required. That promise does not move.
+The user-visible ladder is **anonymous → free account → waitlist**. Money is parked. Full spec: `15-access-and-waitlist-plan.md`.
 
-**Full Time Pro, $4.99/mo USD.** One tier, optional, cancel anytime. It exists to fund the build (real Anthropic and ElevenLabs cost per drop) and to give committed fans control.
-
-What Pro actually gates *today*:
-
-- **Pundit selection.** Free listeners get one house voice, The Reporter (calm, straight, "zen"). The other five pundits (The Gaffer, The Stats Nerd, The Romantic, The Doomer, The Banter) are Pro. This is enforced for real, not just hidden in the UI: the server checks entitlement on `setVoiceStyle` and a database guard trigger backs it, so a free account cannot self-grant a Pro voice.
-
-What Pro will unlock, marketed honestly as **"rolling out"** and *not yet built*:
-
-- Your clubs first in the morning order.
-- Every league in the drop.
-- The full recap archive.
-
-We say "rolling out" until each one ships. We never call an unbuilt thing done.
-
-**Billing is on the Stripe test key, on purpose.** Checkout, the customer portal, and the webhook all work end to end, but no real card is charged yet. We flip to live keys when the near-term value is real enough to charge for. Until then Pro is honest about what it is: pick your pundit, back an independent build.
+- **Anonymous.** The daily drop, the whole morning of recaps with real audio, free with no account. That promise does not move. Anonymous listeners also get two pundits (The Reporter and The Gaffer, preference kept on-device) and local follows with club-first ordering.
+- **Free account** (magic link, $0). Unlocks all six pundits (The Reporter, The Gaffer, The Numbers Guy, The Romantic, The Doomer, The Wind-Up) and syncs follows, voice, and push across devices. The archive and name-a-game land here as they ship (`15-access-and-waitlist-plan.md` Phase 2).
+- **Waitlist.** Reserves a place in the full app: every matchday live by 7am with the morning push. Joining requires only the free account (the magic link IS the join for anonymous users). The waitlist is the launch trigger: live daily generation switches on when it proves demand.
+- **Full Time Pro, $4.99/mo USD: PARKED.** The Stripe plumbing (checkout, portal, webhook, DB guard) stays wired on the **test key** and gates nothing user-visible. It returns as the paid tier when there are features worth paying for. We never call an unbuilt thing done; "rolling out" copy stays until each thing ships.
 
 Exact current status and the ordered steps to go live, for both billing and the automated daily drop, are the "Launch status" block at the top of `12-roadmap.md`. That block is the single source of truth for what is switched on versus built-but-waiting.
 

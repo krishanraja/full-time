@@ -23,10 +23,10 @@ The honest read: the plumbing is done so that flipping to live is a config chang
 ## Full Time Pro (what actually exists today)
 
 - **Price:** $4.99/mo USD.
-- **Status:** live in code, wired to Stripe on the **test key**. No live charges, no revenue. Deliberately test-only.
-- **What Pro gates today:** **pundit selection.** Free users get **"The Reporter"** only. The other five pundits are Pro. This is enforced in three places, the UI, the server, and a database guard trigger. The billing columns are `service_role`-only, which closed a self-grant-Pro hole (a free user cannot flip their own account to Pro).
-- **What is "rolling out" (shown as a Pro benefit but NOT built yet):** clubs-first, all leagues, archive. Do **not** market these as available. They are aspirational until they ship.
-- **What Pro must never paywall:** the core daily drop, push notifications, and team-follow personalization. That is the loop, and it stays free forever.
+- **Status:** **PARKED** (2026-07-06, `15-access-and-waitlist-plan.md`). The plumbing stays live in code and wired to Stripe on the **test key**, but Pro gates **nothing user-visible**: pundit selection moved to the free account tier, and the `/pro` page now redirects to `/waitlist`. No live charges, no revenue.
+- The user-visible ladder is anonymous → free account → waitlist. Demand capture happens on the waitlist, not a paywall.
+- The billing columns remain `service_role`-only (the guard trigger that closed the self-grant-Pro hole is untouched). When Pro returns, the entitlement seam (`entitlement.ts`, `use-entitlement`) is where it re-enters.
+- **What Pro must never paywall (unchanged):** the core daily drop, push notifications, and team-follow personalization. That is the loop, and it stays free forever.
 - **Files:** `billing.functions.ts`, `api/stripe/webhook.ts`, `stripe.server.ts`, `billing-sync.server.ts`, `entitlement.ts`, `use-entitlement.ts`, `pro.tsx`.
 - **Env:** `STRIPE_SECRET_KEY` (test), `STRIPE_PRO_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`.
 - **To go live (when the time is right):** build the real Pro features, create a live-mode Stripe webhook, swap the three Stripe env vars above to live values, redeploy. Until pundit selection is joined by genuine Pro value, leave it on test.

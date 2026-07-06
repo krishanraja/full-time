@@ -1,13 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Play } from "lucide-react";
 import { AudioCard } from "../components/AudioCard";
 import { EpisodeListItem } from "../components/EpisodeListItem";
 import { HapticButton } from "../components/HapticButton";
+import { useAuth } from "../hooks/use-auth";
 import { useTodayFeed } from "../hooks/use-episodes";
 import { useFollowed } from "../lib/follow-store";
 import { playerStore } from "../lib/player-store";
+import { getWaitlistStatus, type WaitlistStatus } from "@/lib/api/waitlist.functions";
 import type { Episode } from "../data/mockEpisodes";
 
 export const Route = createFileRoute("/")({
@@ -49,6 +53,14 @@ function Skeleton() {
 
 function Home() {
   const { data, isLoading } = useTodayFeed();
+  const { user } = useAuth();
+  const fetchWaitlist = useServerFn(getWaitlistStatus);
+  const waitlist = useQuery<WaitlistStatus>({
+    queryKey: ["waitlist", user?.id ?? "anon"],
+    queryFn: () => fetchWaitlist(),
+    enabled: !!user,
+    staleTime: 60_000,
+  });
   const followed = useFollowed();
   const rawEpisodes = (data?.episodes ?? []) as Episode[];
   // Club-first: a followed team's (or league's) recap leads the drop. Stable
@@ -139,6 +151,23 @@ function Home() {
             While you were asleep · spotted across every match
           </div>
         </motion.section>
+      )}
+
+      {!waitlist.data?.joined && (
+        <Link
+          to="/waitlist"
+          className="surface mt-8 flex items-center justify-between rounded-[var(--radius-lg)] p-4"
+        >
+          <div>
+            <div className="text-sm font-semibold tracking-tight">
+              Want this every morning?
+            </div>
+            <div className="text-mono mt-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              Every matchday · live by 7am · join the waitlist
+            </div>
+          </div>
+          <span className="text-sm font-semibold text-[var(--lime)]">Go →</span>
+        </Link>
       )}
 
       {tonight.length > 0 && (

@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { isProProfile, isProVoiceStyle } from "@/lib/entitlement";
 
 export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -23,18 +22,9 @@ export const setVoiceStyle = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    // Server-side entitlement gate: the extra pundits are Full Time Pro.
-    // Enforced here so a lower-tier user cannot set them via a direct RPC.
-    if (isProVoiceStyle(data.voiceStyle)) {
-      const { data: prof } = await context.supabase
-        .from("profiles")
-        .select("plan, subscription_status, current_period_end")
-        .eq("id", context.userId)
-        .maybeSingle();
-      if (!isProProfile(prof)) {
-        throw new Error("Full Time Pro is required to choose this pundit.");
-      }
-    }
+    // All six pundits are open to any signed-in account (the auth middleware
+    // is the gate). Anonymous listeners keep their pick in localStorage and
+    // never reach this function.
     const { error } = await context.supabase
       .from("profiles")
       .upsert({ id: context.userId, voice_style_pref: data.voiceStyle }, { onConflict: "id" });

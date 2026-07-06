@@ -22,6 +22,7 @@ Each file declares the role it is written for, when to read it, and when not to.
 | 11 | [legal.md](./11-legal.md) | Legal | Data, IP, AI disclosure stance |
 | 12 | [roadmap.md](./12-roadmap.md) | Product | What's next, decision log |
 | 13 | [agent-handoff.md](./13-agent-handoff.md) | Any AI agent | Picking up this project cold |
+| 15 | [access-and-waitlist-plan.md](./15-access-and-waitlist-plan.md) | Product / builder | Building or changing the anon / free / waitlist ladder |
 
 ## Authoring rules
 

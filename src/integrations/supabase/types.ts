@@ -226,6 +226,36 @@ export type Database = {
           },
         ]
       }
+      waitlist: {
+        Row: {
+          user_id: string
+          joined_at: string
+          source: string | null
+          referral_code: string | null
+          referred_by: string | null
+          invited_at: string | null
+          cohort: string | null
+        }
+        Insert: {
+          user_id: string
+          joined_at?: string
+          source?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
+          invited_at?: string | null
+          cohort?: string | null
+        }
+        Update: {
+          user_id?: string
+          joined_at?: string
+          source?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
+          invited_at?: string | null
+          cohort?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

@@ -32,6 +32,7 @@ Any change here that touches collection, processors, or billing must ship the ma
 | Voice style preference | Personalisation | Until account deletion |
 | Follow list (teams/leagues) | Personalisation | Until account deletion |
 | Push subscription (endpoint, keys) | Morning push delivery | Until unsubscribe |
+| Waitlist membership (joined_at, source, referral attribution) | Admitting the full-app launch list in join order | Until launch admission or account deletion |
 | Listens (episode, completion, timestamp) | Analytics on what to make more of | 12 months, then aggregated |
 | Stripe customer id + subscription status (Pro users only) | Billing, Pro entitlement | Until account deletion / subscription end |
 | Plausible analytics (cookieless) | Site-wide usage | 12 months (Plausible's default) |
@@ -50,7 +51,7 @@ Card and payment details never touch our servers. Stripe holds them. We store on
 ## Data subject rights
 
 - **Access / export**: email request → we return a JSON of all rows tied to their `auth.users.id`.
-- **Deletion**: email request → we delete `profiles`, `follows`, `push_subscriptions`, `listens` for that user. Auth row removed via Supabase Auth admin. Confirm within 30 days. If they hold a live subscription, cancel it in Stripe as part of deletion.
+- **Deletion**: email request → we delete `profiles`, `follows`, `push_subscriptions`, `listens`, `waitlist` for that user. Auth row removed via Supabase Auth admin. Confirm within 30 days. If they hold a live subscription, cancel it in Stripe as part of deletion.
 - **Correction**: trivial fields (display name) are user-editable; we don't store much else.
 - **Portability**: same shape as the export.
 
