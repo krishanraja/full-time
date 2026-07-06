@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WaitlistRouteImport } from './routes/waitlist'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProRouteImport } from './routes/pro'
 import { Route as FollowingRouteImport } from './routes/following'
@@ -20,6 +21,11 @@ import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
 import { Route as ApiPublicCronDailyDropRouteImport } from './routes/api/public/cron.daily-drop'
 
+const WaitlistRoute = WaitlistRouteImport.update({
+  id: '/waitlist',
+  path: '/waitlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/following': typeof FollowingRoute
   '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
+  '/waitlist': typeof WaitlistRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/following': typeof FollowingRoute
   '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
+  '/waitlist': typeof WaitlistRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/following': typeof FollowingRoute
   '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
+  '/waitlist': typeof WaitlistRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/following'
     | '/pro'
     | '/settings'
+    | '/waitlist'
     | '/legal/privacy'
     | '/legal/terms'
     | '/api/stripe/webhook'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/following'
     | '/pro'
     | '/settings'
+    | '/waitlist'
     | '/legal/privacy'
     | '/legal/terms'
     | '/api/stripe/webhook'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/following'
     | '/pro'
     | '/settings'
+    | '/waitlist'
     | '/legal/privacy'
     | '/legal/terms'
     | '/api/stripe/webhook'
@@ -154,6 +166,7 @@ export interface RootRouteChildren {
   FollowingRoute: typeof FollowingRoute
   ProRoute: typeof ProRoute
   SettingsRoute: typeof SettingsRoute
+  WaitlistRoute: typeof WaitlistRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
   LegalTermsRoute: typeof LegalTermsRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
@@ -162,6 +175,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/waitlist': {
+      id: '/waitlist'
+      path: '/waitlist'
+      fullPath: '/waitlist'
+      preLoaderRoute: typeof WaitlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -242,6 +262,7 @@ const rootRouteChildren: RootRouteChildren = {
   FollowingRoute: FollowingRoute,
   ProRoute: ProRoute,
   SettingsRoute: SettingsRoute,
+  WaitlistRoute: WaitlistRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
   LegalTermsRoute: LegalTermsRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,

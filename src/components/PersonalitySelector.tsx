@@ -53,12 +53,15 @@ export function PersonalitySelector({
   onChange,
   lockedIds,
   onLockedClick,
+  lockLabel = "Free account",
 }: {
   active?: PersonalityId;
   onChange?: (id: PersonalityId) => void;
-  /** Ids that require Pro. Shown with a lock; selecting one calls onLockedClick. */
+  /** Ids the current tier cannot pick. Shown with a lock; selecting one calls onLockedClick. */
   lockedIds?: readonly string[];
   onLockedClick?: (id: PersonalityId) => void;
+  /** What the lock chip says the locked pundits need. */
+  lockLabel?: string;
 }) {
   const current = active ?? "zen";
   return (
@@ -93,7 +96,7 @@ export function PersonalitySelector({
                 <div className="text-sm font-semibold tracking-tight">{p.name}</div>
                 {locked && (
                   <span className="inline-flex items-center gap-1 rounded-full border border-[var(--pitch-line)] px-1.5 py-0.5 text-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
-                    <Lock className="h-2.5 w-2.5" /> Pro
+                    <Lock className="h-2.5 w-2.5" /> {lockLabel}
                   </span>
                 )}
               </div>

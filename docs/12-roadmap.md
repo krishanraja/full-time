@@ -24,7 +24,7 @@ Step 1 is what produces real content. Steps 2 and 3 turn the schedule on. Do not
 
 ### 2. Live billing (charging real money for Pro)
 
-**Status right now: WIRED, VERIFIED, and on the Stripe TEST key.** Full Time Pro ($4.99/mo) works end to end (checkout, billing portal, webhook, entitlement, DB guard) and was verified in Stripe **test mode** on account `acct_1Siiex`. **No real card can be charged today**, a real card is declined in test mode. The one Pro benefit that enforces now is pundit selection; the rest are marketed honestly as "rolling out". This is deliberate: charging real users for features that are not built yet would burn trust (see `08-sales.md`).
+**Status right now: WIRED, VERIFIED, on the Stripe TEST key, and PARKED.** Full Time Pro ($4.99/mo) works end to end (checkout, billing portal, webhook, entitlement, DB guard) and was verified in Stripe **test mode** on account `acct_1Siiex`. **No real card can be charged today**, a real card is declined in test mode. As of 2026-07-06 Pro gates **nothing user-visible**: pundit selection moved to the free-account tier and `/pro` redirects to `/waitlist` (see `15-access-and-waitlist-plan.md`). Demand capture is the waitlist, not a paywall. This is deliberate: charging real users for features that are not built yet would burn trust (see `08-sales.md`).
 
 **Required next, in order:**
 
@@ -58,6 +58,11 @@ Do not do step 3 before step 1. The plumbing is ready; pulling the trigger is a 
 - **Hardened daily-drop cron** (`src/routes/api/public/cron.daily-drop.ts`, scheduled by `.github/workflows/daily-drop.yml` at 06:30 UTC): requires a `CRON_SECRET` bearer token (previously it trusted the public Supabase publishable key), runs generation with bounded concurrency (3) under a 240s wall-clock budget to stay inside the 300s serverless limit, and is idempotent (skips matches that already have an episode). Inert until a live match-data feed exists.
 - **Honesty sweep**: removed the false always-on "Live drop" badge (the product is deliberately day-after, not live) and replaced it with a static "Daily"; hedged the Pro pundit copy to "rolling out"; restored pinch-zoom by removing `viewport maximum-scale=1`.
 
+## Shipped (2026-07-06, access ladder + waitlist)
+
+- **Access ladder** (`15-access-and-waitlist-plan.md`): anonymous gets recent drops + two pundits (The Reporter, The Gaffer; pick kept in localStorage); a free account unlocks all six pundits (server gate on `setVoiceStyle` is now signed-in, not Pro); Pro is parked (plumbing intact, gates nothing, `/pro` → `/waitlist`).
+- **Waitlist for the full app**: `waitlist` table (own-row RLS + `waitlist_guard` trigger so a user cannot backdate `joined_at` or set ops fields; position computed by a service_role count), `/waitlist` page (honest live-today vs full-app split, one-tap join for signed-in, magic-link-is-the-join for anonymous via `?join=1` auto-join), join CTAs on Today and Settings, position shown only from a confirmed row. Migration `20260706150000_waitlist.sql`. New Plausible events: `waitlist_join`, `signin_gate_shown`.
+
 ## Next up (in priority order)
 
 1. **Real API-Football ingest** to turn on daily generation. The pipeline, gate, judge, and cron are all built and hardened, but the cron is inert until a live match feed exists (current match data is seeded from the 2023-24 season and the cron is date-filtered to recent finished matches). This unlocks real daily content and accepts ongoing Anthropic plus ElevenLabs cost. To activate the schedule the operator also sets two GitHub repo secrets: `CRON_SECRET` (matching Vercel) and `FULL_TIME_URL`.
@@ -89,6 +94,11 @@ These have been considered and rejected. Re-opening requires a new decision-log 
 ## Decision log
 
 Format: **Decision · Context · Tradeoff · Reversible?**
+
+### 2026-07-06 · Anonymous / free-account / waitlist ladder; Pro parked (supersedes the Pro gate below)
+- **Context:** Founder direction: the app must sell itself without login, a free account is the unlock (all six pundits now; archive and name-a-game next), and the waitlist for the full app is both the demand proof and the launch trigger for live daily generation. Pundit selection moved from Pro to free-account; `/pro` redirects to `/waitlist`; billing plumbing stays wired on the test key but gates nothing. Spec: `15-access-and-waitlist-plan.md`.
+- **Tradeoff:** No paywall signal at all until Pro returns; the waitlist number becomes the metric that matters.
+- **Reversible?** Yes. The entitlement seam is intact; re-gating anything on Pro is a constant change plus copy.
 
 ### 2026-07-06 · Free plus Full Time Pro at $4.99/mo (reverses "Free at launch")
 - **Context:** Monetization is wired now via Stripe (account `acct_1Siiex`, an old Lockstep account repurposed), deliberately on the TEST key so no real charges happen yet. The only Pro benefit that actually enforces today is pundit selection: free gets "The Reporter" (zen), the other five pundits are Pro, enforced in the UI, in server `setVoiceStyle`, and by a DB guard trigger. The other benefits (your clubs first, all leagues, full archive) are marketed honestly as "rolling out". This closed a real self-grant-Pro RLS hole, since the billing columns are now writable only by `service_role`.

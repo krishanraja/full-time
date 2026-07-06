@@ -31,6 +31,9 @@ We use **fewer events on purpose**. Add an event only if it changes a decision.
 | `complete` | `{ episode_id }` | `player-store.ts` past 90% |
 | `follow` | `{ entity_type, entity_id }` | `FollowButton.tsx` |
 | `push_opt_in` | `{}` | `settings.tsx` push toggle |
+| `waitlist_join` | `{ source: "waitlist_page"\|"settings"\|"today"\|"auth_redirect" }` | `waitlist.tsx` on confirmed join |
+| `signin_gate_shown` | `{ surface }` | wherever a locked feature routes to `/auth` (e.g. pundits) |
+| `name_a_game` | `{ generated: boolean }` | name-a-game (roadmap) |
 | `install_prompt_shown` / `install_prompt_accepted` | `{}` | install prompt component (roadmap) |
 | `share` | `{ episode_id, channel }` | per-episode share (roadmap) |
 

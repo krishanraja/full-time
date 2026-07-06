@@ -48,7 +48,8 @@ function AuthPage() {
         Sync across devices.
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Optional. Saves your follows, voice, and notification preference.
+        Optional and free. Unlocks all six pundits and saves your follows, voice, and
+        notification preference across devices.
       </p>
 
       {sent ? (

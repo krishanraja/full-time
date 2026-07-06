@@ -18,14 +18,15 @@ export const Route = createFileRoute("/legal/privacy")({
       <p className="mt-4 text-muted-foreground">
         Full Time stores only what we need to deliver your morning recap. If you sign in, we keep
         your email, the teams you follow, and your voice preference. If you opt in to push
-        notifications, we store the device endpoint we need to send them.
+        notifications, we store the device endpoint we need to send them. If you join the
+        waitlist for the full app, we store when you joined so we can admit the list in order.
       </p>
       <p className="mt-3 text-muted-foreground">
         We do not sell your data. We do not run third-party advertising trackers. Anonymous,
         cookieless analytics (Plausible) tell us which recaps people listened to.
       </p>
       <p className="mt-3 text-muted-foreground">
-        Want your data deleted? Sign out and email support — we will remove your account on request.
+        Want your data deleted? Sign out and email support. We will remove your account on request.
       </p>
     </article>
   ),

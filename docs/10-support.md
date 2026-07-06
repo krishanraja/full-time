@@ -29,7 +29,10 @@ Apologies, please tell us the match and the line that was wrong. We'll take the 
 Recaps are written by an AI model (Anthropic's Claude) from publicly available match data (final scores, scorers, minutes, stats), then checked by an automated accuracy pass that blocks the recap if it gets the winner, the score, or a scorer wrong. The voice is synthetic (ElevenLabs). We never use copyrighted broadcast audio. Full disclosure on Settings.
 
 ### "Can I pick a different voice?"
-In Settings → Your pundit. Everyone gets The Reporter, our calm house voice. Full Time Pro unlocks five more pundits (The Gaffer, The Numbers Guy, The Romantic, The Doomer, The Wind-Up). Your choice persists when you're signed in. Distinct per-pundit narration is rolling out.
+In Settings → Your pundit. Everyone gets The Reporter and The Gaffer, no account needed (your pick stays on that device). A free account unlocks all six pundits (adding The Numbers Guy, The Romantic, The Doomer, The Wind-Up) and syncs your choice across devices. Distinct per-pundit narration is rolling out.
+
+### "What is the waitlist?"
+The full app: every matchday narrated and live by 7am local, with the morning push. It switches on when the waitlist proves demand, and we admit the list in join order. Joining is free; the sign-in link is the join. Your place shows on the waitlist page and in Settings.
 
 ### "How do I get the morning push?"
 Sign in (Settings → "Sync across devices"), then toggle Notifications. Your browser will ask for permission. We send one push per day at the drop time. No marketing pushes, ever.
@@ -44,10 +47,10 @@ Sign in (Settings → "Sync across devices"), then toggle Notifications. Your br
 Sign out, then email support. We remove your `profiles`, `follows`, `push_subscriptions`, and `listens` rows on request. Reply with the email you signed up with.
 
 ### "Is this free? What's the catch?"
-The daily drop is always free, no ads. Full Time Pro is an optional upgrade at $4.99/mo that unlocks the extra pundit voices, with more Pro features rolling out. We use only cookieless Plausible analytics.
+The daily drop is always free, no ads, no card. A free account unlocks all six pundits and syncs your settings. There is nothing to pay for right now; a paid tier may return later when there are features worth paying for. We use only cookieless Plausible analytics.
 
 ### "How do I manage or cancel Full Time Pro?"
-Settings → Membership → Manage billing opens your secure Stripe portal, where you can update your card or cancel anytime. If you cancel, Pro stays active until the end of the period you already paid for.
+Pro is currently parked and nothing is charged. If an account ever holds an active subscription, Settings shows a Manage billing button that opens the secure Stripe portal (update card, cancel anytime; Pro stays active until the end of the paid period).
 
 ### "Can I share a recap?"
 Per-episode share links are coming. For now: screenshot the card and tag us on the channel you're sharing to.
