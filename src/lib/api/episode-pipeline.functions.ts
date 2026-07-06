@@ -7,7 +7,6 @@
 // Service-role import is done INSIDE the handler — this file is reachable
 // from the client bundle as a *.functions.ts module.
 
-import { createServerFn } from "@tanstack/react-start";
 import type {
   MatchInfo,
   EventRow,
@@ -181,9 +180,7 @@ export async function runEpisodePipeline(matchId: string) {
     };
 }
 
-export const generateEpisodeForMatch = createServerFn({ method: "POST" }).handler(
-  async ({ data }: { data?: { matchId?: string } }) => {
-    if (!data?.matchId) throw new Error("matchId required");
-    return runEpisodePipeline(data.matchId);
-  },
-);
+// NOTE: there is deliberately NO unauthenticated createServerFn wrapper around
+// runEpisodePipeline. Generation spends Anthropic + ElevenLabs money; the only
+// entry points are the CRON_SECRET-guarded cron and the authed, rate-limited
+// requestEpisode in archive.functions.ts.

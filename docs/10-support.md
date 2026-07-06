@@ -31,6 +31,9 @@ Recaps are written by an AI model (Anthropic's Claude) from publicly available m
 ### "Can I pick a different voice?"
 In Settings → Your pundit. Everyone gets The Reporter and The Gaffer, no account needed (your pick stays on that device). A free account unlocks all six pundits (adding The Numbers Guy, The Romantic, The Doomer, The Wind-Up) and syncs your choice across devices. Distinct per-pundit narration is rolling out.
 
+### "What is the archive / name a game?"
+Signed-in (free), the Archive tab lists every match we hold data for. Anything already narrated plays instantly. Anything with minute-by-minute data can be narrated on the spot: the engine writes it, checks it against the match facts, and only publishes if it can prove it right. That check is why it can refuse ("we could not verify this recap"), and a refusal does not count against your day. Limit: 3 narrations per day, resets midnight UTC.
+
 ### "What is the waitlist?"
 The full app: every matchday narrated and live by 7am local, with the morning push. It switches on when the waitlist proves demand, and we admit the list in join order. Joining is free; the sign-in link is the join. Your place shows on the waitlist page and in Settings.
 

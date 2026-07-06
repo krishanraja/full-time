@@ -226,6 +226,36 @@ export type Database = {
           },
         ]
       }
+      generation_requests: {
+        Row: {
+          id: string
+          user_id: string
+          match_id: string
+          status: string
+          episode_id: string | null
+          error: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          match_id: string
+          status?: string
+          episode_id?: string | null
+          error?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          match_id?: string
+          status?: string
+          episode_id?: string | null
+          error?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       waitlist: {
         Row: {
           user_id: string
