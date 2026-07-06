@@ -14,4 +14,7 @@ export type Episode = {
   durationSec: number;
   badge?: "BIGGEST MOMENT" | "LATE DRAMA" | "DEMOLITION" | "CLASSIC";
   audioUrl?: string | null;
+  homeTeamId?: string | null;
+  awayTeamId?: string | null;
+  leagueId?: string | null;
 };

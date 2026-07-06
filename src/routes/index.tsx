@@ -1,8 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { motion } from "framer-motion";
+import { useMemo } from "react";
+import { Play } from "lucide-react";
 import { AudioCard } from "../components/AudioCard";
 import { EpisodeListItem } from "../components/EpisodeListItem";
+import { HapticButton } from "../components/HapticButton";
 import { useTodayFeed } from "../hooks/use-episodes";
+import { useFollowed } from "../lib/follow-store";
+import { playerStore } from "../lib/player-store";
 import type { Episode } from "../data/mockEpisodes";
 
 export const Route = createFileRoute("/")({
@@ -44,8 +49,22 @@ function Skeleton() {
 
 function Home() {
   const { data, isLoading } = useTodayFeed();
+  const followed = useFollowed();
+  const rawEpisodes = (data?.episodes ?? []) as Episode[];
+  // Club-first: a followed team's (or league's) recap leads the drop. Stable
+  // sort keeps published order within each group. No auth needed (follows are
+  // local-first). This is the "your clubs first" promise, kept.
+  const episodes = useMemo(() => {
+    if (!followed.size) return rawEpisodes;
+    const isFollowed = (ep: Episode) =>
+      (ep.homeTeamId != null && followed.has(`team:${ep.homeTeamId}`)) ||
+      (ep.awayTeamId != null && followed.has(`team:${ep.awayTeamId}`)) ||
+      (ep.leagueId != null && followed.has(`league:${ep.leagueId}`));
+    return [...rawEpisodes].sort((a, b) => Number(isFollowed(b)) - Number(isFollowed(a)));
+  }, [rawEpisodes, followed]);
+
   if (isLoading || !data) return <Skeleton />;
-  const { episodes, tonight } = data;
+  const { tonight, coda } = data as typeof data & { coda: string | null };
 
   return (
     <div className="pb-6 pt-4">
@@ -69,13 +88,22 @@ function Home() {
         </p>
       ) : (
         <>
+          <HapticButton
+            hapticPattern="success"
+            onClick={() => playerStore.playAll(episodes)}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 py-3 text-sm font-semibold text-[var(--primary-foreground)] transition-transform active:scale-[0.99]"
+          >
+            <Play className="h-4 w-4" fill="currentColor" />
+            Play the morning · {episodes.length} {episodes.length === 1 ? "recap" : "recaps"}
+          </HapticButton>
+
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.05 }}
-            className="mt-6"
+            className="mt-4"
           >
-            <AudioCard episode={episodes[0] as Episode} hero />
+            <AudioCard episode={episodes[0] as Episode} hero queue={episodes} />
           </motion.div>
 
           {episodes.length > 1 && (
@@ -89,13 +117,28 @@ function Home() {
               <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
                 {episodes.slice(1).map((ep) => (
                   <div key={ep.id} className="w-[80%] shrink-0 snap-start">
-                    <AudioCard episode={ep} />
+                    <AudioCard episode={ep} queue={episodes} />
                   </div>
                 ))}
               </div>
             </section>
           )}
         </>
+      )}
+
+      {coda && (
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.1 }}
+          className="surface mt-8 rounded-[var(--radius-2xl)] p-5"
+        >
+          <div className="eyebrow mb-2">One thing we noticed</div>
+          <p className="text-[15px] leading-relaxed text-foreground">{coda}</p>
+          <div className="text-mono mt-3 text-[10px] uppercase tracking-[0.22em] text-muted-foreground/70">
+            While you were asleep · spotted across every match
+          </div>
+        </motion.section>
       )}
 
       {tonight.length > 0 && (

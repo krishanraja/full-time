@@ -10,17 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ProRouteImport } from './routes/pro'
 import { Route as FollowingRouteImport } from './routes/following'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
+import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
 import { Route as ApiPublicCronDailyDropRouteImport } from './routes/api/public/cron.daily-drop'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProRoute = ProRouteImport.update({
+  id: '/pro',
+  path: '/pro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FollowingRoute = FollowingRouteImport.update({
@@ -53,6 +60,11 @@ const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
   path: '/legal/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+  id: '/api/stripe/webhook',
+  path: '/api/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCronDailyDropRoute = ApiPublicCronDailyDropRouteImport.update({
   id: '/api/public/cron/daily-drop',
   path: '/api/public/cron/daily-drop',
@@ -64,9 +76,11 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/feed': typeof FeedRoute
   '/following': typeof FollowingRoute
+  '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
 }
 export interface FileRoutesByTo {
@@ -74,9 +88,11 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/feed': typeof FeedRoute
   '/following': typeof FollowingRoute
+  '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
 }
 export interface FileRoutesById {
@@ -85,9 +101,11 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/feed': typeof FeedRoute
   '/following': typeof FollowingRoute
+  '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
 }
 export interface FileRouteTypes {
@@ -97,9 +115,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/feed'
     | '/following'
+    | '/pro'
     | '/settings'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/api/stripe/webhook'
     | '/api/public/cron/daily-drop'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -107,9 +127,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/feed'
     | '/following'
+    | '/pro'
     | '/settings'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/api/stripe/webhook'
     | '/api/public/cron/daily-drop'
   id:
     | '__root__'
@@ -117,9 +139,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/feed'
     | '/following'
+    | '/pro'
     | '/settings'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/api/stripe/webhook'
     | '/api/public/cron/daily-drop'
   fileRoutesById: FileRoutesById
 }
@@ -128,9 +152,11 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   FeedRoute: typeof FeedRoute
   FollowingRoute: typeof FollowingRoute
+  ProRoute: typeof ProRoute
   SettingsRoute: typeof SettingsRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
   LegalTermsRoute: typeof LegalTermsRoute
+  ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiPublicCronDailyDropRoute: typeof ApiPublicCronDailyDropRoute
 }
 
@@ -141,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pro': {
+      id: '/pro'
+      path: '/pro'
+      fullPath: '/pro'
+      preLoaderRoute: typeof ProRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/following': {
@@ -185,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/stripe/webhook': {
+      id: '/api/stripe/webhook'
+      path: '/api/stripe/webhook'
+      fullPath: '/api/stripe/webhook'
+      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/daily-drop': {
       id: '/api/public/cron/daily-drop'
       path: '/api/public/cron/daily-drop'
@@ -200,11 +240,23 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   FeedRoute: FeedRoute,
   FollowingRoute: FollowingRoute,
+  ProRoute: ProRoute,
   SettingsRoute: SettingsRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
   LegalTermsRoute: LegalTermsRoute,
+  ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiPublicCronDailyDropRoute: ApiPublicCronDailyDropRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

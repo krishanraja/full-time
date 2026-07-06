@@ -27,6 +27,15 @@ export type Database = {
           script: string
           title: string
           voice_style: string
+          segments: Json | null
+          magic_sentence: string | null
+          forward_line: string | null
+          share_clip_url: string | null
+          og_image_url: string | null
+          locale: string
+          model: string | null
+          verification: Json | null
+          status: string
         }
         Insert: {
           audio_url?: string | null
@@ -40,6 +49,15 @@ export type Database = {
           script: string
           title: string
           voice_style?: string
+          segments?: Json | null
+          magic_sentence?: string | null
+          forward_line?: string | null
+          share_clip_url?: string | null
+          og_image_url?: string | null
+          locale?: string
+          model?: string | null
+          verification?: Json | null
+          status?: string
         }
         Update: {
           audio_url?: string | null
@@ -53,6 +71,15 @@ export type Database = {
           script?: string
           title?: string
           voice_style?: string
+          segments?: Json | null
+          magic_sentence?: string | null
+          forward_line?: string | null
+          share_clip_url?: string | null
+          og_image_url?: string | null
+          locale?: string
+          model?: string | null
+          verification?: Json | null
+          status?: string
         }
         Relationships: [
           {
@@ -202,24 +229,222 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          current_period_end: string | null
           display_name: string | null
           id: string
+          locale: string
+          plan: string
+          price_id: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: string | null
+          timezone: string | null
           updated_at: string
           voice_style_pref: string
         }
         Insert: {
           created_at?: string
+          current_period_end?: string | null
           display_name?: string | null
           id: string
+          locale?: string
+          plan?: string
+          price_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
+          timezone?: string | null
           updated_at?: string
           voice_style_pref?: string
         }
         Update: {
           created_at?: string
+          current_period_end?: string | null
           display_name?: string | null
           id?: string
+          locale?: string
+          plan?: string
+          price_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
+          timezone?: string | null
           updated_at?: string
           voice_style_pref?: string
+        }
+        Relationships: []
+      }
+      match_events: {
+        Row: {
+          added_time: number | null
+          assist_player_id: string | null
+          created_at: string
+          detail: string | null
+          id: string
+          match_id: string
+          minute: number | null
+          player_id: string | null
+          player_name: string | null
+          source: string | null
+          team_id: string | null
+          type: string
+        }
+        Insert: {
+          added_time?: number | null
+          assist_player_id?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          match_id: string
+          minute?: number | null
+          player_id?: string | null
+          player_name?: string | null
+          source?: string | null
+          team_id?: string | null
+          type: string
+        }
+        Update: {
+          added_time?: number | null
+          assist_player_id?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          match_id?: string
+          minute?: number | null
+          player_id?: string | null
+          player_name?: string | null
+          source?: string | null
+          team_id?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
+      match_stats: {
+        Row: {
+          away_corners: number | null
+          away_possession: number | null
+          away_shots: number | null
+          away_sot: number | null
+          away_xg: number | null
+          home_corners: number | null
+          home_possession: number | null
+          home_shots: number | null
+          home_sot: number | null
+          home_xg: number | null
+          match_id: string
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          away_corners?: number | null
+          away_possession?: number | null
+          away_shots?: number | null
+          away_sot?: number | null
+          away_xg?: number | null
+          home_corners?: number | null
+          home_possession?: number | null
+          home_shots?: number | null
+          home_sot?: number | null
+          home_xg?: number | null
+          match_id: string
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          away_corners?: number | null
+          away_possession?: number | null
+          away_shots?: number | null
+          away_sot?: number | null
+          away_xg?: number | null
+          home_corners?: number | null
+          home_possession?: number | null
+          home_shots?: number | null
+          home_sot?: number | null
+          home_xg?: number | null
+          match_id?: string
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      voice_corpus: {
+        Row: {
+          active: boolean
+          content: string
+          created_at: string
+          id: string
+          kind: string
+          match_type: string | null
+          updated_at: string
+          version: number
+          weight: number
+        }
+        Insert: {
+          active?: boolean
+          content: string
+          created_at?: string
+          id?: string
+          kind: string
+          match_type?: string | null
+          updated_at?: string
+          version?: number
+          weight?: number
+        }
+        Update: {
+          active?: boolean
+          content?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          match_type?: string | null
+          updated_at?: string
+          version?: number
+          weight?: number
+        }
+        Relationships: []
+      }
+      synthesis_insights: {
+        Row: {
+          audio_url: string | null
+          card_image_url: string | null
+          computed_payload: Json
+          created_at: string
+          drop_date: string
+          id: string
+          kind: string
+          reviewed_by: string | null
+          status: string
+          surprise_score: number
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          audio_url?: string | null
+          card_image_url?: string | null
+          computed_payload: Json
+          created_at?: string
+          drop_date: string
+          id?: string
+          kind: string
+          reviewed_by?: string | null
+          status?: string
+          surprise_score?: number
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          audio_url?: string | null
+          card_image_url?: string | null
+          computed_payload?: Json
+          created_at?: string
+          drop_date?: string
+          id?: string
+          kind?: string
+          reviewed_by?: string | null
+          status?: string
+          surprise_score?: number
+          text?: string
+          updated_at?: string
         }
         Relationships: []
       }

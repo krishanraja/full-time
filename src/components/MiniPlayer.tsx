@@ -19,7 +19,7 @@ export function MiniPlayer() {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 80, opacity: 0 }}
         transition={{ type: "spring", stiffness: 320, damping: 30 }}
-        className="tap surface fixed inset-x-3 bottom-[78px] z-40 flex items-center gap-3 overflow-hidden rounded-[var(--radius-xl)] p-2.5 pl-3 text-left backdrop-blur"
+        className="tap surface fixed inset-x-0 bottom-[78px] z-40 mx-auto flex w-[calc(100%-24px)] max-w-[424px] items-center gap-3 overflow-hidden rounded-[var(--radius-xl)] p-2.5 pl-3 text-left backdrop-blur"
       >
         <div className="absolute inset-x-0 bottom-0 h-[2px] bg-white/5">
           <div
@@ -37,7 +37,7 @@ export function MiniPlayer() {
           <div className="truncate text-sm font-semibold tracking-tight">
             {episode.homeTeam}{" "}
             <span className="text-mono text-[var(--lime)]">
-              {episode.homeScore}–{episode.awayScore}
+              {episode.homeScore}-{episode.awayScore}
             </span>{" "}
             {episode.awayTeam}
           </div>

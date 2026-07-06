@@ -1,7 +1,7 @@
 # 11 · Legal
 
 **Role:** Legal advisor, or anyone facing a legal-shaped question.
-**Read this when:** a rights holder pings, a data request lands, we're considering a feature with IP implications, or we want to change AI disclosure.
+**Read this when:** a rights holder pings, a data request lands, we're considering a feature with IP implications, we're about to touch billing, or we want to change AI disclosure.
 **Don't read this when:** you need product or marketing context (→ `00-product.md` / `07-marketing.md`).
 
 > Not legal advice. This file documents the operating posture. Anything novel goes to qualified counsel.
@@ -12,7 +12,16 @@
 
 - UK and EU users primarily.
 - Subject to GDPR / UK GDPR.
-- Data is hosted via Lovable Cloud (EU regions where available).
+- Data is stored in Supabase (Postgres, Auth, Storage); the app is served via Vercel.
+
+## Public legal pages
+
+Two public pages exist:
+
+- `/legal/terms`: Terms of Service.
+- `/legal/privacy`: Privacy Policy (carries the processor list below).
+
+Any change here that touches collection, processors, or billing must ship the matching change to those pages in the same commit. Note: subscription terms and a refund policy are not yet finalised on these pages. See "Billing and subscriptions".
 
 ## What we collect
 
@@ -24,24 +33,45 @@
 | Follow list (teams/leagues) | Personalisation | Until account deletion |
 | Push subscription (endpoint, keys) | Morning push delivery | Until unsubscribe |
 | Listens (episode, completion, timestamp) | Analytics on what to make more of | 12 months, then aggregated |
+| Stripe customer id + subscription status (Pro users only) | Billing, Pro entitlement | Until account deletion / subscription end |
 | Plausible analytics (cookieless) | Site-wide usage | 12 months (Plausible's default) |
 
 We do not collect: IP-based location, device fingerprints, cross-site identifiers, contacts, microphone, camera.
 
+Card and payment details never touch our servers. Stripe holds them. We store only the Stripe customer id and subscription status, and those billing columns are service_role-only.
+
 ## Legal bases (GDPR Art. 6)
 
 - Account data: contract (the user opted in to a service).
+- Billing / subscription: contract (the user opted in to Full Time Pro).
 - Listens / Plausible: legitimate interest (product analytics), with right to object via account deletion.
 - Push: explicit consent (the browser prompt).
 
 ## Data subject rights
 
 - **Access / export**: email request → we return a JSON of all rows tied to their `auth.users.id`.
-- **Deletion**: email request → we delete `profiles`, `follows`, `push_subscriptions`, `listens` for that user. Auth row removed via Supabase Auth admin. Confirm within 30 days.
+- **Deletion**: email request → we delete `profiles`, `follows`, `push_subscriptions`, `listens` for that user. Auth row removed via Supabase Auth admin. Confirm within 30 days. If they hold a live subscription, cancel it in Stripe as part of deletion.
 - **Correction**: trivial fields (display name) are user-editable; we don't store much else.
 - **Portability**: same shape as the export.
 
 Runbook lives partly in `10-support.md`. Legal owns the SLA.
+
+## Billing and subscriptions
+
+Full Time Pro is a paid tier alongside a free tier.
+
+- **Price**: Full Time Pro is $4.99/mo USD, a recurring subscription billed monthly.
+- **Processor**: Stripe. Stripe is the processor of record for the payment; card data stays with Stripe and never reaches our servers.
+- **Cancellation**: users cancel any time through the hosted Stripe billing portal (Settings → Membership → Manage billing). Cancelling stops the next renewal; Pro stays active until the end of the period already paid for.
+- **No real charges today**: we run on the Stripe test key. No live money moves. Nothing is charged to any user until we deliberately swap to live-mode keys.
+
+**Before we switch on live billing** (flag, not done, do not represent otherwise):
+
+- Finalise and publish subscription terms on `/legal/terms`: renewal cadence, price, what Pro includes, and how to cancel.
+- Finalise a refund policy. UK/EU consumer cancellation and cooling-off rights for digital services apply here; counsel to confirm the exact wording and whether we take the immediate-delivery-with-waiver route.
+- Create a live-mode Stripe webhook and rotate the three Stripe env vars (`STRIPE_SECRET_KEY`, `STRIPE_PRO_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`) from test to live.
+
+Until those are done, charging real users is premature. There are no users yet and the non-gating Pro benefits are not built, which is why we deliberately stay on the test key. The audit view: do not go live on billing before the terms, the refund policy, and the Pro features are real.
 
 ## AI disclosure (our public stance)
 
@@ -55,25 +85,27 @@ We also tag every player surface with `AI · {duration}`. This is non-negotiable
 
 What we do:
 
-- Use **final match scores and scorers** — these are facts, not copyrighted compositions.
+- Use **final match scores and scorers**. These are facts, not copyrighted compositions.
 - Generate **original prose** narrating those facts (model + our prompt). Output is our work.
-- Synthesize voice via ElevenLabs under their licence — we hold ElevenLabs commercial-use entitlement for the generated audio.
+- Synthesize voice via ElevenLabs under their licence. We hold ElevenLabs commercial-use entitlement for the generated audio.
 - Host the audio in our Storage bucket; serve under our domain.
 
 What we don't do:
 
 - Reuse any broadcaster's audio, even snippets.
 - Reuse any broadcaster's transcript.
-- Imitate a named real broadcaster's voice or style — `05-content-safety.md` enforces this in the system prompt and the voice selection.
+- Imitate a named real broadcaster's voice or style. `05-content-safety.md` enforces this in the system prompt and the voice selection.
 - Use league logos, club crests, or broadcaster logos in marketing without permission.
 
 ## Third-party processors
 
 | Provider | Role | Data shared |
 |---|---|---|
-| Lovable Cloud (Supabase) | DB, Auth, Storage, Realtime | All user-scoped data |
-| ElevenLabs | TTS synthesis | The match-fact script only — no PII |
-| Lovable AI Gateway | LLM (Gemini 3 Flash) | Match-fact prompt only — no PII |
+| Supabase | DB, Auth, Storage, Realtime | All user-scoped data |
+| Vercel | App hosting + delivery | Standard request metadata (incl. IP) |
+| Anthropic | LLM writer + contradiction judge (Opus / Sonnet) | Match-fact prompt only, no PII |
+| ElevenLabs | TTS synthesis | The match-fact script only, no PII |
+| Stripe | Payments + subscription billing | Email + payment details (card data stays with Stripe) |
 | Google Fonts | Font delivery | Standard browser request (IP) |
 | Plausible | Cookieless analytics | Page views + 4 custom events (see `09-growth.md`) |
 
@@ -83,7 +115,7 @@ We publish this list on `/legal/privacy`. Updates require updating both this doc
 
 1. Don't reply on the spot. Acknowledge receipt within 48h.
 2. Identify the specific episode(s) or asset(s) named.
-3. Take down immediately (`06-ops.md` "take down a bad episode") — this is reversible.
+3. Take down immediately (`06-ops.md` "take down a bad episode"). This is reversible.
 4. Loop in counsel before any substantive reply.
 5. If the claim concerns AI disclosure or broadcaster impressions specifically: this file plus `05-content-safety.md` is the evidence chain that we deliberately don't do those things.
 
@@ -92,6 +124,7 @@ We publish this list on `/legal/privacy`. Updates require updating both this doc
 - Pre-tick consent. Push and analytics are opt-in / objectable.
 - Selling user data. Ever. Not aggregated, not anonymised.
 - "Powered by AI" rebrand that obscures that it *is* AI. Disclosure stays front-and-centre.
+- Charging real money before the subscription terms, refund policy, and Pro features are finalised.
 
 ## Changelog of legal-relevant changes
 

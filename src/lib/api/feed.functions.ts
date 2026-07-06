@@ -26,6 +26,9 @@ export type FeedEpisode = {
   badge?: "BIGGEST MOMENT" | "LATE DRAMA" | "DEMOLITION" | "CLASSIC";
   audioUrl: string | null;
   publishedAt: string;
+  homeTeamId: string | null;
+  awayTeamId: string | null;
+  leagueId: string | null;
 };
 
 export type TonightMatch = { id: string; label: string; kickoff: string };
@@ -43,6 +46,9 @@ type EpisodeRow = {
   matches: {
     home_score: number | null;
     away_score: number | null;
+    league_id: string | null;
+    home_team_id: string | null;
+    away_team_id: string | null;
     leagues: { name: string } | null;
     home: { name: string } | null;
     away: { name: string } | null;
@@ -65,17 +71,20 @@ function shape(row: EpisodeRow): FeedEpisode {
     badge: (row.badge as FeedEpisode["badge"]) ?? undefined,
     audioUrl: row.audio_url,
     publishedAt: row.published_at,
+    homeTeamId: row.matches?.home_team_id ?? null,
+    awayTeamId: row.matches?.away_team_id ?? null,
+    leagueId: row.matches?.league_id ?? null,
   };
 }
 
 export const getTodayFeed = createServerFn({ method: "GET" }).handler(async () => {
   const sb = publicClient();
 
-  const [episodesRes, tonightRes] = await Promise.all([
+  const [episodesRes, tonightRes, codaRes] = await Promise.all([
     sb
       .from("episodes")
       .select(
-        "id, match_id, title, hook, script, duration_sec, badge, audio_url, published_at, matches!inner(home_score, away_score, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name))",
+        "id, match_id, title, hook, script, duration_sec, badge, audio_url, published_at, matches!inner(home_score, away_score, league_id, home_team_id, away_team_id, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name))",
       )
       .order("published_at", { ascending: false })
       .limit(20),
@@ -87,10 +96,17 @@ export const getTodayFeed = createServerFn({ method: "GET" }).handler(async () =
       .lte("kickoff_at", new Date(Date.now() + 1000 * 60 * 60 * 36).toISOString())
       .order("kickoff_at")
       .limit(6),
+    sb
+      .from("synthesis_insights")
+      .select("text")
+      .eq("status", "shipped")
+      .order("drop_date", { ascending: false })
+      .limit(1),
   ]);
 
   if (episodesRes.error) throw new Error(episodesRes.error.message);
   if (tonightRes.error) throw new Error(tonightRes.error.message);
+  const coda: string | null = (codaRes.data as { text: string }[] | null)?.[0]?.text ?? null;
 
   const episodes = (episodesRes.data as unknown as EpisodeRow[]).map(shape);
   const tonight: TonightMatch[] = (tonightRes.data ?? []).map((m) => {
@@ -102,7 +118,7 @@ export const getTodayFeed = createServerFn({ method: "GET" }).handler(async () =
     return { id: m.id, label: `${home} vs ${away}`, kickoff: `${hh}:${mm}` };
   });
 
-  return { episodes, tonight };
+  return { episodes, tonight, coda };
 });
 
 export const getEpisode = createServerFn({ method: "GET" })
@@ -112,7 +128,7 @@ export const getEpisode = createServerFn({ method: "GET" })
     const { data: row, error } = await sb
       .from("episodes")
       .select(
-        "id, match_id, title, hook, script, duration_sec, badge, audio_url, published_at, matches!inner(home_score, away_score, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name))",
+        "id, match_id, title, hook, script, duration_sec, badge, audio_url, published_at, matches!inner(home_score, away_score, league_id, home_team_id, away_team_id, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name))",
       )
       .eq("id", data.id)
       .single();

@@ -8,9 +8,9 @@
 
 ## North-star metric
 
-**Daily completed listens per active user** during the 07:00–10:00 window.
+**Daily completed listens per active user** during the 07:00 to 10:00 window.
 
-Not DAU, not opens, not installs. Completed = listened past 90% of the recap (`listens.completed = true`). The product wins when users tap play 3–5 times in their morning and walk away — the metric should reflect that exact shape.
+Not DAU, not opens, not installs. Completed = listened past 90% of the recap (`listens.completed = true`). The product wins when users tap play 3 to 5 times in their morning and walk away, the metric should reflect that exact shape.
 
 ## Supporting metrics
 
@@ -41,7 +41,7 @@ Implementation: `window.plausible?.(eventName, { props: { ... } })`. Plausible o
 ## Acquisition loops (priority)
 
 ### 1. Per-episode share link (roadmap, biggest unlock)
-`/episode/{id}` — page that auto-plays the recap, has a custom OG image with the scoreline, and a strong "get tomorrow's at 7am" CTA. The viral loop is *not* the app — it's the share of a specific match someone wants their friend to hear about.
+`/episode/{id}`, page that auto-plays the recap, has a custom OG image with the scoreline, and a strong "get tomorrow's at 7am" CTA. The viral loop is *not* the app, it's the share of a specific match someone wants their friend to hear about.
 
 ### 2. PWA install prompt
 After the user's second visit and second completed listen, surface an install card. Don't ask earlier; the user hasn't decided yet.
@@ -52,7 +52,7 @@ A signed-in user who never enables push will churn. Surface the opt-in prompt:
 - After they hit follow on a team
 - On Settings as a card, not buried
 
-Never auto-trigger the browser prompt — that's an instant block. Use a custom card → then trigger.
+Never auto-trigger the browser prompt, that's an instant block. Use a custom card → then trigger.
 
 ### 4. Referral (later)
 "Send a friend tomorrow's drop." Generates a unique link that pre-follows the sender's teams. Easy to build once accounts are sticky.

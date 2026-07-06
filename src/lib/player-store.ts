@@ -18,6 +18,19 @@ const listeners = new Set<() => void>();
 const completedListeners = new Set<(ep: Episode) => void>();
 let audioEl: HTMLAudioElement | null = null;
 let fallbackTimer: ReturnType<typeof setInterval> | null = null;
+// The "drop": a queue the player advances through so listening is continuous
+// and hands-busy, instead of one tap per clip.
+let queue: Episode[] = [];
+let queueIndex = 0;
+
+function nextInQueue(): Episode | null {
+  if (queueIndex >= 0 && queueIndex + 1 < queue.length) return queue[queueIndex + 1];
+  return null;
+}
+function prevInQueue(): Episode | null {
+  if (queueIndex > 0 && queue.length) return queue[queueIndex - 1];
+  return null;
+}
 const trackEvent = (name: string, props?: Record<string, unknown>) => {
   if (typeof window === "undefined") return;
   type Plausible = (event: string, opts?: { props?: Record<string, unknown> }) => void;
@@ -65,6 +78,10 @@ function handleComplete() {
   trackEvent("complete", { id: ep.id });
   completedListeners.forEach((l) => l(ep));
   emit();
+  // Auto-advance the drop: play the next recap so a hands-busy listener
+  // keeps going without touching the phone.
+  const nxt = nextInQueue();
+  if (nxt) playerStore.play(nxt, queue);
 }
 
 function tick() {
@@ -103,10 +120,25 @@ function setMediaSession(ep: Episode) {
   navigator.mediaSession.setActionHandler("seekforward", () =>
     playerStore.seek(Math.min(1, state.progress + 0.1)),
   );
+  navigator.mediaSession.setActionHandler("nexttrack", () => playerStore.next());
+  navigator.mediaSession.setActionHandler("previoustrack", () => playerStore.prev());
 }
 
 export const playerStore = {
-  play(ep: Episode) {
+  // q: the drop to play through. When given, playback auto-advances through it.
+  play(ep: Episode, q?: Episode[]) {
+    if (q && q.length) {
+      queue = q;
+      const i = q.findIndex((e) => e.id === ep.id);
+      queueIndex = i >= 0 ? i : 0;
+    } else {
+      const i = queue.findIndex((e) => e.id === ep.id);
+      if (i >= 0) queueIndex = i;
+      else {
+        queue = [ep];
+        queueIndex = 0;
+      }
+    }
     const same = state.episode?.id === ep.id;
     state = {
       episode: ep,
@@ -133,6 +165,18 @@ export const playerStore = {
       startFallback();
     }
     emit();
+  },
+  // Start the whole morning drop from the top.
+  playAll(list: Episode[]) {
+    if (list.length) this.play(list[0], list);
+  },
+  next() {
+    const n = nextInQueue();
+    if (n) this.play(n, queue);
+  },
+  prev() {
+    const p = prevInQueue();
+    if (p) this.play(p, queue);
   },
   toggle() {
     const ep = state.episode;

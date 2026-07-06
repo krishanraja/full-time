@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BottomNav } from "../components/BottomNav";
+import { AppHeader } from "../components/AppHeader";
 import { MiniPlayer } from "../components/MiniPlayer";
 import { CompletionToast } from "../components/CompletionToast";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,7 +70,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       {
         name: "viewport",
-        content: "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1",
+        content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
       { name: "theme-color", content: "#0a0a0c" },
       { title: "Full Time - Daily football recaps, narrated" },
@@ -147,7 +148,8 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <CompletionToast />
-      <div className="mx-auto min-h-screen max-w-md pb-[150px]">
+      <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-[150px]">
+        <AppHeader />
         <Outlet />
       </div>
       <MiniPlayer />

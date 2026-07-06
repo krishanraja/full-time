@@ -1,19 +1,23 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { VoiceSelector } from "../components/VoiceSelector";
+import { Crown } from "lucide-react";
 import { HapticButton } from "../components/HapticButton";
+import { PersonalitySelector, PERSONALITIES, type PersonalityId } from "../components/PersonalitySelector";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/use-auth";
+import { useEntitlement } from "../hooks/use-entitlement";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile, setVoiceStyle } from "@/lib/api/profile.functions";
+import { createPortal } from "@/lib/api/billing.functions";
+import { PRO_VOICE_STYLES, PRO_PRICE_DISPLAY, PRO_PRICE_PERIOD } from "@/lib/entitlement";
 import { subscribeToPush, unsubscribeFromPush, isPushSubscribed } from "../lib/push-client";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
       { title: "Settings • Full Time" },
-      { name: "description", content: "Pick your commentary voice. Toggle notifications." },
+      { name: "description", content: "Your morning football briefing. Toggle the 7am nudge." },
       { property: "og:title", content: "Settings • Full Time" },
       { property: "og:url", content: "/settings" },
     ],
@@ -24,28 +28,42 @@ export const Route = createFileRoute("/settings")({
 
 function Settings() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { isPro } = useEntitlement();
   const fetchProfile = useServerFn(getMyProfile);
   const saveVoice = useServerFn(setVoiceStyle);
-  const [voice, setVoice] = useState<"classic" | "wit" | "concise">("classic");
+  const openPortal = useServerFn(createPortal);
+  const [personality, setPersonality] = useState<PersonalityId>("zen");
   const [notif, setNotif] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [billingBusy, setBillingBusy] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    fetchProfile()
-      .then((p) => {
-        if (p?.voice_style_pref)
-          setVoice(p.voice_style_pref as "classic" | "wit" | "concise");
-      })
-      .catch(() => {});
-  }, [user, fetchProfile]);
+  const handleManage = async () => {
+    setBillingBusy(true);
+    try {
+      const { url } = await openPortal();
+      window.location.href = url;
+    } catch {
+      setBillingBusy(false);
+    }
+  };
 
   useEffect(() => {
     isPushSubscribed().then(setNotif);
   }, [user]);
 
-  const handleVoice = (v: "classic" | "wit" | "concise") => {
-    setVoice(v);
+  useEffect(() => {
+    if (!user) return;
+    fetchProfile()
+      .then((p) => {
+        const v = p?.voice_style_pref;
+        if (v && PERSONALITIES.some((x) => x.id === v)) setPersonality(v as PersonalityId);
+      })
+      .catch(() => {});
+  }, [user, fetchProfile]);
+
+  const handlePersonality = (v: PersonalityId) => {
+    setPersonality(v);
     if (user) saveVoice({ data: { voiceStyle: v } }).catch(() => {});
   };
 
@@ -104,8 +122,56 @@ function Settings() {
       </section>
 
       <section className="mb-7">
-        <h2 className="eyebrow mb-3">Commentary voice</h2>
-        <VoiceSelector active={voice} onChange={handleVoice} />
+        <h2 className="eyebrow mb-3">Membership</h2>
+        {isPro ? (
+          <div className="surface flex items-center justify-between rounded-[var(--radius-lg)] p-4">
+            <div>
+              <div className="flex items-center gap-1.5 text-sm font-semibold tracking-tight">
+                <Crown className="h-3.5 w-3.5 text-[var(--lime)]" /> Full Time Pro
+              </div>
+              <div className="text-mono mt-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                Active · thank you
+              </div>
+            </div>
+            <HapticButton
+              hapticPattern="soft"
+              onClick={handleManage}
+              disabled={billingBusy}
+              className="text-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground disabled:opacity-40"
+            >
+              {billingBusy ? "…" : "Manage"}
+            </HapticButton>
+          </div>
+        ) : (
+          <Link
+            to="/pro"
+            className="surface flex items-center justify-between rounded-[var(--radius-lg)] p-4"
+          >
+            <div>
+              <div className="text-sm font-semibold tracking-tight">Upgrade to Full Time Pro</div>
+              <div className="text-mono mt-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                Every pundit · every league · {PRO_PRICE_DISPLAY}
+                {PRO_PRICE_PERIOD}
+              </div>
+            </div>
+            <span className="text-sm font-semibold text-[var(--lime)]">Go →</span>
+          </Link>
+        )}
+      </section>
+
+      <section className="mb-7">
+        <h2 className="eyebrow mb-3">Your pundit</h2>
+        <PersonalitySelector
+          active={personality}
+          onChange={handlePersonality}
+          lockedIds={isPro ? [] : PRO_VOICE_STYLES}
+          onLockedClick={() => navigate({ to: "/pro" })}
+        />
+        <p className="text-mono mt-3 text-[10px] uppercase leading-relaxed tracking-[0.18em] text-muted-foreground/70">
+          {isPro
+            ? "Your pick is saved. Distinct pundit narration is rolling out."
+            : "The Reporter is free. The other five are Full Time Pro."}
+        </p>
       </section>
 
       <section className="mb-7">
@@ -139,9 +205,9 @@ function Settings() {
       </section>
 
       <section className="surface rounded-[var(--radius-lg)] p-4 text-xs leading-relaxed text-muted-foreground">
-        <div className="eyebrow mb-2">AI disclosure</div>
-        Recaps on Full Time are generated by AI from publicly available match data. Voices are
-        synthetic. No copyrighted broadcast audio is used.
+        <div className="eyebrow mb-2">How Full Time works</div>
+        Every recap is written from public match data and read by a single, consistent
+        synthetic broadcast voice. Generated by AI. No copyrighted broadcast audio is used.
         <div className="mt-4 flex gap-4 text-mono text-[10px] uppercase tracking-[0.18em]">
           <Link to="/legal/privacy" className="underline-offset-2 hover:underline">
             Privacy

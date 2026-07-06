@@ -12,4 +12,7 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Force-enable the Nitro deploy build outside the Lovable environment and target Vercel,
+  // otherwise the wrapper skips the server bundle and the deployment 404s on SSR routes.
+  nitro: { preset: "vercel" },
 });

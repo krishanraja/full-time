@@ -16,8 +16,8 @@ jobs:
           curl --fail --silent --show-error \
             -X POST "$FULL_TIME_URL/api/public/cron/daily-drop" \
             -H "Content-Type: application/json" \
-            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            -H "Authorization: Bearer $CRON_SECRET" \
             -d '{}'
         env:
           FULL_TIME_URL: ${{ secrets.FULL_TIME_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}

@@ -1,4 +1,4 @@
-# Full Time — Documentation
+# Full Time, Documentation
 
 This folder is the source of truth for every role that touches Full Time.
 

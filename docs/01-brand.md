@@ -16,8 +16,8 @@
 
 Two assets, served from CDN via pointers in `src/assets/`:
 
-- `full-time-mark.png.asset.json` — the green stopwatch+player monogram. Used for app icon, favicon, OG image avatar.
-- `full-time-wordmark.png.asset.json` — white `FULL_TIME` wordmark. Used in the top-left of the app header on every route via `src/components/AppHeader.tsx`.
+- `full-time-mark.png.asset.json`, the green stopwatch+player monogram. Used for app icon, favicon, OG image avatar.
+- `full-time-wordmark.png.asset.json`, white `FULL_TIME` wordmark. Used in the top-left of the app header on every route via `src/components/AppHeader.tsx`.
 
 Rules:
 - Minimum mark size: 24 px square.
@@ -25,7 +25,7 @@ Rules:
 - Clear space: at least 1× the mark's "dot" radius on every side.
 - Never recolour the mark. The lime is fixed.
 - Never set the mark on white. It's designed for dark.
-- The white wordmark is the only wordmark — there is no dark version yet. If a light surface is needed, use the mark alone.
+- The white wordmark is the only wordmark, there is no dark version yet. If a light surface is needed, use the mark alone.
 
 ## Palette
 
@@ -40,7 +40,7 @@ All tokens live in `src/styles.css` and are exposed as `--lime`, `--background`,
 | `--muted-foreground` | `0.68 0.012 240` | Secondary text, eyebrows |
 | `--lime` | `0.88 0.24 138` | **The accent.** Affordances, active state, key moments only |
 | `--lime-glow` | `0.93 0.22 138` | Halos, the `glow-lime` utility |
-| `--ember` | `0.72 0.2 35` | Reserved — live / breaking only. Do not use casually |
+| `--ember` | `0.72 0.2 35` | Reserved, live / breaking only. Do not use casually |
 
 ### Lime is precious
 
@@ -50,8 +50,8 @@ Lime appears on: the play button, the active progress fill, the active nav indic
 
 Loaded via `<link>` in `src/routes/__root.tsx` from Google Fonts.
 
-- **Geist** (400/500/600/700/800) — display + UI body.
-- **Geist Mono** (400/500/600) — scores, kickoff times, durations, eyebrows, anywhere a number reads as data.
+- **Geist** (400/500/600/700/800), display + UI body.
+- **Geist Mono** (400/500/600), scores, kickoff times, durations, eyebrows, anywhere a number reads as data.
 
 Why these: Geist is engineered, neutral, and reads more like a pro broadcast tool than a content app. Geist Mono ties to the wordmark's mono-ish character.
 
@@ -75,8 +75,8 @@ The `hairline` utility is a single token border in `--pitch-line`. Use for any d
 
 Two signature moments:
 
-1. **Home hero enter** — score and badge fade up on initial paint (~250ms).
-2. **Play-state transition** — the active card gets a lime border and the `glow-lime` shadow ramps in.
+1. **Home hero enter**, score and badge fade up on initial paint (~250ms).
+2. **Play-state transition**, the active card gets a lime border and the `glow-lime` shadow ramps in.
 
 Everywhere else: motion should be invisible. No micro-interactions on every button. No card hover scales. No parallax.
 
@@ -100,11 +100,11 @@ Words we avoid: *amazing, incredible, must-listen, game-changer, content, podcas
 
 ## OG / share image
 
-Not built yet — see `12-roadmap.md`. When built: dark `#0b0d0c` background, mark top-left at ~88px, wordmark bottom-left at ~36px tall, leave the right ~60% clear for episode-specific overlays.
+Not built yet, see `12-roadmap.md`. When built: dark `#0b0d0c` background, mark top-left at ~88px, wordmark bottom-left at ~36px tall, leave the right ~60% clear for episode-specific overlays.
 
 ## Iconography
 
-Lucide React. Stroke width 1.75 for inactive, 2.25 for active. Never fill an icon with lime — the play button is the only filled lime element in the system.
+Lucide React. Stroke width 1.75 for inactive, 2.25 for active. Never fill an icon with lime, the play button is the only filled lime element in the system.
 
 ## Do / don't summary
 

@@ -11,7 +11,16 @@ function fmt(sec: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export function AudioCard({ episode, hero = false }: { episode: Episode; hero?: boolean }) {
+export function AudioCard({
+  episode,
+  hero = false,
+  queue,
+}: {
+  episode: Episode;
+  hero?: boolean;
+  /** The drop to play through when this card starts. Enables continuous playback. */
+  queue?: Episode[];
+}) {
   const { episode: current, isPlaying, progress } = usePlayer();
   const active = current?.id === episode.id;
   const playing = active && isPlaying;
@@ -96,7 +105,7 @@ export function AudioCard({ episode, hero = false }: { episode: Episode; hero?: 
       {/* transport */}
       <div className="mt-5 flex items-center gap-4">
         <HapticButton
-          onClick={() => (active ? playerStore.toggle() : playerStore.play(episode))}
+          onClick={() => (active ? playerStore.toggle() : playerStore.play(episode, queue ?? [episode]))}
           aria-label={playing ? "Pause" : "Play"}
           className={cn(
             "grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--lime)] text-[var(--primary-foreground)] transition-transform active:scale-95",
