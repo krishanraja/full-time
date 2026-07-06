@@ -66,7 +66,11 @@ src/components/AppHeader.tsx                   wordmark + lime hairline on every
 src/components/AudioCard.tsx                   hero & carousel cards
 src/lib/api/recap-generator.server.ts          Opus writer + deterministic code gate + Sonnet judge
 src/lib/api/episode-pipeline.functions.ts      runEpisodePipeline: fact-pack -> recap -> TTS -> Storage -> row
-src/lib/api/billing.functions.ts               entitlement + Stripe checkout / portal / sync
+src/lib/api/billing.functions.ts               entitlement + Stripe checkout / portal / sync (parked)
+src/lib/api/waitlist.functions.ts              waitlist join + status (position = service-role count)
+src/lib/api/archive.functions.ts               archive list + name-a-game requestEpisode (rate-limited)
+src/routes/waitlist.tsx                        the waitlist page (/pro redirects here)
+src/routes/archive.tsx                         archive + name-a-game (free-gated)
 src/routes/api/stripe/webhook.ts               Stripe webhook -> profile billing sync
 src/lib/entitlement.ts                         client-safe Pro gate (voice styles, isProProfile)
 src/routes/pro.tsx                             the Pro upgrade page

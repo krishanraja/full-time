@@ -58,6 +58,12 @@ Do not do step 3 before step 1. The plumbing is ready; pulling the trigger is a 
 - **Hardened daily-drop cron** (`src/routes/api/public/cron.daily-drop.ts`, scheduled by `.github/workflows/daily-drop.yml` at 06:30 UTC): requires a `CRON_SECRET` bearer token (previously it trusted the public Supabase publishable key), runs generation with bounded concurrency (3) under a 240s wall-clock budget to stay inside the 300s serverless limit, and is idempotent (skips matches that already have an episode). Inert until a live match-data feed exists.
 - **Honesty sweep**: removed the false always-on "Live drop" badge (the product is deliberately day-after, not live) and replaced it with a static "Daily"; hedged the Pro pundit copy to "rolling out"; restored pinch-zoom by removing `viewport maximum-scale=1`.
 
+## Shipped (2026-07-06, archive + name-a-game)
+
+- **/archive, free-gated**: every finished match we hold data for, league filter chips, signed-out state is an honest teaser (real counts) with one sign-in ask. Nav gained an Archive tab.
+- **Name a game**: a match with an episode plays instantly; a match with event data gets a "Narrate" button that runs the fail-closed engine on demand (`requestEpisode`: signed-in only, 3 per user per UTC day, failed attempts not counted, ledger in `generation_requests`, service_role-only). The unauthenticated `generateEpisodeForMatch` server fn was REMOVED (it let anyone spend Anthropic/ElevenLabs money).
+- **Additive ingest tooling** (`_ops/ingest-rounds.mjs`, `_ops/backfill-events.mjs`): pull whole rounds or enrich bare matches without deleting anything, budget-capped for the API-Football free tier. The old `_ops/ingest.mjs` is destructive (wipes episodes); do not re-run it.
+
 ## Shipped (2026-07-06, access ladder + waitlist)
 
 - **Access ladder** (`15-access-and-waitlist-plan.md`): anonymous gets recent drops + two pundits (The Reporter, The Gaffer; pick kept in localStorage); a free account unlocks all six pundits (server gate on `setVoiceStyle` is now signed-in, not Pro); Pro is parked (plumbing intact, gates nothing, `/pro` → `/waitlist`).

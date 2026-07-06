@@ -4,7 +4,7 @@
 **Read this when:** implementing the anonymous / free-account / waitlist ladder, or deciding what gates where.
 **Don't read this when:** you need the shipped truth (this is a PLAN; `12-roadmap.md` launch status is what is live).
 
-**STATUS: PLAN. Founder-directed 2026-07-06. Nothing below is shipped yet.** When a phase ships, move it to `12-roadmap.md` (Shipped + decision log) and update `00-product.md`, `08-sales.md`, `10-support.md`, `11-legal.md`, `13-agent-handoff.md` in the same change.
+**STATUS: Phases 1 to 3 BUILT and DB-verified 2026-07-06 (see `12-roadmap.md` Shipped); production deploy pending founder approval. Phase 4 (launch trigger) remains gated on the waitlist threshold.** Docs 00/08/09/10/11/12/13 were updated in the same change.
 
 ---
 

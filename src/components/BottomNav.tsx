@@ -1,11 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, ListMusic, Heart, Settings as Cog } from "lucide-react";
+import { Home, ListMusic, Library, Heart, Settings as Cog } from "lucide-react";
 import { haptic } from "../lib/haptics";
 import { cn } from "../lib/utils";
 
 const ITEMS = [
   { to: "/", label: "Today", Icon: Home },
   { to: "/feed", label: "Feed", Icon: ListMusic },
+  { to: "/archive", label: "Archive", Icon: Library },
   { to: "/following", label: "Following", Icon: Heart },
   { to: "/settings", label: "Settings", Icon: Cog },
 ] as const;
@@ -23,7 +24,7 @@ export function BottomNav() {
         borderTop: "1px solid var(--pitch-line)",
       }}
     >
-      <ul className="mx-auto grid max-w-md grid-cols-4">
+      <ul className="mx-auto grid max-w-md grid-cols-5">
         {ITEMS.map(({ to, label, Icon }) => {
           const active = pathname === to;
           return (

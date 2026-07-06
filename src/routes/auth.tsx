@@ -3,7 +3,15 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { HapticButton } from "../components/HapticButton";
 
+// Where the magic link may land the user afterwards. An allowlist keeps the
+// param from becoming an open redirect.
+const REDIRECTS = ["/settings", "/archive", "/waitlist", "/"] as const;
+type Redirect = (typeof REDIRECTS)[number];
+
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>): { redirect?: Redirect } => ({
+    redirect: REDIRECTS.includes(s.redirect as Redirect) ? (s.redirect as Redirect) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Sign in • Full Time" },
@@ -15,6 +23,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -27,7 +36,7 @@ function AuthPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: window.location.origin + "/settings",
+        emailRedirectTo: window.location.origin + (redirect ?? "/settings"),
       },
     });
     setBusy(false);
