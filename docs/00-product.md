@@ -64,6 +64,8 @@ We say "rolling out" until each one ships. We never call an unbuilt thing done.
 
 **Billing is on the Stripe test key, on purpose.** Checkout, the customer portal, and the webhook all work end to end, but no real card is charged yet. We flip to live keys when the near-term value is real enough to charge for. Until then Pro is honest about what it is: pick your pundit, back an independent build.
 
+Exact current status and the ordered steps to go live, for both billing and the automated daily drop, are the "Launch status" block at the top of `12-roadmap.md`. That block is the single source of truth for what is switched on versus built-but-waiting.
+
 ## Success metrics (v1)
 
 Reality check: 0 real users, listens, or follows yet. Five hand-authored episodes are live. These are targets to steer by, not current numbers.

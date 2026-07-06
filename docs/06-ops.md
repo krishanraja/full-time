@@ -8,7 +8,12 @@
 
 ## Reality check before you panic
 
-The daily drop is **inert until a live match-data feed exists.** Match data is currently seeded (2023-24 season) and the cron is date-filtered to recently finished matches, so a scheduled run returning `created: 0` is the **expected** state today, not a fault. There are 5 hand-authored episodes live and 0 real users so far. New dated cards will only start appearing once a live API-Football ingest is wired (see `12-roadmap.md`), which also turns on ongoing Anthropic plus ElevenLabs spend.
+Two capabilities are BUILT but deliberately NOT switched on. The canonical status and the exact steps that flip each on live in `12-roadmap.md` (the "Launch status" block at the top). In short:
+
+- **Daily generation is inert until a live match-data feed exists.** Match data is currently seeded (2023-24 season) and the cron is date-filtered to recently finished matches, so a scheduled run returning `created: 0` is the **expected** state today, not a fault, and no AI spend happens. New dated cards only appear once a live API-Football ingest is wired, plus the two GitHub cron secrets (`CRON_SECRET`, `FULL_TIME_URL`) are set.
+- **Billing is on the Stripe TEST key.** Checkout, portal, webhook, and entitlement all work, but no real card can be charged (test mode declines real cards). This is deliberate until the Pro features are built. Going live is a three-env-var swap plus a live-mode webhook.
+
+There are 5 hand-authored episodes live and 0 real users so far.
 
 ---
 

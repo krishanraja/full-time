@@ -6,6 +6,36 @@
 
 ---
 
+## Launch status (as of 2026-07-06): two things are BUILT but deliberately NOT switched on
+
+Read this first. Two capabilities are fully built and deployed but intentionally not live. This is the single source of truth for exactly where each stands and what flips it on.
+
+### 1. Daily generation (the automated morning drop)
+
+**Status right now: BUILT, DEPLOYED, PROVEN, and INERT.** The full engine (deterministic fact-pack, Opus writer, code gate, Sonnet judge, fail-closed, ElevenLabs TTS) is live and was proven end to end on production. The daily cron is hardened (`CRON_SECRET` bearer auth, bounded concurrency, idempotent) and deployed. It generates **nothing** today because (a) match data is seeded from the 2023-24 season and the cron only looks at recently finished matches, and (b) the GitHub Actions schedule has no secrets set. A manual or scheduled run today returns `{processed:0, created:0}`. That is the **expected** result, not a fault, and **no AI spend happens.**
+
+**Required next, in order:**
+
+1. Wire a **live match-data ingest** (API-Football) that keeps `matches`, `match_events`, and `match_stats` current. Until this exists there is nothing to generate. This is the real blocker.
+2. Set two **GitHub repo secrets** to activate the schedule: `CRON_SECRET` (must equal the Vercel env var of the same name) and `FULL_TIME_URL` = `https://full-time-alpha.vercel.app`.
+3. Accept the **ongoing cost**: once live, each published episode is about one Opus writer call (plus up to 5 regens), one Sonnet judge call per attempt, and one ElevenLabs render. See `06-ops.md` cost watch.
+
+Step 1 is what produces real content. Steps 2 and 3 turn the schedule on. Do not expect episodes before step 1.
+
+### 2. Live billing (charging real money for Pro)
+
+**Status right now: WIRED, VERIFIED, and on the Stripe TEST key.** Full Time Pro ($4.99/mo) works end to end (checkout, billing portal, webhook, entitlement, DB guard) and was verified in Stripe **test mode** on account `acct_1Siiex`. **No real card can be charged today**, a real card is declined in test mode. The one Pro benefit that enforces now is pundit selection; the rest are marketed honestly as "rolling out". This is deliberate: charging real users for features that are not built yet would burn trust (see `08-sales.md`).
+
+**Required next, in order:**
+
+1. **Build the Pro features** worth paying for. At minimum, make pundit selection actually change the narration, then your-clubs-first as a full experience, all leagues, and the archive.
+2. Create a **live-mode Stripe webhook** endpoint pointing at `/api/stripe/webhook` and copy its signing secret.
+3. Swap three Vercel env vars to **live** and redeploy: `STRIPE_SECRET_KEY` to the live key, `STRIPE_PRO_PRICE_ID` to the live price `price_1Tpo8WHqiZo6hj3eFxBpm4Lq`, and `STRIPE_WEBHOOK_SECRET` to the live webhook's secret.
+
+Do not do step 3 before step 1. The plumbing is ready; pulling the trigger is a product decision, not an engineering one.
+
+---
+
 ## Shipped (v1)
 
 - 15-table data model on Supabase (`04-data-model.md`).
