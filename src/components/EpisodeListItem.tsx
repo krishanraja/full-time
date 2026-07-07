@@ -1,4 +1,5 @@
 import { Play, Pause } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import type { Episode } from "../data/mockEpisodes";
 import { playerStore, usePlayer } from "../lib/player-store";
 import { HapticButton } from "./HapticButton";
@@ -30,7 +31,7 @@ export function EpisodeListItem({ episode }: { episode: Episode }) {
           <Play className="h-4 w-4 translate-x-[1px]" fill="currentColor" />
         )}
       </HapticButton>
-      <div className="min-w-0 flex-1">
+      <Link to="/episode/$id" params={{ id: episode.id }} className="min-w-0 flex-1">
         <div className="text-mono flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
           <span>{episode.competition}</span>
           <span className="opacity-40">/</span>
@@ -47,7 +48,7 @@ export function EpisodeListItem({ episode }: { episode: Episode }) {
           {episode.awayTeam}
         </div>
         <div className="truncate text-xs text-muted-foreground">{episode.title}</div>
-      </div>
+      </Link>
     </div>
   );
 }

@@ -25,6 +25,7 @@ export type FeedEpisode = {
   durationSec: number;
   badge?: "BIGGEST MOMENT" | "LATE DRAMA" | "DEMOLITION" | "CLASSIC";
   audioUrl: string | null;
+  ogImageUrl: string | null;
   publishedAt: string;
   homeTeamId: string | null;
   awayTeamId: string | null;
@@ -42,6 +43,7 @@ type EpisodeRow = {
   duration_sec: number;
   badge: string | null;
   audio_url: string | null;
+  og_image_url: string | null;
   published_at: string;
   matches: {
     home_score: number | null;
@@ -70,6 +72,7 @@ function shape(row: EpisodeRow): FeedEpisode {
     durationSec: row.duration_sec,
     badge: (row.badge as FeedEpisode["badge"]) ?? undefined,
     audioUrl: row.audio_url,
+    ogImageUrl: row.og_image_url,
     publishedAt: row.published_at,
     homeTeamId: row.matches?.home_team_id ?? null,
     awayTeamId: row.matches?.away_team_id ?? null,
@@ -84,7 +87,7 @@ export const getTodayFeed = createServerFn({ method: "GET" }).handler(async () =
     sb
       .from("episodes")
       .select(
-        "id, match_id, title, hook, script, duration_sec, badge, audio_url, published_at, matches!inner(home_score, away_score, league_id, home_team_id, away_team_id, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name))",
+        "id, match_id, title, hook, script, duration_sec, badge, audio_url, og_image_url, published_at, matches!inner(home_score, away_score, league_id, home_team_id, away_team_id, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name))",
       )
       .order("published_at", { ascending: false })
       .limit(20),
@@ -128,7 +131,7 @@ export const getEpisode = createServerFn({ method: "GET" })
     const { data: row, error } = await sb
       .from("episodes")
       .select(
-        "id, match_id, title, hook, script, duration_sec, badge, audio_url, published_at, matches!inner(home_score, away_score, league_id, home_team_id, away_team_id, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name))",
+        "id, match_id, title, hook, script, duration_sec, badge, audio_url, og_image_url, published_at, matches!inner(home_score, away_score, league_id, home_team_id, away_team_id, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name))",
       )
       .eq("id", data.id)
       .single();

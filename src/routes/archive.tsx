@@ -234,20 +234,37 @@ function ArchiveRow({
         active ? "border-[color:color-mix(in_oklab,var(--lime)_35%,var(--pitch-line))] bg-card/80" : "hover:bg-card/40",
       )}
     >
-      <div className="min-w-0 flex-1">
-        <div className="text-mono flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-          <span className="truncate">{match.competition}</span>
-          <span className="opacity-40">/</span>
-          <span className="tabular-nums">{dateLabel(match.kickoffAt)}</span>
+      {ep ? (
+        <Link to="/episode/$id" params={{ id: ep.id }} className="min-w-0 flex-1">
+          <div className="text-mono flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            <span className="truncate">{match.competition}</span>
+            <span className="opacity-40">/</span>
+            <span className="tabular-nums">{dateLabel(match.kickoffAt)}</span>
+          </div>
+          <div className="mt-0.5 truncate text-sm font-semibold tracking-tight">
+            {match.homeTeam}{" "}
+            <span className="text-mono tabular-nums">
+              {match.homeScore}-{match.awayScore}
+            </span>{" "}
+            <span className="text-muted-foreground">{match.awayTeam}</span>
+          </div>
+        </Link>
+      ) : (
+        <div className="min-w-0 flex-1">
+          <div className="text-mono flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            <span className="truncate">{match.competition}</span>
+            <span className="opacity-40">/</span>
+            <span className="tabular-nums">{dateLabel(match.kickoffAt)}</span>
+          </div>
+          <div className="mt-0.5 truncate text-sm font-semibold tracking-tight">
+            {match.homeTeam}{" "}
+            <span className="text-mono tabular-nums">
+              {match.homeScore}-{match.awayScore}
+            </span>{" "}
+            <span className="text-muted-foreground">{match.awayTeam}</span>
+          </div>
         </div>
-        <div className="mt-0.5 truncate text-sm font-semibold tracking-tight">
-          {match.homeTeam}{" "}
-          <span className="text-mono tabular-nums">
-            {match.homeScore}-{match.awayScore}
-          </span>{" "}
-          <span className="text-muted-foreground">{match.awayTeam}</span>
-        </div>
-      </div>
+      )}
 
       {ep ? (
         <HapticButton
