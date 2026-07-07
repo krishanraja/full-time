@@ -1,7 +1,7 @@
 // Public podcast RSS feed (RSS 2.0 + itunes namespace).
 // File is named `feed[.]rss.ts` so TanStack Router's file-based routing
 // (which otherwise turns a bare "." into a "/" path segment) treats the dot
-// as literal, producing the URL /api/public/feed.rss — the conventional
+// as literal, producing the URL /api/public/feed.rss, the conventional
 // extension podcast directories and validators expect. Same public/no-auth
 // posture as cron.daily-drop.ts's data reads: this is read-only, published
 // data, no secrets.
