@@ -19,7 +19,9 @@ import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
+import { Route as EpisodeIdRouteImport } from './routes/episode.$id'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
+import { Route as ApiPublicFeedDotrssRouteImport } from './routes/api/public/feed[.]rss'
 import { Route as ApiPublicCronDailyDropRouteImport } from './routes/api/public/cron.daily-drop'
 
 const WaitlistRoute = WaitlistRouteImport.update({
@@ -72,9 +74,19 @@ const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
   path: '/legal/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EpisodeIdRoute = EpisodeIdRouteImport.update({
+  id: '/episode/$id',
+  path: '/episode/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFeedDotrssRoute = ApiPublicFeedDotrssRouteImport.update({
+  id: '/api/public/feed.rss',
+  path: '/api/public/feed.rss',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicCronDailyDropRoute = ApiPublicCronDailyDropRouteImport.update({
@@ -92,8 +104,10 @@ export interface FileRoutesByFullPath {
   '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
   '/waitlist': typeof WaitlistRoute
+  '/episode/$id': typeof EpisodeIdRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/api/public/feed.rss': typeof ApiPublicFeedDotrssRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
 }
@@ -106,8 +120,10 @@ export interface FileRoutesByTo {
   '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
   '/waitlist': typeof WaitlistRoute
+  '/episode/$id': typeof EpisodeIdRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/api/public/feed.rss': typeof ApiPublicFeedDotrssRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
 }
@@ -121,8 +137,10 @@ export interface FileRoutesById {
   '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
   '/waitlist': typeof WaitlistRoute
+  '/episode/$id': typeof EpisodeIdRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/api/public/feed.rss': typeof ApiPublicFeedDotrssRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
 }
@@ -137,8 +155,10 @@ export interface FileRouteTypes {
     | '/pro'
     | '/settings'
     | '/waitlist'
+    | '/episode/$id'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/api/public/feed.rss'
     | '/api/stripe/webhook'
     | '/api/public/cron/daily-drop'
   fileRoutesByTo: FileRoutesByTo
@@ -151,8 +171,10 @@ export interface FileRouteTypes {
     | '/pro'
     | '/settings'
     | '/waitlist'
+    | '/episode/$id'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/api/public/feed.rss'
     | '/api/stripe/webhook'
     | '/api/public/cron/daily-drop'
   id:
@@ -165,8 +187,10 @@ export interface FileRouteTypes {
     | '/pro'
     | '/settings'
     | '/waitlist'
+    | '/episode/$id'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/api/public/feed.rss'
     | '/api/stripe/webhook'
     | '/api/public/cron/daily-drop'
   fileRoutesById: FileRoutesById
@@ -180,8 +204,10 @@ export interface RootRouteChildren {
   ProRoute: typeof ProRoute
   SettingsRoute: typeof SettingsRoute
   WaitlistRoute: typeof WaitlistRoute
+  EpisodeIdRoute: typeof EpisodeIdRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
   LegalTermsRoute: typeof LegalTermsRoute
+  ApiPublicFeedDotrssRoute: typeof ApiPublicFeedDotrssRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiPublicCronDailyDropRoute: typeof ApiPublicCronDailyDropRoute
 }
@@ -258,11 +284,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/episode/$id': {
+      id: '/episode/$id'
+      path: '/episode/$id'
+      fullPath: '/episode/$id'
+      preLoaderRoute: typeof EpisodeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/stripe/webhook': {
       id: '/api/stripe/webhook'
       path: '/api/stripe/webhook'
       fullPath: '/api/stripe/webhook'
       preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/feed.rss': {
+      id: '/api/public/feed.rss'
+      path: '/api/public/feed.rss'
+      fullPath: '/api/public/feed.rss'
+      preLoaderRoute: typeof ApiPublicFeedDotrssRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/cron/daily-drop': {
@@ -284,8 +324,10 @@ const rootRouteChildren: RootRouteChildren = {
   ProRoute: ProRoute,
   SettingsRoute: SettingsRoute,
   WaitlistRoute: WaitlistRoute,
+  EpisodeIdRoute: EpisodeIdRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
   LegalTermsRoute: LegalTermsRoute,
+  ApiPublicFeedDotrssRoute: ApiPublicFeedDotrssRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiPublicCronDailyDropRoute: ApiPublicCronDailyDropRoute,
 }

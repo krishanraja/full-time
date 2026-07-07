@@ -152,6 +152,7 @@ export async function runEpisodePipeline(matchId: string) {
 
     const words = script.split(/\s+/).length;
     const durationSec = Math.max(45, Math.round((words / 155) * 60));
+    const audioBytes = audio.byteLength;
 
     const { data: inserted, error: insErr } = await supabaseAdmin
       .from("episodes")
@@ -163,6 +164,7 @@ export async function runEpisodePipeline(matchId: string) {
         magic_sentence: recap.magic_sentence || null,
         segments: [{ seg: "recap", text: script }],
         audio_url: audioUrl,
+        audio_bytes: audioBytes,
         duration_sec: durationSec,
         badge: badgeFor(m),
         model: "opus-4-8+gate+judge+eleven_multilingual_v2",

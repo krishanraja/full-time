@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       episodes: {
         Row: {
+          audio_bytes: number | null
           audio_url: string | null
           badge: string | null
           created_at: string
@@ -38,6 +39,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          audio_bytes?: number | null
           audio_url?: string | null
           badge?: string | null
           created_at?: string
@@ -60,6 +62,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          audio_bytes?: number | null
           audio_url?: string | null
           badge?: string | null
           created_at?: string

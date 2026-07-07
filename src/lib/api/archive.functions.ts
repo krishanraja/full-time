@@ -56,6 +56,7 @@ type ArchiveRow = {
     duration_sec: number;
     badge: string | null;
     audio_url: string | null;
+    og_image_url: string | null;
     published_at: string;
   }[];
   match_events: { count: number }[];
@@ -88,6 +89,7 @@ function shapeArchive(row: ArchiveRow): ArchiveMatch {
           durationSec: ep.duration_sec,
           badge: (ep.badge as FeedEpisode["badge"]) ?? undefined,
           audioUrl: ep.audio_url,
+          ogImageUrl: ep.og_image_url,
           publishedAt: ep.published_at,
           homeTeamId: null,
           awayTeamId: null,
@@ -99,7 +101,7 @@ function shapeArchive(row: ArchiveRow): ArchiveMatch {
 }
 
 const ARCHIVE_SELECT =
-  "id, kickoff_at, home_score, away_score, league_id, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name), episodes(id, title, hook, script, duration_sec, badge, audio_url, published_at), match_events(count)";
+  "id, kickoff_at, home_score, away_score, league_id, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name), episodes(id, title, hook, script, duration_sec, badge, audio_url, og_image_url, published_at), match_events(count)";
 
 // Honest teaser numbers for the signed-out state. Public on purpose:
 // it reveals only counts.
