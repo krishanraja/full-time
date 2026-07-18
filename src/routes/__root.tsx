@@ -102,15 +102,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/icon-192.png", type: "image/png" },
       { rel: "apple-touch-icon", href: "/icon-192.png" },
     ],
-    scripts: PLAUSIBLE_DOMAIN
-      ? [
-          {
-            src: "https://plausible.io/js/script.js",
-            defer: true,
-            "data-domain": PLAUSIBLE_DOMAIN,
-          } as unknown as { src: string },
-        ]
-      : [],
+    scripts: [
+      {
+        // PostHog product analytics. Shared project; the product super-property
+        // separates ventures. Publishable client key (safe in page markup).
+        children:
+          "(function(){var s=document.createElement('script');s.async=true;s.src='https://us-assets.i.posthog.com/static/array.js';s.onload=function(){window.posthog.init('phc_uNKPzXzC9QCgkZo2VcTmpwVTNuKtZpghXdeuA5ciBBaz',{api_host:'https://us.i.posthog.com',person_profiles:'identified_only',capture_pageview:true,capture_pageleave:true});window.posthog.register({product:'full_time'});};document.head.appendChild(s);})();",
+      } as unknown as { src: string },
+      ...(PLAUSIBLE_DOMAIN
+        ? [
+            {
+              src: "https://plausible.io/js/script.js",
+              defer: true,
+              "data-domain": PLAUSIBLE_DOMAIN,
+            } as unknown as { src: string },
+          ]
+        : []),
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
