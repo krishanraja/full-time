@@ -43,6 +43,14 @@ function escapeXml(input: string): string {
     .replace(/'/g, "&apos;");
 }
 
+// OP3 (op3.dev) is an open, privacy-respecting podcast analytics prefix. Wrapping
+// the enclosure URL routes each download through OP3 (which counts it, then
+// redirects to the real file), giving Full Time real download numbers that Apple
+// and Spotify never expose. Scheme is stripped per OP3's convention.
+function op3Wrap(url: string): string {
+  return `https://op3.dev/e/${url.replace(/^https?:\/\//, "")}`;
+}
+
 function durationHhMmSs(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
@@ -77,7 +85,7 @@ function itemXml(row: EpisodeRow): string {
     `<guid isPermaLink="false">${escapeXml(row.id)}</guid>`,
     `<pubDate>${new Date(row.published_at).toUTCString()}</pubDate>`,
     row.audio_url
-      ? `<enclosure url="${escapeXml(row.audio_url)}" type="audio/mpeg" length="${lengthBytes}" />`
+      ? `<enclosure url="${escapeXml(op3Wrap(row.audio_url))}" type="audio/mpeg" length="${lengthBytes}" />`
       : "",
     `<itunes:title>${escapeXml(title)}</itunes:title>`,
     `<itunes:summary>${escapeXml(description)}</itunes:summary>`,
