@@ -7,6 +7,7 @@ import { HapticButton } from "../components/HapticButton";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/use-auth";
 import { playerStore, usePlayer } from "../lib/player-store";
+import { track } from "../lib/analytics";
 import {
   getArchive,
   getArchiveOverview,
@@ -32,12 +33,6 @@ export const Route = createFileRoute("/archive")({
   }),
   component: ArchivePage,
 });
-
-function track(event: string, props?: Record<string, string>) {
-  const plausible = (window as unknown as { plausible?: (e: string, o?: { props: Record<string, string> }) => void })
-    .plausible;
-  if (typeof plausible === "function") plausible(event, props ? { props } : undefined);
-}
 
 function dateLabel(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });

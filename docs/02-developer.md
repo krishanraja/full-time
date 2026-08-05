@@ -22,7 +22,7 @@
 | TTS | ElevenLabs (`eleven_multilingual_v2`, voice via `ELEVENLABS_VOICE_ID`) |
 | Payments | Stripe (test mode today, no real charges): Checkout + Billing Portal + webhooks |
 | Push | Web Push (VAPID) via `web-push` in a server function |
-| Analytics | Plausible (cookieless, optional via `VITE_PLAUSIBLE_DOMAIN`) |
+| Analytics | PostHog (loaded unconditionally in `__root.tsx`; all custom events go through `src/lib/analytics.ts`) |
 | Runtime | Vercel serverless functions (Node). Server code runs per request; heavy work (LLM writer + judge + TTS) is bounded by the function timeout, see the cron budget below. |
 
 ## File map
@@ -257,6 +257,5 @@ Do not run `tsc`, `npm run build`, or `bun run build` manually as a checkpoint -
 | `SUPABASE_PUBLISHABLE_KEY` | cron route (fallback) | Legacy `apikey` cron auth |
 | `APP_URL` (optional) | billing redirects | Fallback checkout/portal return origin |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | push fanout | Morning push |
-| `VITE_PLAUSIBLE_DOMAIN` (publishable) | `__root.tsx` | Analytics script |
 
 Set via the Vercel project env (server secrets) and Supabase; the client-visible `VITE_*` values are the only ones bundled. Never commit. To take Stripe live, swap the three `STRIPE_*` values to live-mode and point a live-mode webhook at the webhook route.

@@ -56,7 +56,7 @@ When the waitlist hits the founder-set threshold (recommend **100**), execute in
 
 ## Metrics (pre-launch north star changes)
 
-Until launch, the fleet steers by: **waitlist signups per week**, anonymous → free-account conversion, and name-a-game usage (proof people want the archive product). Plausible events to add: `waitlist_join { source }`, `name_a_game { generated: boolean }`, `signin_gate_shown { surface }`. The `09-growth.md` completed-listens metric resumes as north star at launch.
+Until launch, the fleet steers by: **waitlist signups per week**, anonymous → free-account conversion, and name-a-game usage (proof people want the archive product). Analytics events to add: `waitlist_join { source }`, `name_a_game { generated: boolean }`, `signin_gate_shown { surface }`. The `09-growth.md` completed-listens metric resumes as north star at launch.
 
 ## Open decisions for Krish (defaults chosen, flag if wrong)
 

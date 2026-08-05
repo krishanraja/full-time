@@ -1,6 +1,7 @@
 // Web Push client helpers. VAPID public key is fetched from the server.
 import { supabase } from "@/integrations/supabase/client";
 import { savePushSubscription, deletePushSubscription, getVapidPublicKey } from "./api/push.functions";
+import { track } from "./analytics";
 
 function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
@@ -62,9 +63,7 @@ export async function subscribeToPush(): Promise<boolean> {
       auth: json.keys?.auth ?? "",
     },
   });
-  type Plausible = (e: string) => void;
-  const plausible = (window as unknown as { plausible?: Plausible }).plausible;
-  if (typeof plausible === "function") plausible("push_opt_in");
+  track("push_opt_in");
   return true;
 }
 

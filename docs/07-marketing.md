@@ -40,7 +40,7 @@ We are the *day-after* moment, not the *during-match* moment. We do not compete 
 - [ ] Landing page (or `/` itself) shows the product working, not a sign-up form.
 - [ ] OG / Twitter card image set (see `01-brand.md` notes).
 - [ ] PWA install prompt fires after second visit.
-- [ ] Plausible domain wired, key events firing.
+- [x] PostHog wired, key events firing.
 - [ ] `/legal/privacy` and `/legal/terms` reachable.
 - [ ] First seven days' content is *certain*. No launch on a Tuesday with no Monday matches.
 - [ ] Three "anchor" reviewers / podcasters teed up with early access (1 week before).

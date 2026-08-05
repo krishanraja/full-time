@@ -35,7 +35,7 @@ Any change here that touches collection, processors, or billing must ship the ma
 | Waitlist membership (joined_at, source, referral attribution) | Admitting the full-app launch list in join order | Until launch admission or account deletion |
 | Listens (episode, completion, timestamp) | Analytics on what to make more of | 12 months, then aggregated |
 | Stripe customer id + subscription status (Pro users only) | Billing, Pro entitlement | Until account deletion / subscription end |
-| Plausible analytics (cookieless) | Site-wide usage | 12 months (Plausible's default) |
+| PostHog analytics (first-party cookie for the anonymous id) | Site-wide usage + the custom product events in `09-growth.md` | Whatever the PostHog project's retention is set to. Confirm it in PostHog project settings and record the real number here |
 
 We do not collect: IP-based location, device fingerprints, cross-site identifiers, contacts, microphone, camera.
 
@@ -45,7 +45,7 @@ Card and payment details never touch our servers. Stripe holds them. We store on
 
 - Account data: contract (the user opted in to a service).
 - Billing / subscription: contract (the user opted in to Full Time Pro).
-- Listens / Plausible: legitimate interest (product analytics), with right to object via account deletion.
+- Listens / PostHog: legitimate interest (product analytics), with right to object via account deletion.
 - Push: explicit consent (the browser prompt).
 
 ## Data subject rights
@@ -108,7 +108,7 @@ What we don't do:
 | ElevenLabs | TTS synthesis | The match-fact script only, no PII |
 | Stripe | Payments + subscription billing | Email + payment details (card data stays with Stripe) |
 | Google Fonts | Font delivery | Standard browser request (IP) |
-| Plausible | Cookieless analytics | Page views + 4 custom events (see `09-growth.md`) |
+| PostHog (US cloud) | Product analytics | Page views + the live custom events in `09-growth.md` |
 
 We publish this list on `/legal/privacy`. Updates require updating both this doc and the public page in the same change.
 

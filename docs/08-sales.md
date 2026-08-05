@@ -61,7 +61,7 @@ If a league, club, or broadcaster reaches out:
 ## Conversations with sponsors
 
 - Send the deck (not yet written, see `12-roadmap.md`).
-- Quote audience size from Plausible. Never invent numbers.
+- Quote audience size from PostHog. Never invent numbers.
 - Sponsor placement is **brand mention only**, no audio inserts in the recap itself. The recap is the product; protect it.
 - Three-month minimum contract. We don't churn week-to-week sponsors.
 

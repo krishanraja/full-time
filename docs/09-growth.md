@@ -21,25 +21,31 @@ Not DAU, not opens, not installs. Completed = listened past 90% of the recap (`l
 | Follows-set after first session | Personalisation = stickier morning |
 | Share rate (taps on share, future) | Organic acquisition signal |
 
-## Plausible event taxonomy
+## PostHog event taxonomy
 
 We use **fewer events on purpose**. Add an event only if it changes a decision.
 
-| Event | Properties | Fired by |
-|---|---|---|
-| `play` | `{ episode_id, source: "hero"\|"card"\|"list"\|"mini" }` | `player-store.ts` on first play |
-| `complete` | `{ episode_id }` | `player-store.ts` past 90% |
-| `follow` | `{ entity_type, entity_id }` | `FollowButton.tsx` |
-| `push_opt_in` | `{}` | `settings.tsx` push toggle |
-| `waitlist_join` | `{ source: "waitlist_page"\|"settings"\|"today"\|"auth_redirect" }` | `waitlist.tsx` on confirmed join |
-| `signin_gate_shown` | `{ surface }` | wherever a locked feature routes to `/auth` (e.g. pundits) |
-| `name_a_game` | `{ generated: boolean }` | name-a-game (roadmap) |
-| `install_prompt_shown` / `install_prompt_accepted` | `{}` | install prompt component (roadmap) |
-| `share` | `{ episode_id, channel }` | per-episode share (roadmap) |
+Status column is the honest one: **live** means the call exists in the code and fires in production.
 
-We do **not** track: scrolls, hovers, page-views beyond Plausible's automatic ones.
+| Event | Properties (as actually sent) | Fired by | Status |
+|---|---|---|---|
+| `play` | `{ id }` | `player-store.ts` on play | live |
+| `complete` | `{ id }` | `player-store.ts` on ended | live |
+| `push_opt_in` | none | `push-client.ts` after the subscription saves | live |
+| `waitlist_join` | `{ source: "waitlist_page"\|"settings"\|"today"\|"auth_redirect" }` | `waitlist.tsx` on confirmed join | live |
+| `signin_gate_shown` | `{ surface }` | `archive.tsx` locked view, `settings.tsx` pundit gate | live |
+| `name_a_game` | `{ generated: "true"\|"false" }` | `archive.tsx` on-demand narration | live |
+| `follow` | `{ entity_type, entity_id }` | `FollowButton.tsx` | **not built.** Never wired. Do not read follow numbers off PostHog |
+| `install_prompt_shown` / `install_prompt_accepted` | none | install prompt component | not built (roadmap) |
+| `share` | `{ episode_id, channel }` | per-episode share | not built (roadmap) |
 
-Implementation: `window.plausible?.(eventName, { props: { ... } })`. Plausible only loads when `VITE_PLAUSIBLE_DOMAIN` is set.
+Two known gaps to close when someone touches this next: `play` does not carry the `source` the surface came from, and `follow` was documented but never instrumented.
+
+We do **not** track: scrolls, hovers, page-views beyond PostHog's automatic ones.
+
+Implementation: import `track` from `src/lib/analytics.ts` and call `track(eventName, { ... })`. Never call the vendor global directly. The helper is the single place that knows the vendor, no-ops on the server, no-ops when the script has not loaded or is ad-blocked, and never throws.
+
+PostHog loads unconditionally from `routes/__root.tsx`, no env var gates it. Plausible was removed on 2026-08-05: it was only ever loaded when `VITE_PLAUSIBLE_DOMAIN` was set, that variable was never set in any environment, and every event above silently no-opped from the day it was written until this change.
 
 ## Acquisition loops (priority)
 

@@ -6,6 +6,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import type { Episode } from "../data/mockEpisodes";
 import { haptic } from "./haptics";
+import { track } from "./analytics";
 
 type State = {
   episode: Episode | null;
@@ -31,13 +32,6 @@ function prevInQueue(): Episode | null {
   if (queueIndex > 0 && queue.length) return queue[queueIndex - 1];
   return null;
 }
-const trackEvent = (name: string, props?: Record<string, unknown>) => {
-  if (typeof window === "undefined") return;
-  type Plausible = (event: string, opts?: { props?: Record<string, unknown> }) => void;
-  const fn = (window as unknown as { plausible?: Plausible }).plausible;
-  if (typeof fn === "function") fn(name, props ? { props } : undefined);
-};
-
 function emit() {
   listeners.forEach((l) => l());
 }
@@ -75,7 +69,7 @@ function handleComplete() {
   state = { ...state, progress: 1, isPlaying: false };
   stopFallback();
   haptic("success");
-  trackEvent("complete", { id: ep.id });
+  track("complete", { id: ep.id });
   completedListeners.forEach((l) => l(ep));
   emit();
   // Auto-advance the drop: play the next recap so a hands-busy listener
@@ -146,7 +140,7 @@ export const playerStore = {
       progress: same && state.progress < 1 ? state.progress : 0,
     };
     haptic("tap");
-    trackEvent("play", { id: ep.id });
+    track("play", { id: ep.id });
     setMediaSession(ep);
 
     const audio = getAudio();
