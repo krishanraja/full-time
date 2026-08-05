@@ -137,10 +137,11 @@ export const Route = createFileRoute("/api/public/feed.rss")({
           `<itunes:image href="${DEFAULT_COVER_IMAGE_URL}" />`,
           "<itunes:owner>",
           "<itunes:name>Full Time</itunes:name>",
-          // TODO(krish): placeholder support inbox. _STATE.md's own GTM audit
-          // flags "support inbox" as an open item -- swap this for a real,
-          // monitored address before submitting to Apple/Spotify.
-          "<itunes:email>hello@krishraja.com</itunes:email>",
+          // Real, monitored owner inbox, ratified by Krish on 2026-08-04.
+          // Apple Podcasts Connect emails a verification code to this address
+          // and Spotify checks it is reachable, so it must never be a
+          // placeholder or the feed is rejected outright.
+          "<itunes:email>krish@themindmaker.ai</itunes:email>",
           "</itunes:owner>",
           '<itunes:category text="Sports">',
           '<itunes:category text="Soccer" />',
