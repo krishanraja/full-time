@@ -19,8 +19,8 @@
 //                        failure mode that disqualified the whole web tier.
 //   entity_licence       every proper noun must be in this match's data.
 //
-// CLASS H blocks forever. CLASS Q (taste) blocks on attempts 1 to 3 and goes
-// advisory on 4 and 5, because a rhythm rule must never kill the day's drop.
+// CLASS H blocks forever. CLASS Q (taste) blocks on attempts 1 and 2 and goes
+// advisory from attempt 3, because a rhythm rule must never kill the day's drop.
 
 import type { Angle } from "@/lib/api/angles.server";
 
@@ -83,6 +83,10 @@ export type RecapResult = {
   attempts: number;
   judge: unknown;
   checks: Record<string, boolean>;
+  /** Per-attempt record of what blocked, for observability and for tuning the
+   *  gate. Without this, a high retry rate is invisible: the stored `checks`
+   *  only ever describe the attempt that finally passed. */
+  attempt_log: Array<{ attempt: number; failed: string[]; judge: string[] }>;
   quality_relaxed: string[];
   name_license_mode: string;
 };
@@ -125,9 +129,15 @@ const SPELLED: Record<string, number> = {
   seven: 7,
   eight: 8,
   nine: 9,
-  ten: 10,
-  eleven: 11,
-  twelve: 12,
+  // ten, eleven and twelve are deliberately NOT here, for the same reason the
+  // design excludes "one", "once" and "single": in football prose they are
+  // overwhelmingly clock phases ("inside the first ten minutes"), squad
+  // references ("the starting eleven") or "ten men", none of which is an
+  // invented statistic. Leaving them in dropped an episode that said "two
+  // goals inside the first ten minutes", which is both true and unremarkable.
+  // The dodge this check exists to close is spelling out a small COUNT to
+  // evade the digit check, and two through nine covers that. A genuine
+  // statistic written as digits is still caught by numeric_licence.
 };
 const SPELLED_RE = new RegExp(
   `\\b(${Object.keys(SPELLED)
@@ -241,6 +251,16 @@ export function licensedNumbers(
     m.homeScore + m.awayScore,
     cards.length,
   ]);
+  // Every integer from 0 up to the number of goals in this match. These are
+  // COUNTING numbers, not statistics: "he added two more" in a 5-goal game is
+  // something a listener can verify by counting, and it is the natural way
+  // football is written. What this check exists to stop is an INVENTED
+  // STATISTIC ("their 47th win of the season", "26 shots"), and any such number
+  // is either far above the goal total or simply absent from the fact pack, so
+  // it is still caught. Without this a hat-trick recap is close to unwritable:
+  // "scored the first, then added two more" was blocked on five consecutive
+  // attempts and dropped the episode.
+  for (let i = 0; i <= m.homeScore + m.awayScore; i++) s.add(i);
   for (const g of goals) {
     if (g.minute != null) {
       s.add(g.minute);
@@ -428,13 +448,28 @@ export function runGate(input: GateInput): GateResult {
     consequence_lexeme_licensed: unlicensedConsequences.length === 0,
     entity_licence: nameLicenseMode === "enforce" ? unlicensedNames.length === 0 : true,
     no_brackets: !/[[\]]/.test(script),
-    no_caps_emphasis: !/\b[A-Z]{3,}\b/.test(script.replace(/\b(VAR|FA|UEFA|FIFA)\b/g, "")),
+    // Strip the licensed club and competition names before testing for
+    // shouting. "FSV Mainz 05" is a club, not emphasis: it failed this check on
+    // two separate attempts and helped drop an episode on the golden set.
+    no_caps_emphasis: !/\b[A-Z]{3,}\b/.test(
+      licensedEntities
+        .reduce((acc, e) => acc.split(e).join(" "), script)
+        .replace(/\b(VAR|FA|UEFA|FIFA)\b/g, ""),
+    ),
     magic_verbatim: !!magic && norm(script).includes(norm(magic)),
 
     // ---- Class Q: taste. Advisory from attempt 4.
     no_score_repeat: scoreCount <= 1,
     no_minute_repeat: !minutesUsed.some((x, i) => minutesUsed.indexOf(x) !== i),
-    magic_position: magicPos < 0 ? false : magicPos >= 0.5 && magicPos <= 0.85,
+    // Band widened from the design's [0.50, 0.85] to [0.45, 0.90]. The design
+    // derived that band from five hand-authored founder scripts measured at
+    // 0.31, 0.61, 0.59, 0.53 and 0.54, so [0.50, 0.85] rejects the founder's
+    // own writing one time in five: it is stricter than the human standard it
+    // was calibrated against. On the golden set it also rejected a script at
+    // 0.86, one hundredth outside. The rule's real job is to stop the model
+    // front-loading its best line into the opening third, which [0.45, 0.90]
+    // still does: the model's untreated positions measured 0.22, 0.30 and 0.33.
+    magic_position: magicPos < 0 ? false : magicPos >= 0.45 && magicPos <= 0.9,
     sentence_max: sentences.every((s) => sentenceWords(s) <= 26),
     sentence_short: sentences.filter((s) => sentenceWords(s) < 8).length >= 2,
     numeric_budget: numericTokens(sentences.slice(1).join(" ")) <= 4,
@@ -458,8 +493,13 @@ export function runGate(input: GateInput): GateResult {
     .map(([k]) => k);
   const hardFailed = failed.filter((k) => !QUALITY_KEYS.has(k));
   const softFailed = failed.filter((k) => QUALITY_KEYS.has(k));
-  // A taste rule must never kill the day's drop.
-  const relaxNow = attempt >= 4;
+  // A taste rule must never kill the day's drop. Taste blocks on attempts 1 and
+  // 2, which is where nearly all of the corrective value is, then goes
+  // advisory. The design said attempt 4; measurement on the clean golden set
+  // put mean attempts at 3.0 with magic_position alone causing 6 of 17 retry
+  // failures, which is the >2.0 trigger the design itself names as the signal
+  // to relax taste earlier.
+  const relaxNow = attempt >= 3;
 
   return {
     checks,
@@ -599,7 +639,7 @@ YOUR JOB: write ONE flowing recap in the Full Time voice. Get the WINNER and the
 
 RULES:
 1. 105 to 135 words, one continuous piece. Brevity is the product.
-2. Open with the result in one clean line. Tell the story that decided it. Land ONE sharp observation about 60 percent of the way through. Close with one short forward line.
+2. Open with the result in one clean line. Tell the story that decided it. Land ONE sharp observation about 60 percent of the way through. Close with one short forward line. That closing line must name NO opponent, NO date and NO competition: you do not know the fixture list. "They go again" is right. "They travel to Anfield on Saturday" is forbidden.
 3. State each fact once. No repetition of a scoreline, scorer, minute, or stat.
 4. ONE angle, the most interesting TRUE one. Do not list multiple stats. Vary across matches. Do not default to "xG vs scoreline".
 5. NEVER use "draw your own conclusions", "we are not drawing them for you", or "the table does not ask how you felt".
@@ -614,16 +654,22 @@ RULES:
 14. Longest sentence 26 words. Include at least two sentences shorter than 8 words. After the opening line, use at most 4 numbers in the whole script, and never put numbers in three sentences in a row.`;
 
   // RISK 11: voice_corpus is founder-editable and feeds the prompt with no
-  // gate. Fail closed on your own prompt before spending a token.
+  // gate, so fail closed on your own prompt before spending a token.
+  //
+  // ONLY the banned-phrase check belongs here. It is exact, it is three
+  // strings, and a corpus row containing one demonstrably costs attempts.
+  //
+  // A CONSEQUENCE scan of the prompt was tried and removed: it is an
+  // output-shaped test applied to input guidance, and it blocked 100 percent of
+  // generations on the real corpus. It fired on "Relegation and survival get
+  // composure and respect, not jokes" (a restraint rule, the opposite of a
+  // poisoned instruction), on "job security", and on "SCREENSHOT-SAFE: if a
+  // line's safety depends on...". The corpus is allowed to DISCUSS stakes; the
+  // guarantee is that the model may not ASSERT one, and that is enforced on the
+  // output by consequence_lexeme_licensed, which no prompt row can bypass.
   const promptBody = [persona, dos, donts, perType, examples].join("\n");
   if (CLICHE.test(promptBody)) {
     throw new Error("voice_corpus poisoned: the assembled prompt contains a banned house phrase");
-  }
-  CONSEQUENCE.lastIndex = 0;
-  if (CONSEQUENCE.test(promptBody)) {
-    throw new Error(
-      "voice_corpus poisoned: the assembled prompt instructs a season-consequence claim the gate forbids",
-    );
   }
 
   // ------------------------------------------------------------ fact pack
@@ -724,6 +770,7 @@ RULES:
   let cc: Record<string, boolean> = {};
   let relaxed: string[] = [];
   let usedAngle = "none";
+  const attemptLog: Array<{ attempt: number; failed: string[]; judge: string[] }> = [];
 
   while (!pass && attempt < 5) {
     attempt++;
@@ -753,34 +800,91 @@ RULES:
     const failed = gate.failed;
     const hardFailed = gate.hardFailed;
 
+    // The judge is given the SAME licensed sets the code gate enforces, so it
+    // is checking MEMBERSHIP rather than inferring what was permitted.
+    //
+    // The first version of this was shown only the score and the declared
+    // angle. It therefore flagged every possession, shot, corner and xG figure
+    // as unlicensed, even though those live in the fact pack and
+    // numeric_licence explicitly permits them. That alone drove the judge
+    // contradiction rate to ~80 percent of attempts on the clean golden set.
+    // Never hand the judge a narrower world than the gate enforces.
+    const licensedForJudge = [...licensedNumbers(m, goals, cards, st, offered, usedAngle)]
+      .sort((x, y) => x - y)
+      .join(", ");
+    const statLine = st
+      ? `possession ${m.homeName} ${st.home_possession}% / ${m.awayName} ${st.away_possession}%; ` +
+        `shots ${st.home_shots} / ${st.away_shots}; on target ${st.home_sot} / ${st.away_sot}; ` +
+        `xG ${st.home_xg} / ${st.away_xg}; corners ${st.home_corners} / ${st.away_corners}; ` +
+        `cards ${cards.length}`
+      : "(no detailed stats were given to the writer)";
+
     judge = await llm(
-      `You compare a football recap to the CORRECT RESULT and to the LICENSED CONTEXT.
-Flag a contradiction if the recap:
+      `You compare a football recap to the facts it was allowed to use.
+Flag a contradiction ONLY if the recap:
 (a) states the wrong winner or the wrong final score;
 (b) attributes a named goal to the wrong team;
-(c) makes any factual claim about history, past meetings, the league table, form,
+(c) makes a factual claim about history, past meetings, the league table, form,
     streaks, expectation, or ANY other match, that is not stated in LICENSED CONTEXT;
-(d) states any number that does not appear in the CORRECT RESULT or the LICENSED CONTEXT;
-(e) names any person or club that does not appear in the CORRECT RESULT or the LICENSED CONTEXT.
-Ignore phrasing, tone, adjectives, and any goal the recap chooses not to mention.
+(d) states a number that is not in LICENSED NUMBERS;
+(e) names a person or club that is not in LICENSED NAMES.
+
+NOT contradictions, never flag these:
+- any statistic drawn from MATCH STATS below, which the writer was given;
+- a closing forward line such as "they go again", so long as it names no
+  opponent, no date and no competition;
+- phrasing, tone, adjectives, restatement, or any goal the recap leaves out;
+- describing a player as belonging to one of the two clubs in this match.
+
+"contradictions" must contain ONLY actual contradictions, each ONE plain
+sentence naming the false statement. Do not reason in the array. Do not include
+an entry whose own explanation concludes the recap is correct, consistent or
+accurate: if your analysis clears the statement, the entry does not belong
+there at all. If the recap is fine, return an empty array.
+Do not derive new facts by arithmetic and then object to your own derivation.
 Output ONLY JSON.`,
       `CORRECT RESULT: ${fixedFacts}\n` +
         `Final score (home then away): ${realScore}\n` +
-        `LICENSED CONTEXT: ${usedAngle === "none" || !usedClause ? "(none: the recap may state no fact beyond the result and the goals above)" : usedClause}\n\n` +
+        `MATCH STATS the writer was given: ${statLine}\n` +
+        `LICENSED NUMBERS: ${licensedForJudge}\n` +
+        `LICENSED NAMES: ${[...new Set(licensedEntities)].join(", ")}\n` +
+        `LICENSED CONTEXT: ${usedAngle === "none" || !usedClause ? "(none: the recap may state no fact beyond the result, the goals and the stats above)" : usedClause}\n\n` +
         `RECAP:\n"${script}"\n\n` +
         `JSON only: {"contradictions":[],"coherent":true}`,
       JUDGE_MODEL,
-      400,
+      600,
       key,
     );
-    const contradictions = (judge.contradictions as string[]) || [];
+    // Sonnet occasionally returns objects rather than strings here. Coercing
+    // with String() renders them "[object Object]", which makes the retry
+    // feedback useless precisely when it matters most.
+    const contradictions = ((judge.contradictions as unknown[]) || [])
+      .map((c) => (typeof c === "string" ? c : JSON.stringify(c)))
+      .filter((c) => c && c !== "{}")
+      // Sonnet reasons inside the array despite being told not to, and a
+      // meaningful share of entries end by clearing the very statement they
+      // raise ("...which is actually consistent"). An entry that argues itself
+      // down is not a contradiction, and treating it as one burns an attempt
+      // and can fail a correct recap closed. Measured at 3 of 8 entries on the
+      // clean golden set before this filter.
+      .filter(
+        (c) =>
+          !/\b(is|are|was|were) (actually )?(correct|consistent|accurate|fine)\b|no contradiction|not a contradiction|this is consistent/i.test(
+            c,
+          ),
+      );
     const judgePass = contradictions.length === 0 && judge.coherent !== false;
     pass = codePass && judgePass;
+    attemptLog.push({
+      attempt,
+      failed: attempt >= 3 ? gate.hardFailed : gate.failed,
+      judge: contradictions,
+    });
 
     if (!pass) {
       // Once taste rules are advisory, only surface what still blocks: telling
       // the model to fix a rule that no longer blocks wastes the attempt.
-      const blocking = attempt >= 4 ? hardFailed : failed;
+      const blocking = attempt >= 3 ? hardFailed : failed;
       const detail: string[] = [];
       if (unlicensedNumbers.length)
         detail.push(`Unlicensed numbers: ${[...new Set(unlicensedNumbers)].join(", ")}.`);
@@ -811,6 +915,7 @@ Output ONLY JSON.`,
     attempts: attempt,
     judge,
     checks: cc,
+    attempt_log: attemptLog,
     quality_relaxed: relaxed,
     name_license_mode: NAME_LICENSE_MODE,
   };
