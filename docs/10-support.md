@@ -50,7 +50,7 @@ Sign in (Settings → "Sync across devices"), then toggle Notifications. Your br
 Sign out, then email support. We remove your `profiles`, `follows`, `push_subscriptions`, and `listens` rows on request. Reply with the email you signed up with.
 
 ### "Is this free? What's the catch?"
-The daily drop is always free, no ads, no card. A free account unlocks all six pundits and syncs your settings. There is nothing to pay for right now; a paid tier may return later when there are features worth paying for. We use only cookieless Plausible analytics.
+The daily drop is always free, no ads, no card. A free account unlocks all six pundits and syncs your settings. There is nothing to pay for right now; a paid tier may return later when there are features worth paying for. We use only first-party product analytics (PostHog) to see which recaps get listened to.
 
 ### "How do I manage or cancel Full Time Pro?"
 Pro is currently parked and nothing is charged. If an account ever holds an active subscription, Settings shows a Manage billing button that opens the secure Stripe portal (update card, cancel anytime; Pro stays active until the end of the paid period).

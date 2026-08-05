@@ -73,7 +73,7 @@ docs/
   06-ops.md                  ← runbooks: cron failing, TTS failing, push fanout, rotating secrets, restoring storage
   07-marketing.md            ← positioning, channels, launch checklist, copy bank, SEO/OG strategy
   08-sales.md                ← (free-for-now context) future monetization options, partnership angles, what to say to rights-holders
-  09-growth.md               ← referral loops, retention levers, push opt-in playbook, Plausible event taxonomy
+  09-growth.md               ← referral loops, retention levers, push opt-in playbook, PostHog event taxonomy
   10-support.md              ← common user issues, FAQ source-of-truth, escalation
   11-legal.md                ← AI disclosure stance, data retention, GDPR posture, rights/IP guardrails (no broadcaster impressions, etc.)
   12-roadmap.md              ← what's v1, what's explicitly out, what's next, decision log

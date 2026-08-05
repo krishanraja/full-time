@@ -62,8 +62,6 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-const PLAUSIBLE_DOMAIN = import.meta.env.VITE_PLAUSIBLE_DOMAIN as string | undefined;
-
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
@@ -109,15 +107,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         children:
           "(function(){var s=document.createElement('script');s.async=true;s.src='https://us-assets.i.posthog.com/static/array.js';s.onload=function(){window.posthog.init('phc_uNKPzXzC9QCgkZo2VcTmpwVTNuKtZpghXdeuA5ciBBaz',{api_host:'https://us.i.posthog.com',person_profiles:'identified_only',capture_pageview:true,capture_pageleave:true});window.posthog.register({product:'full_time'});};document.head.appendChild(s);})();",
       } as unknown as { src: string },
-      ...(PLAUSIBLE_DOMAIN
-        ? [
-            {
-              src: "https://plausible.io/js/script.js",
-              defer: true,
-              "data-domain": PLAUSIBLE_DOMAIN,
-            } as unknown as { src: string },
-          ]
-        : []),
     ],
   }),
   shellComponent: RootShell,

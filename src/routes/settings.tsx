@@ -14,11 +14,10 @@ import { createPortal } from "@/lib/api/billing.functions";
 import { getWaitlistStatus, type WaitlistStatus } from "@/lib/api/waitlist.functions";
 import { ACCOUNT_VOICE_STYLES, VOICE_STYLE_STORAGE_KEY } from "@/lib/entitlement";
 import { subscribeToPush, unsubscribeFromPush, isPushSubscribed } from "../lib/push-client";
+import { track } from "../lib/analytics";
 
 function trackSigninGate(surface: string) {
-  const plausible = (window as unknown as { plausible?: (e: string, o?: { props: Record<string, string> }) => void })
-    .plausible;
-  if (typeof plausible === "function") plausible("signin_gate_shown", { props: { surface } });
+  track("signin_gate_shown", { surface });
 }
 
 export const Route = createFileRoute("/settings")({

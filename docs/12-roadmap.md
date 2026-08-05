@@ -45,7 +45,7 @@ Do not do step 3 before step 1. The plumbing is ready; pulling the trigger is a 
 - Realtime episode updates.
 - Cron route + GitHub Actions workflow.
 - PWA manifest + push (client + fanout).
-- Plausible wiring.
+- Analytics wiring (done: PostHog, 2026-08-05).
 - Brand v1 (this rebrand): logo, wordmark, lime-on-pitch palette, Geist typography, hairline-everywhere UI.
 - `/docs` suite (you're reading it).
 
@@ -67,7 +67,7 @@ Do not do step 3 before step 1. The plumbing is ready; pulling the trigger is a 
 ## Shipped (2026-07-06, access ladder + waitlist)
 
 - **Access ladder** (`15-access-and-waitlist-plan.md`): anonymous gets recent drops + two pundits (The Reporter, The Gaffer; pick kept in localStorage); a free account unlocks all six pundits (server gate on `setVoiceStyle` is now signed-in, not Pro); Pro is parked (plumbing intact, gates nothing, `/pro` → `/waitlist`).
-- **Waitlist for the full app**: `waitlist` table (own-row RLS + `waitlist_guard` trigger so a user cannot backdate `joined_at` or set ops fields; position computed by a service_role count), `/waitlist` page (honest live-today vs full-app split, one-tap join for signed-in, magic-link-is-the-join for anonymous via `?join=1` auto-join), join CTAs on Today and Settings, position shown only from a confirmed row. Migration `20260706150000_waitlist.sql`. New Plausible events: `waitlist_join`, `signin_gate_shown`.
+- **Waitlist for the full app**: `waitlist` table (own-row RLS + `waitlist_guard` trigger so a user cannot backdate `joined_at` or set ops fields; position computed by a service_role count), `/waitlist` page (honest live-today vs full-app split, one-tap join for signed-in, magic-link-is-the-join for anonymous via `?join=1` auto-join), join CTAs on Today and Settings, position shown only from a confirmed row. Migration `20260706150000_waitlist.sql`. New analytics events: `waitlist_join`, `signin_gate_shown`.
 
 ## Next up (in priority order)
 

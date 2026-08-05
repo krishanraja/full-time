@@ -7,6 +7,7 @@ import { HapticButton } from "../components/HapticButton";
 import { useAuth } from "../hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { getWaitlistStatus, joinWaitlist, type WaitlistStatus } from "@/lib/api/waitlist.functions";
+import { track } from "../lib/analytics";
 
 type Search = { join?: boolean };
 
@@ -31,9 +32,7 @@ export const Route = createFileRoute("/waitlist")({
 });
 
 function trackJoin(source: string) {
-  const plausible = (window as unknown as { plausible?: (e: string, o?: { props: Record<string, string> }) => void })
-    .plausible;
-  if (typeof plausible === "function") plausible("waitlist_join", { props: { source } });
+  track("waitlist_join", { source });
 }
 
 // What's live today vs what the waitlist reserves. Keep this honest: the

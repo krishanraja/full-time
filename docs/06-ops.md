@@ -22,7 +22,7 @@ There are 5 hand-authored episodes live and 0 real users so far.
 After the 06:30 UTC drop, look at:
 
 1. `/feed`: loads, and the seeded episodes play (their `audio_url` resolves). Expect no new dated cards until the live ingest lands.
-2. Plausible (if `VITE_PLAUSIBLE_DOMAIN` set): `play` event count in the last hour. 0 is expected while there are no real users.
+2. PostHog (`product = full_time`): `play` event count in the last hour. 0 is expected while there are no real users.
 3. Cron logs: no spike in per-match errors, no `recap failed gate/judge` entries.
 
 If any of these look wrong for the wrong reason, run the relevant runbook below.
@@ -135,7 +135,7 @@ Server env, set in Vercel:
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | push fanout | Morning push |
 | `CRON_SECRET` | cron route auth | Bearer token the daily-drop endpoint requires |
 
-Client env (publishable, `VITE_` prefixed): `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_PLAUSIBLE_DOMAIN` (optional analytics).
+Client env (publishable, `VITE_` prefixed): `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`. Analytics needs no env var: the PostHog key is inline in `routes/__root.tsx`.
 
 GitHub repo secrets (for the scheduled cron): `CRON_SECRET` (matching the Vercel value) and `FULL_TIME_URL` (the deployed origin).
 

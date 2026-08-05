@@ -22,8 +22,9 @@ export const Route = createFileRoute("/legal/privacy")({
         waitlist for the full app, we store when you joined so we can admit the list in order.
       </p>
       <p className="mt-3 text-muted-foreground">
-        We do not sell your data. We do not run third-party advertising trackers. Anonymous,
-        cookieless analytics (Plausible) tell us which recaps people listened to.
+        We do not sell your data. We do not run third-party advertising trackers. Product
+        analytics (PostHog) tell us which recaps people listened to. It sets a first-party
+        cookie so a returning visitor counts once.
       </p>
       <p className="mt-3 text-muted-foreground">
         Want your data deleted? Sign out and email support. We will remove your account on request.
