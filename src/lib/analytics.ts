@@ -12,10 +12,16 @@
 // service-worker subscription:
 //   - No-op on the server. TanStack Start renders these modules under Nitro
 //     where `window` does not exist.
-//   - No-op if PostHog has not loaded yet. The loader is async, so
-//     `window.posthog` is undefined for the first moments of a page, and
-//     stays undefined forever behind an ad blocker.
-//   - Never throw. An analytics failure must not be able to break playback.
+//   - Never throw, never block. An analytics failure must not be able to
+//     break playback.
+//
+// The loader is async, so `window.posthog` does not exist for the first few
+// hundred milliseconds of a page. Events fired from a mount effect lose that
+// race: `signin_gate_shown` on `/archive` was observed being dropped for
+// exactly this reason. So an event that arrives too early is held and flushed
+// once PostHog appears, rather than discarded. The queue is bounded and gives
+// up, so an ad blocker (where PostHog never appears) cannot grow it forever
+// or leave a timer running.
 //
 // Event taxonomy lives in `docs/09-growth.md`. Add an event only if it
 // changes a decision.
@@ -24,11 +30,68 @@ type PostHog = {
   capture?: (event: string, properties?: Record<string, unknown>) => void;
 };
 
+type Queued = { event: string; props?: Record<string, unknown> };
+
+const MAX_PENDING = 50;
+const POLL_MS = 250;
+const GIVE_UP_MS = 30_000;
+
+let pending: Queued[] = [];
+let timer: ReturnType<typeof setInterval> | null = null;
+let waited = 0;
+
+function posthog(): PostHog | undefined {
+  return (window as unknown as { posthog?: PostHog }).posthog;
+}
+
+function send(event: string, props?: Record<string, unknown>): boolean {
+  const ph = posthog();
+  if (!ph || typeof ph.capture !== "function") return false;
+  ph.capture(event, props);
+  return true;
+}
+
+function stopWaiting() {
+  if (timer !== null) {
+    clearInterval(timer);
+    timer = null;
+  }
+}
+
+function startWaiting() {
+  if (timer !== null) return;
+  waited = 0;
+  timer = setInterval(() => {
+    waited += POLL_MS;
+    try {
+      const ph = posthog();
+      if (ph && typeof ph.capture === "function") {
+        const queued = pending;
+        pending = [];
+        stopWaiting();
+        for (const q of queued) send(q.event, q.props);
+        return;
+      }
+    } catch {
+      pending = [];
+      stopWaiting();
+      return;
+    }
+    // PostHog is not coming (ad blocker, offline, blocked host). Drop the
+    // backlog and stop burning a timer.
+    if (waited >= GIVE_UP_MS) {
+      pending = [];
+      stopWaiting();
+    }
+  }, POLL_MS);
+}
+
 export function track(event: string, props?: Record<string, unknown>): void {
   if (typeof window === "undefined") return;
   try {
-    const posthog = (window as unknown as { posthog?: PostHog }).posthog;
-    posthog?.capture?.(event, props);
+    if (send(event, props)) return;
+    if (pending.length < MAX_PENDING) pending.push({ event, props });
+    startWaiting();
   } catch {
     /* analytics is never allowed to break the product */
   }
