@@ -1,5 +1,10 @@
 User-agent: *
 Allow: /
+# The podcast RSS feed is public, published data. Allow it explicitly: the
+# longer, more specific rule wins over the /api/ block below.
+Allow: /api/public/feed.rss
 Disallow: /settings
 Disallow: /auth
 Disallow: /api/
+
+Sitemap: https://full-time-alpha.vercel.app/sitemap.xml

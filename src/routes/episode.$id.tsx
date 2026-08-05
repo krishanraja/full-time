@@ -13,6 +13,51 @@ import { getEpisode, type FeedEpisode } from "@/lib/api/feed.functions";
 import { SITE_URL, DEFAULT_COVER_IMAGE_URL } from "@/lib/site-url";
 import type { Episode } from "@/data/mockEpisodes";
 
+// Schema.org PodcastEpisode for the share page, so search engines and AI
+// assistants read this as a real audio episode rather than an untyped page.
+// Built ONLY from the loaded row: every optional field is omitted when the
+// underlying column is null or zero rather than filled with a plausible
+// guess, because a wrong duration or date here is a factual claim.
+function episodeJsonLd(ep: FeedEpisode, url: string, image: string) {
+  const title = `${ep.homeTeam} ${ep.homeScore}-${ep.awayScore} ${ep.awayTeam}`;
+  // ISO 8601 duration. duration_sec is set by the pipeline on every row.
+  const duration = ep.durationSec > 0 ? `PT${ep.durationSec}S` : undefined;
+
+  const audio = ep.audioUrl
+    ? {
+        "@type": "AudioObject",
+        contentUrl: ep.audioUrl,
+        encodingFormat: "audio/mpeg",
+        // The narration script IS the transcript, verbatim: it is what the
+        // TTS read out, so this is a real transcript, not a summary.
+        transcript: ep.script,
+        ...(duration ? { duration } : {}),
+      }
+    : undefined;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "PodcastEpisode",
+    "@id": url,
+    url,
+    name: title,
+    description: ep.hook,
+    datePublished: ep.publishedAt,
+    inLanguage: "en",
+    // Same image the OG tag uses, including the app-icon fallback while
+    // og_image_url is still null on every row.
+    image,
+    partOfSeries: {
+      "@type": "PodcastSeries",
+      name: "Full Time",
+      url: SITE_URL,
+      webFeed: `${SITE_URL}/api/public/feed.rss`,
+    },
+    ...(duration ? { duration } : {}),
+    ...(audio ? { associatedMedia: audio } : {}),
+  };
+}
+
 export const Route = createFileRoute("/episode/$id")({
   loader: async ({ params }) => {
     try {
@@ -48,6 +93,9 @@ export const Route = createFileRoute("/episode/$id")({
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: description },
         { name: "twitter:image", content: image },
+        // TanStack Router renders this as <script type="application/ld+json">
+        // in the server-rendered <head> via HeadContent.
+        { "script:ld+json": episodeJsonLd(ep, url, image) },
       ],
       links: [{ rel: "canonical", href: url }],
     };

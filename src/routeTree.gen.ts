@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WaitlistRouteImport } from './routes/waitlist'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProRouteImport } from './routes/pro'
 import { Route as FollowingRouteImport } from './routes/following'
@@ -27,6 +28,11 @@ import { Route as ApiPublicCronDailyDropRouteImport } from './routes/api/public/
 const WaitlistRoute = WaitlistRouteImport.update({
   id: '/waitlist',
   path: '/waitlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/following': typeof FollowingRoute
   '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/waitlist': typeof WaitlistRoute
   '/episode/$id': typeof EpisodeIdRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/following': typeof FollowingRoute
   '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/waitlist': typeof WaitlistRoute
   '/episode/$id': typeof EpisodeIdRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/following': typeof FollowingRoute
   '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/waitlist': typeof WaitlistRoute
   '/episode/$id': typeof EpisodeIdRoute
   '/legal/privacy': typeof LegalPrivacyRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/following'
     | '/pro'
     | '/settings'
+    | '/sitemap.xml'
     | '/waitlist'
     | '/episode/$id'
     | '/legal/privacy'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/following'
     | '/pro'
     | '/settings'
+    | '/sitemap.xml'
     | '/waitlist'
     | '/episode/$id'
     | '/legal/privacy'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/following'
     | '/pro'
     | '/settings'
+    | '/sitemap.xml'
     | '/waitlist'
     | '/episode/$id'
     | '/legal/privacy'
@@ -203,6 +215,7 @@ export interface RootRouteChildren {
   FollowingRoute: typeof FollowingRoute
   ProRoute: typeof ProRoute
   SettingsRoute: typeof SettingsRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WaitlistRoute: typeof WaitlistRoute
   EpisodeIdRoute: typeof EpisodeIdRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       path: '/waitlist'
       fullPath: '/waitlist'
       preLoaderRoute: typeof WaitlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -323,6 +343,7 @@ const rootRouteChildren: RootRouteChildren = {
   FollowingRoute: FollowingRoute,
   ProRoute: ProRoute,
   SettingsRoute: SettingsRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   WaitlistRoute: WaitlistRoute,
   EpisodeIdRoute: EpisodeIdRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
