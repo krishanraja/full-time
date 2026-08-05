@@ -35,11 +35,15 @@ Status column is the honest one: **live** means the call exists in the code and 
 | `waitlist_join` | `{ source: "waitlist_page"\|"settings"\|"today"\|"auth_redirect" }` | `waitlist.tsx` on confirmed join | live |
 | `signin_gate_shown` | `{ surface }` | `archive.tsx` locked view, `settings.tsx` pundit gate | live |
 | `name_a_game` | `{ generated: "true"\|"false" }` | `archive.tsx` on-demand narration | live |
-| `follow` | `{ entity_type, entity_id }` | `FollowButton.tsx` | **not built.** Never wired. Do not read follow numbers off PostHog |
+| `follow` | `{ entity_type: "team"\|"league", entity_id, action: "follow"\|"unfollow" }` | `follow-store.ts` in `useToggleFollow`, the chokepoint behind every `FollowButton` | live from 2026-08-05 |
 | `install_prompt_shown` / `install_prompt_accepted` | none | install prompt component | not built (roadmap) |
 | `share` | `{ episode_id, channel }` | per-episode share | not built (roadmap) |
 
-Two known gaps to close when someone touches this next: `play` does not carry the `source` the surface came from, and `follow` was documented but never instrumented.
+Unfollow is not its own event. It is `follow` with `action: "unfollow"`, for the same reason `name_a_game` carries `generated` instead of splitting in two: the taxonomy is deliberately small, both directions come out of one `useToggleFollow` call, and PostHog breaks down by property as easily as by event name. Keeping them together also means the net follow count for a user is one series filtered two ways rather than two series that can drift apart. Filter to `action = "follow"` for gross adds; leave the filter off for total follow-button engagement.
+
+One caveat on reading `follow`: it records the tap, not the persisted row. Signed-out users are counted (their follows live in `localStorage` only, never in the `follows` table), and a signed-in tap whose server write fails still leaves an event behind after the UI rolls back. Treat it as an engagement signal, and count rows in `follows` when you need the durable number.
+
+One known gap remains to close when someone touches this next: `play` does not carry the `source` the surface came from.
 
 We do **not** track: scrolls, hovers, page-views beyond PostHog's automatic ones.
 
