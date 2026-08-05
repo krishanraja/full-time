@@ -11,7 +11,12 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 
-const CONCURRENCY = 3;
+// 4, not 3. Per-episode cost after the narration change is ~37s typical and
+// ~95s worst case (5 attempts plus a v3 retake plus the v2 fallback). At 3 that
+// is 3 waves for 8 matches and a bad match in each wave blows the budget
+// (3 x 95 = 285s). At 4 it is 2 waves: 74s typical, 190s worst case. The
+// ElevenLabs Creator TTS concurrency ceiling is 5, so 4 is safe.
+const CONCURRENCY = 4;
 const BUDGET_MS = 240_000; // stay under the 300s function limit
 
 function authorized(request: Request): boolean {

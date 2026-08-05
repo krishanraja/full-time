@@ -14,6 +14,149 @@ export type Database = {
   }
   public: {
     Tables: {
+      match_context: {
+        Row: {
+          match_id: string
+          matchday: number | null
+          home_gk_name: string | null
+          away_gk_name: string | null
+          home_gk_subbed: boolean
+          away_gk_subbed: boolean
+          feeds_agree: boolean | null
+          crosscheck_src: string | null
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          match_id: string
+          matchday?: number | null
+          home_gk_name?: string | null
+          away_gk_name?: string | null
+          home_gk_subbed?: boolean
+          away_gk_subbed?: boolean
+          feeds_agree?: boolean | null
+          crosscheck_src?: string | null
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          match_id?: string
+          matchday?: number | null
+          home_gk_name?: string | null
+          away_gk_name?: string | null
+          home_gk_subbed?: boolean
+          away_gk_subbed?: boolean
+          feeds_agree?: boolean | null
+          crosscheck_src?: string | null
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_context_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: true
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      h2h_cache: {
+        Row: {
+          id: string
+          league_id: string
+          season: number
+          team_a_id: string
+          team_b_id: string
+          meetings: Json
+          fetched_at: string
+        }
+        Insert: {
+          id?: string
+          league_id: string
+          season: number
+          team_a_id: string
+          team_b_id: string
+          meetings: Json
+          fetched_at?: string
+        }
+        Update: {
+          id?: string
+          league_id?: string
+          season?: number
+          team_a_id?: string
+          team_b_id?: string
+          meetings?: Json
+          fetched_at?: string
+        }
+        Relationships: []
+      }
+      standings_snapshots: {
+        Row: {
+          id: string
+          league_id: string
+          season: number
+          captured_at: string
+          rows: Json
+        }
+        Insert: {
+          id?: string
+          league_id: string
+          season: number
+          captured_at?: string
+          rows: Json
+        }
+        Update: {
+          id?: string
+          league_id?: string
+          season?: number
+          captured_at?: string
+          rows?: Json
+        }
+        Relationships: []
+      }
+      editorial_signals: {
+        Row: {
+          id: string
+          match_id: string
+          angle: string
+          subject: string | null
+          subject_kind: string | null
+          domains: string[]
+          confidence: string | null
+          raw: Json | null
+          status: string
+          reviewed_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          match_id: string
+          angle: string
+          subject?: string | null
+          subject_kind?: string | null
+          domains?: string[]
+          confidence?: string | null
+          raw?: Json | null
+          status?: string
+          reviewed_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          match_id?: string
+          angle?: string
+          subject?: string | null
+          subject_kind?: string | null
+          domains?: string[]
+          confidence?: string | null
+          raw?: Json | null
+          status?: string
+          reviewed_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       episodes: {
         Row: {
           audio_bytes: number | null
@@ -37,6 +180,12 @@ export type Database = {
           model: string | null
           verification: Json | null
           status: string
+          spoken_script: string | null
+          tts_model: string | null
+          tts_voice_id: string | null
+          tts_seed: number | null
+          angle_id: string | null
+          lufs: number | null
         }
         Insert: {
           audio_bytes?: number | null
@@ -60,6 +209,12 @@ export type Database = {
           model?: string | null
           verification?: Json | null
           status?: string
+          spoken_script?: string | null
+          tts_model?: string | null
+          tts_voice_id?: string | null
+          tts_seed?: number | null
+          angle_id?: string | null
+          lufs?: number | null
         }
         Update: {
           audio_bytes?: number | null
@@ -83,6 +238,12 @@ export type Database = {
           model?: string | null
           verification?: Json | null
           status?: string
+          spoken_script?: string | null
+          tts_model?: string | null
+          tts_voice_id?: string | null
+          tts_seed?: number | null
+          angle_id?: string | null
+          lufs?: number | null
         }
         Relationships: [
           {
@@ -385,6 +546,14 @@ export type Database = {
       match_stats: {
         Row: {
           away_corners: number | null
+          away_blocked: number | null
+          away_saves: number | null
+          away_fouls: number | null
+          away_offsides: number | null
+          home_blocked: number | null
+          home_saves: number | null
+          home_fouls: number | null
+          home_offsides: number | null
           away_possession: number | null
           away_shots: number | null
           away_sot: number | null
@@ -400,6 +569,14 @@ export type Database = {
         }
         Insert: {
           away_corners?: number | null
+          away_blocked?: number | null
+          away_saves?: number | null
+          away_fouls?: number | null
+          away_offsides?: number | null
+          home_blocked?: number | null
+          home_saves?: number | null
+          home_fouls?: number | null
+          home_offsides?: number | null
           away_possession?: number | null
           away_shots?: number | null
           away_sot?: number | null
@@ -415,6 +592,14 @@ export type Database = {
         }
         Update: {
           away_corners?: number | null
+          away_blocked?: number | null
+          away_saves?: number | null
+          away_fouls?: number | null
+          away_offsides?: number | null
+          home_blocked?: number | null
+          home_saves?: number | null
+          home_fouls?: number | null
+          home_offsides?: number | null
           away_possession?: number | null
           away_shots?: number | null
           away_sot?: number | null
