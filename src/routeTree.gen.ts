@@ -23,6 +23,7 @@ import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as EpisodeIdRouteImport } from './routes/episode.$id'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
 import { Route as ApiPublicFeedDotrssRouteImport } from './routes/api/public/feed[.]rss'
+import { Route as ApiPublicCronIngestRouteImport } from './routes/api/public/cron.ingest'
 import { Route as ApiPublicCronDailyDropRouteImport } from './routes/api/public/cron.daily-drop'
 
 const WaitlistRoute = WaitlistRouteImport.update({
@@ -95,6 +96,11 @@ const ApiPublicFeedDotrssRoute = ApiPublicFeedDotrssRouteImport.update({
   path: '/api/public/feed.rss',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCronIngestRoute = ApiPublicCronIngestRouteImport.update({
+  id: '/api/public/cron/ingest',
+  path: '/api/public/cron/ingest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCronDailyDropRoute = ApiPublicCronDailyDropRouteImport.update({
   id: '/api/public/cron/daily-drop',
   path: '/api/public/cron/daily-drop',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/api/public/feed.rss': typeof ApiPublicFeedDotrssRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
+  '/api/public/cron/ingest': typeof ApiPublicCronIngestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByTo {
   '/api/public/feed.rss': typeof ApiPublicFeedDotrssRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
+  '/api/public/cron/ingest': typeof ApiPublicCronIngestRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/api/public/feed.rss': typeof ApiPublicFeedDotrssRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
+  '/api/public/cron/ingest': typeof ApiPublicCronIngestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/api/public/feed.rss'
     | '/api/stripe/webhook'
     | '/api/public/cron/daily-drop'
+    | '/api/public/cron/ingest'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/api/public/feed.rss'
     | '/api/stripe/webhook'
     | '/api/public/cron/daily-drop'
+    | '/api/public/cron/ingest'
   id:
     | '__root__'
     | '/'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/api/public/feed.rss'
     | '/api/stripe/webhook'
     | '/api/public/cron/daily-drop'
+    | '/api/public/cron/ingest'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -223,6 +235,7 @@ export interface RootRouteChildren {
   ApiPublicFeedDotrssRoute: typeof ApiPublicFeedDotrssRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiPublicCronDailyDropRoute: typeof ApiPublicCronDailyDropRoute
+  ApiPublicCronIngestRoute: typeof ApiPublicCronIngestRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -325,6 +338,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFeedDotrssRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/ingest': {
+      id: '/api/public/cron/ingest'
+      path: '/api/public/cron/ingest'
+      fullPath: '/api/public/cron/ingest'
+      preLoaderRoute: typeof ApiPublicCronIngestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/daily-drop': {
       id: '/api/public/cron/daily-drop'
       path: '/api/public/cron/daily-drop'
@@ -351,6 +371,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicFeedDotrssRoute: ApiPublicFeedDotrssRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiPublicCronDailyDropRoute: ApiPublicCronDailyDropRoute,
+  ApiPublicCronIngestRoute: ApiPublicCronIngestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
