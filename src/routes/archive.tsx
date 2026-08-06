@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { pageSeo } from "@/lib/seo";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -19,18 +20,13 @@ import {
 import type { Episode } from "../data/mockEpisodes";
 
 export const Route = createFileRoute("/archive")({
-  head: () => ({
-    meta: [
-      { title: "Archive • Full Time" },
-      {
-        name: "description",
-        content: "Name a game. Any match we hold the data for, narrated on demand.",
-      },
-      { property: "og:title", content: "Archive • Full Time" },
-      { property: "og:url", content: "/archive" },
-    ],
-    links: [{ rel: "canonical", href: "/archive" }],
-  }),
+  head: () =>
+    pageSeo({
+      path: "/archive",
+      title: "Archive • Full Time",
+      description:
+        "Name a game. Any match we hold the data for, narrated on demand.",
+    }),
   component: ArchivePage,
 });
 

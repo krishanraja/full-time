@@ -12,21 +12,35 @@ import { useTodayFeed } from "../hooks/use-episodes";
 import { useFollowed } from "../lib/follow-store";
 import { playerStore } from "../lib/player-store";
 import { getWaitlistStatus, type WaitlistStatus } from "@/lib/api/waitlist.functions";
+import { getTodayFeed } from "@/lib/api/feed.functions";
+import { pageSeo } from "@/lib/seo";
 import type { Episode } from "../data/mockEpisodes";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Today • Full Time" },
-      {
-        name: "description",
-        content: "Today's biggest football story, narrated. Tap once and listen.",
-      },
-      { property: "og:title", content: "Today • Full Time" },
-      { property: "og:url", content: "/" },
-    ],
-    links: [{ rel: "canonical", href: "/" }],
-  }),
+  // The drop is fetched in the loader, not only in the component, so it is
+  // server-rendered. This is the single biggest discoverability fix on the
+  // site: the client-only version shipped 43 characters of visible body text
+  // (the nav) to anything that does not execute JavaScript, which is most AI
+  // crawlers. Same server fn the hook uses, so there is one query, not two.
+  // Degrade, never 500: getTodayFeed throws on a Supabase error, and an
+  // uncaught throw in a loader replaces the whole page with the error
+  // boundary. A null here just means "no server payload", so the component
+  // falls back to the client fetch exactly as it did before. A transient DB
+  // blip costs the SSR benefit for one request, not the page.
+  loader: async () => {
+    try {
+      return await getTodayFeed();
+    } catch (err) {
+      console.error("[index] SSR feed load failed:", err);
+      return null;
+    }
+  },
+  head: () =>
+    pageSeo({
+      path: "/",
+      title: "Today • Full Time",
+      description: "Today's biggest football story, narrated. Tap once and listen.",
+    }),
   component: Home,
 });
 
@@ -52,7 +66,7 @@ function Skeleton() {
 }
 
 function Home() {
-  const { data, isLoading } = useTodayFeed();
+  const { data, isLoading } = useTodayFeed(Route.useLoaderData() ?? undefined);
   const { user } = useAuth();
   const fetchWaitlist = useServerFn(getWaitlistStatus);
   const waitlist = useQuery<WaitlistStatus>({

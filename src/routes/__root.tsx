@@ -16,6 +16,57 @@ import { AppHeader } from "../components/AppHeader";
 import { MiniPlayer } from "../components/MiniPlayer";
 import { CompletionToast } from "../components/CompletionToast";
 import { supabase } from "@/integrations/supabase/client";
+import { SITE_URL, DEFAULT_COVER_IMAGE_URL } from "@/lib/site-url";
+import { ldJson } from "@/lib/seo";
+
+const SITE_NAME_TITLE = "Full Time - Daily football recaps, narrated";
+const SITE_DESCRIPTION =
+  "Daily AI-narrated football recaps. Big 5 leagues, 60 seconds each. Tap once, listen on the move.";
+
+// Site-wide schema.org graph: the publisher, the website, and the show.
+// Split into three linked nodes because search and answer engines treat the
+// Organization as the entity, the WebSite as the searchable surface, and the
+// PodcastSeries as the thing an episode belongs to. Emitted once, from the
+// root, so every route inherits it.
+function siteJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
+        name: "Full Time",
+        url: SITE_URL,
+        logo: {
+          "@type": "ImageObject",
+          url: DEFAULT_COVER_IMAGE_URL,
+          width: 512,
+          height: 512,
+        },
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_URL}/#website`,
+        name: "Full Time",
+        url: SITE_URL,
+        description: SITE_DESCRIPTION,
+        inLanguage: "en",
+        publisher: { "@id": `${SITE_URL}/#organization` },
+      },
+      {
+        "@type": "PodcastSeries",
+        "@id": `${SITE_URL}/#podcast`,
+        name: "Full Time",
+        url: SITE_URL,
+        description: SITE_DESCRIPTION,
+        inLanguage: "en",
+        webFeed: `${SITE_URL}/api/public/feed.rss`,
+        image: DEFAULT_COVER_IMAGE_URL,
+        publisher: { "@id": `${SITE_URL}/#organization` },
+      },
+    ],
+  };
+}
 
 function NotFoundComponent() {
   return (
@@ -71,34 +122,49 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
       { name: "theme-color", content: "#0a0a0c" },
-      { title: "Full Time - Daily football recaps, narrated" },
-      {
-        name: "description",
-        content: "Daily AI-narrated football recaps. Big 5 leagues, 60 seconds each. Tap once, listen on the move.",
-      },
-      { property: "og:title", content: "Full Time - Daily football recaps, narrated" },
-      {
-        property: "og:description",
-        content: "Daily AI-narrated football recaps. Big 5 leagues, 60 seconds each.",
-      },
+      { title: SITE_NAME_TITLE },
+      { name: "description", content: SITE_DESCRIPTION },
+      { property: "og:title", content: SITE_NAME_TITLE },
+      { property: "og:description", content: SITE_DESCRIPTION },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Full Time" },
+      { property: "og:locale", content: "en_GB" },
+      { property: "og:url", content: SITE_URL },
+      // The cover art is square (512x512), so `summary` is the honest card
+      // type: declaring summary_large_image would make X centre-crop the
+      // logo into a letterbox. Upgrading to a bespoke 1200x630 card is a
+      // design task, tracked in _STATE.md, not something to fake here.
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: SITE_NAME_TITLE },
+      { name: "twitter:description", content: SITE_DESCRIPTION },
+      { property: "og:image", content: DEFAULT_COVER_IMAGE_URL },
+      { property: "og:image:width", content: "512" },
+      { property: "og:image:height", content: "512" },
+      { property: "og:image:alt", content: "Full Time" },
+      { name: "twitter:image", content: DEFAULT_COVER_IMAGE_URL },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "apple-mobile-web-app-title", content: "Full Time" },
-      { name: "twitter:title", content: "Full Time - Daily football recaps, narrated" },
-      { name: "description", content: "Listen to daily AI-narrated football goal and match recaps with a simple, mobile-first audio feed." },
-      { property: "og:description", content: "Listen to daily AI-narrated football goal and match recaps with a simple, mobile-first audio feed." },
-      { name: "twitter:description", content: "Listen to daily AI-narrated football goal and match recaps with a simple, mobile-first audio feed." },
-      { property: "og:image", content: "https://fulltime.fm/icon-512.png" },
-      { name: "twitter:image", content: "https://fulltime.fm/icon-512.png" },
+      // Site-level structured data. Answer engines resolve an entity from
+      // this graph, so the three nodes are cross-referenced by @id rather
+      // than repeated inline. Every claim here is checkable against a real
+      // surface: the feed URL 200s, the logo file exists, the series is the
+      // thing the episodes say they are part of.
+      ldJson(siteJsonLd()),
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "icon", href: "/icon-192.png", type: "image/png" },
       { rel: "apple-touch-icon", href: "/icon-192.png" },
+      // Podcast/feed autodiscovery. This is how Apple Podcasts, Spotify and
+      // every feed reader find the show from the site alone.
+      {
+        rel: "alternate",
+        type: "application/rss+xml",
+        title: "Full Time - daily football recaps",
+        href: `${SITE_URL}/api/public/feed.rss`,
+      },
     ],
     scripts: [
       {

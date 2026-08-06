@@ -1,15 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { pageSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/legal/privacy")({
-  head: () => ({
-    meta: [
-      { title: "Privacy • Full Time" },
-      { name: "description", content: "How Full Time handles your data." },
-      { property: "og:title", content: "Privacy • Full Time" },
-      { property: "og:url", content: "/legal/privacy" },
-    ],
-    links: [{ rel: "canonical", href: "/legal/privacy" }],
-  }),
+  head: () =>
+    pageSeo({
+      path: "/legal/privacy",
+      title: "Privacy • Full Time",
+      description:
+        "How Full Time handles your data.",
+    }),
   component: () => (
     <article className="prose prose-invert py-6 text-sm leading-relaxed">
       <Link to="/settings" className="text-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">← Back</Link>

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { pageSeo } from "@/lib/seo";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -21,15 +22,14 @@ function trackSigninGate(surface: string) {
 }
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({
-    meta: [
-      { title: "Settings • Full Time" },
-      { name: "description", content: "Your morning football briefing. Toggle the 7am nudge." },
-      { property: "og:title", content: "Settings • Full Time" },
-      { property: "og:url", content: "/settings" },
-    ],
-    links: [{ rel: "canonical", href: "/settings" }],
-  }),
+  head: () =>
+    pageSeo({
+      path: "/settings",
+      title: "Settings • Full Time",
+      description:
+        "Your morning football briefing. Toggle the 7am nudge.",
+      noindex: true,
+    }),
   component: Settings,
 });
 

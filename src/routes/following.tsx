@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { pageSeo } from "@/lib/seo";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -7,15 +8,14 @@ import { useFollowed, useFollowSync } from "../lib/follow-store";
 import { getTeamsAndLeagues } from "../lib/api/feed.functions";
 
 export const Route = createFileRoute("/following")({
-  head: () => ({
-    meta: [
-      { title: "Following • Full Time" },
-      { name: "description", content: "Pick the teams and leagues you actually care about." },
-      { property: "og:title", content: "Following • Full Time" },
-      { property: "og:url", content: "/following" },
-    ],
-    links: [{ rel: "canonical", href: "/following" }],
-  }),
+  head: () =>
+    pageSeo({
+      path: "/following",
+      title: "Following • Full Time",
+      description:
+        "Pick the teams and leagues you actually care about.",
+      noindex: true,
+    }),
   component: Following,
 });
 

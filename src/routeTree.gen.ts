@@ -13,6 +13,7 @@ import { Route as WaitlistRouteImport } from './routes/waitlist'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProRouteImport } from './routes/pro'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as FollowingRouteImport } from './routes/following'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -44,6 +45,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const ProRoute = ProRouteImport.update({
   id: '/pro',
   path: '/pro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FollowingRoute = FollowingRouteImport.update({
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/feed': typeof FeedRoute
   '/following': typeof FollowingRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/feed': typeof FeedRoute
   '/following': typeof FollowingRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/feed': typeof FeedRoute
   '/following': typeof FollowingRoute
+  '/llms.txt': typeof LlmsDottxtRoute
   '/pro': typeof ProRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/feed'
     | '/following'
+    | '/llms.txt'
     | '/pro'
     | '/settings'
     | '/sitemap.xml'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/feed'
     | '/following'
+    | '/llms.txt'
     | '/pro'
     | '/settings'
     | '/sitemap.xml'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/feed'
     | '/following'
+    | '/llms.txt'
     | '/pro'
     | '/settings'
     | '/sitemap.xml'
@@ -225,6 +237,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   FeedRoute: typeof FeedRoute
   FollowingRoute: typeof FollowingRoute
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
   ProRoute: typeof ProRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -266,6 +279,13 @@ declare module '@tanstack/react-router' {
       path: '/pro'
       fullPath: '/pro'
       preLoaderRoute: typeof ProRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/following': {
@@ -361,6 +381,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   FeedRoute: FeedRoute,
   FollowingRoute: FollowingRoute,
+  LlmsDottxtRoute: LlmsDottxtRoute,
   ProRoute: ProRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
