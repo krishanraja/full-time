@@ -1,3 +1,13 @@
+# Full Time - https://fulltime.fm
+# Daily AI-narrated football recaps. The recaps, transcripts and the podcast
+# feed are public, published data and we want them read, quoted and cited.
+#
+# Two groups below. The first is the default for every crawler. The second
+# names the answer engines explicitly: a named group REPLACES the wildcard
+# group for that agent, so the rules are repeated in full rather than
+# inherited. Naming them is the point, because several of these default to
+# "no permission granted" unless a site opts in by name.
+
 User-agent: *
 Allow: /
 # The podcast RSS feed is public, published data. Allow it explicitly: the
@@ -5,6 +15,35 @@ Allow: /
 Allow: /api/public/feed.rss
 Disallow: /settings
 Disallow: /auth
+Disallow: /following
+Disallow: /api/
+
+# --- Answer engines and AI crawlers: explicitly welcome ---
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-User
+User-agent: Claude-SearchBot
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot
+User-agent: Applebot-Extended
+User-agent: meta-externalagent
+User-agent: Amazonbot
+User-agent: Bytespider
+User-agent: CCBot
+User-agent: cohere-ai
+User-agent: YouBot
+User-agent: Diffbot
+User-agent: Timpibot
+User-agent: omgili
+Allow: /
+Allow: /api/public/feed.rss
+Disallow: /settings
+Disallow: /auth
+Disallow: /following
 Disallow: /api/
 
 Sitemap: https://fulltime.fm/sitemap.xml

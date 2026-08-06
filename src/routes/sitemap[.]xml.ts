@@ -85,8 +85,16 @@ export const Route = createFileRoute("/sitemap.xml")({
           '<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
           urlXml("/", newestEpisodeDate),
+          urlXml("/feed", newestEpisodeDate),
           urlXml("/archive", newestEpisodeDate),
           urlXml("/waitlist", null),
+          // Static copy, no lastmod rather than a guess. Listed because
+          // legal pages are a trust signal engines look for, not because
+          // they are traffic. /settings, /following, /auth and /pro are
+          // deliberately absent: they are noindex, personalised, or a
+          // redirect.
+          urlXml("/legal/privacy", null),
+          urlXml("/legal/terms", null),
           ...rows.map((row) => urlXml(`/episode/${row.id}`, lastmodDate(row.published_at))),
           "</urlset>",
         ].join("");

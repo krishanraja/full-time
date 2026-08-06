@@ -1,17 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { pageSeo } from "@/lib/seo";
 import { EpisodeListItem } from "../components/EpisodeListItem";
 import { useTodayFeed } from "../hooks/use-episodes";
 
 export const Route = createFileRoute("/feed")({
-  head: () => ({
-    meta: [
-      { title: "Feed • Full Time" },
-      { name: "description", content: "Every recap from today's matches in one tap-and-go list." },
-      { property: "og:title", content: "Feed • Full Time" },
-      { property: "og:url", content: "/feed" },
-    ],
-    links: [{ rel: "canonical", href: "/feed" }],
-  }),
+  head: () =>
+    pageSeo({
+      path: "/feed",
+      title: "Feed • Full Time",
+      description:
+        "Every recap from today's matches in one tap-and-go list.",
+    }),
   component: Feed,
 });
 

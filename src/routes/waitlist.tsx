@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { pageSeo } from "@/lib/seo";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -15,19 +16,13 @@ export const Route = createFileRoute("/waitlist")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     join: s.join === 1 || s.join === "1" || s.join === true ? true : undefined,
   }),
-  head: () => ({
-    meta: [
-      { title: "Waitlist • Full Time" },
-      {
-        name: "description",
-        content:
-          "The full app: every matchday narrated and live by 7am, with the morning push. Join the waitlist.",
-      },
-      { property: "og:title", content: "Waitlist • Full Time" },
-      { property: "og:url", content: "/waitlist" },
-    ],
-    links: [{ rel: "canonical", href: "/waitlist" }],
-  }),
+  head: () =>
+    pageSeo({
+      path: "/waitlist",
+      title: "Waitlist • Full Time",
+      description:
+        "The full app: every matchday narrated and live by 7am, with the morning push. Join the waitlist.",
+    }),
   component: WaitlistPage,
 });
 

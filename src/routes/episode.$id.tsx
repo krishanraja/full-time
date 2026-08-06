@@ -11,6 +11,7 @@ import { AudioCard } from "@/components/AudioCard";
 import { HapticButton } from "@/components/HapticButton";
 import { getEpisode, type FeedEpisode } from "@/lib/api/feed.functions";
 import { SITE_URL, DEFAULT_COVER_IMAGE_URL } from "@/lib/site-url";
+import { pageSeo, ldJson } from "@/lib/seo";
 import type { Episode } from "@/data/mockEpisodes";
 
 // Schema.org PodcastEpisode for the share page, so search engines and AI
@@ -47,14 +48,31 @@ function episodeJsonLd(ep: FeedEpisode, url: string, image: string) {
     // Same image the OG tag uses, including the app-icon fallback while
     // og_image_url is still null on every row.
     image,
+    // @id ties this back to the PodcastSeries node the root layout emits, so
+    // the series is described once and referenced everywhere rather than
+    // re-asserted (and possibly contradicted) per episode.
     partOfSeries: {
       "@type": "PodcastSeries",
+      "@id": `${SITE_URL}/#podcast`,
       name: "Full Time",
       url: SITE_URL,
       webFeed: `${SITE_URL}/api/public/feed.rss`,
     },
     ...(duration ? { duration } : {}),
     ...(audio ? { associatedMedia: audio } : {}),
+  };
+}
+
+// Breadcrumbs give search results a readable trail and give answer engines
+// the parent/child relationship without them having to infer it from URLs.
+function breadcrumbJsonLd(url: string, title: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Today", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: title, item: url },
+    ],
   };
 }
 
@@ -70,34 +88,43 @@ export const Route = createFileRoute("/episode/$id")({
   head: ({ loaderData }) => {
     const ep = loaderData as FeedEpisode | undefined;
     if (!ep) {
-      return { meta: [{ title: "Episode not found • Full Time" }] };
+      return {
+        meta: [
+          { title: "Episode not found • Full Time" },
+          { name: "robots", content: "noindex, follow" },
+        ],
+      };
     }
     const title = `${ep.homeTeam} ${ep.homeScore}-${ep.awayScore} ${ep.awayTeam} • Full Time`;
     const description = ep.hook;
-    const url = `${SITE_URL}/episode/${ep.id}`;
+    const path = `/episode/${ep.id}`;
+    const url = `${SITE_URL}${path}`;
     // og_image_url is NULL on every episode today (nothing generates it
     // yet); fall back to the app icon so the share card is never blank.
     const image = ep.ogImageUrl ?? DEFAULT_COVER_IMAGE_URL;
 
+    const seo = pageSeo({
+      path,
+      title,
+      description,
+      image,
+      imageAlt: title,
+      type: "article",
+    });
+
     return {
+      ...seo,
       meta: [
-        { title },
-        { name: "description", content: description },
-        { property: "og:title", content: title },
-        { property: "og:description", content: description },
-        { property: "og:type", content: "website" },
-        { property: "og:url", content: url },
-        { property: "og:image", content: image },
-        { property: "og:site_name", content: "Full Time" },
-        { name: "twitter:card", content: "summary" },
-        { name: "twitter:title", content: title },
-        { name: "twitter:description", content: description },
-        { name: "twitter:image", content: image },
-        // TanStack Router renders this as <script type="application/ld+json">
-        // in the server-rendered <head> via HeadContent.
-        { "script:ld+json": episodeJsonLd(ep, url, image) },
+        ...seo.meta,
+        { property: "article:published_time", content: ep.publishedAt },
+        // TanStack Router renders these as <script type="application/ld+json">
+        // in the server-rendered <head> via HeadContent. The cast is because
+        // the head `meta` array is typed as HTML <meta> attributes, which the
+        // ld+json escape hatch deliberately is not; the same shape is already
+        // used for the root layout's script tag.
+        ldJson(episodeJsonLd(ep, url, image)),
+        ldJson(breadcrumbJsonLd(url, title)),
       ],
-      links: [{ rel: "canonical", href: url }],
     };
   },
   component: EpisodePage,
@@ -189,6 +216,30 @@ function EpisodePage() {
       <div className="mt-4">
         <AudioCard episode={uiEpisode} hero />
       </div>
+
+      {/* The narration script, verbatim. It is already inside the
+          PodcastEpisode JSON-LD as `transcript`, but structured data alone
+          is metadata: putting the words in the document body is what makes
+          the recap readable to anything that cannot press play, from a
+          crawler to a screen reader to someone on a silent commute. Kept in
+          a <details> so the page stays an audio-first surface by default;
+          the content ships in the HTML either way. */}
+      {episode.script ? (
+        <details className="mt-6 border-t border-[var(--pitch-line)] pt-4">
+          <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground">
+            Read the transcript
+          </summary>
+          <div className="mt-3 space-y-3 text-sm leading-relaxed text-muted-foreground">
+            {episode.script
+              .split(/\n{2,}/)
+              .map((para) => para.trim())
+              .filter(Boolean)
+              .map((para, i) => (
+                <p key={i}>{para}</p>
+              ))}
+          </div>
+        </details>
+      ) : null}
 
       <div className="mt-5">
         <ShareButton episode={episode} />

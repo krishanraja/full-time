@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { pageSeo } from "@/lib/seo";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { HapticButton } from "../components/HapticButton";
@@ -12,12 +13,14 @@ export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>): { redirect?: Redirect } => ({
     redirect: REDIRECTS.includes(s.redirect as Redirect) ? (s.redirect as Redirect) : undefined,
   }),
-  head: () => ({
-    meta: [
-      { title: "Sign in • Full Time" },
-      { name: "description", content: "Magic-link sign in. No password." },
-    ],
-  }),
+  head: () =>
+    pageSeo({
+      path: "/auth",
+      title: "Sign in • Full Time",
+      description:
+        "Magic-link sign in. No password.",
+      noindex: true,
+    }),
   component: AuthPage,
 });
 
