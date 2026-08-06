@@ -17,7 +17,7 @@ Read this first. Two capabilities are fully built and deployed but intentionally
 **Required next, in order:**
 
 1. Wire a **live match-data ingest** (API-Football) that keeps `matches`, `match_events`, and `match_stats` current. Until this exists there is nothing to generate. This is the real blocker.
-2. Set two **GitHub repo secrets** to activate the schedule: `CRON_SECRET` (must equal the Vercel env var of the same name) and `FULL_TIME_URL` = `https://full-time-alpha.vercel.app`.
+2. Set two **GitHub repo secrets** to activate the schedule: `CRON_SECRET` (must equal the Vercel env var of the same name) and `FULL_TIME_URL` = `https://fulltime.fm`.
 3. Accept the **ongoing cost**: once live, each published episode is about one Opus writer call (plus up to 5 regens), one Sonnet judge call per attempt, and one ElevenLabs render. See `06-ops.md` cost watch.
 
 Step 1 is what produces real content. Steps 2 and 3 turn the schedule on. Do not expect episodes before step 1.
