@@ -583,35 +583,67 @@ export async function generateRecap(
 
   // ---- corpus assembly (T12). Deterministic ordering: without it Postgres
   // returns rows in whatever order it likes and two identical runs differ.
+  //
+  // Rows carrying a banned house phrase are DROPPED here rather than allowed to
+  // reach the model. voice_corpus is founder-editable and several live rows
+  // quote the banned phrases as worked examples ("State your observation, then
+  // retreat. 'Draw your own conclusions...'"). Feeding the model a phrase the
+  // gate rejects costs attempts and can fail an episode closed.
+  const poisoned = corpus.filter((c) => CLICHE.test(c.content));
+  if (poisoned.length) {
+    console.warn(
+      `[corpus] dropped ${poisoned.length} row(s) containing a banned house phrase: ` +
+        JSON.stringify(poisoned.map((c) => `${c.kind}:${c.content.slice(0, 60)}`)),
+    );
+  }
+  const clean = corpus.filter((c) => !CLICHE.test(c.content));
   const pick = (kind: string) =>
-    corpus
+    clean
       .filter((c) => c.kind === kind)
       .sort(
         (a, b) => Number(b.weight ?? 0) - Number(a.weight ?? 0) || (a.content < b.content ? -1 : 1),
       );
 
-  const persona = pick("style_rule")
-    .map((c) => c.content)
-    .join("\n")
-    .slice(0, 1300);
-  const examples = pick("example")
-    .slice(0, 8)
-    .map((c) => "- " + c.content)
-    .join("\n");
-  // 53 rows used to be fetched and silently discarded. Capped so they inform
-  // without swamping the rules.
-  const capped = (rows: CorpusRow[], budget: number) => {
+  // Pack WHOLE rows only, and keep going after one does not fit rather than
+  // stopping. The old behaviour joined every style_rule and took `.slice(0,
+  // 1300)`, which delivered 8 percent of the founder's 15,754 characters of
+  // voice doctrine, cut the first row off mid-sentence, and dropped all ten
+  // SCREENSHOT-SAFE brand-safety rules entirely. A half-sentence of doctrine is
+  // worse than no sentence, and the short safety rules are the highest value
+  // per character in the corpus.
+  //
+  // Shortest-first ordering is deliberate: it fits many complete rules instead
+  // of one truncated essay. Weight still leads, so the founder can promote any
+  // row by raising its weight.
+  const pack = (rows: CorpusRow[], budget: number, bullet: boolean) => {
     const out: string[] = [];
     let used = 0;
-    for (const r of rows) {
-      if (used + r.content.length > budget) break;
-      out.push("- " + r.content);
+    for (const r of [...rows].sort(
+      (a, b) =>
+        Number(b.weight ?? 0) - Number(a.weight ?? 0) || a.content.length - b.content.length,
+    )) {
+      if (used + r.content.length > budget) continue; // skip, do not stop
+      out.push(bullet ? "- " + r.content : r.content);
       used += r.content.length;
     }
     return out.join("\n");
   };
-  const dos = capped(pick("do"), 600);
-  const donts = capped(pick("dont"), 600);
+  // 9000 is about 2,250 tokens, roughly $0.011 per attempt, and it is the
+  // cheapest quality lever in the pipeline. It fits all ten SCREENSHOT-SAFE
+  // rules, the load-bearing calm-voice principle and the humour doctrine with
+  // its four mechanics, while still excluding the two longest rows, which are
+  // architecture notes ABOUT the corpus system rather than instructions to the
+  // writer ("THE PRINCIPLE: the voice must NOT live in a hardcoded LLM prompt",
+  // and a Nielsen Norman tone-dimension analysis). Sending those would spend
+  // tokens telling the model how the pipeline is built.
+  const persona = pack(pick("style_rule"), 9000, false);
+  const examples = pick("example")
+    .slice(0, 8)
+    .map((c) => "- " + c.content)
+    .join("\n");
+  // 53 do/dont rows used to be fetched and silently discarded entirely.
+  const dos = pack(pick("do"), 900, true);
+  const donts = pack(pick("dont"), 900, true);
   const perType = opts.matchType
     ? (corpus.find((c) => c.kind === "per_match_type" && c.match_type === opts.matchType)
         ?.content ?? "")
@@ -653,23 +685,34 @@ RULES:
 13. Your script is the on-screen transcript AND it is read aloud. Write plain sentences only. No square brackets, no stage directions, no ellipses, no ALL CAPS for emphasis. Delivery direction is added by the system afterwards, not by you.
 14. Longest sentence 26 words. Include at least two sentences shorter than 8 words. After the opening line, use at most 4 numbers in the whole script, and never put numbers in three sentences in a row.`;
 
-  // RISK 11: voice_corpus is founder-editable and feeds the prompt with no
-  // gate, so fail closed on your own prompt before spending a token.
+  // RISK 11: voice_corpus is founder-editable and feeds the prompt with no gate.
   //
-  // ONLY the banned-phrase check belongs here. It is exact, it is three
-  // strings, and a corpus row containing one demonstrably costs attempts.
+  // This used to THROW when a banned phrase reached the prompt, which was the
+  // wrong response to the wrong risk. A banned phrase in the corpus is a TASTE
+  // problem: the output-side noCliche check already guarantees it can never
+  // ship, so throwing converted a taste problem into a total outage that would
+  // drop every match of the day. Offending rows are now filtered out at
+  // assembly (above) and logged, so the day still ships.
   //
-  // A CONSEQUENCE scan of the prompt was tried and removed: it is an
-  // output-shaped test applied to input guidance, and it blocked 100 percent of
-  // generations on the real corpus. It fired on "Relegation and survival get
-  // composure and respect, not jokes" (a restraint rule, the opposite of a
-  // poisoned instruction), on "job security", and on "SCREENSHOT-SAFE: if a
-  // line's safety depends on...". The corpus is allowed to DISCUSS stakes; the
-  // guarantee is that the model may not ASSERT one, and that is enforced on the
-  // output by consequence_lexeme_licensed, which no prompt row can bypass.
+  // This was not theoretical. Four live rows quote the banned phrases as worked
+  // examples, including a `do` rule reading "State your observation, then
+  // retreat. 'Draw your own conclusions. We are not drawing them for you.'".
+  // They escaped the old throw only because they happened to fall outside the
+  // 1300 and 600 character caps: luck, not design, and one founder edit away
+  // from a silent all-day outage.
+  //
+  // A CONSEQUENCE scan of the prompt was tried and removed for the same class
+  // of reason: it is an output-shaped test applied to input guidance, and it
+  // blocked 100 percent of generations on the real corpus, firing on
+  // "Relegation and survival get composure and respect, not jokes" (a restraint
+  // rule) and on "SCREENSHOT-SAFE: if a line's safety depends on...". The
+  // corpus may DISCUSS stakes; the model may not ASSERT one, and that is
+  // enforced on the output where no prompt row can bypass it.
   const promptBody = [persona, dos, donts, perType, examples].join("\n");
   if (CLICHE.test(promptBody)) {
-    throw new Error("voice_corpus poisoned: the assembled prompt contains a banned house phrase");
+    // Unreachable: `clean` already removed these. Kept as a last-resort assert
+    // so a future refactor that bypasses the filter is caught immediately.
+    throw new Error("voice_corpus poisoned: a banned house phrase survived corpus filtering");
   }
 
   // ------------------------------------------------------------ fact pack
