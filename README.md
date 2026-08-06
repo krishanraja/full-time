@@ -2,7 +2,7 @@
 
 Daily AI-narrated football recaps. Big-5 leagues. About 60 seconds per match. One morning drop. Calm voice, sharp writing. PWA-first, optional account, optional push.
 
-Live: https://full-time-alpha.vercel.app
+Live: https://fulltime.fm
 
 Status: 5 hand-authored episodes are live and the accuracy-guaranteed generation engine has been proven end to end on production. There are no real users, listens, or follows yet. Match data is seeded (2023-24 season), so the daily cron is inert until a live match feed is wired.
 

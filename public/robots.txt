@@ -7,4 +7,4 @@ Disallow: /settings
 Disallow: /auth
 Disallow: /api/
 
-Sitemap: https://full-time-alpha.vercel.app/sitemap.xml
+Sitemap: https://fulltime.fm/sitemap.xml

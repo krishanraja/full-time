@@ -11,7 +11,7 @@ function getOrigin(): string {
   const host = h?.get("x-forwarded-host") ?? h?.get("host");
   const proto = h?.get("x-forwarded-proto") ?? "https";
   if (host) return `${proto}://${host}`;
-  return process.env.APP_URL ?? "https://full-time-alpha.vercel.app";
+  return process.env.APP_URL ?? "https://fulltime.fm";
 }
 
 // What the client uses to gate UI. Reads the caller's own profile under RLS.

@@ -91,8 +91,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Listen to daily AI-narrated football goal and match recaps with a simple, mobile-first audio feed." },
       { property: "og:description", content: "Listen to daily AI-narrated football goal and match recaps with a simple, mobile-first audio feed." },
       { name: "twitter:description", content: "Listen to daily AI-narrated football goal and match recaps with a simple, mobile-first audio feed." },
-      { property: "og:image", content: "https://full-time-alpha.vercel.app/icon-512.png" },
-      { name: "twitter:image", content: "https://full-time-alpha.vercel.app/icon-512.png" },
+      { property: "og:image", content: "https://fulltime.fm/icon-512.png" },
+      { name: "twitter:image", content: "https://fulltime.fm/icon-512.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

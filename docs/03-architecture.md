@@ -148,7 +148,7 @@ The always-on "Live drop" badge was false (the product is deliberately day-after
 ## Deployment
 
 - Frontend plus server functions run on **Vercel** (TanStack Start with the nitro `vercel` preset). Deploys are driven from Git, connected to the `full-time` Vercel project.
-- Stable production URL: **`https://full-time-alpha.vercel.app`**. Use this for cron and external services (it is what `FULL_TIME_URL` points at).
+- Stable production URL: **`https://fulltime.fm`**. Use this for cron and external services (it is what `FULL_TIME_URL` points at).
 - Current reality: the live app is deployed from the local working tree and is being merged to `main`. There are 5 hand-authored episodes live and 0 real users, listens, or follows yet.
 - The daily-drop schedule is enabled by setting two GitHub repo secrets: `CRON_SECRET` (matching Vercel) and `FULL_TIME_URL`.
 
@@ -156,7 +156,7 @@ The always-on "Live drop" badge was false (the product is deliberately day-after
 
 | Env | Where | Used for |
 |---|---|---|
-| Production | `https://full-time-alpha.vercel.app` (Vercel project `full-time`) | Real users, cron target |
+| Production | `https://fulltime.fm` (Vercel project `full-time`) | Real users, cron target |
 | Preview (per branch) | Vercel preview deployment per PR / branch | Review before merge |
 | Local dev | `vite` dev server | Local development against the same Supabase project |
 

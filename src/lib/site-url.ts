@@ -2,7 +2,7 @@
 // self-links). Same fallback pattern already used in billing.functions.ts
 // getOrigin() and hardcoded in __root.tsx's static og:image: prefer an
 // explicit APP_URL env var, else the one known production domain.
-export const SITE_URL = process.env.APP_URL ?? "https://full-time-alpha.vercel.app";
+export const SITE_URL = process.env.APP_URL ?? "https://fulltime.fm";
 
 // Square app icon (2000x2000, verified >= the 1400-3000px Apple/Spotify
 // podcast cover art spec) used as: (a) the RSS channel/item itunes:image,
