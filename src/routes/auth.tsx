@@ -6,7 +6,7 @@ import { HapticButton } from "../components/HapticButton";
 
 // Where the magic link may land the user afterwards. An allowlist keeps the
 // param from becoming an open redirect.
-const REDIRECTS = ["/settings", "/archive", "/waitlist", "/"] as const;
+const REDIRECTS = ["/settings", "/archive", "/waitlist", "/pro", "/"] as const;
 type Redirect = (typeof REDIRECTS)[number];
 
 export const Route = createFileRoute("/auth")({

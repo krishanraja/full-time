@@ -106,6 +106,9 @@ function ArchiveSignedIn() {
   }, [matches]);
   const shown = league ? matches.filter((m) => m.leagueId === league) : matches;
   const remaining = archive.data?.remainingToday ?? 0;
+  // The caller's own allowance, not the free constant: a Pro subscriber
+  // must never be told "20 of 3 narrations left".
+  const dailyLimit = archive.data?.dailyLimit ?? DAILY_GENERATION_LIMIT;
 
   const handleGenerate = async (m: ArchiveMatch) => {
     if (generating) return;
@@ -117,6 +120,7 @@ function ArchiveSignedIn() {
       queryClient.setQueryData<ArchiveData>(["archive"], (old) =>
         old
           ? {
+              ...old,
               remainingToday,
               matches: old.matches.map((x) =>
                 x.matchId === m.matchId ? { ...x, episode, generatable: false } : x,
@@ -144,7 +148,7 @@ function ArchiveSignedIn() {
         the spot, checked against the facts first.
       </p>
       <p className="text-mono mt-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
-        {remaining} of {DAILY_GENERATION_LIMIT} narrations left today
+        {remaining} of {dailyLimit} narrations left today
       </p>
 
       {leagues.length > 1 && (

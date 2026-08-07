@@ -69,3 +69,26 @@ Until launch, the fleet steers by: **waitlist signups per week**, anonymous → 
 
 - Parts of the 2026-07-06 "Free plus Full Time Pro" decision: Pro remains wired but stops gating pundits; the user-visible ladder is anon / free / waitlist. Log this in the `12-roadmap.md` decision log when Phase 1 ships.
 - The `/pro` page as an upgrade surface. It becomes the waitlist page.
+
+---
+
+## Addendum, 2026-08-07: Pro un-parked
+
+Reverses the "Pro (parked)" row in the ladder above, at founder instruction, on the same day production moved to live Stripe keys. Pro now gates two things, both enforced server-side, both already built:
+
+| | Anonymous | Free account | **Pro, $4.99/mo** |
+|---|---|---|---|
+| Pundits | The Reporter, The Gaffer | same two | **all six** |
+| Name a game | not available | 3 / UTC day | **25 / UTC day** |
+| Archive, drop, follows, sync | per ladder above | per ladder above | same |
+
+**Why these two.** They were the only Pro-shaped levers already enforced in code, and the generation limit is where the real marginal cost sits (one Anthropic call plus one ElevenLabs render per narration). Selling anything else would have meant selling a promise.
+
+**What free accounts lose.** The four extra pundits, which Phase 1 had moved from Pro down to free. That regression was accepted explicitly as the price of giving the paid tier a real benefit on day one. Free keeps the archive, name a game, synced settings and push.
+
+**Enforcement points, not just UI:**
+- `setVoiceStyle` (`profile.functions.ts`) re-reads the profile and rejects a Pro pundit for a non-Pro caller. The client could otherwise post any of the six.
+- `limitFor` (`archive.functions.ts`) resolves the daily allowance per profile; `getArchive` returns it as `dailyLimit` so the UI never quotes the free number at a subscriber.
+- `effectiveVoiceStyle` (`entitlement.ts`) falls a lapsed or downgraded listener back to the house voice instead of leaving them pointing at something locked.
+
+**Honesty constraint, hardened.** The page now takes real money, so `FEATURES` on `/pro` lists only what is enforced today. "Ask your pundit a question about any match" is rendered in a separate, visually demoted `NEXT_UP` block that says in plain words that it is not built and not what you are paying for. See `16-ask-your-pundit.md` for the spec stub.

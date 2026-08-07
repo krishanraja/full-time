@@ -9,8 +9,16 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import type { FeedEpisode } from "@/lib/api/feed.functions";
+import {
+  dailyGenerationLimit,
+  isProProfile,
+  FREE_DAILY_GENERATION_LIMIT,
+  PRO_DAILY_GENERATION_LIMIT,
+} from "@/lib/entitlement";
 
-export const DAILY_GENERATION_LIMIT = 3;
+// Kept as an alias so existing imports (and the signed-out archive copy, which
+// can only ever be quoting the free allowance) keep working.
+export const DAILY_GENERATION_LIMIT = FREE_DAILY_GENERATION_LIMIT;
 
 function publicClient() {
   return createClient<Database>(
@@ -37,6 +45,9 @@ export type ArchiveMatch = {
 export type ArchiveData = {
   matches: ArchiveMatch[];
   remainingToday: number;
+  /** The caller's own daily allowance, so the UI never quotes the free number
+   *  at a Pro subscriber ("20 of 3 left" was the bug waiting to happen). */
+  dailyLimit: number;
 };
 
 type ArchiveRow = {
@@ -117,7 +128,19 @@ export const getArchiveOverview = createServerFn({ method: "GET" }).handler(asyn
   };
 });
 
-async function remainingFor(userId: string): Promise<number> {
+/** The caller's allowance for today. Pro buys a bigger one, so the limit has
+ *  to be resolved from the profile rather than being a module constant. */
+async function limitFor(userId: string): Promise<number> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: prof } = await supabaseAdmin
+    .from("profiles")
+    .select("plan, subscription_status, current_period_end")
+    .eq("id", userId)
+    .maybeSingle();
+  return dailyGenerationLimit(isProProfile(prof));
+}
+
+async function remainingFor(userId: string, limit?: number): Promise<number> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const dayStart = new Date().toISOString().slice(0, 10) + "T00:00:00Z";
   const { count } = await supabaseAdmin
@@ -126,7 +149,7 @@ async function remainingFor(userId: string): Promise<number> {
     .eq("user_id", userId)
     .neq("status", "failed") // a failed attempt costs nothing
     .gte("created_at", dayStart);
-  return Math.max(0, DAILY_GENERATION_LIMIT - (count ?? 0));
+  return Math.max(0, (limit ?? (await limitFor(userId))) - (count ?? 0));
 }
 
 export const getArchive = createServerFn({ method: "GET" })
@@ -140,9 +163,11 @@ export const getArchive = createServerFn({ method: "GET" })
       .order("kickoff_at", { ascending: false })
       .limit(200);
     if (error) throw new Error(error.message);
+    const dailyLimit = await limitFor(context.userId);
     return {
       matches: (data as unknown as ArchiveRow[]).map(shapeArchive),
-      remainingToday: await remainingFor(context.userId),
+      remainingToday: await remainingFor(context.userId, dailyLimit),
+      dailyLimit,
     };
   });
 
@@ -175,10 +200,13 @@ export const requestEpisode = createServerFn({ method: "POST" })
       throw new Error("We do not hold the minute-by-minute data for this one yet.");
     }
 
-    const remaining = await remainingFor(context.userId);
+    const limit = await limitFor(context.userId);
+    const remaining = await remainingFor(context.userId, limit);
     if (remaining <= 0) {
       throw new Error(
-        `That is ${DAILY_GENERATION_LIMIT} narrations today. The counter resets at midnight UTC.`,
+        limit >= PRO_DAILY_GENERATION_LIMIT
+          ? `That is ${limit} narrations today. The counter resets at midnight UTC.`
+          : `That is ${limit} narrations today. The counter resets at midnight UTC, or Full Time Pro raises it to ${PRO_DAILY_GENERATION_LIMIT}.`,
       );
     }
 
