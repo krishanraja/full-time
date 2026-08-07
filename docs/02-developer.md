@@ -20,7 +20,7 @@
 | AI (writer) | Anthropic Opus via `recap-generator.server.ts` (`WRITER_MODEL`, default `claude-opus-4-8`) |
 | AI (judge) | Anthropic Sonnet contradiction judge (`JUDGE_MODEL`, default `claude-sonnet-4-6`) |
 | TTS | ElevenLabs (`eleven_multilingual_v2`, voice via `ELEVENLABS_VOICE_ID`) |
-| Payments | Stripe (test mode today, no real charges): Checkout + Billing Portal + webhooks |
+| Payments | Stripe: Checkout + Billing Portal + webhooks. **Live keys in production** since 2026-08-07; test key in preview/development |
 | Push | Web Push (VAPID) via `web-push` in a server function |
 | Analytics | PostHog (loaded unconditionally in `__root.tsx`; all custom events go through `src/lib/analytics.ts`) |
 | Runtime | Vercel serverless functions (Node). Server code runs per request; heavy work (LLM writer + judge + TTS) is bounded by the function timeout, see the cron budget below. |
@@ -161,7 +161,7 @@ Runs the morning drop (GitHub Actions or Vercel cron). It authorizes on a `CRON_
 
 ## Billing and Pro entitlement
 
-Free vs **Full Time Pro ($4.99/mo)**. The only Pro benefit enforced **today** is pundit selection: free gets the one house voice, the other five pundits are Pro. The rest of the Pro list on `/pro` is honest near-term roadmap, not yet built. Production runs on **live** Stripe keys as of 2026-08-07; preview and development remain on the **test** key. No real charge is possible today anyway, because `/pro` redirects to `/waitlist` and is the only entry to `createCheckout`.
+Free vs **Full Time Pro ($4.99/mo)**. Production runs **live** Stripe keys as of 2026-08-07; preview and development remain on the **test** key. Pro gates two things, both enforced server-side: **all six pundits** (anonymous and free get `zen` + `gaffer`) and **25 name-a-game narrations a day** against the free 3. Everything on `/pro` is one of those two; unbuilt work sits in a separate, visibly demoted block on that page.
 
 ### `entitlement.ts` (client-safe, import from either side)
 

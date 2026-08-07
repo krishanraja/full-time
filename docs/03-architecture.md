@@ -103,7 +103,7 @@ The pipeline, in order:
    Browser (use-entitlement, /pro)
         │  createCheckout / createPortal / syncCheckout   (billing.functions.ts)
         ▼
-   Stripe (acct_1Siiex, TEST key)  ── webhook ──▶  POST /api/stripe/webhook.ts
+   Stripe (acct_1Siiex, LIVE in prod) ─ webhook ─▶  POST /api/stripe/webhook.ts
         ▲                                              │ verifies STRIPE_WEBHOOK_SECRET (raw body)
         │                                              ▼
         │                                    applySubscriptionToProfile  (billing-sync.server.ts)
