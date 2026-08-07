@@ -1,0 +1,52 @@
+# Typecheck gate.
+#
+# Why this exists: on 2026-08-07 two direct-to-main pushes from
+# gpt-engineer-app[bot] (Lovable) deleted 671 lines from
+# src/integrations/supabase/types.ts, stripping generation_requests, waitlist,
+# synthesis_insights, voice_corpus and every billing column on profiles. That
+# broke `tsc --noEmit` on main.
+#
+# Nothing noticed, because `vite build` does NOT run tsc: Vercel kept
+# deploying green while the typecheck was broken. The repo had no CI at all.
+#
+# So this runs on pull requests AND on direct pushes to main, because the
+# thing it is guarding against arrives as a direct push.
+
+name: verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      # The real gate. This is what caught the stripped types, and what would
+      # have caught them on the push that caused it.
+      - name: Typecheck
+        run: bunx tsc --noEmit
+
+      # A named canary on top of tsc, so the failure reads as "the generated
+      # Supabase types were gutted" rather than a wall of inference errors.
+      # Regenerate with the Management API, do not hand-patch:
+      #   GET /v1/projects/{ref}/types/typescript?included_schemas=public
+      - name: Supabase types are not stale
+        run: |
+          for t in generation_requests waitlist synthesis_insights voice_corpus; do
+            if ! grep -q "$t" src/integrations/supabase/types.ts; then
+              echo "::error file=src/integrations/supabase/types.ts::'$t' missing from the generated Supabase types. They have been stripped or are stale. Regenerate from the live schema."
+              exit 1
+            fi
+          done
+          echo "Supabase types look complete."
