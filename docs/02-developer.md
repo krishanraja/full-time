@@ -161,7 +161,7 @@ Runs the morning drop (GitHub Actions or Vercel cron). It authorizes on a `CRON_
 
 ## Billing and Pro entitlement
 
-Free vs **Full Time Pro ($4.99/mo)**. The only Pro benefit enforced **today** is pundit selection: free gets the one house voice, the other five pundits are Pro. The rest of the Pro list on `/pro` is honest near-term roadmap, not yet built. Stripe runs on the **test key** on purpose (0 users, features not built), so no real charges happen.
+Free vs **Full Time Pro ($4.99/mo)**. The only Pro benefit enforced **today** is pundit selection: free gets the one house voice, the other five pundits are Pro. The rest of the Pro list on `/pro` is honest near-term roadmap, not yet built. Production runs on **live** Stripe keys as of 2026-08-07; preview and development remain on the **test** key. No real charge is possible today anyway, because `/pro` redirects to `/waitlist` and is the only entry to `createCheckout`.
 
 ### `entitlement.ts` (client-safe, import from either side)
 
@@ -205,9 +205,15 @@ The entitlement columns (`plan`, `stripe_customer_id`, `stripe_subscription_id`,
 2. **Server** -- `setVoiceStyle` in `profile.functions.ts` calls `isProVoiceStyle` then `isProProfile` and rejects a Pro pundit for a non-Pro caller, so a direct RPC cannot bypass the UI.
 3. **DB** -- the billing guard trigger makes the entitlement columns unwritable by user roles.
 
-### Going live later
+### Going live
 
-Charging real users now is deliberately premature. To flip on: build the real Pro features, create a **live-mode** webhook, swap the three Stripe env vars (`STRIPE_SECRET_KEY`, `STRIPE_PRO_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`) to live values, and redeploy.
+The infrastructure half is **done** (2026-08-07). Live account `acct_1SiiexHqiZo6hj3e` (`charges_enabled`, `payouts_enabled`), product `prod_UpT4QstbwlhLw6` "Full Time Pro", price `price_1Tpo8WHqiZo6hj3eFxBpm4Lq` at $4.99/mo USD, and webhook endpoint `we_1U1pNgHqiZo6hj3eKkJ1xgIS` -> `https://fulltime.fm/api/stripe/webhook` subscribed to exactly the six events this handler switches on. The three Stripe env vars are split by target: **production = live**, **preview + development = test**. Verified by signing a payload with the live secret and getting `200 {"received":true}`, and by opening then expiring a real live Checkout Session at $4.99.
+
+What is deliberately NOT done, and what must happen before a real customer can pay:
+
+1. **Build the Pro features.** Only pundit selection is enforced today. Everything else on the old `/pro` copy is roadmap.
+2. **Un-park `/pro`.** It currently `beforeLoad`-redirects to `/waitlist`, so nothing can reach `createCheckout`. That redirect is the only thing standing between the live keys and a real charge, so treat removing it as the go-live switch.
+3. **Fix the return URLs at the same time.** `createCheckout` sends `success_url` to `/pro?status=success`, which today just bounces to `/waitlist`, so the `syncCheckout` instant-entitlement fallback never runs. The webhook would still grant entitlement, but the payer would land on a waitlist page. Either restore `/pro` or repoint both URLs.
 
 ## Build & dev
 

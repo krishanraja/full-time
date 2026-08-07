@@ -84,7 +84,7 @@ The pipeline, in order:
 **DB write:** `INSERT` into `episodes` with `script`, `hook`, `magic_sentence`, `segments`, `audio_url`, `duration_sec`, `badge`, `model` (`opus-4-8+gate+judge+eleven_multilingual_v2`), `status: "published"`. Uses `supabaseAdmin` (service role) imported INSIDE the handler, never at module scope (this file is reachable from the client bundle as a `*.functions.ts` module).
 
 ### Billing and entitlement (Stripe)
-**Model:** Free plus "Full Time Pro" at $4.99/mo USD. Wired to Stripe account `acct_1Siiex` (an old Lockstep account repurposed). Deliberately on the Stripe TEST key, so no real charges happen yet.
+**Model:** Free plus "Full Time Pro" at $4.99/mo USD. Wired to Stripe account `acct_1SiiexHqiZo6hj3e` (an old Lockstep account repurposed, display name `full-time`). **Production is on LIVE keys as of 2026-08-07**; preview and development stay on the TEST key. No real charge is reachable today because `/pro` redirects to `/waitlist`, which is the only route into `createCheckout`. See `02-developer.md` "Going live" for the exact go-live switch.
 **The Pro gate that actually enforces today:** pundit SELECTION. The free tier gets only the house voice ("The Reporter" / `zen`). The other five pundits (`gaffer`, `stats`, `romantic`, `doomer`, `banter`) are Pro. Enforced in three places: the UI, the server function `setVoiceStyle` (`src/lib/api/profile.functions.ts`, which rejects a Pro pundit for a non-Pro caller), and the DB. Other Pro benefits (your clubs first, all leagues, full archive) are marketed honestly as "rolling out", not yet built.
 
 **Server functions** (`src/lib/api/billing.functions.ts`, all behind `requireSupabaseAuth`):
@@ -171,7 +171,7 @@ Supabase project (Postgres / Auth / Storage / Realtime): `hzadscrqmyilbisexvyz`.
 | Generation throws `ANTHROPIC_API_KEY missing` | Anthropic key not synced to the runtime |
 | A match is skipped with "recap failed gate/judge" | Fail-closed by design: the writer could not pass the code gate plus judge in 5 attempts, so no episode was published |
 | All TTS failures | `ELEVENLABS_API_KEY` missing or over quota |
-| Checkout / portal errors | `STRIPE_SECRET_KEY` or `STRIPE_PRO_PRICE_ID` missing (test key) |
+| Checkout / portal errors | `STRIPE_SECRET_KEY` or `STRIPE_PRO_PRICE_ID` missing for that target (production = live, preview/dev = test) |
 | Pro not reflected after paying | Webhook not receiving events or `STRIPE_WEBHOOK_SECRET` mismatch; `/pro` success page `syncCheckout` is the fallback |
 | No push delivered | VAPID keys missing or service worker not registered |
 | New episode does not appear without refresh | Realtime channel not connected |
