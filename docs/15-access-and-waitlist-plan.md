@@ -16,7 +16,7 @@ Founder decision: **the live daily product (blocker #1, the API-Football ingest 
 2. Give a reason to create a free account (more pundits, archive, name a game, persistent settings).
 3. Capture demand for the full app (waitlist), which is both the launch trigger and the target of the entire pre-launch GTM motion (see `_audit/2026-07-06-GTM-DOCS-READINESS.md`).
 
-Pro ($4.99) is **parked, not deleted**: plumbing stays, test key stays, but Pro stops gating anything user-visible. The pundit gate moves from Pro to free-account.
+Pro ($4.99) is **parked, not deleted**: plumbing stays, test key stays, but Pro stops gating anything user-visible. The pundit gate moves from Pro to free-account. **SUPERSEDED 2026-08-07 by the addendum at the foot of this file: Pro was un-parked and the pundit gate moved back.**
 
 ## The access ladder
 
@@ -25,7 +25,7 @@ Pro ($4.99) is **parked, not deleted**: plumbing stays, test key stays, but Pro 
 | **Anonymous** | none | Recent drops with full audio, continuous playback, the coda, local-only follows and club-first ordering (already local-first), and a **taste of pundits: The Reporter + one more** (preference in localStorage). |
 | **Free account** | magic link, $0 | Everything anonymous has, plus: **all 6 pundits**, the **full archive**, **name a game** (on-demand recap of any match we have data for), and persistent settings (follows sync, voice pref, push opt-in). |
 | **Waitlist** | free account + flag | Reserved place in the **full app**: live daily drops by 7am local, push fanout, every matchday, all leagues. Joining = one tap when signed in; an anonymous join sends the magic link first, so every waitlist member is a free account. One identity system, no separate email list, no ESP dependency. |
-| **Pro (parked)** | Stripe, test key | Nothing user-visible for now. `/pro` route is repurposed as the waitlist page. Billing code, webhook, guard trigger, and entitlement seam all stay intact for the future paid tier. |
+| **Pro** ~~(parked)~~ | Stripe, **live key in prod** | **SUPERSEDED, see addendum.** Pro now gates all six pundits and 25/day name a game. `/pro` is a pricing page again, not a redirect. |
 
 **Honesty constraint carried over:** distinct per-pundit narration is still "rolling out". Pundit *selection* is real; narration variation is not built. Copy must keep the hedge until name-a-game generates per-pundit for real (Phase 2 makes it the testbed).
 
@@ -68,7 +68,7 @@ Until launch, the fleet steers by: **waitlist signups per week**, anonymous → 
 ## What this supersedes
 
 - Parts of the 2026-07-06 "Free plus Full Time Pro" decision: Pro remains wired but stops gating pundits; the user-visible ladder is anon / free / waitlist. Log this in the `12-roadmap.md` decision log when Phase 1 ships.
-- The `/pro` page as an upgrade surface. It becomes the waitlist page.
+- ~~The `/pro` page as an upgrade surface. It becomes the waitlist page.~~ **Reversed 2026-08-07: `/pro` is an upgrade surface again.**
 
 ---
 

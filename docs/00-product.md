@@ -46,10 +46,10 @@ Mechanism lives in `02-developer.md`. What matters here: the promise is load-bea
 
 ## Access ladder (and money)
 
-The user-visible ladder is **anonymous → free account → waitlist**. Money is parked. Full spec: `15-access-and-waitlist-plan.md`.
+The user-visible ladder is **anonymous → free account → Pro**, with the waitlist running alongside for the full live app. Full spec: `15-access-and-waitlist-plan.md`, including the 2026-08-07 addendum that un-parked Pro.
 
 - **Anonymous.** The daily drop, the whole morning of recaps with real audio, free with no account. That promise does not move. Anonymous listeners also get two pundits (The Reporter and The Gaffer, preference kept on-device) and local follows with club-first ordering.
-- **Free account** (magic link, $0). Unlocks all six pundits (The Reporter, The Gaffer, The Numbers Guy, The Romantic, The Doomer, The Wind-Up) and syncs follows, voice, and push across devices. The archive and name-a-game land here as they ship (`15-access-and-waitlist-plan.md` Phase 2).
+- **Free account** (magic link, $0). The archive, name a game at 3 narrations a day, and synced follows, voice and push across devices. Pundits stay as they are for anonymous listeners: The Reporter and The Gaffer.
 - **Waitlist.** Reserves a place in the full app: every matchday live by 7am with the morning push. Joining requires only the free account (the magic link IS the join for anonymous users). The waitlist is the launch trigger: live daily generation switches on when it proves demand.
 - **Full Time Pro, $4.99/mo USD: LIVE (2026-08-07).** Production runs live Stripe keys; preview and development stay on the test key. Pro gates two things, both enforced server-side and both already built: all six pundits (free keeps The Reporter and The Gaffer), and 25 name-a-game narrations a day instead of 3. `/pro` lists only those. "Ask your pundit a question" is on the page as explicitly-not-included roadmap (`16-ask-your-pundit.md`). We never call an unbuilt thing done.
 

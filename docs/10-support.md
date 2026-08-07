@@ -29,10 +29,10 @@ Apologies, please tell us the match and the line that was wrong. We'll take the 
 Recaps are written by an AI model (Anthropic's Claude) from publicly available match data (final scores, scorers, minutes, stats), then checked by an automated accuracy pass that blocks the recap if it gets the winner, the score, or a scorer wrong. The voice is synthetic (ElevenLabs). We never use copyrighted broadcast audio. Full disclosure on Settings.
 
 ### "Can I pick a different voice?"
-In Settings → Your pundit. Everyone gets The Reporter and The Gaffer, no account needed (your pick stays on that device). A free account unlocks all six pundits (adding The Numbers Guy, The Romantic, The Doomer, The Wind-Up) and syncs your choice across devices. Distinct per-pundit narration is rolling out.
+In Settings → Your pundit. Everyone gets The Reporter and The Gaffer, no account needed (your pick stays on that device). A free account syncs your choice across devices. Full Time Pro adds the other four (The Numbers Guy, The Romantic, The Doomer, The Wind-Up). Distinct per-pundit narration is rolling out.
 
 ### "What is the archive / name a game?"
-Signed-in (free), the Archive tab lists every match we hold data for. Anything already narrated plays instantly. Anything with minute-by-minute data can be narrated on the spot: the engine writes it, checks it against the match facts, and only publishes if it can prove it right. That check is why it can refuse ("we could not verify this recap"), and a refusal does not count against your day. Limit: 3 narrations per day, resets midnight UTC.
+Signed-in (free), the Archive tab lists every match we hold data for. Anything already narrated plays instantly. Anything with minute-by-minute data can be narrated on the spot: the engine writes it, checks it against the match facts, and only publishes if it can prove it right. That check is why it can refuse ("we could not verify this recap"), and a refusal does not count against your day. Limit: 3 narrations per day on a free account, 25 on Pro, resets midnight UTC.
 
 ### "What is the waitlist?"
 The full app: every matchday narrated and live by 7am local, with the morning push. It switches on when the waitlist proves demand, and we admit the list in join order. Joining is free; the sign-in link is the join. Your place shows on the waitlist page and in Settings.
@@ -50,10 +50,10 @@ Sign in (Settings → "Sync across devices"), then toggle Notifications. Your br
 Sign out, then email support. We remove your `profiles`, `follows`, `push_subscriptions`, and `listens` rows on request. Reply with the email you signed up with.
 
 ### "Is this free? What's the catch?"
-The daily drop is always free, no ads, no card. A free account unlocks all six pundits and syncs your settings. There is nothing to pay for right now; a paid tier may return later when there are features worth paying for. We use only first-party product analytics (PostHog) to see which recaps get listened to.
+The daily drop is always free, no ads, no card, and so is the archive. A free account syncs your settings and gives you 3 name-a-game narrations a day. Full Time Pro ($4.99/mo) is optional: it adds the other four pundits and raises that limit to 25. We use only first-party product analytics (PostHog) to see which recaps get listened to.
 
 ### "How do I manage or cancel Full Time Pro?"
-Pro is currently parked and nothing is charged. If an account ever holds an active subscription, Settings shows a Manage billing button that opens the secure Stripe portal (update card, cancel anytime; Pro stays active until the end of the paid period).
+Settings shows a Manage billing button when your account holds an active subscription. It opens the secure Stripe portal (update card, cancel any time). Cancelling stops the next renewal; Pro stays active until the end of the period you have already paid for.
 
 ### "Can I share a recap?"
 Per-episode share links are coming. For now: screenshot the card and tag us on the channel you're sharing to.

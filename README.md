@@ -12,7 +12,7 @@ Status: 5 hand-authored episodes are live and the accuracy-guaranteed generation
 - Supabase (Postgres, Auth, Storage, Realtime), project `hzadscrqmyilbisexvyz`
 - Deployed on Vercel (nitro `vercel` preset)
 - Anthropic (writer + judge) and ElevenLabs (TTS) power generation
-- Stripe for billing (on the test key today, so no real charges)
+- Stripe for billing. **Live keys in production** since 2026-08-07; test key in preview and development
 
 ## How episodes are generated
 
@@ -30,9 +30,16 @@ Env: `ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, optional 
 
 ## Free and Pro
 
-Free tier plus Full Time Pro at $4.99/mo USD, wired through Stripe. Billing runs on the Stripe test key today, so no real money moves yet.
+Free tier plus Full Time Pro at $4.99/mo USD, through Stripe. **Live in production** since 2026-08-07 (test key in preview and development), so real cards can be charged.
 
-The Pro gate that actually enforces right now is pundit selection: the free tier gets only "The Reporter" (zen); the other 5 pundits are Pro. It is enforced in the UI, in the server `setVoiceStyle`, and by a DB guard trigger. Other Pro benefits (your clubs first, all leagues, full archive) are marketed honestly as "rolling out" and are not fully built yet.
+Pro gates two things, both enforced server-side rather than only in the UI:
+
+1. **All six pundits.** Anonymous and free listeners get The Reporter and The Gaffer. `setVoiceStyle` re-reads the profile and rejects a Pro pundit for a non-Pro caller, because the client can post any of the six.
+2. **25 name-a-game narrations a day**, against 3 on the free tier. `limitFor` resolves the allowance per profile.
+
+The `profiles` billing columns are writable only by `service_role`, enforced by a DB guard trigger that closed a real self-grant-Pro hole.
+
+Distinct per-pundit narration is still "rolling out": selection is real and gated, but the voices do not yet sound different. Open compliance gap: subscription terms and a refund policy are not published yet, see `docs/11-legal.md`.
 
 Billing code: `src/lib/api/billing.functions.ts` (`getEntitlement`, `createCheckout`, `createPortal`, `syncCheckout`), `src/routes/api/stripe/webhook.ts`, `src/lib/stripe.server.ts`, `src/lib/billing-sync.server.ts`, `src/lib/entitlement.ts`, `src/hooks/use-entitlement.ts`, and the `src/routes/pro.tsx` page.
 

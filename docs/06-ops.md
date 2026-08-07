@@ -11,7 +11,7 @@
 Two capabilities are BUILT but deliberately NOT switched on. The canonical status and the exact steps that flip each on live in `12-roadmap.md` (the "Launch status" block at the top). In short:
 
 - **Daily generation is inert until a live match-data feed exists.** Match data is currently seeded (2023-24 season) and the cron is date-filtered to recently finished matches, so a scheduled run returning `created: 0` is the **expected** state today, not a fault, and no AI spend happens. New dated cards only appear once a live API-Football ingest is wired, plus the two GitHub cron secrets (`CRON_SECRET`, `FULL_TIME_URL`) are set.
-- **Billing is on the Stripe TEST key.** Checkout, portal, webhook, and entitlement all work, but no real card can be charged (test mode declines real cards). This is deliberate until the Pro features are built. Going live is a three-env-var swap plus a live-mode webhook.
+- **Billing is LIVE in production** (2026-08-07). Real cards can be charged. Preview and development stay on the test key, so a preview deploy cannot transact. Live webhook: `we_1U1pNgHqiZo6hj3eKkJ1xgIS` → `https://fulltime.fm/api/stripe/webhook`. Open compliance gap: subscription terms and refund policy are still unpublished, see `11-legal.md`.
 
 There are 5 hand-authored episodes live and 0 real users so far.
 
@@ -75,7 +75,7 @@ Look at the error string:
 
 **Symptom:** a user completed a Stripe checkout but is still on Free (still locked to the Reporter pundit).
 
-1. Remember Stripe is on the **test** key today (account `acct_1Siiex`), so this only applies to test-mode checkouts. No real charges happen yet.
+1. Production is on the **live** key (account `acct_1Siiex`); preview and development are on the test key. Check which mode a given session belongs to before debugging it.
 2. Check the Stripe webhook endpoint (`src/routes/api/stripe/webhook.ts`) is receiving events and `STRIPE_WEBHOOK_SECRET` is set in Vercel. Bad or missing signature returns 400; a transient handler error returns 500 so Stripe retries with backoff.
 3. Entitlement is written only by the service-role client, because the billing columns on `profiles` (`plan`, `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`, `current_period_end`, `price_id`) are locked by the `enforce_profile_billing_guard` BEFORE INSERT/UPDATE trigger. If writes are being rejected, confirm the webhook is going through `supabaseAdmin`, not a user client.
 4. As a manual reconcile, `syncCheckout` in `src/lib/api/billing.functions.ts` recomputes a user's profile from Stripe. Every webhook handler is also idempotent (it re-derives state from Stripe), so replaying the event is safe.
@@ -128,7 +128,7 @@ Server env, set in Vercel:
 | `JUDGE_MODEL` (optional) | generator | Judge model, default `claude-sonnet-4-6` |
 | `ELEVENLABS_API_KEY` | episode pipeline | TTS |
 | `ELEVENLABS_VOICE_ID` (optional) | episode pipeline | Voice, default Daniel `onwK4e9ZLuTAKqWW03F9` |
-| `STRIPE_SECRET_KEY` (**test**) | `stripe.server.ts` | Stripe API, test key on account `acct_1Siiex` |
+| `STRIPE_SECRET_KEY` | `stripe.server.ts` | Stripe API. **Live** value on the production target, test value on preview/development. Account `acct_1Siiex` |
 | `STRIPE_PRO_PRICE_ID` (**test**) | checkout | Full Time Pro price ($4.99/mo) |
 | `STRIPE_WEBHOOK_SECRET` | webhook | Verifies the Stripe signature against the raw body |
 | `APP_URL` | `billing.functions.ts` | Checkout and portal return URLs |

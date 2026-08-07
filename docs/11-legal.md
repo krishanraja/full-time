@@ -64,15 +64,19 @@ Full Time Pro is a paid tier alongside a free tier.
 - **Price**: Full Time Pro is $4.99/mo USD, a recurring subscription billed monthly.
 - **Processor**: Stripe. Stripe is the processor of record for the payment; card data stays with Stripe and never reaches our servers.
 - **Cancellation**: users cancel any time through the hosted Stripe billing portal (Settings → Membership → Manage billing). Cancelling stops the next renewal; Pro stays active until the end of the period already paid for.
-- **No real charges today**: we run on the Stripe test key. No live money moves. Nothing is charged to any user until we deliberately swap to live-mode keys.
+- **Live billing is ON as of 2026-08-07.** Production runs live Stripe keys and `/pro` is reachable, so a real card can now be charged. Preview and development stay on the test key.
 
-**Before we switch on live billing** (flag, not done, do not represent otherwise):
+### OPEN COMPLIANCE GAP (2026-08-07)
 
-- Finalise and publish subscription terms on `/legal/terms`: renewal cadence, price, what Pro includes, and how to cancel.
-- Finalise a refund policy. UK/EU consumer cancellation and cooling-off rights for digital services apply here; counsel to confirm the exact wording and whether we take the immediate-delivery-with-waiver route.
-- Create a live-mode Stripe webhook and rotate the three Stripe env vars (`STRIPE_SECRET_KEY`, `STRIPE_PRO_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`) from test to live.
+Live billing was switched on before two of the three pre-conditions below were met. This is a known, deliberate ordering decision by the founder, recorded here so nobody discovers it by accident. It should be closed before the tier is actively promoted.
 
-Until those are done, charging real users is premature. There are no users yet and the non-gating Pro benefits are not built, which is why we deliberately stay on the test key. The audit view: do not go live on billing before the terms, the refund policy, and the Pro features are real.
+| Pre-condition | Status |
+|---|---|
+| Live-mode Stripe webhook + the three env vars swapped to live | **DONE** 2026-08-07 |
+| Subscription terms published on `/legal/terms`: renewal cadence, price, what Pro includes, how to cancel | **NOT DONE** |
+| Refund policy finalised. UK/EU consumer cancellation and cooling-off rights for digital services apply; counsel to confirm the wording and whether we take the immediate-delivery-with-waiver route | **NOT DONE** |
+
+Mitigating facts, not excuses: there are no subscribers yet, cancellation genuinely works through the hosted Stripe portal, and what Pro gates is now real and enforced rather than promised. The audit view is unchanged: **publish the subscription terms and the refund policy before promoting Pro to anyone.**
 
 ## AI disclosure (our public stance)
 

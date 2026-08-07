@@ -10,7 +10,7 @@
 
 **Free, plus a paid tier that is deliberately not charging anyone yet.** No ads.
 
-A Pro tier now exists in the product: **Full Time Pro, $4.99/mo USD**, wired end-to-end through Stripe. But it runs on the **Stripe test key**. There are no real charges, and there is **no revenue**. That is on purpose.
+A Pro tier exists and is **live**: **Full Time Pro, $4.99/mo USD**, on live Stripe keys in production since 2026-08-07. Real cards can be charged. There is still **no revenue**, because there are no subscribers yet, and the metric we steer by is unchanged: habit-forming retention, not MRR.
 
 Why we are not charging real money yet:
 - **0 users.** Charging before there is an audience is premature. The product has to earn the daily habit before it earns money, and adding friction at launch kills the loop.
@@ -23,7 +23,7 @@ The honest read: the plumbing is done so that flipping to live is a config chang
 ## Full Time Pro (what actually exists today)
 
 - **Price:** $4.99/mo USD.
-- **Status:** **PARKED** (2026-07-06, `15-access-and-waitlist-plan.md`). The plumbing stays live in code and wired to Stripe on the **test key**, but Pro gates **nothing user-visible**: pundit selection moved to the free account tier, and the `/pro` page now redirects to `/waitlist`. No live charges, no revenue.
+- **Status:** **LIVE** (2026-08-07, `15-access-and-waitlist-plan.md` addendum). `/pro` is a real pricing page again on live Stripe keys. Pro gates two enforced things: all six pundits (free keeps The Reporter and The Gaffer) and 25 name-a-game narrations a day against the free 3. Do not promote it until the subscription terms and refund policy are published, see `11-legal.md`.
 - The user-visible ladder is anonymous → free account → waitlist. Demand capture happens on the waitlist, not a paywall.
 - The billing columns remain `service_role`-only (the guard trigger that closed the self-grant-Pro hole is untouched). When Pro returns, the entitlement seam (`entitlement.ts`, `use-entitlement`) is where it re-enters.
 - **What Pro must never paywall (unchanged):** the core daily drop, push notifications, and team-follow personalization. That is the loop, and it stays free forever.
@@ -79,4 +79,4 @@ If a league, club, or broadcaster reaches out:
 
 ## What "sales" means in v1
 
-Mostly *not selling*. The job is keeping the door closed to bad partners and open to the right ones. A price now exists in the product, but it is deliberately inert: no real charges, no revenue. The number we measure is not revenue, it is habit-forming retention (`00-product.md`).
+Mostly *not selling*. The job is keeping the door closed to bad partners and open to the right ones. A live price now exists, but it is not being promoted, and the number we measure is not revenue, it is habit-forming retention (`00-product.md`).
