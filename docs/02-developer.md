@@ -209,11 +209,14 @@ The entitlement columns (`plan`, `stripe_customer_id`, `stripe_subscription_id`,
 
 The infrastructure half is **done** (2026-08-07). Live account `acct_1SiiexHqiZo6hj3e` (`charges_enabled`, `payouts_enabled`), product `prod_UpT4QstbwlhLw6` "Full Time Pro", price `price_1Tpo8WHqiZo6hj3eFxBpm4Lq` at $4.99/mo USD, and webhook endpoint `we_1U1pNgHqiZo6hj3eKkJ1xgIS` -> `https://fulltime.fm/api/stripe/webhook` subscribed to exactly the six events this handler switches on. The three Stripe env vars are split by target: **production = live**, **preview + development = test**. Verified by signing a payload with the live secret and getting `200 {"received":true}`, and by opening then expiring a real live Checkout Session at $4.99.
 
-What is deliberately NOT done, and what must happen before a real customer can pay:
+**Pro went live on 2026-08-07.** `/pro` is a real pricing page again, so a customer can reach checkout. Pro gates exactly two things, both enforced server-side:
 
-1. **Build the Pro features.** Only pundit selection is enforced today. Everything else on the old `/pro` copy is roadmap.
-2. **Un-park `/pro`.** It currently `beforeLoad`-redirects to `/waitlist`, so nothing can reach `createCheckout`. That redirect is the only thing standing between the live keys and a real charge, so treat removing it as the go-live switch.
-3. **Fix the return URLs at the same time.** `createCheckout` sends `success_url` to `/pro?status=success`, which today just bounces to `/waitlist`, so the `syncCheckout` instant-entitlement fallback never runs. The webhook would still grant entitlement, but the payer would land on a waitlist page. Either restore `/pro` or repoint both URLs.
+1. **All six pundits.** `setVoiceStyle` re-reads the profile and rejects a Pro pundit for a non-Pro caller. The four extra pundits moved back from the free tier; see `15-access-and-waitlist-plan.md` addendum.
+2. **25 name-a-game narrations a day** instead of 3. `limitFor` resolves the allowance per profile and `getArchive` returns it as `dailyLimit`.
+
+`createCheckout`'s `success_url` returns to `/pro?status=success`, which now renders again, so the `syncCheckout` instant-entitlement fallback works as designed rather than bouncing to the waitlist.
+
+The honesty rule is unchanged and now matters more: `/pro` takes real money, so `FEATURES` lists only what is enforced today. Anything unbuilt goes in the visually separated `NEXT_UP` block, labelled as not included. Do not promote something into `FEATURES` before its gate exists in code.
 
 ## Build & dev
 

@@ -88,11 +88,13 @@ export const Route = createFileRoute("/sitemap.xml")({
           urlXml("/feed", newestEpisodeDate),
           urlXml("/archive", newestEpisodeDate),
           urlXml("/waitlist", null),
+          // Un-parked 2026-08-07: /pro is a real pricing page again, so it
+          // belongs in the sitemap.
+          urlXml("/pro", null),
           // Static copy, no lastmod rather than a guess. Listed because
           // legal pages are a trust signal engines look for, not because
-          // they are traffic. /settings, /following, /auth and /pro are
-          // deliberately absent: they are noindex, personalised, or a
-          // redirect.
+          // they are traffic. /settings, /following and /auth are
+          // deliberately absent: they are noindex or personalised.
           urlXml("/legal/privacy", null),
           urlXml("/legal/terms", null),
           ...rows.map((row) => urlXml(`/episode/${row.id}`, lastmodDate(row.published_at))),

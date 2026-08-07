@@ -13,7 +13,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMyProfile, setVoiceStyle } from "@/lib/api/profile.functions";
 import { createPortal } from "@/lib/api/billing.functions";
 import { getWaitlistStatus, type WaitlistStatus } from "@/lib/api/waitlist.functions";
-import { ACCOUNT_VOICE_STYLES, VOICE_STYLE_STORAGE_KEY } from "@/lib/entitlement";
+import {
+  PRO_VOICE_STYLES,
+  VOICE_STYLE_STORAGE_KEY,
+  effectiveVoiceStyle,
+  PRO_PRICE_DISPLAY,
+  PRO_PRICE_PERIOD,
+} from "@/lib/entitlement";
 import { subscribeToPush, unsubscribeFromPush, isPushSubscribed } from "../lib/push-client";
 import { track } from "../lib/analytics";
 
@@ -76,8 +82,10 @@ function Settings() {
     }
     fetchProfile()
       .then((p) => {
-        const v = p?.voice_style_pref;
-        if (v && PERSONALITIES.some((x) => x.id === v)) setPersonality(v as PersonalityId);
+        // A profile can still hold a Pro pundit from before Pro gated them,
+        // or from a lapsed subscription. Show what they can actually play.
+        const v = effectiveVoiceStyle(p?.voice_style_pref, isPro);
+        if (PERSONALITIES.some((x) => x.id === v)) setPersonality(v as PersonalityId);
       })
       .catch(() => {});
   }, [user, fetchProfile]);
@@ -192,6 +200,23 @@ function Settings() {
             </HapticButton>
           </div>
         )}
+        {user && !isPro && (
+          <Link
+            to="/pro"
+            className="surface mt-3 flex items-center justify-between rounded-[var(--radius-lg)] p-4"
+          >
+            <div>
+              <div className="flex items-center gap-1.5 text-sm font-semibold tracking-tight">
+                <Crown className="h-3.5 w-3.5 text-[var(--lime)]" /> Full Time Pro
+              </div>
+              <div className="text-mono mt-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                All six pundits · more narrations · {PRO_PRICE_DISPLAY}
+                {PRO_PRICE_PERIOD}
+              </div>
+            </div>
+            <span className="text-sm font-semibold text-[var(--lime)]">Go →</span>
+          </Link>
+        )}
       </section>
 
       <section className="mb-7">
@@ -199,16 +224,21 @@ function Settings() {
         <PersonalitySelector
           active={personality}
           onChange={handlePersonality}
-          lockedIds={user ? [] : ACCOUNT_VOICE_STYLES}
+          lockedIds={isPro ? [] : PRO_VOICE_STYLES}
+          lockLabel="PRO"
           onLockedClick={() => {
-            trackSigninGate("pundit");
-            navigate({ to: "/auth" });
+            if (!user) {
+              trackSigninGate("pundit");
+              navigate({ to: "/auth", search: { redirect: "/pro" } });
+              return;
+            }
+            navigate({ to: "/pro" });
           }}
         />
         <p className="text-mono mt-3 text-[10px] uppercase leading-relaxed tracking-[0.18em] text-muted-foreground/70">
-          {user
+          {isPro
             ? "Your pick is saved. Distinct pundit narration is rolling out."
-            : "The Reporter and The Gaffer are open to everyone. A free account unlocks all six."}
+            : "The Reporter and The Gaffer are open to everyone. Pro unlocks the other four."}
         </p>
       </section>
 
