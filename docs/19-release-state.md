@@ -9,7 +9,7 @@ This is the single source of truth for resuming the world-class pundit launch wo
 - New checkout and Pro marketing: disabled.
 - Six pundits: free and selectable.
 - Branch: `codex/world-class-pundits`.
-- Production deployment: still points to the pre-branch revision. This branch has not been deployed.
+- Production deployment: this release branch is live at `fulltime.fm` in truthful pre-launch mode. Public launch, publication automation and billing remain disabled.
 - Production database: the pundit-system, operational-release-gate, function-search-path and auth-RLS optimization migrations were applied to the confirmed FullTime project on 2026-08-08 and independently read back.
 - Correct Supabase project reference: `hzadscrqmyilbisexvyz`.
 - The configured Supabase connector still does not include that project. Production operations used the authenticated FullTime dashboard and process-injected Vercel secrets after verifying the project reference; no secret was printed or persisted.
