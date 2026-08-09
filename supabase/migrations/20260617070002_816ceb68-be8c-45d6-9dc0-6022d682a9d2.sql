@@ -192,7 +192,7 @@ INSERT INTO public.matches (id, league_id, home_team_id, away_team_id, kickoff_a
 INSERT INTO public.episodes (match_id, title, hook, script, duration_sec, badge) VALUES
   ('m_ars_liv', 'Arsenal steal it late',
    'Ninety-two minutes of grit, then a header out of nowhere. North London exhales.',
-   'Ninety-two minutes. That is how long Arsenal waited for the moment. Liverpool had matched them blow for blow, the visitors looking the more likely after the hour. Then the corner, the flick, the header — and the Emirates erupts. Two-one. A win that says more about belief than about football.',
+   'Ninety-two minutes. That is how long Arsenal waited for the moment. Liverpool had matched them blow for blow, the visitors looking the more likely after the hour. Then the corner, the flick, the header. The Emirates erupts. Two-one. A win that says more about belief than about football.',
    95, 'BIGGEST MOMENT'),
   ('m_bar_sev', 'Barcelona turn the screw',
    'Patient, then ruthless. Three goals inside twenty minutes and Sevilla stopped resisting.',

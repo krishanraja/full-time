@@ -1,5 +1,7 @@
 # 03 · Architecture
 
+> **CURRENT-SYSTEM PRECEDENCE (2026-08-08):** This file documents the legacy recap topology. Use `18-world-class-pundit-system.md`, the two new migrations and `19-release-state.md` for the six-pundit pipeline.
+
 **Role:** Developer or ops agent who needs the system topology.
 **Read this when:** designing a change that crosses the cron to generation to TTS to storage to realtime to push chain, or touching billing / entitlement.
 **Don't read this when:** you only need to touch a single component (see `02-developer.md`).

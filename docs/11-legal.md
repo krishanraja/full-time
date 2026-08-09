@@ -1,5 +1,7 @@
 # 11 · Legal
 
+> **CURRENT-SYSTEM PRECEDENCE (2026-08-08):** Billing is disabled and public launch is blocked pending revision-bound legal and privacy sign-off. Voice licensing and research-source permissions in `18-world-class-pundit-system.md` are mandatory additions to the historical checklist below.
+
 **Role:** Legal advisor, or anyone facing a legal-shaped question.
 **Read this when:** a rights holder pings, a data request lands, we're considering a feature with IP implications, we're about to touch billing, or we want to change AI disclosure.
 **Don't read this when:** you need product or marketing context (→ `00-product.md` / `07-marketing.md`).
@@ -59,24 +61,21 @@ Runbook lives partly in `10-support.md`. Legal owns the SLA.
 
 ## Billing and subscriptions
 
-Full Time Pro is a paid tier alongside a free tier.
+New billing is disabled in pre-launch. `PRELAUNCH_MODE` fails closed and checkout also requires both server and client billing flags to be explicitly enabled. All six pundits are free during verification.
 
-- **Price**: Full Time Pro is $4.99/mo USD, a recurring subscription billed monthly.
-- **Processor**: Stripe. Stripe is the processor of record for the payment; card data stays with Stripe and never reaches our servers.
-- **Cancellation**: users cancel any time through the hosted Stripe billing portal (Settings → Membership → Manage billing). Cancelling stops the next renewal; Pro stays active until the end of the period already paid for.
-- **Live billing is ON as of 2026-08-07.** Production runs live Stripe keys and `/pro` is reachable, so a real card can now be charged. Preview and development stay on the test key.
+Stripe integration remains in the codebase so existing subscribers can reach billing management, but its presence is not evidence that a live offer is legally or operationally approved. Public billing requires a separate founder-approved mutation after launch readiness.
 
-### OPEN COMPLIANCE GAP (2026-08-07)
-
-Live billing was switched on before two of the three pre-conditions below were met. This is a known, deliberate ordering decision by the founder, recorded here so nobody discovers it by accident. It should be closed before the tier is actively promoted.
+Before any paid offer is enabled:
 
 | Pre-condition | Status |
-|---|---|
-| Live-mode Stripe webhook + the three env vars swapped to live | **DONE** 2026-08-07 |
-| Subscription terms published on `/legal/terms`: renewal cadence, price, what Pro includes, how to cancel | **NOT DONE** |
-| Refund policy finalised. UK/EU consumer cancellation and cooling-off rights for digital services apply; counsel to confirm the wording and whether we take the immediate-delivery-with-waiver route | **NOT DONE** |
+| --- | --- |
+| Final product, price, renewal cadence and cancellation behavior | Pending founder approval |
+| Subscription terms published on `/legal/terms` | Pending counsel review |
+| UK/EU refund, cancellation and cooling-off treatment | Pending counsel review |
+| Live-mode Stripe environment and webhook canary | Must be reverified against the release revision |
+| Accessibility, support and incident procedures | Must be included in the release snapshot |
 
-Mitigating facts, not excuses: there are no subscribers yet, cancellation genuinely works through the hosted Stripe portal, and what Pro gates is now real and enforced rather than promised. The audit view is unchanged: **publish the subscription terms and the refund policy before promoting Pro to anyone.**
+Do not expose checkout, promote Pro or run a real-card test until every row is complete and billing is explicitly approved.
 
 ## AI disclosure (our public stance)
 
@@ -92,7 +91,7 @@ What we do:
 
 - Use **final match scores and scorers**. These are facts, not copyrighted compositions.
 - Generate **original prose** narrating those facts (model + our prompt). Output is our work.
-- Synthesize voice via ElevenLabs under their licence. We hold ElevenLabs commercial-use entitlement for the generated audio.
+- Synthesize voice only through commercially usable voice candidates whose licence evidence is stored in `voice_candidates` and approved for the exact release revision.
 - Host the audio in our Storage bucket; serve under our domain.
 
 What we don't do:

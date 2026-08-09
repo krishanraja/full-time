@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const savePushSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       endpoint: z.string().url(),
       p256dh: z.string().min(1),
@@ -27,7 +27,7 @@ export const savePushSubscription = createServerFn({ method: "POST" })
 
 export const deletePushSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ endpoint: z.string().url() }))
+  .validator(z.object({ endpoint: z.string().url() }))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("push_subscriptions")

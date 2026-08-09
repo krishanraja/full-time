@@ -1,177 +1,132 @@
-# 06 · Ops
+# 06 - Operations
 
-**Role:** Anyone on-call when something breaks.
-**Read this when:** the morning drop didn't happen, push didn't go out, a secret needs rotating, a Pro checkout didn't land entitlement, or a user reports a broken episode.
-**Don't read this when:** you're shipping a feature (→ `02-developer.md`).
+This is the current operating runbook. Release truth and required evidence live in `19-release-state.md`.
 
----
+## Default posture
 
-## Reality check before you panic
+- The product is in fail-closed pre-launch.
+- New checkout is disabled. Do not claim billing is live.
+- All six pundits are free.
+- Public publication is disabled.
+- Private rehearsals are disabled unless an operator explicitly enables them.
+- The legacy one-voice generator is disabled behind its own recovery flag.
+- No failed persona may be replaced silently by another persona.
 
-Two capabilities are BUILT but deliberately NOT switched on. The canonical status and the exact steps that flip each on live in `12-roadmap.md` (the "Launch status" block at the top). In short:
+Required safe defaults:
 
-- **Daily generation is inert until a live match-data feed exists.** Match data is currently seeded (2023-24 season) and the cron is date-filtered to recently finished matches, so a scheduled run returning `created: 0` is the **expected** state today, not a fault, and no AI spend happens. New dated cards only appear once a live API-Football ingest is wired, plus the two GitHub cron secrets (`CRON_SECRET`, `FULL_TIME_URL`) are set.
-- **Billing is LIVE in production** (2026-08-07). Real cards can be charged. Preview and development stay on the test key, so a preview deploy cannot transact. Live webhook: `we_1U1pNgHqiZo6hj3eKkJ1xgIS` → `https://fulltime.fm/api/stripe/webhook`. Open compliance gap: subscription terms and refund policy are still unpublished, see `11-legal.md`.
-
-There are 5 hand-authored episodes live and 0 real users so far.
-
----
-
-## Daily green-light check
-
-After the 06:30 UTC drop, look at:
-
-1. `/feed`: loads, and the seeded episodes play (their `audio_url` resolves). Expect no new dated cards until the live ingest lands.
-2. PostHog (`product = full_time`): `play` event count in the last hour. 0 is expected while there are no real users.
-3. Cron logs: no spike in per-match errors, no `recap failed gate/judge` entries.
-
-If any of these look wrong for the wrong reason, run the relevant runbook below.
-
----
-
-## Runbook · cron didn't fire
-
-**Symptom:** the schedule didn't run, or the live feed is on and still no new episodes.
-
-1. Check GitHub Actions: repo → Actions → the "Daily Drop" workflow (`.github/workflows/daily-drop.yml`, 06:30 UTC, best-effort, expect ±10 min) → most recent run. If missing or red, the workflow itself didn't fire or failed.
-2. Confirm the two GitHub repo secrets that the workflow needs are set: `CRON_SECRET` (must match the Vercel env var of the same name) and `FULL_TIME_URL` (the deployed origin). Without both, the `curl` step fails before it reaches the endpoint.
-3. Manually trigger via the "Run workflow" button, which confirms whether the issue is the schedule or the endpoint.
-4. If the manual run fails with **401**: the endpoint authorizes a `Authorization: Bearer <CRON_SECRET>` header, so this means the GitHub repo secret `CRON_SECRET` and the Vercel env `CRON_SECRET` disagree. Re-set both to the same value and re-run. (A legacy Supabase-publishable-key fallback still exists in the endpoint code but is inactive whenever `CRON_SECRET` is set, which is the intended posture.)
-5. If the manual run returns **200 but `created: 0`**: no finished Big-5 matches in the last 36h (expected while data is seeded), OR all matched matches already have episodes (idempotent skip is working), OR the 240s time budget was hit and the rest is left for the next run.
-
----
-
-## Runbook · cron fires but a match fails
-
-**Symptom:** cron returns 200, `processed > 0`, and a result has `ok: false` with an `error`. Each match is caught independently, so one failure skips that match, not the whole drop.
-
-Look at the error string:
-
-| Error contains | Cause | Fix |
-|---|---|---|
-| `ANTHROPIC_API_KEY missing` | Writer/judge key absent in runtime | Set `ANTHROPIC_API_KEY` in Vercel env, redeploy |
-| Anthropic 4xx/5xx (writer or judge fetch) | Anthropic API problem or quota | Check Anthropic status, retry |
-| `recap failed gate/judge after N attempts` | The deterministic code gate or the Sonnet contradiction judge rejected all regens. Fail-closed: the episode is skipped on purpose rather than published wrong | Not a bug, it is the accuracy guarantee. Inspect the match's `match_events` fact-pack (usually missing or garbled events, or a genuinely un-writable match). A recurring pattern means tightening a check in `recap-generator.server.ts`, not loosening it |
-| `ELEVENLABS_API_KEY missing` | TTS key absent | Set `ELEVENLABS_API_KEY` in Vercel env |
-| `ElevenLabs 401` | Key invalid | Rotate `ELEVENLABS_API_KEY` |
-| `ElevenLabs 402/429` | Quota or balance | Top up ElevenLabs account |
-| `Storage upload: ...` | Bucket missing or RLS misconfigured | Check `episodes` bucket exists, public-read |
-
----
-
-## Runbook · push didn't deliver
-
-**Symptom:** episodes were created but no one got the morning push.
-
-1. Confirm VAPID secrets exist: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`. If any missing, fanout silently no-ops.
-2. Confirm there are rows in `push_subscriptions`. If zero, no one has opted in yet.
-3. Inspect cron logs for `[cron] push fanout failed (non-fatal)`.
-4. If a single subscriber's `endpoint` returns 410 Gone, that device unsubscribed at the browser level, so it is safe to delete that row.
-5. Service worker on the client: `/sw.js` must be registered. If users say "I had push working, then it stopped", their PWA cache may be stale, so push them to reinstall.
-
----
-
-## Runbook · Pro checkout didn't grant entitlement
-
-**Symptom:** a user completed a Stripe checkout but is still on Free (still locked to the Reporter pundit).
-
-1. Production is on the **live** key (account `acct_1Siiex`); preview and development are on the test key. Check which mode a given session belongs to before debugging it.
-2. Check the Stripe webhook endpoint (`src/routes/api/stripe/webhook.ts`) is receiving events and `STRIPE_WEBHOOK_SECRET` is set in Vercel. Bad or missing signature returns 400; a transient handler error returns 500 so Stripe retries with backoff.
-3. Entitlement is written only by the service-role client, because the billing columns on `profiles` (`plan`, `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`, `current_period_end`, `price_id`) are locked by the `enforce_profile_billing_guard` BEFORE INSERT/UPDATE trigger. If writes are being rejected, confirm the webhook is going through `supabaseAdmin`, not a user client.
-4. As a manual reconcile, `syncCheckout` in `src/lib/api/billing.functions.ts` recomputes a user's profile from Stripe. Every webhook handler is also idempotent (it re-derives state from Stripe), so replaying the event is safe.
-
----
-
-## Runbook · take down a bad episode
-
-**Symptom:** an episode is wrong, unsafe, or has a hallucination.
-
-1. Find the `episodes.id` (search by `match_id` or by `published_at` plus team names).
-2. Delete the audio: Storage bucket `episodes`, path `YYYY-MM-DD/{matchId}.mp3`.
-3. Delete the row: `DELETE FROM episodes WHERE id = '...'`.
-4. If it slipped past the gate plus judge: the accuracy layer is code (deterministic fact-pack, code gate, Sonnet contradiction judge in `recap-generator.server.ts`), not a term list. Capture the script and the `match_events`, note the failure mode, and open `05-content-safety.md`. A recurring miss means tightening a gate or judge check, not adding a banned word.
-5. The frontend updates on next refresh; no cache to invalidate.
-
----
-
-## Runbook · rotate a secret
-
-Server secrets live in the **Vercel project → Settings → Environment Variables.** The cron additionally needs two **GitHub repo secrets** (`CRON_SECRET`, `FULL_TIME_URL`). To rotate:
-
-1. Reissue the value at the provider (Stripe, Anthropic, ElevenLabs, VAPID, etc.).
-2. Update it in Vercel env, then **redeploy**. Env changes only take effect on a new deployment.
-3. For `CRON_SECRET`: update **both** the Vercel env var **and** the GitHub repo secret to the same new value, or the next cron will 401.
-4. For `STRIPE_WEBHOOK_SECRET`: reissue from the Stripe Dashboard webhook endpoint, update in Vercel, redeploy.
-5. **Never** echo a secret in chat, logs, or a code response.
-
-VAPID keypair generation:
-
-```bash
-npx web-push generate-vapid-keys
+```text
+PRELAUNCH_MODE=true
+BILLING_ENABLED=false
+ENABLE_PRIVATE_REHEARSALS=false
+ENABLE_LEGACY_DAILY_DROP=false
+PUNDIT_PUBLICATION_ENABLED=false
+ENABLE_FORECAST_TRAINING=false
+ENABLE_PREDICTION_REGISTRATION=false
+ENABLE_EVALUATION_RUNS=false
+ENABLE_RELEASE_SNAPSHOT_WRITE=false
 ```
 
-Generates a new pair. Existing `push_subscriptions` rows tied to the old public key become invalid. Rotate only when actually compromised; otherwise leave alone.
+The matching client flags are `VITE_PRELAUNCH_MODE=true` and `VITE_BILLING_ENABLED=false`.
 
----
+## Production schedules
 
-## Env inventory (where each secret lives)
+`vercel.ts` is the schedule source of truth:
 
-Server env, set in Vercel:
+| Time, UTC | Endpoint | Purpose |
+| --- | --- | --- |
+| 00:15 | `/api/public/cron/ingest` | Structured match-data ingest and prediction settlement |
+| 04:45 | `/api/internal/daily-rehearsal` | Durable six-pundit rehearsal or publication run |
+| 06:30 and 16:30 | `/api/internal/predictions-register` | Pre-kickoff prediction registration |
 
-| Key | Used by | Purpose |
-|---|---|---|
-| `SUPABASE_URL` | server clients | Supabase project `hzadscrqmyilbisexvyz` |
-| `SUPABASE_SERVICE_ROLE_KEY` | admin client (`client.server.ts`) | Service-role writes: generation, entitlement past the billing guard |
-| `SUPABASE_PUBLISHABLE_KEY` | read clients, auth middleware, legacy cron fallback | Anon-key reads; inactive as cron auth once `CRON_SECRET` is set |
-| `ANTHROPIC_API_KEY` | `recap-generator.server.ts` | Opus writer plus Sonnet judge |
-| `WRITER_MODEL` (optional) | generator | Writer model, default `claude-opus-4-8` |
-| `JUDGE_MODEL` (optional) | generator | Judge model, default `claude-sonnet-4-6` |
-| `ELEVENLABS_API_KEY` | episode pipeline | TTS |
-| `ELEVENLABS_VOICE_ID` (optional) | episode pipeline | Voice, default Daniel `onwK4e9ZLuTAKqWW03F9` |
-| `STRIPE_SECRET_KEY` | `stripe.server.ts` | Stripe API. **Live** value on the production target, test value on preview/development. Account `acct_1Siiex` |
-| `STRIPE_PRO_PRICE_ID` (**test**) | checkout | Full Time Pro price ($4.99/mo) |
-| `STRIPE_WEBHOOK_SECRET` | webhook | Verifies the Stripe signature against the raw body |
-| `APP_URL` | `billing.functions.ts` | Checkout and portal return URLs |
-| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | push fanout | Morning push |
-| `CRON_SECRET` | cron route auth | Bearer token the daily-drop endpoint requires |
+GitHub workflows are manual recovery triggers only. Every scheduled or manual request requires the exact `Authorization: Bearer $CRON_SECRET` value. A missing secret fails closed.
 
-Client env (publishable, `VITE_` prefixed): `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`. Analytics needs no env var: the PostHog key is inline in `routes/__root.tsx`.
+## Daily run procedure
 
-GitHub repo secrets (for the scheduled cron): `CRON_SECRET` (matching the Vercel value) and `FULL_TIME_URL` (the deployed origin).
+1. Confirm ingest completed for the intended London coverage date.
+2. Confirm provider quotas, voice candidates, pronunciation entries and required feature flags.
+3. Trigger `POST /api/internal/daily-rehearsal` with cron authorization.
+4. Expect HTTP `202` with `runId` and `statusUrl`. A `202` means accepted, not passed.
+5. Poll the authenticated status URL or inspect Workflow observability until the run is terminal.
+6. Inspect the editorial run, all six variants and the stored promise checks.
+7. Treat `failed` and `quarantined` as visible release failures. Never publish a partial drop.
 
----
+The durable workflow has 14 steps. It claims an idempotent run, prepares one immutable evidence pack, creates six independent editorial variants in parallel, persists their harness evidence, creates six narrated variants in parallel, runs the exact publication promise set, and uses one atomic publication transaction only after every check passes.
 
-## Runbook · database appears empty / broken
+## Failure guide
 
-1. Supabase dashboard (project `hzadscrqmyilbisexvyz`) → check project status. If yellow or red, wait and re-check.
-2. Connections healthy but no rows: confirm the latest migration applied. Migrations are the 3 base files plus `supabase/migrations/20260617130000_magic_engine_extensions.sql` plus `supabase/migrations/20260705120000_billing.sql`.
-3. RLS suspicion: a permission error in the browser console with a `HINT` line will tell you which GRANT or policy is missing. Apply the suggested GRANT in a new migration.
-4. Billing writes rejected: the `profiles` billing columns are writable only by `service_role` via the `enforce_profile_billing_guard` trigger. If entitlement will not persist, confirm the writer is the service-role client and that the guard is not blocking a legitimate service-role write.
+| Symptom | Meaning | Operator response |
+| --- | --- | --- |
+| `401` | Missing or mismatched cron bearer | Rotate or reconcile `CRON_SECRET`; do not add a fallback credential |
+| `409 Private rehearsals are disabled` | Safe pre-launch flag is working | Enable only for an approved private run |
+| `409 Pundit publication is disabled` | Public publication kill switch is working | Leave disabled until the release snapshot passes |
+| No feature match | No complete structured-data candidate for the requested date | Fix ingest or use the correct coverage date |
+| Editorial quarantine | One or more hard or qualitative gates failed | Inspect `harness_runs`; repair only failed beats |
+| Narration quarantine | Fidelity, pronunciation, voice, quota or mastering gate failed | Fix the named input or provider issue; never accept unverified audio |
+| Promise-check quarantine | One or more required variant, asset, harness or receipt promises are missing | Repair the missing record and rerun idempotently |
+| Forecast activation rejected | Held-out model did not beat the baseline or lacked sufficient data | Keep scores private and improve the training data or model |
 
----
+## Audio incidents
 
-## Generation and storage cost watch
+- A transcription outage blocks audio approval.
+- A missing or unverified proper name blocks narration.
+- More than three pronunciation dictionaries blocks narration; consolidate verified entries.
+- Each TTS request is sentence-safe and at most 4,500 characters.
+- FFmpeg must be available through the installed optional package or `FFMPEG_PATH`.
+- Mastered duration, loudness and true peak are measured from the produced file.
+- The account must expose at least 1.5 million monthly characters and sufficient retry reserve.
 
-Once the live feed is on, each published episode costs: one Anthropic Opus writer call (plus up to 5 surgical regens on gate or judge rejection), one Sonnet judge call per attempt, and one ElevenLabs TTS render. So Anthropic plus ElevenLabs spend scales per episode per day. The fail-closed design bounds this: a hopeless match burns at most the writer, judge, and regen budget, then skips, so it never loops forever.
+Do not delete a published prediction or receipt to hide a mistake. Pause publication, preserve the immutable audit trail and publish a correction or receipt through the normal product record.
 
-Storage: the `episodes` bucket grows about 3 MB/day (8 matches at roughly 360 KB mp3). At scale, bandwidth is the variable cost. If costs spike:
+## Content or safety incident
 
-- Confirm no infinite-loop hotlinking (someone embedding our mp3s on another site).
-- Consider a lifecycle policy: delete episodes older than 60 days. They're a daily product, old episodes aren't replayed.
+1. Set the release state to `paused` and disable publication flags.
+2. Record the affected drop, variant, script, audio asset, evidence pack and harness versions.
+3. Quarantine the affected variant or drop through an additive incident record. Do not overwrite another persona into its place.
+4. Preserve registered predictions and settled receipts.
+5. Fix the smallest failed layer, add an adversarial regression case and rerun the held-out suite.
+6. Obtain the required editorial, legal or founder sign-off before resuming.
 
----
+## Secret rotation
 
-## Deploys
+Server secrets live in Vercel environment variables. Manual recovery also needs the matching GitHub `CRON_SECRET` and `FULL_TIME_URL` values.
 
-- Hosted on **Vercel** (TanStack Start built with the nitro `vercel` preset).
-- The live app is currently deployed from the local working tree and is being **merged to main now**. Once on `main`, pushes to `main` deploy through the Vercel Git integration.
-- Env-var changes do not apply to the running deployment until you trigger a **new deployment**.
-- The daily cron is driven by GitHub Actions, not by Vercel Cron.
+1. Reissue the credential at the provider.
+2. Update every environment that legitimately uses it.
+3. Update the GitHub secret when rotating `CRON_SECRET`.
+4. Redeploy only with operator approval.
+5. Verify the relevant authenticated canary.
+6. Revoke the old value.
 
----
+Never print a secret in chat, logs, shell output or committed files. `.env.example` is the canonical variable inventory and contains no values.
 
-## Escalation
+## Deployment and rollback
 
-- **Service down / users blocked:** post in the team channel, then status page if we have one.
-- **Safety incident (bad recap):** product plus legal in the loop within 1h. Use `05-content-safety.md` checklist.
-- **Suspected data leak:** rotate every affected secret in Vercel env (and the matching GitHub repo secret for `CRON_SECRET`), reissue provider keys at the source, and audit `listens` and `profiles` access logs.
+The application targets Vercel Node 24 through the Nitro Vercel preset. Build with Node 24; the Workflow compiler is not supported by this repository's local ARM64 Node 25 installation.
+
+Vercel CLI 58.9.0 is installed and the project is linked. An operator-approved environment pull uses:
+
+```powershell
+vercel env pull .env.local
+```
+
+Environment pull, migration, preview deployment and production rollout are separate approval-gated actions.
+
+Rollback rules:
+
+- Promote the last known-good Vercel deployment.
+- Set release state to `paused` and disable publication flags.
+- Stop writers rather than dropping additive schema.
+- Preserve content-addressed published assets and immutable prediction receipts.
+- Run promise checks against the rollback revision before resuming schedules.
+
+## Verification
+
+```powershell
+pnpm run typecheck
+pnpm test
+pnpm run lint
+pnpm run build
+git diff --check
+```
+
+A green local build is necessary but does not satisfy voice licensing, rights, human review, provider quota, database migration, seven-rehearsal or production sign-off gates.

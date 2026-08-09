@@ -1,5 +1,7 @@
 # 08 · Sales / BD
 
+> **CURRENT-SYSTEM PRECEDENCE (2026-08-08):** New checkout and Pro promotion are disabled. All six pundits are free during pre-launch. Do not quote the legacy live-Pro status below as current.
+
 **Role:** Sales, business development, partnership-facing agent.
 **Read this when:** considering monetization, approached for a partnership, talking to a rights holder.
 **Don't read this when:** doing direct-to-consumer marketing (→ `07-marketing.md`).

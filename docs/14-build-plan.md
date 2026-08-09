@@ -1,6 +1,6 @@
 # 14 · Build Plan (production push, 2026-06-17)
 
-> **STATUS (2026-07-06): SUPERSEDED / HISTORICAL.** This is the original build plan. It is kept for provenance. Current reality: generation is Anthropic Opus writer + code gate + Sonnet judge (fail-closed), TTS is ElevenLabs, and monetization (Free + Pro $4.99/mo) is wired and LIVE since 2026-08-07. For the current system see `03-architecture.md`, `04-data-model.md`, `06-ops.md`, and the `12-roadmap.md` decision log.
+> **STATUS (2026-08-08): SUPERSEDED / HISTORICAL.** This is the original build plan and is kept for provenance. The current system is the six-pundit, evidence-licensed, 5-8 minute architecture in `18-world-class-pundit-system.md`; operational truth lives in `19-release-state.md`. Billing and public launch are disabled.
 
 
 **Role:** Any agent or human executing the migration off Lovable and the push to a production, go-to-market launch.

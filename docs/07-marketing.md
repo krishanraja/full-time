@@ -8,13 +8,13 @@
 
 ## Positioning
 
-> **The morning football briefing. Narrated. 60 seconds per match.**
+> **One football morning. Six genuinely different minds. Every prediction gets a receipt.**
 
 We are the *day-after* moment, not the *during-match* moment. We do not compete with Sky, BBC, TNT, talkSPORT. We compete with: scrolling Twitter half-asleep, the "highlights" tab on YouTube, missing the result entirely.
 
 ### Three things to never lead with
 
-- "AI" as the headline. AI is the *how*, not the *why*. Lead with the user benefit (the morning, 60 seconds, every match).
+- "AI" as the headline. AI is the *how*, not the *why*. Lead with the user benefit: one sharp morning show, a pundit worth choosing, and opinions that remain accountable.
 - "Podcast." We're shorter and tighter than a podcast, calling it a podcast under-sells the format.
 - "Free." Coming at the wallet first signals low value.
 
@@ -49,7 +49,7 @@ We are the *day-after* moment, not the *during-match* moment. We do not compete 
 ## Copy bank
 
 ### App store / social one-liners
-- "Yesterday's biggest stories from the Big Five. Narrated. 60 seconds per match."
+- "Yesterday's biggest football story, told six genuinely different ways."
 - "Coffee in one hand. Football recap in the other ear."
 - "The morning drop. Up by 7am. Listen and go."
 - "Every match that mattered. In sixty seconds."

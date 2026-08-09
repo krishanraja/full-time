@@ -33,8 +33,8 @@ type Row = {
 
 function episodeLine(row: Row): string {
   const m = row.matches;
-  const home = m?.home?.name ?? "—";
-  const away = m?.away?.name ?? "—";
+  const home = m?.home?.name ?? "Unknown home team";
+  const away = m?.away?.name ?? "Unknown away team";
   const score = `${m?.home_score ?? 0}-${m?.away_score ?? 0}`;
   const league = m?.leagues?.name;
   const date = row.published_at.slice(0, 10);

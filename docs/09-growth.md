@@ -1,5 +1,7 @@
 # 09 · Growth
 
+> **CURRENT-SYSTEM PRECEDENCE (2026-08-08):** The core format is now one 5-8 minute daily show with six selectable variants, not 60-second match cuts. Growth experiments must preserve evidence, receipts and saved-pundit attribution.
+
 **Role:** Growth experiments, retention, acquisition loops.
 **Read this when:** designing an experiment, picking a metric, instrumenting an event.
 **Don't read this when:** doing broad marketing (→ `07-marketing.md`).

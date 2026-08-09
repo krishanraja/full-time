@@ -1,5 +1,7 @@
 # 01 · Brand
 
+> **CURRENT-SYSTEM PRECEDENCE (2026-08-08):** The product is now one 5-8 minute morning show with six distinct pundit editions. Any legacy 60-second messaging below is historical.
+
 **Role:** Designer, brand writer, marketer, any agent applying visuals or copy.
 **Read this when:** picking colours, fonts, writing UI copy, designing assets, OG images, social posts.
 **Don't read this when:** writing backend code (→ `02-developer.md`).

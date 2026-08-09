@@ -6,9 +6,18 @@
 
 ---
 
-## Launch status (as of 2026-08-07): billing is ON, daily generation is still off
+## Launch status (as of 2026-08-08): six-pundit pre-launch, billing off
 
-Read this first. This is the single source of truth for exactly where each stands and what flips it on. Live billing moved from "parked" to **live** on 2026-08-07; daily generation is unchanged and still inert.
+The current implementation and operator state are in `18-world-class-pundit-system.md` and `19-release-state.md`. Public launch, publication and new billing are fail-closed. All six pundits are free during private verification. The older decisions below remain an append-only history and are not current operating instructions.
+
+### 2026-08-08: world-class pundit architecture replaces short recaps
+
+- **Decision:** build one evidence base into six independent theses, scripts, humour systems, performances and prediction ledgers.
+- **Decision:** replace 60-second cuts with 5-8 minute daily variants and keep the Reporter as the single RSS acquisition feed.
+- **Decision:** public launch requires hard evidence gates, dimension-by-dimension qualitative floors, a passing forecast, 360-script evaluation, full-length audio review, seven rehearsals and revision-bound sign-offs.
+- **Decision:** billing stays off and all six pundits stay free until after public launch is separately approved.
+
+## Historical status from 2026-08-07
 
 ### 1. Daily generation (the automated morning drop)
 

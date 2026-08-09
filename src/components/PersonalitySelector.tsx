@@ -3,46 +3,47 @@ import { HapticButton } from "./HapticButton";
 import { cn } from "../lib/utils";
 
 /**
- * Pundit personalities the listener can pick. Loaded now; the generation pipeline
- * wires each one to its own narration style later. Each is identity-safe: it mocks
- * the game and the situation, never a club, player, or manager.
+ * Six complete pundit products: each owns a thesis lens, humour system,
+ * performance plan, licensed voice and prediction record. Humour may target
+ * decisions, contradictions, institutions and football culture, never private
+ * lives, protected traits, injuries, grief or personal humiliation.
  */
 export const PERSONALITIES = [
   {
     id: "zen",
     name: "The Reporter",
-    tag: "Calm, dry, knows everything. The house voice.",
-    sample: "Two goals to nil. Comfortable. Filed.",
+    tag: "Balanced evidence, news judgment and the detail that matters most.",
+    sample: "The score is the headline. The shot profile is the correction beneath it.",
   },
   {
     id: "gaffer",
     name: "The Gaffer",
-    tag: "Forty years in the dugout. Suffers no fools.",
-    sample: "That back four wants a long, hard look in the mirror.",
+    tag: "Decisions, substitutions, game state and the cost of each choice.",
+    sample: "It worked. That does not automatically make it a good decision.",
   },
   {
     id: "stats",
     name: "The Numbers Guy",
-    tag: "Lives in the xG. Visits the pitch occasionally.",
-    sample: "Three expected goals, they scored one. The model is sulking.",
+    tag: "Probability, xG, variance and process separated from outcome.",
+    sample: "The result got the champagne. The process has asked for a recount.",
   },
   {
     id: "romantic",
     name: "The Romantic",
-    tag: "Thinks football is art. Weeps at a good through ball.",
-    sample: "A goal of such audacity it deserves a frame, not a replay.",
+    tag: "Narrative turns, extraordinary actions and the emotional stakes.",
+    sample: "Some moments need explaining. That one merely needed witnessing.",
   },
   {
     id: "doomer",
     name: "The Doomer",
-    tag: "Certain it is all going wrong. Usually right.",
-    sample: "We won, which means the collapse is simply being rescheduled.",
+    tag: "Failure modes, fragility and the downside hiding inside a good result.",
+    sample: "The clean sheet is smiling. The chances conceded are drafting a complaint.",
   },
   {
     id: "banter",
     name: "The Wind-Up",
-    tag: "Here for the bragging rights and nothing else.",
-    sample: "Somewhere, a rival fan is very quiet this morning. Lovely.",
+    tag: "Rivalry, contradiction and sharp judgments that return to evidence.",
+    sample: "The victory parade can start after the numbers finish their objection.",
   },
 ] as const;
 
@@ -101,7 +102,9 @@ export function PersonalitySelector({
                 )}
               </div>
               <div className="mt-0.5 text-xs leading-snug text-muted-foreground">{p.tag}</div>
-              <div className="mt-1.5 text-xs italic leading-snug text-foreground/75">{p.sample}</div>
+              <div className="mt-1.5 text-xs italic leading-snug text-foreground/75">
+                {p.sample}
+              </div>
             </div>
           </HapticButton>
         );

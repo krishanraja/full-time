@@ -6,7 +6,7 @@
 
 /* ---- Theme tokens ------------------------------------------------------ */
 /* Brand: vivid lime (from logo) on near-black pitch. Editorial, broadcast-
-   tool feel — hairline borders, mono numerals, lime reserved for affordances
+   tool feel: hairline borders, mono numerals, lime reserved for affordances
    and key moments. */
 
 @theme inline {
@@ -55,7 +55,7 @@
 :root {
   --radius: 0.875rem;
 
-  /* Pitch — deep, slightly cool near-black */
+  /* Pitch: deep, slightly cool near-black */
   --background: oklch(0.155 0.008 240);
   --foreground: oklch(0.985 0.004 240);
   --card: oklch(0.195 0.01 240);
@@ -63,7 +63,7 @@
   --popover: oklch(0.195 0.01 240);
   --popover-foreground: oklch(0.985 0.004 240);
 
-  /* Lime — pulled directly from the logo's electric green */
+  /* Lime: pulled directly from the logo's electric green */
   --lime: oklch(0.88 0.24 138);
   --lime-glow: oklch(0.93 0.22 138);
   --primary: var(--lime);
@@ -76,7 +76,7 @@
   --accent: var(--lime);
   --accent-foreground: oklch(0.16 0.01 240);
 
-  /* Signal colour — reserved for live/breaking only */
+  /* Signal colour: reserved for live/breaking only */
   --ember: oklch(0.72 0.2 35);
   --destructive: oklch(0.65 0.22 25);
   --destructive-foreground: oklch(0.98 0.004 240);
@@ -112,14 +112,41 @@
      doesn't read as flat black. */
   body {
     background-image:
-      radial-gradient(120% 80% at 50% -10%, color-mix(in oklab, var(--lime) 6%, transparent), transparent 55%),
-      radial-gradient(60% 60% at 100% 100%, color-mix(in oklab, var(--lime) 3%, transparent), transparent 60%);
+      radial-gradient(
+        120% 80% at 50% -10%,
+        color-mix(in oklab, var(--lime) 6%, transparent),
+        transparent 55%
+      ),
+      radial-gradient(
+        60% 60% at 100% 100%,
+        color-mix(in oklab, var(--lime) 3%, transparent),
+        transparent 60%
+      );
     background-attachment: fixed;
   }
 
   ::selection {
     background: color-mix(in oklab, var(--lime) 35%, transparent);
     color: var(--foreground);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--lime);
+    outline-offset: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

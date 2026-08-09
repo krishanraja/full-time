@@ -25,17 +25,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: 24
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.20.0
+          run_install: false
 
       - name: Install
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Production dependency audit
+        run: pnpm audit --prod --audit-level moderate
 
       # The real gate. This is what caught the stripped types, and what would
       # have caught them on the push that caused it.
       - name: Typecheck
-        run: bunx tsc --noEmit
+        run: pnpm run typecheck
+
+      - name: Unit and gate tests
+        run: pnpm test
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Production build
+        run: pnpm run build
 
       # A named canary on top of tsc, so the failure reads as "the generated
       # Supabase types were gutted" rather than a wall of inference errors.
@@ -50,3 +67,26 @@ jobs:
             fi
           done
           echo "Supabase types look complete."
+
+      - name: Pundit-system migration is present
+        run: |
+          migration="supabase/migrations/20260808194138_pundit_intelligence_system.sql"
+          for t in daily_drops evidence_packs analysis_claims pundit_specs pundit_variants harness_runs prediction_ledger research_sources concept_cards pronunciation_lexicon; do
+            if ! grep -q "public.$t" "$migration"; then
+              echo "::error file=$migration::'$t' is missing from the pundit-system migration."
+              exit 1
+            fi
+          done
+
+      - name: Operational release-gate migration is present and ordered
+        run: |
+          migration="supabase/migrations/20260808200000_operational_release_gates.sql"
+          for t in voice_candidates audio_reviews forecast_models evaluation_matches evaluation_runs evaluation_reviews editorial_runs rehearsal_runs release_signoffs release_state release_gate_runs; do
+            if ! grep -q "public.$t" "$migration"; then
+              echo "::error file=$migration::'$t' is missing from the operational migration."
+              exit 1
+            fi
+          done
+          grep -q "missing_required_harnesses" "$migration"
+          grep -q "public_launch_enabled BOOLEAN NOT NULL DEFAULT false" "$migration"
+          grep -q "billing_enabled BOOLEAN NOT NULL DEFAULT false" "$migration"

@@ -1,5 +1,7 @@
 # 15 · Access Model + Waitlist Plan
 
+> **CURRENT-SYSTEM PRECEDENCE (2026-08-08):** All six pundits are free and selectable without an account during pre-launch. Legacy paid-persona gates below are superseded.
+
 **Role:** Product / any agent building the launch access model.
 **Read this when:** implementing the anonymous / free-account / waitlist ladder, or deciding what gates where.
 **Don't read this when:** you need the shipped truth (this is a PLAN; `12-roadmap.md` launch status is what is live).

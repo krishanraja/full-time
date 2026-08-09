@@ -1,96 +1,73 @@
-# 00 · Product
+# 00 - Product
 
-**Role:** Product manager / founder-mode AI agent.
-**Read this when:** deciding what to build, prioritising, or saying no.
-**Don't read this when:** debugging code (→ `02-developer.md`) or writing marketing copy (→ `07-marketing.md`).
+**Role:** Product doctrine and launch truth.
 
----
+## One line
 
-## One-line
+Full Time is an autonomous, interactive football show with six genuinely different AI pundits. Every opinion has evidence. Every prediction gets a receipt.
 
-Full Time is the morning football recap, narrated, in 60-second cuts, for fans who don't have time to watch highlights.
+## Current status
 
-## Why this exists
+Full Time is in pre-launch. There is no public launch date.
 
-Match highlights are 3 to 8 minutes, video, and require attention. Most fans miss most matches outside the team they support. Existing audio products (talkSPORT, The Athletic) are either long-form or behind paywalls. Full Time fills the in-between: **one tap, one minute, every match that mattered**, while you make coffee.
+- New Stripe checkout is disabled server-side.
+- All six pundits are free and selectable without an account.
+- Existing subscribers retain billing-portal access.
+- Legacy episodes are archive/demo material and cannot be relabelled as current.
+- The legacy daily and on-demand generators cannot publish during pre-launch.
+- The canonical RSS feed accepts only an approved Reporter variant.
+- Public prediction scores remain hidden until held-out calibration beats a league-base-rate baseline.
 
-## Target user
+Launch happens only after the editorial, narration, prediction, operational, legal and UX gates pass.
 
-- Adult football fan in the UK/EU.
-- Follows 1 to 3 clubs across the Big 5.
-- Listens on a phone, often hands-busy (commuting, walking, cooking, training).
-- Already uses Spotify or Apple Podcasts but won't subscribe to another podcast.
-- Cares about *story*, not stats.
+## Product doctrine
 
-Not the target: hardcore stats fans, fantasy players, bettors.
+The editorial blend is:
 
-## Promise
+- 40% tactical and structural analysis, limited to what licensed evidence proves.
+- 20% probability and decision-quality analysis.
+- 15% football context and journalism.
+- 15% storytelling and broadcasting.
+- 10% provocation.
 
-- Up by 07:00 local, every day there was football.
-- 60 seconds per match. Confident, lean prose. Real scores, no rumours.
-- Tap once, lock screen, walk away.
-- Optional account. Optional push. The daily drop is free, always, no card.
+Humour, clarity, originality and memorable language are required throughout. They are not garnish.
 
-## Anti-promise
+Every successful segment contains an observation, mechanism or decision, judgment, evidence, material counterpoint, portable concept, and either a prediction/receipt or an explicit reason to stop analysing.
 
-- Not live. We are deliberately the *day-after* moment, not real-time.
-- Not opinion. No takes, no rants, no transfer gossip.
-- Not impressions. We don't fake Tyldesley or Drury.
-- Not betting-adjacent. Ever.
+> Full Time makes bold, evidence-grounded judgments. Facts are closed-world and verified. Interpretations may differ by pundit. Predictions are timestamped. Mistakes are acknowledged plainly.
 
-## Accuracy is a feature, not a footnote
+## Evidence boundary
 
-"Real scores, no rumours" is now true *by construction*, not by asking a model nicely. Every recap is written from a deterministic fact-pack (goals with running score, scorers per team, own-goals and penalties tagged, cards, full-match stats), then passed through a hard code gate (exact final score, scorers must be a subset of the fact-pack, length and phrasing rules) and a contradiction judge before it can publish. The engine is fail-closed: if it can't prove a recap is right, it ships nothing rather than something wrong. If we ever get a score wrong, that is a bug, not a limitation.
+With the current structured-data licence, Full Time may analyse score progression, goals, cards, substitutions, game state, shots, shots on target, xG, possession, corners, saves, conversion, outcome versus underlying performance, sufficiently sampled history, variance, probabilities and registered statistical expectations.
 
-Mechanism lives in `02-developer.md`. What matters here: the promise is load-bearing and the product keeps it.
+It must not claim to have observed pressing triggers or shapes, rest defence, overloads, spacing, rotations, body shape, scanning, unrecorded decisions, coaching intent, dressing-room dynamics, confidence, leadership, effort, recruitment, PSR, ownership, injury or transfer context without a separate licensed source.
 
-## Access ladder (and money)
+The correct line is sometimes: "The data shows what happened, but not why."
 
-The user-visible ladder is **anonymous → free account → Pro**, with the waitlist running alongside for the full live app. Full spec: `15-access-and-waitlist-plan.md`, including the 2026-08-07 addendum that un-parked Pro.
+## Six pundits
 
-- **Anonymous.** The daily drop, the whole morning of recaps with real audio, free with no account. That promise does not move. Anonymous listeners also get two pundits (The Reporter and The Gaffer, preference kept on-device) and local follows with club-first ordering.
-- **Free account** (magic link, $0). The archive, name a game at 3 narrations a day, and synced follows, voice and push across devices. Pundits stay as they are for anonymous listeners: The Reporter and The Gaffer.
-- **Waitlist.** Reserves a place in the full app: every matchday live by 7am with the morning push. Joining requires only the free account (the magic link IS the join for anonymous users). The waitlist is the launch trigger: live daily generation switches on when it proves demand.
-- **Full Time Pro, $4.99/mo USD: LIVE (2026-08-07).** Production runs live Stripe keys; preview and development stay on the test key. Pro gates two things, both enforced server-side and both already built: all six pundits (free keeps The Reporter and The Gaffer), and 25 name-a-game narrations a day instead of 3. `/pro` lists only those. "Ask your pundit a question" is on the page as explicitly-not-included roadmap (`16-ask-your-pundit.md`). We never call an unbuilt thing done.
+The Reporter prioritises balanced evidence and news judgment. The Gaffer judges decisions and game state. The Numbers Guy separates process from outcome. The Romantic finds the earned human story. The Doomer makes downside paths testable. The Wind-Up punctures contradictions and immediately returns to evidence.
 
-Exact current status and the ordered steps to go live, for both billing and the automated daily drop, are the "Launch status" block at the top of `12-roadmap.md`. That block is the single source of truth for what is switched on versus built-but-waiting.
+They do not share one script. Each selects claims, forms a thesis, uses persona-specific humour, receives a separate performance plan and owns a separate prediction ledger.
 
-## Success metrics (v1)
+No voice or script imitates a living pundit. Humour may target decisions, contradictions, institutions, club PR, match situations, statistical absurdity and football culture. It never targets injuries, grief, protected traits, private lives, mental health or personal humiliation.
 
-Reality check: 0 real users, listens, or follows yet. Five hand-authored episodes are live. These are targets to steer by, not current numbers.
+## Prediction accountability
 
-| Metric | Target by month 3 |
-|---|---|
-| DAU / MAU | ≥ 35% (sticky daily habit) |
-| Median listens per active user per drop | ≥ 3 (out of ~6 to 8) |
-| Push opt-in rate (of signed-in users) | ≥ 40% |
-| Day-7 retention of new installs | ≥ 25% |
-| Complaints about hallucination | < 0.5% of listens |
+All public predictions are immutable after kickoff and include evidence, a falsifier and a structured settlement rule. Shared probabilities may move by at most five percentage points per pundit unless additional licensed evidence supports the change.
 
-We do not measure: time-in-app (we want the opposite), screens-per-session, scroll depth.
+Settled forecasts receive Brier and log-loss scores. A wrong thesis triggers a plain-language receipt: what was believed, what happened, and what was missed or overweighted.
 
-## What we will say no to
+## Distribution
 
-- League standings / fixtures / stats pages.
-- Comments, replies, "community".
-- Live commentary.
-- Long-form (5+ min) recaps.
-- Native iOS/Android apps before PWA install rate is proven.
-- Personalised AI voices "as you".
-- Paywalling the daily drop itself. The free drop is a real product, not a demo.
-- More than one paid tier. One Pro, $4.99, is the whole menu.
-- NFTs, crypto, anything in that direction.
+The web app is the differentiated product. Podcast directories carry one canonical Reporter feed, with one stable GUID per daily drop and a route back to fulltime.fm to choose another pundit.
 
-Add to this list when we kill an idea. See `12-roadmap.md` decision log.
+## Launch metrics
 
-## Voice & tone (product-level)
+Editorial launch requires 100% hard-gate accuracy; median 4/5 on every required qualitative dimension; 80% blind persona identification; 70% preference over the current baseline and a generic model; 80% casual-fan comprehension; founder approval of humour and full-length voice; and a passing forecast backtest.
 
-We are a **calm, confident match reporter**, not a hype machine. The product never shouts. The lime green of the brand does the shouting. Copy stays low-volume.
+Narration launch requires zero incorrect numerical statements, 99% verified proper-name pronunciation, 80% audio-only persona identification, mean 4/5 authority/naturalness/timing/listenability, and no unverified audio accepted during transcription outages.
 
-Detailed voice guide in `01-brand.md`.
+Operations require seven consecutive complete six-variant rehearsals, deadline compliance, promise checks for player/transcript/artwork/share/RSS/receipts, no stale-current labels, no simulated completion and no silent persona substitution.
 
-## Distribution model
-
-- PWA-first. Web push for the morning nudge.
-- Shareable per-episode links (`/episode/{id}`, roadmap).
-- Eventually: podcast RSS feed of the day's drop as a single 6-min episode.
+Implementation detail and operator commands live in `18-world-class-pundit-system.md`.

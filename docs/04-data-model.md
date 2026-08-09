@@ -1,5 +1,7 @@
 # 04 · Data Model
 
+> **CURRENT-SYSTEM PRECEDENCE (2026-08-08):** The two 2026-08-08 migrations are the authoritative new schema. This document describes the legacy tables and must not be used to infer current pundit, evaluation, forecast or release-gate records.
+
 **Role:** Anyone reading or writing the database.
 **Read this when:** writing a query, adding a column, changing RLS, debugging permission errors.
 **Don't read this when:** you only need the system shape (→ `03-architecture.md`).

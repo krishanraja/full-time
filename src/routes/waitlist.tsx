@@ -21,7 +21,7 @@ export const Route = createFileRoute("/waitlist")({
       path: "/waitlist",
       title: "Waitlist • Full Time",
       description:
-        "The full app: every matchday narrated and live by 7am, with the morning push. Join the waitlist.",
+        "Ask for one email when Full Time passes its editorial, narration and operational launch gates.",
     }),
   component: WaitlistPage,
 });
@@ -33,14 +33,14 @@ function trackJoin(source: string) {
 // What's live today vs what the waitlist reserves. Keep this honest: the
 // left column must only list things that work right now.
 const TODAY = [
-  "Recent matchdays, narrated, free",
-  "The morning coda: one thing we noticed",
-  "Follow your clubs, they lead the drop",
+  "All six pundit choices are free",
+  "Only approved current drops appear",
+  "No fake playback or silent fallback",
 ];
 const FULL_APP = [
-  "Every matchday, live by 7am local",
-  "The morning push, one nudge a day",
-  "Every league in the drop",
+  "Full-length six-variant mornings",
+  "A public prediction and receipt record",
+  "Launch timing follows evidence, not a calendar",
 ];
 
 function WaitlistPage() {
@@ -106,7 +106,7 @@ function WaitlistPage() {
 
   return (
     <div className="pb-6 pt-4">
-      <div className="eyebrow">The full app</div>
+      <div className="eyebrow">Private verification</div>
 
       {joined ? (
         <>
@@ -121,13 +121,16 @@ function WaitlistPage() {
               {status.data?.position != null ? `#${status.data.position}` : "…"}
             </div>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              When the live daily drop switches on, we admit the list in order. You&rsquo;ll
-              get one email. Until then, everything on the left below is yours already.
+              You will get one email after every editorial, narration, prediction and operational
+              launch gate passes. We will not manufacture a date to fill this space.
             </p>
           </div>
           <WhatYouGet />
           <div className="mt-6 text-center">
-            <Link to="/" className="text-xs text-muted-foreground underline-offset-2 hover:underline">
+            <Link
+              to="/"
+              className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+            >
               Back to today&rsquo;s drop
             </Link>
           </div>
@@ -135,12 +138,11 @@ function WaitlistPage() {
       ) : (
         <>
           <h1 className="mb-2 mt-2 text-[30px] font-semibold leading-tight tracking-tight">
-            Every matchday. Live by 7am.
+            Get the launch note.
           </h1>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Full Time today is recent matchdays, narrated, free. The full app is the same
-            thing every single morning there was football, with the push that makes it a
-            habit. It switches on when the waitlist proves the demand.
+            Full Time is still proving six distinct, insightful and funny pundits over full-length
+            shows. Leave your email for one message when the evidence says it is ready.
           </p>
 
           <WhatYouGet />
@@ -185,7 +187,10 @@ function WaitlistPage() {
           )}
 
           <div className="mt-6 text-center">
-            <Link to="/" className="text-xs text-muted-foreground underline-offset-2 hover:underline">
+            <Link
+              to="/"
+              className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+            >
               Maybe later
             </Link>
           </div>
@@ -199,7 +204,7 @@ function WhatYouGet() {
   return (
     <div className="mt-6 grid grid-cols-2 gap-3">
       <div className="surface rounded-[var(--radius-lg)] p-4">
-        <div className="eyebrow mb-3">Live today</div>
+        <div className="eyebrow mb-3">Preview standard</div>
         <ul className="flex flex-col gap-2.5">
           {TODAY.map((f) => (
             <li key={f} className="flex items-start gap-2">
@@ -210,7 +215,7 @@ function WhatYouGet() {
         </ul>
       </div>
       <div className="surface rounded-[var(--radius-lg)] p-4">
-        <div className="eyebrow mb-3">The full app</div>
+        <div className="eyebrow mb-3">Launch gate</div>
         <ul className="flex flex-col gap-2.5">
           {FULL_APP.map((f) => (
             <li key={f} className="flex items-start gap-2">

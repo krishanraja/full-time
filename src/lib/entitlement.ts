@@ -1,13 +1,8 @@
 // Shared, client-safe entitlement constants + helpers.
 // No secrets, no server-only imports: safe to import from both client and server.
 
-// The access ladder (docs/15-access-and-waitlist-plan.md), as of 2026-08-07
-// when Pro was un-parked and put on live Stripe keys:
-//   anon  -> recent drops, continuous playback, local follows, two pundits.
-//   free  -> a signed-in account: the same two pundits, plus the archive,
-//            name a game at FREE_DAILY_GENERATION_LIMIT, and synced settings.
-//   pro   -> $4.99/mo. All six pundits, and name a game at
-//            PRO_DAILY_GENERATION_LIMIT.
+// Billing is paused while the editorial product is in pre-launch. All six
+// pundits are public product choices, not subscription entitlements.
 export type Tier = "anon" | "free" | "pro";
 
 export type Plan = "free" | "pro";
@@ -21,12 +16,17 @@ export type Entitlement = {
 
 // Pundits open to everyone, signed in or not. Preference for anonymous
 // listeners lives in localStorage (VOICE_STYLE_STORAGE_KEY below).
-export const OPEN_VOICE_STYLES = ["zen", "gaffer"] as const;
+export const OPEN_VOICE_STYLES = [
+  "zen",
+  "gaffer",
+  "stats",
+  "romantic",
+  "doomer",
+  "banter",
+] as const;
 
-// Pundits that need Pro. These sat behind a free account between Phase 1 and
-// 2026-08-07; moving them back behind Pro is what gives the paid tier a real,
-// enforced benefit on day one rather than an empty promise.
-export const PRO_VOICE_STYLES = ["stats", "romantic", "doomer", "banter"] as const;
+// No pundit requires Pro in the current product doctrine.
+export const PRO_VOICE_STYLES = [] as const;
 
 export const VOICE_STYLE_STORAGE_KEY = "ft-voice-style";
 
@@ -34,9 +34,9 @@ export function isProVoiceStyle(id: string): boolean {
   return (PRO_VOICE_STYLES as readonly string[]).includes(id);
 }
 
-// Name a game, per UTC day. The free allowance is unchanged; Pro is the lever
-// that actually costs money to honour (each generation is an Anthropic call
-// plus an ElevenLabs render), which is why it is the thing being sold.
+// Legacy name-a-game limits remain for existing data compatibility. The server
+// blocks the generation path throughout pre-launch; these are not current
+// product claims.
 export const FREE_DAILY_GENERATION_LIMIT = 3;
 export const PRO_DAILY_GENERATION_LIMIT = 25;
 
@@ -47,10 +47,14 @@ export function dailyGenerationLimit(isPro: boolean): number {
 /** What a listener may actually play right now. Anyone who picked a Pro
  *  pundit and then lapsed (or was moved off it by this change) falls back to
  *  the house voice rather than being left pointing at something locked. */
-export function effectiveVoiceStyle(pref: string | null | undefined, isPro: boolean): string {
+export function effectiveVoiceStyle(
+  pref: string | null | undefined,
+  _isPro?: boolean,
+): (typeof OPEN_VOICE_STYLES)[number] {
   const id = pref ?? OPEN_VOICE_STYLES[0];
-  if (isProVoiceStyle(id) && !isPro) return OPEN_VOICE_STYLES[0];
-  return id;
+  return (OPEN_VOICE_STYLES as readonly string[]).includes(id)
+    ? (id as (typeof OPEN_VOICE_STYLES)[number])
+    : OPEN_VOICE_STYLES[0];
 }
 
 // The single source of truth for "is this profile row entitled to Pro right now".

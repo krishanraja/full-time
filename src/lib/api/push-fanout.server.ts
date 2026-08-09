@@ -8,7 +8,7 @@ export async function fanoutMorningPush(count: number): Promise<void> {
   const privateKey = process.env.VAPID_PRIVATE_KEY;
   const subject = process.env.VAPID_SUBJECT ?? "mailto:hello@fulltime.app";
   if (!publicKey || !privateKey) {
-    console.warn("[push] VAPID keys not configured — skipping fan-out");
+    console.warn("[push] VAPID keys not configured; skipping fan-out");
     return;
   }
 
@@ -35,7 +35,7 @@ export async function fanoutMorningPush(count: number): Promise<void> {
     } catch (err) {
       const e = err as { statusCode?: number };
       if (e.statusCode === 404 || e.statusCode === 410) {
-        // Subscription gone — clean up
+        // Subscription gone. Clean up.
         await supabaseAdmin.from("push_subscriptions").delete().eq("id", s.id);
       } else {
         console.warn("[push] send failed", err);

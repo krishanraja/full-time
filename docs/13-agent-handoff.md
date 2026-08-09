@@ -1,5 +1,7 @@
 # 13 · Agent Handoff
 
+> **SUPERSEDED (2026-08-08):** Do not use the legacy operational state below for current work. Start with `00-product.md`, `18-world-class-pundit-system.md` and the single state artifact `19-release-state.md`.
+
 **Role:** Any AI agent picking this codebase up cold.
 **Read this when:** the very first turn you work on Full Time.
 **Don't read this when:** you've already been working on this project this session.

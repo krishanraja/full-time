@@ -1,5 +1,7 @@
 # 05 · Content Safety
 
+> **CURRENT-SYSTEM PRECEDENCE (2026-08-08):** `00-product.md` and `18-world-class-pundit-system.md` replace the legacy no-opinion, short-recap and paid-persona assumptions. The evidence boundary and independent harnesses are authoritative.
+
 **Role:** Developer, product, legal, anyone touching the generation pipeline or considering loosening a constraint.
 **Read this when:** changing the writer prompt, the deterministic code gate, the contradiction judge, the regen / fail-closed policy, the voice, or the AI disclosure copy.
 **Don't read this when:** you only need user-facing FAQ (→ `10-support.md`).

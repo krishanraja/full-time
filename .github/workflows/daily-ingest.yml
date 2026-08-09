@@ -1,27 +1,15 @@
-name: Full Time — Daily Ingest
+name: Full Time - Manual Daily Ingest Recovery
 
-# Pulls yesterday's finished Big Five fixtures, events, statistics, lineups and
-# head-to-head into Postgres, and cross-checks the scorelines against a second
-# feed. Everything the recap needs must be in the database BEFORE the drop runs.
-#
-# 01:30 UTC, five hours ahead of the 06:30 drop. That gap is deliberate: it
-# leaves room to notice and fix a failed ingest before anything is published.
-#
-# LAUNCH DAY (2026-08-16): the route asserts `coverage.fixtures.events === true`
-# for the season and returns 503 if no league has live coverage, rather than
-# ingesting empty matches that would fail the score check and drop the day
-# silently. A 503 here is the signal to investigate, not to retry blindly.
-
+# Vercel owns the production schedule. This job is intentionally manual and
+# exists only for an operator-approved recovery run.
 on:
-  schedule:
-    - cron: "30 1 * * *"
   workflow_dispatch:
     inputs:
       date:
         description: "YYYY-MM-DD to ingest (default: yesterday, UK time)"
         required: false
       season:
-        description: "Season year (default: the FT_SEASON env on Vercel, else 2026)"
+        description: "Season year (default: FT_SEASON, else 2026)"
         required: false
 
 jobs:
@@ -36,19 +24,11 @@ jobs:
           if [ -n "${SEASON_IN:-}" ]; then
             if [ -z "$QS" ]; then QS="?season=${SEASON_IN}"; else QS="${QS}&season=${SEASON_IN}"; fi
           fi
-          echo "POST ${FULL_TIME_URL}/api/public/cron/ingest${QS}"
           curl --fail --silent --show-error --max-time 800 \
             -X POST "${FULL_TIME_URL}/api/public/cron/ingest${QS}" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             -d '{}' | tee response.json
-          echo
-          # Surface a cross-check disagreement or a coverage warning in the log.
-          if grep -q '"warnings":\[""\?\]' response.json; then
-            echo "no warnings"
-          else
-            echo "WARNINGS PRESENT, read the response above"
-          fi
         env:
           FULL_TIME_URL: ${{ secrets.FULL_TIME_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}

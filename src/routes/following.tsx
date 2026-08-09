@@ -12,8 +12,7 @@ export const Route = createFileRoute("/following")({
     pageSeo({
       path: "/following",
       title: "Following • Full Time",
-      description:
-        "Pick the teams and leagues you actually care about.",
+      description: "Pick the teams and leagues you actually care about.",
       noindex: true,
     }),
   component: Following,
@@ -24,7 +23,7 @@ function Following() {
   const followed = useFollowed();
   const hasFollows = followed.size > 0;
   const fetchTL = useServerFn(getTeamsAndLeagues);
-  const { data } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["teams-leagues"],
     queryFn: () => fetchTL(),
     staleTime: 5 * 60_000,
@@ -50,27 +49,56 @@ function Following() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-6 rounded-[var(--radius-lg)] border border-dashed border-[color:color-mix(in_oklab,var(--lime)_55%,transparent)] bg-[color:color-mix(in_oklab,var(--lime)_6%,transparent)] p-4 text-sm"
         >
-          Tap any team below — your morning recap will lead with their match.
+          Tap any team below. Your morning recap will lead with their match.
         </motion.div>
       )}
 
-      <section className="mb-7">
-        <h2 className="eyebrow mb-3">Teams</h2>
-        <div className="flex flex-wrap gap-2">
-          {teams.map((t) => (
-            <FollowButton key={t.id} id={`team:${t.id}`} label={t.name} />
-          ))}
+      {isLoading && (
+        <div className="surface rounded-[var(--radius-lg)] p-4 text-sm text-muted-foreground">
+          Loading the current teams and leagues&hellip;
         </div>
-      </section>
+      )}
 
-      <section>
-        <h2 className="eyebrow mb-3">Leagues</h2>
-        <div className="flex flex-wrap gap-2">
-          {leagues.map((l) => (
-            <FollowButton key={l.id} id={`league:${l.id}`} label={l.name} />
-          ))}
+      {isError && (
+        <div className="surface rounded-[var(--radius-lg)] p-4 text-sm">
+          <p>Teams could not be loaded.</p>
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            className="mt-3 font-semibold text-[var(--lime)]"
+          >
+            Try again
+          </button>
         </div>
-      </section>
+      )}
+
+      {!isLoading && !isError && teams.length === 0 && leagues.length === 0 && (
+        <div className="surface rounded-[var(--radius-lg)] p-4 text-sm text-muted-foreground">
+          No current competitions are available yet.
+        </div>
+      )}
+
+      {!isLoading && !isError && (
+        <section className="mb-7">
+          <h2 className="eyebrow mb-3">Teams</h2>
+          <div className="flex flex-wrap gap-2">
+            {teams.map((t) => (
+              <FollowButton key={t.id} id={`team:${t.id}`} label={t.name} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {!isLoading && !isError && (
+        <section>
+          <h2 className="eyebrow mb-3">Leagues</h2>
+          <div className="flex flex-wrap gap-2">
+            {leagues.map((l) => (
+              <FollowButton key={l.id} id={`league:${l.id}`} label={l.name} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

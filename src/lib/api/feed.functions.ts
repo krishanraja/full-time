@@ -2,13 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  currentCoverageDate,
+  londonDate,
+  londonDayBounds,
+  londonTimeLabel,
+} from "@/lib/london-date";
 
 function publicClient() {
-  return createClient<Database>(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_PUBLISHABLE_KEY!,
-    { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
-  );
+  return createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+  });
 }
 
 export type FeedEpisode = {
@@ -48,6 +52,7 @@ type EpisodeRow = {
   matches: {
     home_score: number | null;
     away_score: number | null;
+    kickoff_at: string;
     league_id: string | null;
     home_team_id: string | null;
     away_team_id: string | null;
@@ -64,11 +69,11 @@ function shape(row: EpisodeRow): FeedEpisode {
     title: row.title,
     hook: row.hook,
     script: row.script,
-    homeTeam: row.matches?.home?.name ?? "—",
-    awayTeam: row.matches?.away?.name ?? "—",
+    homeTeam: row.matches?.home?.name ?? "Unknown home team",
+    awayTeam: row.matches?.away?.name ?? "Unknown away team",
     homeScore: row.matches?.home_score ?? 0,
     awayScore: row.matches?.away_score ?? 0,
-    competition: row.matches?.leagues?.name ?? "—",
+    competition: row.matches?.leagues?.name ?? "Unknown competition",
     durationSec: row.duration_sec,
     badge: (row.badge as FeedEpisode["badge"]) ?? undefined,
     audioUrl: row.audio_url,
@@ -82,29 +87,40 @@ function shape(row: EpisodeRow): FeedEpisode {
 
 export const getTodayFeed = createServerFn({ method: "GET" }).handler(async () => {
   const sb = publicClient();
+  const coverageDate = currentCoverageDate();
+  const coverage = londonDayBounds(coverageDate);
+  const upcoming = londonDayBounds(londonDate());
 
-  const [episodesRes, tonightRes, codaRes] = await Promise.all([
+  const [episodesRes, tonightRes, codaRes, coverageRes] = await Promise.all([
     sb
       .from("episodes")
       .select(
-        "id, match_id, title, hook, script, duration_sec, badge, audio_url, og_image_url, published_at, matches!inner(home_score, away_score, league_id, home_team_id, away_team_id, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name))",
+        "id, match_id, title, hook, script, duration_sec, badge, audio_url, og_image_url, published_at, matches!inner(home_score, away_score, kickoff_at, league_id, home_team_id, away_team_id, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name))",
       )
+      .gte("matches.kickoff_at", coverage.start.toISOString())
+      .lt("matches.kickoff_at", coverage.end.toISOString())
       .order("published_at", { ascending: false })
       .limit(20),
     sb
       .from("matches")
       .select("id, kickoff_at, home:home_team_id(name), away:away_team_id(name)")
       .eq("status", "scheduled")
-      .gte("kickoff_at", new Date(Date.now() - 1000 * 60 * 60).toISOString())
-      .lte("kickoff_at", new Date(Date.now() + 1000 * 60 * 60 * 36).toISOString())
+      .gte("kickoff_at", upcoming.start.toISOString())
+      .lt("kickoff_at", upcoming.end.toISOString())
       .order("kickoff_at")
       .limit(6),
     sb
       .from("synthesis_insights")
       .select("text")
       .eq("status", "shipped")
-      .order("drop_date", { ascending: false })
+      .eq("drop_date", coverageDate)
       .limit(1),
+    sb
+      .from("matches")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "finished")
+      .gte("kickoff_at", coverage.start.toISOString())
+      .lt("kickoff_at", coverage.end.toISOString()),
   ]);
 
   if (episodesRes.error) throw new Error(episodesRes.error.message);
@@ -112,20 +128,22 @@ export const getTodayFeed = createServerFn({ method: "GET" }).handler(async () =
   const coda: string | null = (codaRes.data as { text: string }[] | null)?.[0]?.text ?? null;
 
   const episodes = (episodesRes.data as unknown as EpisodeRow[]).map(shape);
+  // Legacy episode rows predate the world-class harness. They remain available
+  // as archive/demo material, but cannot appear as a current drop in pre-launch.
+  const currentEpisodes = process.env.PRELAUNCH_MODE === "false" ? episodes : [];
   const tonight: TonightMatch[] = (tonightRes.data ?? []).map((m) => {
-    const home = (m.home as { name?: string } | null)?.name ?? "—";
-    const away = (m.away as { name?: string } | null)?.name ?? "—";
-    const d = new Date(m.kickoff_at);
-    const hh = d.getHours().toString().padStart(2, "0");
-    const mm = d.getMinutes().toString().padStart(2, "0");
-    return { id: m.id, label: `${home} vs ${away}`, kickoff: `${hh}:${mm}` };
+    const home = (m.home as { name?: string } | null)?.name ?? "Unknown home team";
+    const away = (m.away as { name?: string } | null)?.name ?? "Unknown away team";
+    return { id: m.id, label: `${home} vs ${away}`, kickoff: londonTimeLabel(m.kickoff_at) };
   });
 
-  return { episodes, tonight, coda };
+  const state =
+    currentEpisodes.length > 0 ? "published" : (coverageRes.count ?? 0) > 0 ? "pending" : "off_day";
+  return { episodes: currentEpisodes, tonight, coda, coverageDate, state };
 });
 
 export const getEpisode = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .validator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data }) => {
     const sb = publicClient();
     const { data: row, error } = await sb

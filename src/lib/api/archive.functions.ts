@@ -21,11 +21,9 @@ import {
 export const DAILY_GENERATION_LIMIT = FREE_DAILY_GENERATION_LIMIT;
 
 function publicClient() {
-  return createClient<Database>(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_PUBLISHABLE_KEY!,
-    { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
-  );
+  return createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+  });
 }
 
 export type ArchiveMatch = {
@@ -39,7 +37,7 @@ export type ArchiveMatch = {
   awayScore: number;
   // exactly one of these shapes the row's affordance:
   episode: FeedEpisode | null; // exists -> play
-  generatable: boolean;        // no episode but events exist -> "Narrate this one"
+  generatable: boolean; // no episode but events exist -> "Narrate this one"
 };
 
 export type ArchiveData = {
@@ -79,10 +77,10 @@ function shapeArchive(row: ArchiveRow): ArchiveMatch {
   return {
     matchId: row.id,
     kickoffAt: row.kickoff_at,
-    competition: row.leagues?.name ?? "—",
+    competition: row.leagues?.name ?? "Unknown competition",
     leagueId: row.league_id,
-    homeTeam: row.home?.name ?? "—",
-    awayTeam: row.away?.name ?? "—",
+    homeTeam: row.home?.name ?? "Unknown home team",
+    awayTeam: row.away?.name ?? "Unknown away team",
     homeScore: row.home_score ?? 0,
     awayScore: row.away_score ?? 0,
     episode: ep
@@ -92,11 +90,11 @@ function shapeArchive(row: ArchiveRow): ArchiveMatch {
           title: ep.title,
           hook: ep.hook,
           script: ep.script,
-          homeTeam: row.home?.name ?? "—",
-          awayTeam: row.away?.name ?? "—",
+          homeTeam: row.home?.name ?? "Unknown home team",
+          awayTeam: row.away?.name ?? "Unknown away team",
           homeScore: row.home_score ?? 0,
           awayScore: row.away_score ?? 0,
-          competition: row.leagues?.name ?? "—",
+          competition: row.leagues?.name ?? "Unknown competition",
           durationSec: ep.duration_sec,
           badge: (ep.badge as FeedEpisode["badge"]) ?? undefined,
           audioUrl: ep.audio_url,
@@ -176,8 +174,13 @@ export const getArchive = createServerFn({ method: "GET" })
 // recap right, the user gets an honest error and the attempt is not charged.
 export const requestEpisode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ matchId: z.string().min(1) }))
+  .validator(z.object({ matchId: z.string().min(1) }))
   .handler(async ({ data, context }): Promise<{ episode: FeedEpisode; remainingToday: number }> => {
+    if (process.env.PRELAUNCH_MODE !== "false") {
+      throw new Error(
+        "On-demand narration is paused until the six-pundit editorial and audio harnesses pass.",
+      );
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { runEpisodePipeline } = await import("@/lib/api/episode-pipeline.functions");
 
@@ -226,7 +229,10 @@ export const requestEpisode = createServerFn({ method: "POST" })
     } catch (e) {
       await supabaseAdmin
         .from("generation_requests")
-        .update({ status: "failed", error: e instanceof Error ? e.message.slice(0, 300) : "unknown" })
+        .update({
+          status: "failed",
+          error: e instanceof Error ? e.message.slice(0, 300) : "unknown",
+        })
         .eq("id", req.id);
       throw new Error(
         "We could not verify this recap against the match facts, so we did not publish it. Nothing was counted against your day.",
@@ -234,6 +240,7 @@ export const requestEpisode = createServerFn({ method: "POST" })
     }
 
     const after = await fetchShaped();
-    if (!after.episode) throw new Error("Generation finished but the episode did not land. Try again.");
+    if (!after.episode)
+      throw new Error("Generation finished but the episode did not land. Try again.");
     return { episode: after.episode, remainingToday: await remainingFor(context.userId) };
   });

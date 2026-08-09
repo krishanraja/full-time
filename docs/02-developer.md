@@ -1,5 +1,7 @@
 # 02 · Developer
 
+> **CURRENT-SYSTEM PRECEDENCE (2026-08-08):** Read `18-world-class-pundit-system.md` and `19-release-state.md` first. Billing is disabled, all six pundits are free, and the six-variant pipeline supersedes legacy Pro and one-voice guidance below.
+
 **Role:** Anyone writing or refactoring code in this repo.
 **Read this when:** adding a feature, fixing a bug, refactoring, onboarding.
 **Don't read this when:** you only need product context (→ `00-product.md`) or system topology (→ `03-architecture.md`).
@@ -8,22 +10,22 @@
 
 ## Stack
 
-| Layer | Choice |
-|---|---|
-| Framework | TanStack Start v1 (React 19, file-based routing, server functions) |
-| Bundler | Vite 8 + Lightning CSS |
-| Styling | Tailwind v4 (CSS-first, no `tailwind.config.js`) |
-| Components | shadcn/ui + lucide-react |
-| Motion | framer-motion |
-| State (client) | TanStack Query + a few tiny `useSyncExternalStore` stores (`player-store.ts`, `follow-store.ts`) |
-| Backend | Supabase (Postgres + Auth + Storage + Realtime), project `hzadscrqmyilbisexvyz` |
-| AI (writer) | Anthropic Opus via `recap-generator.server.ts` (`WRITER_MODEL`, default `claude-opus-4-8`) |
-| AI (judge) | Anthropic Sonnet contradiction judge (`JUDGE_MODEL`, default `claude-sonnet-4-6`) |
-| TTS | ElevenLabs (`eleven_multilingual_v2`, voice via `ELEVENLABS_VOICE_ID`) |
-| Payments | Stripe: Checkout + Billing Portal + webhooks. **Live keys in production** since 2026-08-07; test key in preview/development |
-| Push | Web Push (VAPID) via `web-push` in a server function |
-| Analytics | PostHog (loaded unconditionally in `__root.tsx`; all custom events go through `src/lib/analytics.ts`) |
-| Runtime | Vercel serverless functions (Node). Server code runs per request; heavy work (LLM writer + judge + TTS) is bounded by the function timeout, see the cron budget below. |
+| Layer          | Choice                                                                                                                                                                 |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework      | TanStack Start v1 (React 19, file-based routing, server functions)                                                                                                     |
+| Bundler        | Vite 8 + Lightning CSS                                                                                                                                                 |
+| Styling        | Tailwind v4 (CSS-first, no `tailwind.config.js`)                                                                                                                       |
+| Components     | shadcn/ui + lucide-react                                                                                                                                               |
+| Motion         | framer-motion                                                                                                                                                          |
+| State (client) | TanStack Query + a few tiny `useSyncExternalStore` stores (`player-store.ts`, `follow-store.ts`)                                                                       |
+| Backend        | Supabase (Postgres + Auth + Storage + Realtime), project `hzadscrqmyilbisexvyz`                                                                                        |
+| AI (writer)    | Anthropic Opus via `recap-generator.server.ts` (`WRITER_MODEL`, default `claude-opus-4-8`)                                                                             |
+| AI (judge)     | Anthropic Sonnet contradiction judge (`JUDGE_MODEL`, default `claude-sonnet-4-6`)                                                                                      |
+| TTS            | ElevenLabs (`eleven_multilingual_v2`, voice via `ELEVENLABS_VOICE_ID`)                                                                                                 |
+| Payments       | Stripe: Checkout + Billing Portal + webhooks. **Live keys in production** since 2026-08-07; test key in preview/development                                            |
+| Push           | Web Push (VAPID) via `web-push` in a server function                                                                                                                   |
+| Analytics      | PostHog (loaded unconditionally in `__root.tsx`; all custom events go through `src/lib/analytics.ts`)                                                                  |
+| Runtime        | Vercel serverless functions (Node). Server code runs per request; heavy work (LLM writer + judge + TTS) is bounded by the function timeout, see the cron budget below. |
 
 ## File map
 
@@ -221,50 +223,50 @@ The honesty rule is unchanged and now matters more: `/pro` takes real money, so 
 ## Build & dev
 
 ```bash
-bun install
-bun run dev      # localhost:5173
-bun run build    # production build
+pnpm install
+pnpm run dev      # localhost:5173
+pnpm run build    # production build
 ```
 
-Do not run `tsc`, `npm run build`, or `bun run build` manually as a checkpoint -- the harness does it automatically and reports back. Run only when you need to reproduce a failure locally.
+Do not run `tsc` or `pnpm run build` manually as a checkpoint -- the harness does it automatically and reports back. Run only when you need to reproduce a failure locally.
 
 ## Common pitfalls
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| `Cannot apply unknown utility class 'X'` in a CSS module | Tailwind v4 `@apply` only works in the entry CSS | Add `@reference "../styles.css"` at top of that file |
-| Border invisible after edit | v4 bare `border` = `currentColor` | Name the colour: `border-[var(--pitch-line)]` |
-| A server route "calls" a server function and it fails / loops | `createServerFn` is an RPC endpoint, not a plain function | Export the plain async fn (e.g. `runEpisodePipeline`) and call that server-side; wrap in `createServerFn` only for clients |
-| Daily drop produced no episode for a match | The recap failed the gate + judge 5 times (fail-closed by design) | Check the cron logs; the pipeline throws rather than publish a wrong recap. Fix the facts/corpus, do not loosen the gate |
-| Non-Pro user set a Pro pundit | Should be impossible | Blocked in three places: `use-entitlement`, `setVoiceStyle`, and the billing guard trigger. Do not route entitlement writes around them |
-| `Unauthorized` on a server fn during `build:dev` | `requireSupabaseAuth` called from a public-route loader during SSR | Call from a component via `useServerFn` + `useQuery`, never a public loader |
-| Stripe webhook returns `Bad signature` | Verifying against a parsed/JSON body instead of the raw text | Read `request.text()` and pass the raw string to `constructEventAsync` |
-| `Expected 3 parts in JWT; got 1` from PostgREST | Using `supabaseAdmin` for an ordinary Data API read | Use the publishable client or `requireSupabaseAuth` |
-| Service worker serving stale HTML in preview | Old PWA cache | Already guarded -- `public/sw.js` is push-only, no cache |
-| Edit fails after a content change | `routeTree.gen.ts` is stale | Restart dev server (TanStack regenerates it) |
+| Symptom                                                       | Cause                                                              | Fix                                                                                                                                     |
+| ------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `Cannot apply unknown utility class 'X'` in a CSS module      | Tailwind v4 `@apply` only works in the entry CSS                   | Add `@reference "../styles.css"` at top of that file                                                                                    |
+| Border invisible after edit                                   | v4 bare `border` = `currentColor`                                  | Name the colour: `border-[var(--pitch-line)]`                                                                                           |
+| A server route "calls" a server function and it fails / loops | `createServerFn` is an RPC endpoint, not a plain function          | Export the plain async fn (e.g. `runEpisodePipeline`) and call that server-side; wrap in `createServerFn` only for clients              |
+| Daily drop produced no episode for a match                    | The recap failed the gate + judge 5 times (fail-closed by design)  | Check the cron logs; the pipeline throws rather than publish a wrong recap. Fix the facts/corpus, do not loosen the gate                |
+| Non-Pro user set a Pro pundit                                 | Should be impossible                                               | Blocked in three places: `use-entitlement`, `setVoiceStyle`, and the billing guard trigger. Do not route entitlement writes around them |
+| `Unauthorized` on a server fn during `build:dev`              | `requireSupabaseAuth` called from a public-route loader during SSR | Call from a component via `useServerFn` + `useQuery`, never a public loader                                                             |
+| Stripe webhook returns `Bad signature`                        | Verifying against a parsed/JSON body instead of the raw text       | Read `request.text()` and pass the raw string to `constructEventAsync`                                                                  |
+| `Expected 3 parts in JWT; got 1` from PostgREST               | Using `supabaseAdmin` for an ordinary Data API read                | Use the publishable client or `requireSupabaseAuth`                                                                                     |
+| Service worker serving stale HTML in preview                  | Old PWA cache                                                      | Already guarded -- `public/sw.js` is push-only, no cache                                                                                |
+| Edit fails after a content change                             | `routeTree.gen.ts` is stale                                        | Restart dev server (TanStack regenerates it)                                                                                            |
 
 ## Where the bodies are buried
 
 - **`src/lib/api/recap-generator.server.ts`** is server-only and talks to Anthropic directly over `fetch`. Accuracy is a property of the deterministic fact-pack + code gate + judge, not of the prompt. Do not "simplify" by trusting the model to credit goals or state the score. Model ids are overridable via `WRITER_MODEL` / `JUDGE_MODEL`.
 - **`src/lib/api/episode-pipeline.functions.ts`** requires `ANTHROPIC_API_KEY` and `ELEVENLABS_API_KEY`; it throws with a clear message if either is missing. It is **fail-closed**: a match whose recap does not pass the gate + judge gets **no** episode. The cron catches per-match, so a failed or missing key fails that drop but not the endpoint.
-- **`src/lib/player-store.ts`** has both a real `<audio>` path and a simulation fallback used by the seeded demo episodes. Don't delete the simulator until every seed row has a real audio URL.
+- **`src/lib/player-store.ts`** advances only from real `<audio>` media events. Seeded archive/demo rows without approved audio remain visibly unplayable; never restore timer-based playback or simulated completion.
 - **The billing columns on `profiles` are service-role-only.** The `enforce_profile_billing_guard` trigger silently resets them for `authenticated` / `anon` writers. If entitlement "won't stick" from an ordinary client write, that is the guard working as designed -- route the write through Stripe -> webhook / `billing-sync.server.ts`.
 - **`public/sw.js`** is a push-display worker only. It is NOT an app-shell cache. Do not turn it into one -- see the PWA guidance in the project context.
 
 ## Secrets
 
-| Name | Used by | Required for |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | recap generator | Opus writer + Sonnet judge |
-| `WRITER_MODEL` / `JUDGE_MODEL` (optional) | recap generator | Override the default `claude-opus-4-8` / `claude-sonnet-4-6` |
-| `ELEVENLABS_API_KEY` | episode pipeline | TTS |
-| `ELEVENLABS_VOICE_ID` (optional) | episode pipeline | Voice (defaults to Daniel) |
-| `STRIPE_SECRET_KEY` (test) | `stripe.server.ts` / billing | Checkout, portal, subscription reads |
-| `STRIPE_PRO_PRICE_ID` | `stripe.server.ts` | The Pro subscription price |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook route | Raw-body signature verification |
-| `CRON_SECRET` | cron route | Bearer auth for the daily drop |
-| `SUPABASE_PUBLISHABLE_KEY` | cron route (fallback) | Legacy `apikey` cron auth |
-| `APP_URL` (optional) | billing redirects | Fallback checkout/portal return origin |
-| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | push fanout | Morning push |
+| Name                                                       | Used by                      | Required for                                                 |
+| ---------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------ |
+| `ANTHROPIC_API_KEY`                                        | recap generator              | Opus writer + Sonnet judge                                   |
+| `WRITER_MODEL` / `JUDGE_MODEL` (optional)                  | recap generator              | Override the default `claude-opus-4-8` / `claude-sonnet-4-6` |
+| `ELEVENLABS_API_KEY`                                       | episode pipeline             | TTS                                                          |
+| `ELEVENLABS_VOICE_ID` (optional)                           | episode pipeline             | Voice (defaults to Daniel)                                   |
+| `STRIPE_SECRET_KEY` (test)                                 | `stripe.server.ts` / billing | Checkout, portal, subscription reads                         |
+| `STRIPE_PRO_PRICE_ID`                                      | `stripe.server.ts`           | The Pro subscription price                                   |
+| `STRIPE_WEBHOOK_SECRET`                                    | Stripe webhook route         | Raw-body signature verification                              |
+| `CRON_SECRET`                                              | cron route                   | Bearer auth for the daily drop                               |
+| `SUPABASE_PUBLISHABLE_KEY`                                 | cron route (fallback)        | Legacy `apikey` cron auth                                    |
+| `APP_URL` (optional)                                       | billing redirects            | Fallback checkout/portal return origin                       |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | push fanout                  | Morning push                                                 |
 
 Set via the Vercel project env (server secrets) and Supabase; the client-visible `VITE_*` values are the only ones bundled. Never commit. To take Stripe live, swap the three `STRIPE_*` values to live-mode and point a live-mode webhook at the webhook route.

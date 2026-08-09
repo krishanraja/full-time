@@ -1,86 +1,110 @@
 # Full Time
 
-Daily AI-narrated football recaps. Big-5 leagues. About 60 seconds per match. One morning drop. Calm voice, sharp writing. PWA-first, optional account, optional push.
+Full Time is a pre-launch autonomous football morning show: one shared evidence base, six genuinely different AI pundits, and a public receipt for every registered prediction.
 
-Live: https://fulltime.fm
+> One football morning. Six genuinely different minds. Every opinion has evidence. Every prediction gets a receipt.
 
-Status: 5 hand-authored episodes are live and the accuracy-guaranteed generation engine has been proven end to end on production. There are no real users, listens, or follows yet. Match data is seeded (2023-24 season), so the daily cron is inert until a live match feed is wired.
+The existing production site at [fulltime.fm](https://fulltime.fm) is a preview artifact. This branch is not deployed, its migration is not applied to production, and it must not be described as launch-ready.
+
+## Product status
+
+- `PRELAUNCH_MODE` fails closed unless explicitly set to `false`.
+- Checkout and new Pro claims are disabled; existing subscribers can still reach billing management.
+- All six pundits are free and selectable without an account.
+- Legacy match recaps remain archive/demo material and cannot be relabelled as current in pre-launch.
+- The legacy one-voice publisher requires a separate recovery flag even after pre-launch is disabled.
+- Provider-backed private rehearsals require both cron authentication and `ENABLE_PRIVATE_REHEARSALS=true`.
+- No production migration, generation run, checkout, deployment, or backfill is part of the local implementation.
+
+Launch remains blocked on rights-cleared research sources, voice licensing and founder casting, TTS capacity, the two-season forecast backfill, the 60-match/360-script evaluation, blind human review, seven successful daily rehearsals, and the legal/accessibility/operational checklist.
+
+## Architecture
+
+The pipeline is deliberately layered:
+
+1. Immutable evidence packs separate facts, derivations, provenance, and unavailable evidence.
+2. A claim laboratory licenses facts, mechanisms, decision-quality judgments, counterfactuals, opinions, and predictions before prose exists.
+3. Each versioned pundit spec independently selects a thesis, uncertainty stance, humour mechanism, language, prediction risk, and performance profile.
+4. A structured ten-beat outline becomes a 750-1,100 word script.
+5. Hard gates and independent qualitative judges run against the same candidate. Failed beats receive at most three targeted repair rounds; thresholds never relax.
+6. The approved display script becomes a separate performance plan. Code renders allowlisted delivery directions and strict TTS fidelity checks fail closed.
+7. Predictions lock before kickoff, settle against their original structured rule, and retain Brier score, log loss, and an explicit receipt.
+
+Structured data cannot prove pressing shapes, rest defence, overloads, body position, coaching intent, confidence, effort, or dressing-room dynamics. The unsupported-tactics gate blocks those claims until richer licensed evidence exists.
+
+## Six pundits
+
+| ID         | Product         | Primary lens                                          |
+| ---------- | --------------- | ----------------------------------------------------- |
+| `zen`      | The Reporter    | Balanced evidence and news judgment                   |
+| `gaffer`   | The Gaffer      | Decisions, substitutions, game state, counterfactuals |
+| `stats`    | The Numbers Guy | Probability, xG, variance, process versus outcome     |
+| `romantic` | The Romantic    | Narrative turns and exceptional actions               |
+| `doomer`   | The Doomer      | Fragility, downside scenarios, warning signs          |
+| `banter`   | The Wind-Up     | Contradiction, rivalry, status, bold judgments        |
+
+None may imitate the wording, vocal identity, or recognisable style of a living pundit.
 
 ## Stack
 
-- TanStack Start v1, React 19, Vite 8, Tailwind v4, shadcn/ui
-- Supabase (Postgres, Auth, Storage, Realtime), project `hzadscrqmyilbisexvyz`
-- Deployed on Vercel (nitro `vercel` preset)
-- Anthropic (writer + judge) and ElevenLabs (TTS) power generation
-- Stripe for billing. **Live keys in production** since 2026-08-07; test key in preview and development
+- TanStack Start, React 19, TypeScript, Vite, Tailwind, shadcn/ui
+- Supabase Postgres/Auth/Storage with RLS migrations
+- Anthropic-compatible structured generation for writers and independent judges
+- ElevenLabs narration with persona voices, performance plans, transcription and number checks
+- Vercel configuration in `vercel.ts`
+- pnpm 11 with a strict release-age policy, scoped security overrides, and an explicit dependency-build allowlist
+- Vitest, TypeScript, ESLint, and production-build verification in GitHub Actions
 
-## How episodes are generated
+## Local development
 
-Accuracy is guaranteed by construction, not by a prompt instruction. The pipeline lives in `src/lib/api/recap-generator.server.ts` and `src/lib/api/episode-pipeline.functions.ts` (`runEpisodePipeline`):
-
-1. A deterministic fact-pack is built from `match_events`: a goal log with running score, scorer summary by team, own-goal and penalty tagging, cards, and full-match stats.
-2. An Anthropic Opus writer drafts the script, conditioned on a persona and examples from `voice_corpus`.
-3. A deterministic code gate checks the draft: exact final score, scorers must be a subset of the fact-pack (diacritic-normalized surname matching), 105 to 135 words, no repeated score or minute, no "scored every goal", no em dashes, no banned cliches.
-4. A Sonnet contradiction judge returns a verdict only, flagging a wrong winner, a wrong score, or a goal credited to the wrong team.
-5. Up to 5 surgical regens on any failure. The pipeline is fail-closed: it publishes no episode rather than a wrong one.
-
-The approved script goes to ElevenLabs TTS (Daniel voice, `eleven_multilingual_v2`), the audio lands in Supabase Storage, and an `episodes` row is written (script, magic sentence, segments, audio URL).
-
-Env: `ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, optional `WRITER_MODEL` (default `claude-opus-4-8`), `JUDGE_MODEL` (default `claude-sonnet-4-6`).
-
-## Free and Pro
-
-Free tier plus Full Time Pro at $4.99/mo USD, through Stripe. **Live in production** since 2026-08-07 (test key in preview and development), so real cards can be charged.
-
-Pro gates two things, both enforced server-side rather than only in the UI:
-
-1. **All six pundits.** Anonymous and free listeners get The Reporter and The Gaffer. `setVoiceStyle` re-reads the profile and rejects a Pro pundit for a non-Pro caller, because the client can post any of the six.
-2. **25 name-a-game narrations a day**, against 3 on the free tier. `limitFor` resolves the allowance per profile.
-
-The `profiles` billing columns are writable only by `service_role`, enforced by a DB guard trigger that closed a real self-grant-Pro hole.
-
-Distinct per-pundit narration is still "rolling out": selection is real and gated, but the voices do not yet sound different. Open compliance gap: subscription terms and a refund policy are not published yet, see `docs/11-legal.md`.
-
-Billing code: `src/lib/api/billing.functions.ts` (`getEntitlement`, `createCheckout`, `createPortal`, `syncCheckout`), `src/routes/api/stripe/webhook.ts`, `src/lib/stripe.server.ts`, `src/lib/billing-sync.server.ts`, `src/lib/entitlement.ts`, `src/hooks/use-entitlement.ts`, and the `src/routes/pro.tsx` page.
-
-Data: `profiles` gained `plan`, `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`, `current_period_end`, and `price_id`. A `BEFORE INSERT/UPDATE` trigger (`enforce_profile_billing_guard`) makes those billing columns writable by `service_role` only, which closed a real self-grant-Pro RLS hole. See `supabase/migrations/20260705120000_billing.sql`.
-
-Env: `STRIPE_SECRET_KEY` (test), `STRIPE_PRO_PRICE_ID` (test), `STRIPE_WEBHOOK_SECRET`.
-
-## Daily drop
-
-The morning batch is a single endpoint, `src/routes/api/public/cron/daily-drop` (file `src/routes/api/public/cron.daily-drop.ts`), triggered by GitHub Actions (`.github/workflows/daily-drop.yml`) at 06:30 UTC.
-
-- Auth: it requires a `CRON_SECRET` bearer token (previously it trusted the public Supabase publishable key, which was a weakness).
-- Scale: generation is heavy, so matches run with bounded concurrency (3) under a 240s wall-clock budget to stay inside the 300s serverless function limit.
-- Safety: it is idempotent, skipping any match that already has an episode, and date-filtered to recent finished matches.
-
-It is inert until a live match-data feed exists. Turning on real daily content needs a live API-Football ingest (roadmap) and accepts ongoing Anthropic and ElevenLabs cost. To activate the schedule, the operator sets two GitHub repo secrets: `CRON_SECRET` (matching Vercel) and `FULL_TIME_URL`.
-
-## Local dev
-
-```bash
-bun install
-bun run dev
+```powershell
+pnpm install
+Copy-Item .env.example .env.local
+pnpm run dev
 ```
 
-The app runs at the local URL Vite prints. `.env` holds the Supabase project vars; the generation, billing, and cron features need their own keys (see the sections above) to run fully.
+Populate only the environment values required for the surface being exercised. Public UI remains honest when client Supabase configuration is unavailable; paid generation remains disabled until its explicit flags and provider credentials are present.
+
+Verification commands:
+
+```powershell
+pnpm run typecheck
+pnpm test
+pnpm run lint
+pnpm run build
+```
+
+Vercel CLI 58.9.0 is installed and the project is linked. Environment pull and deployment still require separate operator approval:
+
+```powershell
+vercel env pull .env.local
+```
+
+Environment pull and deployment remain separate, approval-gated operations.
+
+## Data migration and interfaces
+
+The new schema is split across two ordered migrations:
+
+- [`20260808194138_pundit_intelligence_system.sql`](./supabase/migrations/20260808194138_pundit_intelligence_system.sql): editorial evidence, claims, specs, variants, harnesses, predictions and research provenance.
+- [`20260808200000_operational_release_gates.sql`](./supabase/migrations/20260808200000_operational_release_gates.sql): voice licensing, audio review, forecasts, evaluation, rehearsals, release sign-offs, atomic run claims and atomic publication.
+
+Public interfaces:
+
+- `GET /api/public/pundits`
+- `GET /api/public/drops/today?pundit=<id>`
+- `GET /api/public/drops/:id/variants/:pundit`
+- `PUT /api/profile/pundit`
+- `GET /api/public/pundits/:id/predictions`
+- `GET /api/public/pundits/:id/receipts`
+- `GET /api/public/feed.rss`
+
+The RSS feed is one canonical Reporter feed with one stable drop GUID. Shared links preview a selected pundit without overwriting the recipient's saved preference.
 
 ## Documentation
 
-Full operating documentation lives in [`docs/`](./docs/README.md), written for the specific role an AI agent or human might step into. Some role docs predate the 2026-07-06 monetization and generation-engine changes; this README is the current source of truth for those two areas until the role docs catch up.
-
-| If you are… | Start here |
-|---|---|
-| Picking this codebase up cold | [`docs/13-agent-handoff.md`](./docs/13-agent-handoff.md) |
-| Shipping code | [`docs/02-developer.md`](./docs/02-developer.md) |
-| Reading or writing the database | [`docs/04-data-model.md`](./docs/04-data-model.md) |
-| Touching the AI pipeline | [`docs/05-content-safety.md`](./docs/05-content-safety.md) |
-| Designing or applying brand | [`docs/01-brand.md`](./docs/01-brand.md) |
-| Running ops / on-call | [`docs/06-ops.md`](./docs/06-ops.md) |
-| Marketing or launch | [`docs/07-marketing.md`](./docs/07-marketing.md) |
-| Sales or partnerships | [`docs/08-sales.md`](./docs/08-sales.md) |
-| Growth experiments | [`docs/09-growth.md`](./docs/09-growth.md) |
-| Product or roadmap | [`docs/00-product.md`](./docs/00-product.md), [`docs/12-roadmap.md`](./docs/12-roadmap.md) |
-| Support escalations | [`docs/10-support.md`](./docs/10-support.md) |
-| Legal review | [`docs/11-legal.md`](./docs/11-legal.md) |
+- [`docs/00-product.md`](./docs/00-product.md): current product doctrine
+- [`docs/18-world-class-pundit-system.md`](./docs/18-world-class-pundit-system.md): implementation map, safety boundaries, and launch blockers
+- [`docs/19-release-state.md`](./docs/19-release-state.md): single release-state source of truth and operator sequence
+- [`docs/04-data-model.md`](./docs/04-data-model.md): legacy data context; use the new migration as the current schema source
+- [`docs/11-legal.md`](./docs/11-legal.md): legal workstream that must pass before launch
