@@ -23,6 +23,13 @@ export function parsePunditId(value: string | null | undefined): PunditId | null
   return PUNDIT_IDS.includes(value as PunditId) ? (value as PunditId) : null;
 }
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isValidDropId(value: string): boolean {
+  return UUID_PATTERN.test(value);
+}
+
 type PublicDrop = {
   id: string;
   coverage_date: string;
