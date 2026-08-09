@@ -1,6 +1,6 @@
-import { defineConfig } from "@vercel/config";
+import type { VercelConfig } from "@vercel/config/v1";
 
-export default defineConfig({
+export const config: VercelConfig = {
   crons: [
     {
       path: "/api/public/cron/ingest",
@@ -15,4 +15,4 @@ export default defineConfig({
       schedule: "30 6,16 * * *",
     },
   ],
-});
+};
