@@ -122,10 +122,11 @@
       "TypeScript typecheck",
       "53 tests across 19 test files",
       "ESLint with zero errors and six existing fast-refresh warnings",
-      "Git diff whitespace check"
+      "Git diff whitespace check",
+      "GitHub Actions run 31533126034, including dependency audit, production build, generated-type checks, and migration checks"
     ],
-    "blocked": [
-      "The Windows production build emits the application bundles but the Workflow plugin registers zero steps and zero workflows under both Node 25.5.0 and the required Node 24.19.0. The manifest gate fails as designed. Reproduce on Linux CI or repair the Workflow/Vite integration before release."
+    "localLimitations": [
+      "The Windows production build emits the application bundles but the Workflow plugin registers zero steps and zero workflows under both Node 25.5.0 and the required Node 24.19.0. The manifest gate fails as designed. GitHub Actions run 31533126034 passed the production build on Ubuntu and Node 24 for merge 0933a63, so Linux CI or a matching Vercel build is the current build authority."
     ]
   },
   "claims": {

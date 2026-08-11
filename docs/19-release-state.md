@@ -34,6 +34,7 @@ At 2026-08-11 19:53 UTC, `https://fulltime.fm` returned HTTP 200 from Vercel and
 | `/feed` page                    | Redirects to Today                              |
 | Supabase project                | `hzadscrqmyilbisexvyz`                          |
 | Release migrations              | Previously applied and read back on 2026-08-08  |
+| Repository verification         | GitHub Actions run `31533126034` passed         |
 
 Durable docs do not pin a deployment ID or SHA because committing that value immediately creates a newer revision. Deployment metadata and live readback remain authoritative.
 
@@ -60,7 +61,7 @@ These are implementation facts, not external launch gates:
 - **Settings language:** functional but not fully reconciled to AI Pundit terminology and the simplified public voice.
 - **Personalization:** saved follows exist; a private club-built playlist does not.
 - **Machine-facing copy:** `/llms.txt` is stale in the currently observed deployment until this revision deploys.
-- **Production build gate:** the 2026-08-11 local Windows build emitted client, SSR, and Nitro bundles under Node 24.19.0, but Workflow registered zero steps and zero workflows. The manifest checker failed as designed. Reproduce on Linux CI or repair the Workflow/Vite integration before release.
+- **Local build limitation:** the 2026-08-11 Windows build emitted client, SSR, and Nitro bundles under Node 24.19.0, but Workflow registered zero steps and zero workflows. The manifest checker failed as designed. GitHub Actions run `31533126034` passed the same production gate on Ubuntu and Node 24 for merge `0933a63`; use Linux CI or a matching Vercel build as build authority.
 
 No marketing, support, sales, or agent output may claim those gaps are complete.
 

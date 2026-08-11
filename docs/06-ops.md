@@ -102,7 +102,7 @@ Never print a secret. [`.env.example`](../.env.example) records names only.
 
 ## Deployment
 
-Production targets Vercel Node 24. The 2026-08-11 Windows verification produced the application bundle under both Node 25 and the required Node 24.19.0, but the Workflow plugin registered zero steps and zero workflows. `scripts/check-workflow-manifest.mjs` correctly failed the build. Treat this as an open release blocker until a matching Linux or Vercel build registers `dailyPunditWorkflow` and all ten application steps; changing Node alone did not fix it.
+Production targets Vercel Node 24. The 2026-08-11 Windows verification produced the application bundle under both Node 25 and the required Node 24.19.0, but the Workflow plugin registered zero steps and zero workflows. `scripts/check-workflow-manifest.mjs` correctly failed that local build. GitHub Actions run `31533126034` then passed the production build on Ubuntu with Node 24 for merge `0933a63`. Use Linux CI or a matching Vercel build as the release-build authority; the current Windows environment is not a trustworthy Workflow-manifest validator.
 
 The Vercel CLI is optional and not assumed installed. Install it when an approved operator workflow requires local commands:
 
