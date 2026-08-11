@@ -6,15 +6,15 @@ Full Time is a pre-launch autonomous football morning show. It turns one verifie
 
 ## Status
 
-| Surface                      | State                                                                                    |
-| ---------------------------- | ---------------------------------------------------------------------------------------- |
-| Production                   | [fulltime.fm](https://fulltime.fm) is live as a truthful preview                         |
-| Public launch                | Blocked by the release gates in [`docs/19-release-state.md`](./docs/19-release-state.md) |
-| Publication automation       | Disabled and fail-closed                                                                 |
-| Billing                      | New checkout and paid claims disabled                                                    |
-| Pundits                      | All six are free and selectable without an account                                       |
-| Database                     | Current additive migrations applied to Supabase project `hzadscrqmyilbisexvyz`           |
-| Verified production revision | `36fd607e2ef862894434a3aafd0c7e378f3d5f68` on 2026-08-10                                 |
+| Surface                | State                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------ |
+| Production             | [fulltime.fm](https://fulltime.fm) is live as a truthful preview                                 |
+| Public launch          | Blocked by the release gates in [`docs/19-release-state.md`](./docs/19-release-state.md)         |
+| Publication automation | Disabled and fail-closed                                                                         |
+| Billing                | New checkout and paid claims disabled                                                            |
+| Pundits                | All six are free and selectable without an account                                               |
+| Database               | Current additive migrations applied to Supabase project `hzadscrqmyilbisexvyz`                   |
+| Production authority   | GitHub `main` plus the current Vercel production deployment; last verified `READY` on 2026-08-11 |
 
 The preview never relabels archive content as current, simulates playback, substitutes one persona for another, or publishes an unapproved variant.
 

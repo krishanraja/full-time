@@ -7,21 +7,21 @@
 
 ## Live state
 
-| Item                           | Verified state                                                         |
-| ------------------------------ | ---------------------------------------------------------------------- |
-| Product                        | Fail-closed pre-launch                                                 |
-| Production URL                 | [fulltime.fm](https://fulltime.fm)                                     |
-| Vercel deployment              | `dpl_8phR7sbBEwsn1diWrfByHDsk5Tep`, `READY`, production, region `iad1` |
-| Git revision                   | `36fd607e2ef862894434a3aafd0c7e378f3d5f68`                             |
-| Git branch                     | `codex/world-class-pundits`                                            |
-| Public launch                  | Disabled                                                               |
-| Public publication automation  | Disabled                                                               |
-| New checkout and Pro marketing | Disabled                                                               |
-| Pundits                        | Six, free and selectable                                               |
-| Supabase project               | `hzadscrqmyilbisexvyz`                                                 |
-| Release migrations             | Applied and independently read back on 2026-08-08                      |
+| Item                           | Verified state                                                                                     |
+| ------------------------------ | -------------------------------------------------------------------------------------------------- |
+| Product                        | Fail-closed pre-launch                                                                             |
+| Production URL                 | [fulltime.fm](https://fulltime.fm)                                                                 |
+| Vercel production              | [fulltime.fm](https://fulltime.fm), `READY`, deployed from GitHub `main`, last verified 2026-08-11 |
+| Deployed revision              | Read from current Vercel deployment metadata at release time                                       |
+| Production branch              | `main`                                                                                             |
+| Public launch                  | Disabled                                                                                           |
+| Public publication automation  | Disabled                                                                                           |
+| New checkout and Pro marketing | Disabled                                                                                           |
+| Pundits                        | Six, free and selectable                                                                           |
+| Supabase project               | `hzadscrqmyilbisexvyz`                                                                             |
+| Release migrations             | Applied and independently read back on 2026-08-08                                                  |
 
-Vercel confirmed that `fulltime.fm` points to the revision above and that the deployment is ready. This is an engineering release in truthful preview mode, not product launch approval.
+Vercel confirmed that `fulltime.fm` is ready and deployed from GitHub `main`. Current deployment metadata is authoritative. Durable repository docs intentionally do not pin a deployment ID or SHA because committing that update would immediately create a newer revision. This is an engineering release in truthful preview mode, not product launch approval.
 
 The Supabase connector available in this environment does not have permission to inspect the FullTime project. That is a tooling limitation, not a reason to target another project. Confirm the project name and reference before every future production write.
 
