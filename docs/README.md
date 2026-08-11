@@ -2,7 +2,7 @@
 
 This handbook is the operating contract for Full Time. It is written for founders, contributors, agents, operators, reviewers, and commercial partners who need accurate answers without reverse-engineering the codebase.
 
-- **Last reviewed:** 2026-08-10
+- **Last reviewed:** 2026-08-11
 - **Production authority:** GitHub `main` plus the current Vercel production deployment
 
 ## Source-of-truth order
@@ -40,6 +40,7 @@ Code, migrations, and deployment evidence decide implementation facts. Documenta
 | [`16-ask-your-pundit.md`](./16-ask-your-pundit.md)                     | Proposal                         | Product and engineering         | Evidence-bounded interactive Q&A discovery spec                            |
 | [`18-world-class-pundit-system.md`](./18-world-class-pundit-system.md) | Current                          | Product, engineering, reviewers | Implemented six-pundit system and release-control map                      |
 | [`19-release-state.md`](./19-release-state.md)                         | Current                          | Founder and operators           | Live revision, enabled state, blockers and next operator sequence          |
+| [`20-research-intake.md`](./20-research-intake.md)                     | Current                          | Founder, editorial, data        | Private weekly source intake, rights manifest and fetch procedure          |
 
 Number 17 is intentionally unused. Do not create a placeholder merely to fill the sequence.
 

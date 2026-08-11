@@ -17,7 +17,9 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "backfill:history": "node scripts/backfill-history.mjs"
+    "backfill:history": "node scripts/backfill-history.mjs",
+    "research:new-week": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/new-research-week.ps1",
+    "research:audit": "node scripts/audit-research-week.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

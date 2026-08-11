@@ -38,3 +38,7 @@ dist-ssr
 .vercel
 supabase/.temp/
 /.swc
+
+# Rights-cleared research source files are private local inputs. The repository
+# stores only their schema and operating instructions.
+/_corpus/

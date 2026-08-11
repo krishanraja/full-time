@@ -3,7 +3,7 @@
 - **Status:** Current release source of truth
 - **Owner:** Founder and release operator
 - **Purpose:** Record what is live, what is disabled, and what must happen next.
-- **Last verified:** 2026-08-10
+- **Last verified:** 2026-08-11
 
 ## Live state
 
@@ -25,6 +25,8 @@ Vercel confirmed that `fulltime.fm` is ready and deployed from GitHub `main`. Cu
 
 The Supabase connector available in this environment does not have permission to inspect the FullTime project. That is a tooling limitation, not a reason to target another project. Confirm the project name and reference before every future production write.
 
+The founder confirmed an API-Football Pro plan with all endpoints and 7,500 daily requests on 2026-08-11. The scheduled 00:15 UTC ingest nevertheless failed its 2026 coverage preflight because none of the five configured leagues reported live fixture-event coverage. Treat this as a season, key-mapping, or provider-response investigation; do not assume a missing paid tier and do not bypass the coverage gate for daily production.
+
 ## What is complete
 
 1. Truthful pre-launch behavior, six free pundits, current-date semantics, real audio events, strict cron authorization, and no simulated completion.
@@ -35,6 +37,7 @@ The Supabase connector available in this environment does not have permission to
 6. Deterministic 60-match corpus tooling, resumable 360-script evaluation, human-review records, and revision-bound readiness evaluation.
 7. Responsive product shell, pundit selection, daily-show presentation, archive labeling, and searchable receipt ledger.
 8. Production schema, function search-path fixes, optimized auth RLS policies, and a ready Vercel deployment.
+9. A private weekly research intake, rights manifest, reproducibility hashes, and fail-closed readiness audit.
 
 ## What remains blocked
 
@@ -55,8 +58,8 @@ The release-readiness evaluator lists every missing gate. It cannot average fail
 ## Next operator sequence
 
 1. Confirm the intended Vercel project and Supabase project before touching live state.
-2. Configure provider credentials while leaving all execution flags false.
-3. Backfill two seasons in bounded batches. Train a forecast without activation; activate only a held-out winner.
+2. Reconcile the confirmed API-Football Pro entitlement with the failing 2026 coverage response while leaving all execution flags false.
+3. After coverage passes, backfill two seasons in bounded batches. Train a forecast without activation; activate only a held-out winner.
 4. Curate the 60-match set, run 360 scripts, and collect blinded editorial review.
 5. Add licensed voice candidates, verified pronunciations, and full-length audio reviews.
 6. Enable private rehearsals only. Complete seven consecutive runs before the UK deadline.
