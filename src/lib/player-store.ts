@@ -44,43 +44,90 @@ function emit() {
   listeners.forEach((l) => l());
 }
 
+function wireAudio(audio: HTMLAudioElement) {
+  audio.addEventListener("timeupdate", () => {
+    if (audioEl !== audio || !state.episode || !audio.duration) return;
+    state = { ...state, progress: audio.currentTime / audio.duration };
+    emit();
+  });
+  audio.addEventListener("ended", () => {
+    if (audioEl === audio) handleComplete();
+  });
+  audio.addEventListener("waiting", () => {
+    if (audioEl !== audio || !state.episode) return;
+    state = { ...state, isPlaying: false, status: "loading" };
+    emit();
+  });
+  audio.addEventListener("error", () => {
+    if (audioEl === audio) {
+      failPlayback("This show could not be loaded. Check your connection and try again.");
+    }
+  });
+  audio.addEventListener("pause", () => {
+    if (audioEl !== audio || !state.episode) return;
+    if (state.status !== "ended" && state.status !== "error") {
+      state = { ...state, isPlaying: false, status: "paused" };
+    }
+    emit();
+  });
+  audio.addEventListener("play", () => {
+    if (audioEl !== audio) return;
+    const episodeId = state.episode?.id;
+    if (!episodeId) return;
+    state = { ...state, isPlaying: true, status: "playing", error: null };
+    track("play_started", { id: episodeId });
+    emit();
+  });
+}
+
 function getAudio(): HTMLAudioElement | null {
   if (typeof window === "undefined") return null;
   if (!audioEl) {
     audioEl = new Audio();
     audioEl.preload = "metadata";
-    audioEl.addEventListener("timeupdate", () => {
-      if (!audioEl || !state.episode || !audioEl.duration) return;
-      state = { ...state, progress: audioEl.currentTime / audioEl.duration };
-      emit();
-    });
-    audioEl.addEventListener("ended", () => {
-      handleComplete();
-    });
-    audioEl.addEventListener("waiting", () => {
-      if (!state.episode) return;
-      state = { ...state, isPlaying: false, status: "loading" };
-      emit();
-    });
-    audioEl.addEventListener("error", () => {
-      failPlayback("This episode could not be loaded. Check your connection and try again.");
-    });
-    audioEl.addEventListener("pause", () => {
-      if (!state.episode) return;
-      if (state.status !== "ended" && state.status !== "error") {
-        state = { ...state, isPlaying: false, status: "paused" };
-      }
-      emit();
-    });
-    audioEl.addEventListener("play", () => {
-      const episodeId = state.episode?.id;
-      if (!episodeId) return;
-      state = { ...state, isPlaying: true, status: "playing", error: null };
-      track("play_started", { id: episodeId });
-      emit();
-    });
+    wireAudio(audioEl);
   }
   return audioEl;
+}
+
+function waitForReady(audio: HTMLAudioElement) {
+  return new Promise<void>((resolve, reject) => {
+    const timeout = window.setTimeout(
+      () => finish(new Error("The new show took too long to load.")),
+      15_000,
+    );
+    const onReady = () => finish();
+    const onError = () => finish(new Error("The new show could not be loaded."));
+    const finish = (error?: Error) => {
+      window.clearTimeout(timeout);
+      audio.removeEventListener("canplay", onReady);
+      audio.removeEventListener("error", onError);
+      if (error) reject(error);
+      else resolve();
+    };
+    audio.addEventListener("canplay", onReady, { once: true });
+    audio.addEventListener("error", onError, { once: true });
+    audio.load();
+  });
+}
+
+function playWithTimeout(audio: HTMLAudioElement) {
+  return new Promise<void>((resolve, reject) => {
+    const timeout = window.setTimeout(
+      () => reject(new Error("The new show took too long to load.")),
+      15_000,
+    );
+    audio.play().then(
+      () => {
+        window.clearTimeout(timeout);
+        resolve();
+      },
+      (error: unknown) => {
+        window.clearTimeout(timeout);
+        reject(error);
+      },
+    );
+  });
 }
 
 function handleComplete() {
@@ -134,6 +181,55 @@ function setMediaSession(ep: Episode) {
 }
 
 export const playerStore = {
+  async switchEpisode(ep: Episode, options: { autoplay: boolean }) {
+    if (typeof window === "undefined" || !ep.audioUrl) {
+      throw new Error("Audio is not available for this show yet.");
+    }
+    if (state.episode?.id === ep.id) {
+      if (options.autoplay && !state.isPlaying) this.toggle();
+      else if (!options.autoplay && state.isPlaying) getAudio()?.pause();
+      this.seek(0);
+      return;
+    }
+
+    const candidate = new Audio();
+    candidate.preload = "auto";
+    candidate.src = ep.audioUrl;
+    candidate.playbackRate = state.playbackRate;
+    candidate.currentTime = 0;
+    try {
+      if (options.autoplay) {
+        candidate.muted = true;
+        await playWithTimeout(candidate);
+      } else {
+        await waitForReady(candidate);
+      }
+    } catch (error) {
+      candidate.pause();
+      candidate.removeAttribute("src");
+      throw error instanceof Error ? error : new Error("The new show could not be loaded.");
+    }
+
+    const previous = audioEl;
+    if (previous) previous.pause();
+    audioEl = candidate;
+    wireAudio(candidate);
+    queue = [ep];
+    queueIndex = 0;
+    candidate.currentTime = 0;
+    candidate.muted = false;
+    state = {
+      episode: ep,
+      isPlaying: options.autoplay,
+      progress: 0,
+      status: options.autoplay ? "playing" : "paused",
+      error: null,
+      playbackRate: state.playbackRate,
+    };
+    setMediaSession(ep);
+    track("pundit_switch_committed", { id: ep.id, autoplay: options.autoplay });
+    emit();
+  },
   // q: the drop to play through. When given, playback auto-advances through it.
   play(ep: Episode, q?: Episode[]) {
     if (q && q.length) {

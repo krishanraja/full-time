@@ -1,3 +1,4 @@
+import type { PunditId } from "@/lib/pundit/types";
 import {
   claimEditorialRunStep,
   completeRunStep,
@@ -9,7 +10,6 @@ import {
   publishDropStep,
   quarantineEditorialDropStep,
   selectFeatureMatchStep,
-  type DailyRunMode,
 } from "./daily-pundit.steps";
 
 // Keep workflow constants local. Importing this tiny list from the shared app
@@ -21,6 +21,8 @@ export type DailyPunditWorkflowInput = {
   coverageDate: string;
   mode: DailyRunMode;
 };
+
+export type DailyRunMode = "full_rehearsal" | "publication";
 
 function assertCoverageDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error("Coverage date must be YYYY-MM-DD.");

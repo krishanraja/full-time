@@ -22,9 +22,9 @@ import { hasClientSupabaseConfig } from "@/lib/supabase-availability";
 import { SITE_URL, DEFAULT_COVER_IMAGE_URL } from "@/lib/site-url";
 import { ldJson } from "@/lib/seo";
 
-const SITE_NAME_TITLE = "Full Time - Six AI football pundits, one accountable morning show";
+const SITE_NAME_TITLE = "Full Time - Six AI Pundits, one real football match";
 const SITE_DESCRIPTION =
-  "Choose one of six distinct AI football pundits for evidence-backed analysis, original humour and prediction receipts.";
+  "Pick an AI Pundit and play a complete football show built from checked match facts.";
 
 // Site-wide schema.org graph: the publisher, the website, and the show.
 // Split into three linked nodes because search and answer engines treat the
@@ -226,7 +226,7 @@ function RootComponent() {
           <AppHeader />
           <Outlet />
         </div>
-        <MiniPlayer />
+        {pathname !== "/" && <MiniPlayer />}
         <BottomNav />
       </QueryClientProvider>
     </MotionConfig>

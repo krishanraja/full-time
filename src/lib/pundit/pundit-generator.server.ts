@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { z } from "zod";
 import { licenseClaims } from "./claim-lab";
 import { anthropicJson } from "./anthropic-json.server";
@@ -9,6 +8,7 @@ import {
   validateQualitativeScores,
 } from "./harness";
 import { getPunditSpec, PUNDIT_SPECS } from "./specs";
+import { sha256Hex } from "./hash";
 import { maxSourceSimilarity } from "./research-originality";
 import { loadRightsClearedOriginalityCorpus } from "./research-originality.server";
 import type {
@@ -134,11 +134,8 @@ function compactEvidence(pack: EvidencePack) {
   };
 }
 
-function deterministicClaimId(matchId: string, index: number, thesis: string) {
-  const hex = createHash("sha256")
-    .update(`${matchId}:${index}:${thesis}`)
-    .digest("hex")
-    .slice(0, 32);
+async function deterministicClaimId(matchId: string, index: number, thesis: string) {
+  const hex = (await sha256Hex(`${matchId}:${index}:${thesis}`)).slice(0, 32);
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
@@ -172,11 +169,13 @@ export async function generateClaimLaboratory(pack: EvidencePack): Promise<Analy
       },
     }),
   });
-  const proposed: AnalysisClaim[] = output.claims.map((claim, index) => ({
-    ...claim,
-    id: deterministicClaimId(pack.matchId, index, claim.thesis),
-    matchId: pack.matchId,
-  }));
+  const proposed: AnalysisClaim[] = await Promise.all(
+    output.claims.map(async (claim, index) => ({
+      ...claim,
+      id: await deterministicClaimId(pack.matchId, index, claim.thesis),
+      matchId: pack.matchId,
+    })),
+  );
   const licensed = licenseClaims(proposed, pack).filter((item) => item.licensed);
   if (!licensed.length) throw new Error("Claim laboratory produced no licensed claims.");
   return licensed.map((item) => item.claim);
@@ -472,8 +471,7 @@ export async function generateAllPundits(input: {
   predictionTiming?: { lockedAt: string; kickoffAt: string };
 }) {
   const claims = input.claims ?? (await generateClaimLaboratory(input.pack));
-  const originalityCorpus =
-    input.originalityCorpus ?? (await loadRightsClearedOriginalityCorpus());
+  const originalityCorpus = input.originalityCorpus ?? (await loadRightsClearedOriginalityCorpus());
   return Promise.all(
     (Object.keys(PUNDIT_SPECS) as PunditId[]).map((punditId) =>
       generatePunditVariant({

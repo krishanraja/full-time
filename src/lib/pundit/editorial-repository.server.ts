@@ -1,18 +1,16 @@
-import { createHash } from "node:crypto";
 import type { AnalysisClaim, EvidencePack, HarnessResult } from "./types";
 import type { GeneratedPunditVariant } from "./pundit-generator.server";
+import { sha256Hex } from "./hash";
 import { serviceRest } from "./service-rest.server";
 
 function evidenceHash(pack: EvidencePack) {
-  return createHash("sha256")
-    .update(
-      JSON.stringify({
-        facts: pack.facts,
-        derivations: pack.derivations,
-        unavailable: pack.unavailableEvidence,
-      }),
-    )
-    .digest("hex");
+  return sha256Hex(
+    JSON.stringify({
+      facts: pack.facts,
+      derivations: pack.derivations,
+      unavailable: pack.unavailableEvidence,
+    }),
+  );
 }
 
 type IdRow = { id: string };
@@ -52,7 +50,7 @@ async function assertSingleMatchRehearsalSlot(dropId: string, matchId: string) {
 }
 
 async function persistEvidence(dropId: string, pack: EvidencePack) {
-  const hash = evidenceHash(pack);
+  const hash = await evidenceHash(pack);
   const existing = await serviceRest<IdRow[]>(
     `evidence_packs?content_hash=eq.${hash}&select=id&limit=1`,
   );

@@ -1,9 +1,5 @@
-import { createHash } from "node:crypto";
+import { sha256Hex } from "./hash";
 import type { PunditId } from "./types";
-
-function digest(bytes: Uint8Array) {
-  return createHash("sha256").update(bytes).digest("hex").slice(0, 24);
-}
 
 async function uploadPublicAsset(input: {
   bucket: "episodes" | "share";
@@ -29,8 +25,12 @@ export async function storeVariantAssets(input: {
   audio: Uint8Array;
   shareImage: Uint8Array;
 }) {
-  const audioPath = `pundits/${input.dropId}/${input.punditId}/${digest(input.audio)}.mp3`;
-  const sharePath = `pundits/${input.dropId}/${input.punditId}/${digest(input.shareImage)}.png`;
+  const [audioDigest, shareDigest] = await Promise.all([
+    sha256Hex(input.audio),
+    sha256Hex(input.shareImage),
+  ]);
+  const audioPath = `pundits/${input.dropId}/${input.punditId}/${audioDigest.slice(0, 24)}.mp3`;
+  const sharePath = `pundits/${input.dropId}/${input.punditId}/${shareDigest.slice(0, 24)}.png`;
   const [audioUrl, shareImageUrl] = await Promise.all([
     uploadPublicAsset({
       bucket: "episodes",

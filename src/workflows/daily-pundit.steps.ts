@@ -1,33 +1,20 @@
 import { getStepMetadata } from "workflow";
-import {
-  claimRun,
-  finishRun,
-  recordRehearsal,
-  selectFeatureMatch,
-} from "@/lib/pundit/daily-orchestrator.server";
-import { buildEvidencePack } from "@/lib/pundit/evidence";
-import { persistEditorialRehearsal } from "@/lib/pundit/editorial-repository.server";
-import {
-  generateClaimLaboratory,
-  generatePunditVariant,
-  type GeneratedPunditVariant,
-} from "@/lib/pundit/pundit-generator.server";
-import { runDropPromiseChecks } from "@/lib/pundit/promise-checks.server";
-import { loadRightsClearedOriginalityCorpus } from "@/lib/pundit/research-originality.server";
-import { serviceRest, serviceRpc } from "@/lib/pundit/service-rest.server";
-import { loadStructuredMatch } from "@/lib/pundit/structured-match.server";
+import type { GeneratedPunditVariant } from "@/lib/pundit/pundit-generator.server";
 import type { PunditId } from "@/lib/pundit/types";
-import { producePunditVariant } from "@/lib/pundit/variant-production.server";
 
-export type DailyRunMode = "full_rehearsal" | "publication";
+type DailyRunMode = "full_rehearsal" | "publication";
 
 function assertCoverageDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error("Coverage date must be YYYY-MM-DD.");
   return value;
 }
 
-export async function claimEditorialRunStep(input: { coverageDate: string; mode: DailyRunMode }) {
+export async function claimEditorialRunStep(input: {
+  coverageDate: string;
+  mode: DailyRunMode;
+}) {
   "use step";
+  const { claimRun } = await import("@/lib/pundit/daily-orchestrator.server");
   const { stepId } = getStepMetadata();
   return claimRun({
     coverageDate: assertCoverageDate(input.coverageDate),
@@ -38,11 +25,23 @@ export async function claimEditorialRunStep(input: { coverageDate: string; mode:
 
 export async function selectFeatureMatchStep(coverageDate: string) {
   "use step";
+  const { selectFeatureMatch } = await import("@/lib/pundit/daily-orchestrator.server");
   return selectFeatureMatch(assertCoverageDate(coverageDate));
 }
 
 export async function prepareEditorialStep(matchId: string, requestedCoverageDate: string) {
   "use step";
+  const [
+    { loadStructuredMatch },
+    { buildEvidencePack },
+    { generateClaimLaboratory },
+    { loadRightsClearedOriginalityCorpus },
+  ] = await Promise.all([
+    import("@/lib/pundit/structured-match.server"),
+    import("@/lib/pundit/evidence"),
+    import("@/lib/pundit/pundit-generator.server"),
+    import("@/lib/pundit/research-originality.server"),
+  ]);
   const structured = await loadStructuredMatch(matchId);
   if (structured.coverageDate !== requestedCoverageDate) {
     throw new Error(
@@ -71,6 +70,7 @@ export async function generatePunditStep(input: {
   originalityCorpus: string[];
 }) {
   "use step";
+  const { generatePunditVariant } = await import("@/lib/pundit/pundit-generator.server");
   return generatePunditVariant(input);
 }
 generatePunditStep.maxRetries = 0;
@@ -81,6 +81,7 @@ export async function persistEditorialStep(input: {
   variants: GeneratedPunditVariant[];
 }) {
   "use step";
+  const { persistEditorialRehearsal } = await import("@/lib/pundit/editorial-repository.server");
   return persistEditorialRehearsal({
     coverageDate: input.coverageDate,
     pack: input.prepared.pack,
@@ -97,12 +98,14 @@ export async function producePunditStep(input: {
   entities: string[];
 }) {
   "use step";
+  const { producePunditVariant } = await import("@/lib/pundit/variant-production.server");
   return producePunditVariant(input);
 }
 producePunditStep.maxRetries = 0;
 
 export async function quarantineEditorialDropStep(dropId: string, reason: string) {
   "use step";
+  const { serviceRest } = await import("@/lib/pundit/service-rest.server");
   const promise = {
     passed: false,
     checks: [{ name: "editorial", passed: false, detail: reason }],
@@ -126,6 +129,10 @@ export async function finalizeProducedDropStep(input: {
   production: Array<{ punditId: PunditId; passed: boolean; failures?: readonly string[] }>;
 }) {
   "use step";
+  const [{ runDropPromiseChecks }, { serviceRest }] = await Promise.all([
+    import("@/lib/pundit/promise-checks.server"),
+    import("@/lib/pundit/service-rest.server"),
+  ]);
   const promise = input.production.every((item) => item.passed)
     ? await runDropPromiseChecks({ dropId: input.dropId, coverageDate: input.coverageDate })
     : {
@@ -157,6 +164,7 @@ export async function finalizeProducedDropStep(input: {
 
 export async function publishDropStep(dropId: string) {
   "use step";
+  const { serviceRpc } = await import("@/lib/pundit/service-rest.server");
   return serviceRpc("publish_daily_drop", { target_drop_id: dropId });
 }
 
@@ -172,6 +180,7 @@ export async function completeRunStep(input: {
   failure?: string;
 }) {
   "use step";
+  const { finishRun, recordRehearsal } = await import("@/lib/pundit/daily-orchestrator.server");
   await finishRun({
     runId: input.runId,
     status: input.status,

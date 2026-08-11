@@ -24,9 +24,8 @@ export function AppHeader() {
         </Link>
         <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
           {[
-            ["/", "Morning"],
-            ["/receipts", "Receipts"],
-            ["/following", "Following"],
+            ["/", "Today"],
+            ["/following", "Teams"],
             ["/settings", "Settings"],
           ].map(([to, label]) => (
             <Link

@@ -3,7 +3,7 @@ import { HapticButton } from "./HapticButton";
 import { cn } from "../lib/utils";
 
 /**
- * Six complete pundit products: each owns a thesis lens, humour system,
+ * Six complete AI Pundit products: each owns a thesis lens, humour system,
  * performance plan, licensed voice and prediction record. Humour may target
  * decisions, contradictions, institutions and football culture, never private
  * lives, protected traits, injuries, grief or personal humiliation.
@@ -12,37 +12,37 @@ export const PERSONALITIES = [
   {
     id: "zen",
     name: "The Reporter",
-    tag: "Balanced evidence, news judgment and the detail that matters most.",
+    tag: "Calm, clear, and first with the facts.",
     sample: "The score is the headline. The shot profile is the correction beneath it.",
   },
   {
     id: "gaffer",
     name: "The Gaffer",
-    tag: "Decisions, substitutions, game state and the cost of each choice.",
+    tag: "Spots the choices that changed the game.",
     sample: "It worked. That does not automatically make it a good decision.",
   },
   {
     id: "stats",
     name: "The Numbers Guy",
-    tag: "Probability, xG, variance and process separated from outcome.",
+    tag: "Counts everything. Trusts almost nothing.",
     sample: "The result got the champagne. The process has asked for a recount.",
   },
   {
     id: "romantic",
     name: "The Romantic",
-    tag: "Narrative turns, extraordinary actions and the emotional stakes.",
+    tag: "Finds the bit that made football feel magic.",
     sample: "Some moments need explaining. That one merely needed witnessing.",
   },
   {
     id: "doomer",
     name: "The Doomer",
-    tag: "Failure modes, fragility and the downside hiding inside a good result.",
+    tag: "Sees the wobble before anyone else.",
     sample: "The clean sheet is smiling. The chances conceded are drafting a complaint.",
   },
   {
     id: "banter",
     name: "The Wind-Up",
-    tag: "Rivalry, contradiction and sharp judgments that return to evidence.",
+    tag: "Starts arguments for fun. Football needs one.",
     sample: "The victory parade can start after the numbers finish their objection.",
   },
 ] as const;

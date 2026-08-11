@@ -1,9 +1,3 @@
-import { randomUUID } from "node:crypto";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { spawn } from "node:child_process";
-
 const TARGET_LUFS = -16;
 const TARGET_TRUE_PEAK_DB = -1;
 const TARGET_LRA = 7;
@@ -33,8 +27,27 @@ export type MasteredAudio = {
   };
 };
 
-export const runFfmpeg: FfmpegRunner = (binary, args) =>
-  new Promise((resolve, reject) => {
+async function loadFileRuntime() {
+  // These imports are reached only from Workflow step functions. Keeping the
+  // specifiers runtime-computed prevents the deterministic flow bundle from
+  // resolving Node-only modules while retaining full Node access in the step.
+  const fsSpecifier = `node:${"fs/promises"}`;
+  const osSpecifier = `node:${"os"}`;
+  const pathSpecifier = `node:${"path"}`;
+  const [fs, os, path] = await Promise.all([
+    import(/* @vite-ignore */ fsSpecifier) as Promise<typeof import("node:fs/promises")>,
+    import(/* @vite-ignore */ osSpecifier) as Promise<typeof import("node:os")>,
+    import(/* @vite-ignore */ pathSpecifier) as Promise<typeof import("node:path")>,
+  ]);
+  return { ...fs, tmpdir: os.tmpdir, join: path.join };
+}
+
+export const runFfmpeg: FfmpegRunner = async (binary, args) => {
+  const childProcessSpecifier = `node:${"child_process"}`;
+  const { spawn } = (await import(
+    /* @vite-ignore */ childProcessSpecifier
+  )) as typeof import("node:child_process");
+  return new Promise((resolve, reject) => {
     const child = spawn(binary, args, { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
     let stdout = "";
     let stderr = "";
@@ -57,6 +70,7 @@ export const runFfmpeg: FfmpegRunner = (binary, args) =>
       resolve({ code: code ?? -1, stdout, stderr });
     });
   });
+};
 
 async function resolveFfmpegBinary() {
   if (process.env.FFMPEG_PATH?.trim()) return process.env.FFMPEG_PATH.trim();
@@ -81,7 +95,10 @@ export async function concatenateNarrationMp3(input: {
   if (input.segments.length === 1) return input.segments[0];
   const runner = input.runner ?? runFfmpeg;
   const binary = input.binary ?? (await resolveFfmpegBinary());
-  const directory = await mkdtemp(join(tmpdir(), `full-time-concat-${randomUUID()}-`));
+  const { join, mkdtemp, readFile, rm, tmpdir, writeFile } = await loadFileRuntime();
+  const directory = await mkdtemp(
+    join(tmpdir(), `full-time-concat-${globalThis.crypto.randomUUID()}-`),
+  );
   const outputPath = join(directory, "narration.mp3");
   try {
     const paths: string[] = [];
@@ -243,7 +260,10 @@ export async function masterNarrationAudio(input: {
   if (!input.audio.byteLength) throw new Error("Cannot master an empty audio file.");
   const runner = input.runner ?? runFfmpeg;
   const binary = input.binary ?? (await resolveFfmpegBinary());
-  const directory = await mkdtemp(join(tmpdir(), `full-time-audio-${randomUUID()}-`));
+  const { join, mkdtemp, readFile, rm, tmpdir, writeFile } = await loadFileRuntime();
+  const directory = await mkdtemp(
+    join(tmpdir(), `full-time-audio-${globalThis.crypto.randomUUID()}-`),
+  );
   const sourcePath = join(directory, "source.mp3");
   const masteredPath = join(directory, "mastered.mp3");
 

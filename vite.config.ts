@@ -13,7 +13,8 @@ const workflowPlugins = workflow({ dirs: ["src/workflows"], runtime: "nodejs24.x
 
 export default defineConfig({
   // Lovable appends custom plugins after its internal TanStack/Nitro plugins.
-  // Workflow directives must transform first, so mark the three plugins pre.
+  // Workflow directives must transform first or the build silently registers
+  // zero workflows, so mark all three integration plugins as pre.
   plugins: workflowPlugins,
   vite: {
     // The package is optional because it has no Windows ARM64 binary. Keep it
