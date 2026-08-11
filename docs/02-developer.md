@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Engineering
 - **Purpose:** Provide a reliable setup path, repository map, invariants, and change checklist.
-- **Last reviewed:** 2026-08-10
+- **Last reviewed:** 2026-08-11
 
 ## Quick start
 
@@ -19,6 +19,7 @@ pnpm run dev
 Verification:
 
 ```powershell
+pnpm run docs:check
 pnpm run typecheck
 pnpm test
 pnpm run lint
@@ -51,10 +52,13 @@ Do not weaken a gate, enable a production flag, or copy live secrets into `.env.
 src/routes/                     pages and HTTP routes
 src/workflows/                  durable daily-pundit workflow and retryable steps
 src/components/                 product components and UI primitives
+src/components/TodayShowPlayer.tsx  player-first Today experience
+src/components/PunditAvatar.tsx     generated AI Pundit edition visuals
 src/hooks/                      auth, entitlement and feed hooks
 src/lib/pundit/                 current six-pundit intelligence system
 src/lib/api/                    application services and legacy recap path
 src/lib/player-store.ts         real HTML audio, queue, MediaSession, analytics
+src/lib/today-show-model.ts     published edition to playable episode projection
 src/lib/launch-config.ts        client fail-closed launch and billing flags
 src/integrations/supabase/      clients and generated database types
 src/styles.css                  design tokens and Tailwind 4 configuration
@@ -63,6 +67,7 @@ scripts/backfill-history.mjs    bounded historical data operator
 .github/workflows/verify.yml    CI verification
 vercel.ts                       production schedules
 docs/                           operating handbook
+docs/product-state.json         machine-readable product and commercial truth
 ```
 
 Use [`src/routes/README.md`](../src/routes/README.md) for the route inventory and [`03-architecture.md`](./03-architecture.md) for system flow.
@@ -80,7 +85,10 @@ These rules protect the product contract:
 7. **Publication is atomic.** A drop needs all six variants and every promised asset.
 8. **Predictions are immutable after kickoff.** Settlement uses the original rule.
 9. **Player analytics come from real media events.** Never restore timer-based progress or simulated completion.
-10. **One persona never substitutes for another.** Failure stays visible.
+10. **AI Pundit switching is transactional.** Load the requested media before committing UI state or saved preference.
+11. **Proof cards are projections.** Use only sealed evidence and licensed claim IDs; never generate a request-time explanation.
+12. **One AI Pundit never substitutes for another.** Failure stays visible.
+13. **Public copy says AI Pundit.** Keep `PunditId` and persona terms only where technical compatibility needs them.
 
 ## Current pundit pipeline
 
@@ -108,6 +116,8 @@ The older `recap-generator.server.ts` and `episode-pipeline.functions.ts` remain
 - Public handlers validate method, inputs, and authorization before any privileged access.
 - Cron and internal routes use the shared timing-safe `isCronAuthorized` helper. No public-key fallback is permitted.
 - New pages include title, description, canonical URL, social metadata, and honest loading, empty, error, and unavailable states.
+- `/feed` is a compatibility redirect to Today. Do not rebuild a standalone Feed tab.
+- The public shell contains Today, Teams, and Settings only. `/receipts` stays unlisted while its legacy page is replaced.
 
 ## Supabase rules
 
@@ -158,18 +168,21 @@ Before handoff:
 2. run the full verification set;
 3. inspect `git diff --check` and the final diff;
 4. update the owning document and the route or data map when relevant;
-5. update [`19-release-state.md`](./19-release-state.md) only if live state changed;
-6. record a product decision in [`12-roadmap.md`](./12-roadmap.md) only when doctrine changed.
+5. update `product-state.json` when behavior, gaps, offer state, or claim boundaries change;
+6. update [`19-release-state.md`](./19-release-state.md) only if live state changed;
+7. record a product decision in [`12-roadmap.md`](./12-roadmap.md) only when doctrine changed.
 
 ## Common failures
 
-| Symptom                             | Likely cause                                                 | Response                                                        |
-| ----------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------- |
-| Unknown Tailwind utility            | Tailwind 4 context or token missing                          | Add the correct CSS reference or semantic utility               |
-| Internal route returns `401`        | Missing or mismatched cron bearer                            | Reconcile `CRON_SECRET`; never add a fallback                   |
-| Internal route returns `409`        | Safe feature flag is false                                   | Enable only for the approved operation                          |
-| Script is quarantined               | A hard or qualitative gate failed                            | Inspect evidence spans and repair failed beats only             |
-| Narration is quarantined            | Transcript, number, name, voice, quota, or mastering failure | Fix the named input; never accept unverified audio              |
-| Workflow manifest fails locally     | Wrong Node runtime                                           | Use Node 24, not the local ARM64 Node 25 runtime                |
-| DB write returns no rows            | RLS ownership or missing select policy                       | Inspect policy and caller role; do not bypass with service role |
-| Audio appears to play with no media | Regression to simulated state                                | Restore real `<audio>` events and show unavailable state        |
+| Symptom                              | Likely cause                                                 | Response                                                                                                |
+| ------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| Unknown Tailwind utility             | Tailwind 4 context or token missing                          | Add the correct CSS reference or semantic utility                                                       |
+| Internal route returns `401`         | Missing or mismatched cron bearer                            | Reconcile `CRON_SECRET`; never add a fallback                                                           |
+| Internal route returns `409`         | Safe feature flag is false                                   | Enable only for the approved operation                                                                  |
+| Script is quarantined                | A hard or qualitative gate failed                            | Inspect evidence spans and repair failed beats only                                                     |
+| Narration is quarantined             | Transcript, number, name, voice, quota, or mastering failure | Fix the named input; never accept unverified audio                                                      |
+| Workflow manifest is empty locally   | Current Windows build integration registers zero workflows   | Treat the build as failed; reproduce on Linux CI or repair the Workflow/Vite integration before release |
+| DB write returns no rows             | RLS ownership or missing select policy                       | Inspect policy and caller role; do not bypass with service role                                         |
+| Audio appears to play with no media  | Regression to simulated state                                | Restore real `<audio>` events and show unavailable state                                                |
+| AI Pundit changes before media loads | Switch committed before the preload transaction completed    | Keep the old edition and save only after successful load                                                |
+| Proof card has an invented reason    | Request-time explanation or unlicensed claim escaped         | Project only sealed evidence referenced by a licensed claim                                             |

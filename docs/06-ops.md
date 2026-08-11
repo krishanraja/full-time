@@ -3,7 +3,7 @@
 - **Status:** Current runbook
 - **Owner:** Release operator and on-call
 - **Purpose:** Operate rehearsals, publication, incidents, secrets, deployments, and rollback safely.
-- **Last reviewed:** 2026-08-10
+- **Last reviewed:** 2026-08-11
 
 ## Default posture
 
@@ -102,7 +102,7 @@ Never print a secret. [`.env.example`](../.env.example) records names only.
 
 ## Deployment
 
-Production targets Vercel Node 24. Do not use the local ARM64 Node 25 runtime for a release build because it does not produce a valid Workflow manifest for this repository.
+Production targets Vercel Node 24. The 2026-08-11 Windows verification produced the application bundle under both Node 25 and the required Node 24.19.0, but the Workflow plugin registered zero steps and zero workflows. `scripts/check-workflow-manifest.mjs` correctly failed the build. Treat this as an open release blocker until a matching Linux or Vercel build registers `dailyPunditWorkflow` and all ten application steps; changing Node alone did not fix it.
 
 The Vercel CLI is optional and not assumed installed. Install it when an approved operator workflow requires local commands:
 
@@ -119,7 +119,7 @@ Before production promotion:
 1. verify the exact Git revision;
 2. run the full local checks on Node 24;
 3. verify database migrations and advisors on the confirmed project;
-4. inspect the preview across mobile, desktop, accessibility, auth, player, receipts, RSS, and failure states;
+4. inspect the preview across mobile, desktop, accessibility, auth, Today switching, proof cards, Teams, track record, Settings, RSS, machine-facing metadata, and failure states;
 5. confirm pre-launch and billing flags;
 6. review build and runtime logs;
 7. record the deployment ID in [`19-release-state.md`](./19-release-state.md).
@@ -135,6 +135,7 @@ Before production promotion:
 ## Verification baseline
 
 ```powershell
+pnpm run docs:check
 pnpm run typecheck
 pnpm test
 pnpm run lint

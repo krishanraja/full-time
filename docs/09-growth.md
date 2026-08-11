@@ -3,11 +3,11 @@
 - **Status:** Current
 - **Owner:** Product and growth
 - **Purpose:** Define the product metrics, event taxonomy, growth loops, and experiment rules.
-- **Last reviewed:** 2026-08-10
+- **Last reviewed:** 2026-08-11
 
 ## Measurement principle
 
-Measure the listener behavior Full Time exists to create: choosing a mind, finishing the argument, returning the next morning, and checking the receipt.
+Measure the listener behavior Full Time exists to create: choosing an AI Pundit, starting real audio, finishing a useful argument, comparing another edition, and returning for another approved show.
 
 Do not optimize opens, page views, or outrage in isolation.
 
@@ -28,14 +28,16 @@ Do not optimize opens, page views, or outrage in isolation.
 
 ### Public product
 
-Primary metric: **completed approved shows per weekly active listener**, segmented by pundit and coverage date.
+Primary metric: **completed approved AI Pundit shows per weekly active listener**, segmented by AI Pundit, coverage date, and current-versus-latest state.
 
 Supporting metrics:
 
 - day-7 and day-28 listener retention;
 - completion rate and median listening time;
 - pundit selection and switching rate;
-- receipt return rate;
+- AI Pundit picker open, attempted switch, committed switch, and switch failure rate;
+- Show me why open rate and proof-card completion;
+- settled-record entry and return rate when records exist;
 - share rate by portable line, prediction, and correction;
 - push opt-in and delivery success;
 - playback error rate;
@@ -47,17 +49,18 @@ Guardrails: factual incidents, quarantine rate, unsupported-claim escapes, audio
 
 All calls pass through `src/lib/analytics.ts`. The helper queues briefly while PostHog loads, no-ops on the server, stops after 30 seconds, and never breaks playback.
 
-| Event               | Properties                           | Source                   | Decision it supports               |
-| ------------------- | ------------------------------------ | ------------------------ | ---------------------------------- |
-| `play_intent`       | `{ id }`                             | `player-store.ts`        | User tried to start an item        |
-| `play_started`      | `{ id }`                             | real media `play` event  | Approved media actually began      |
-| `listen_completed`  | `{ id }`                             | real media `ended` event | Item reached true completion       |
-| `playback_error`    | `{ id, message }`                    | media failure            | Reliability and asset diagnosis    |
-| `push_opt_in`       | none                                 | `push-client.ts`         | Notification conversion            |
-| `follow`            | `{ entity_type, entity_id, action }` | `follow-store.ts`        | Follow/unfollow engagement         |
-| `waitlist_join`     | `{ source }`                         | `waitlist.tsx`           | Launch-note source attribution     |
-| `signin_gate_shown` | `{ surface }`                        | gated surfaces           | Auth friction                      |
-| `name_a_game`       | `{ generated }`                      | `archive.tsx`            | Legacy archive demand and failures |
+| Event                     | Properties                           | Source                   | Decision it supports               |
+| ------------------------- | ------------------------------------ | ------------------------ | ---------------------------------- |
+| `play_intent`             | `{ id }`                             | `player-store.ts`        | User tried to start an item        |
+| `play_started`            | `{ id }`                             | real media `play` event  | Approved media actually began      |
+| `listen_completed`        | `{ id }`                             | real media `ended` event | Item reached true completion       |
+| `playback_error`          | `{ id, message }`                    | media failure            | Reliability and asset diagnosis    |
+| `pundit_switch_committed` | `{ id, autoplay }`                   | successful media preload | Safe edition switching             |
+| `push_opt_in`             | none                                 | `push-client.ts`         | Notification conversion            |
+| `follow`                  | `{ entity_type, entity_id, action }` | `follow-store.ts`        | Follow/unfollow engagement         |
+| `waitlist_join`           | `{ source }`                         | `waitlist.tsx`           | Launch-note source attribution     |
+| `signin_gate_shown`       | `{ surface }`                        | gated surfaces           | Auth friction                      |
+| `name_a_game`             | `{ generated }`                      | `archive.tsx`            | Legacy archive demand and failures |
 
 `listen_completed` comes only from the audio element. Missing media cannot generate completion.
 
@@ -72,17 +75,21 @@ All calls pass through `src/lib/analytics.ts`. The helper queues briefly while P
 
 ## Growth loops
 
-### Prediction to receipt
+### AI Pundit comparison
+
+Put two complete readings of one match beside each other. The social question is which AI Pundit saw it best, not which synthetic voice sounded most human.
+
+### Claim to proof
+
+Turn one playful judgment into a card that shows the checked fact and the limit. The card should teach something before it asks for a click.
+
+### Prediction to settled record
 
 Publish a falsifiable claim before kickoff, then send users back to a plain settlement. This loop compounds authority because wrong calls remain visible.
 
 ### Portable insight
 
 Turn one approved concept or line into a share card linked to its evidence and full edition. The share should teach something even if the recipient never installs the app.
-
-### Pundit comparison
-
-Let users compare two editions grounded in the same match. The useful social question is which interpretation was stronger, not which synthetic voice was louder.
 
 ### Morning habit
 

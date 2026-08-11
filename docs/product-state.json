@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-08-11",
+  "authority": {
+    "repository": "https://github.com/krishanraja/full-time",
+    "branch": "main",
+    "productionUrl": "https://fulltime.fm",
+    "rule": "Code and live readback establish behavior. This record explains that behavior for humans and agents."
+  },
+  "product": {
+    "name": "Full Time",
+    "category": "AI-native football audio product",
+    "lifecycle": "pre-launch",
+    "oneSentence": "Full Time turns one set of checked football facts into six complete shows, each made and performed by a different AI Pundit.",
+    "coreValue": "The product is valuable because AI can create six genuinely different readings of the same match, while deterministic evidence controls keep the underlying facts honest.",
+    "primaryAudience": "Football fans who want a playful, useful take on a match without sitting through the usual pundit noise.",
+    "primaryAction": "Choose an AI Pundit and play a checked show.",
+    "publicNavigation": [
+      { "label": "Today", "route": "/" },
+      { "label": "Teams", "route": "/following" },
+      { "label": "Settings", "route": "/settings" }
+    ]
+  },
+  "aiPundits": [
+    { "id": "zen", "name": "The Reporter", "promise": "Calm, clear, and first with the facts." },
+    { "id": "gaffer", "name": "The Gaffer", "promise": "Spots the choices that changed the game." },
+    {
+      "id": "stats",
+      "name": "The Numbers Guy",
+      "promise": "Counts everything. Trusts almost nothing."
+    },
+    {
+      "id": "romantic",
+      "name": "The Romantic",
+      "promise": "Finds the bit that made football feel magic."
+    },
+    { "id": "doomer", "name": "The Doomer", "promise": "Sees the wobble before anyone else." },
+    {
+      "id": "banter",
+      "name": "The Wind-Up",
+      "promise": "Starts arguments for fun. Football needs one."
+    }
+  ],
+  "implemented": {
+    "today": [
+      "The player is the first material object on the mobile Today screen.",
+      "The screen shows the coverage date, show title, hook, AI Pundit, play or pause control, and real-media progress.",
+      "The AI Pundit picker opens as an accessible bottom drawer containing all six choices.",
+      "A switch commits only after the requested edition loads. Failure keeps the previous playable edition and offers retry.",
+      "Switching while audio plays restarts the selected edition and keeps playing. Switching while paused loads it at the beginning without autoplay.",
+      "The current edition can expose up to three proof cards projected from sealed evidence and licensed claim IDs.",
+      "If today's edition is unavailable, the API can return the latest published edition for the same AI Pundit with its real coverage date.",
+      "Recent published editions appear below the player when they exist.",
+      "A quiet How did they do? entry appears only when settled records exist."
+    ],
+    "avatars": [
+      "Every AI Pundit has a distinct abstract visual motif.",
+      "The visual is generated deterministically from the daily-drop ID and AI Pundit ID, so it changes by edition without changing during one edition.",
+      "The current implementation generates SVG geometry in the browser. It does not call an image model at request time."
+    ],
+    "personalization": [
+      "All six AI Pundits are free and selectable without an account.",
+      "The selected AI Pundit is stored locally and is synced to the profile when the listener is signed in.",
+      "A shared pundit or drop query can preview an edition without silently replacing a saved choice."
+    ],
+    "distribution": [
+      "The standalone /feed page redirects to Today.",
+      "A canonical Reporter RSS endpoint remains available at /api/public/feed.rss.",
+      "Legacy archive and episode pages remain available and must stay labelled as archive or demo material."
+    ],
+    "operations": [
+      "Automated public publication, new checkout, public forecast scores, and public launch remain disabled by fail-closed flags.",
+      "The durable six-variant production pipeline, evidence gates, narration checks, atomic publication boundary, forecasts, settlements, and release evaluator exist in code.",
+      "Passing code checks does not satisfy rights, voice, editorial, rehearsal, legal, accessibility, or launch gates."
+    ]
+  },
+  "currentGaps": [
+    {
+      "surface": "Teams",
+      "truth": "The navigation label is Teams, but /following still fetches every stored team and league, puts teams before leagues, and shows the old three-team personalization prompt.",
+      "promiseBoundary": "Do not claim Premier-League-only beta filtering, disabled coming-later leagues, or club-driven show ordering until the route and server response implement them."
+    },
+    {
+      "surface": "Track record",
+      "truth": "Today uses a settled-only endpoint to decide whether to show How did they do?, but the direct /receipts route still renders the older searchable prediction ledger and can request open predictions.",
+      "promiseBoundary": "Do not market a completed quiet settled-only track-record experience until /receipts is replaced."
+    },
+    {
+      "surface": "Settings",
+      "truth": "Settings is functional and warm in places, but some primary copy still says pundit rather than AI Pundit and retains legacy billing and notification seams.",
+      "promiseBoundary": "Do not describe Settings as fully reconciled to the new voice until its public copy pass ships."
+    },
+    {
+      "surface": "Personalized shows",
+      "truth": "Team follows exist, but the current six-edition daily-drop API does not generate a private club-built playlist for each listener.",
+      "promiseBoundary": "Say preferences are saved. Do not say Full Time generates a personal show or playlist."
+    }
+  ],
+  "commercialState": {
+    "consumerPrice": "All six AI Pundits are free during pre-launch.",
+    "newCheckout": "disabled",
+    "existingSubscribers": "Existing subscribers may still manage billing through Settings.",
+    "availableNow": [
+      "Invite a person to try the truthful pre-launch preview.",
+      "Invite a person to join the launch note.",
+      "Run a private product demonstration with approved material.",
+      "Hold non-binding discovery with data, voice, distribution, club, league, publisher, or sponsor partners."
+    ],
+    "notAvailable": [
+      "A new paid subscription",
+      "A guaranteed daily publishing service",
+      "A commercial sponsor package",
+      "An approved white-label offer",
+      "A confirmed public launch date",
+      "A forecast-performance claim"
+    ]
+  },
+  "verification": {
+    "checkedAt": "2026-08-11",
+    "passed": [
+      "Documentation contract and relative-link check",
+      "TypeScript typecheck",
+      "53 tests across 19 test files",
+      "ESLint with zero errors and six existing fast-refresh warnings",
+      "Git diff whitespace check"
+    ],
+    "blocked": [
+      "The Windows production build emits the application bundles but the Workflow plugin registers zero steps and zero workflows under both Node 25.5.0 and the required Node 24.19.0. The manifest gate fails as designed. Reproduce on Linux CI or repair the Workflow/Vite integration before release."
+    ]
+  },
+  "claims": {
+    "approved": [
+      "Six AI Pundits can each have a separate thesis, script, humour system, performance plan, and prediction record.",
+      "The Today player uses real audio events for progress and completion.",
+      "Public proof cards use sealed evidence and licensed claims rather than request-time generated explanations.",
+      "Full Time discloses AI-written scripts and synthetic voices.",
+      "Full Time does not use copyrighted broadcast audio or imitate a living pundit's recognizable voice or style.",
+      "All six AI Pundits are free during pre-launch."
+    ],
+    "conditional": [
+      "Daily reliability requires seven complete rehearsals and revision-bound release approval.",
+      "Prediction accuracy or calibration requires a published held-out evaluation and sample context.",
+      "Premier League beta exclusivity requires the Teams response and UI restriction to ship.",
+      "Personalized ordering requires exact match and team metadata plus multiple approved relevant shows."
+    ],
+    "prohibited": [
+      "Guaranteed predictions or betting value",
+      "Unbiased or error-free analysis",
+      "A human podcast or an imitation of a human pundit",
+      "Personally generated shows or playlists",
+      "Big Five launch coverage",
+      "Current paid availability",
+      "Daily publication before the release gates pass",
+      "Film-level tactical observations without licensed film or tracking evidence"
+    ]
+  },
+  "evidence": {
+    "todayUi": [
+      "src/routes/index.tsx",
+      "src/components/TodayShowPlayer.tsx",
+      "src/lib/player-store.ts"
+    ],
+    "publicApi": ["src/lib/api/editorial-public.server.ts", "src/routes/api/public"],
+    "aiPundits": ["src/components/PersonalitySelector.tsx", "src/lib/pundit/specs.ts"],
+    "avatars": ["src/components/PunditAvatar.tsx", "src/lib/pundit/avatar-model.ts"],
+    "teams": ["src/routes/following.tsx", "src/lib/api/feed.functions.ts"],
+    "trackRecord": ["src/routes/receipts.tsx", "src/routes/api/public/pundits.$id.receipts.ts"],
+    "navigation": ["src/components/BottomNav.tsx", "src/components/AppHeader.tsx"],
+    "release": [
+      "src/lib/launch-config.ts",
+      "src/lib/pundit/release-readiness.server.ts",
+      "docs/19-release-state.md"
+    ]
+  }
+}

@@ -1,39 +1,44 @@
 # Full Time
 
-Full Time is a pre-launch autonomous football morning show. It turns one verified match-data record into six distinct AI-pundit editions, then keeps a public receipt for every registered prediction.
+Full Time is an AI-native football audio product. It turns one set of checked match facts into six complete shows, each made and performed by a different **AI Pundit**.
 
-> One football morning. Six genuinely different minds. Every opinion has evidence. Every prediction gets a receipt.
+> One real match. Six AI Pundits. Pick the brain you fancy.
 
-## Status
+The product is meant to feel brilliant because it is AI, not like a cheaper imitation of a human podcast. The facts stay shared and evidence-bound. The argument, humour, script, delivery, and generated edition visual change with the AI Pundit.
 
-| Surface                | State                                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------------ |
-| Production             | [fulltime.fm](https://fulltime.fm) is live as a truthful preview                                 |
-| Public launch          | Blocked by the release gates in [`docs/19-release-state.md`](./docs/19-release-state.md)         |
-| Publication automation | Disabled and fail-closed                                                                         |
-| Billing                | New checkout and paid claims disabled                                                            |
-| Pundits                | All six are free and selectable without an account                                               |
-| Database               | Current additive migrations applied to Supabase project `hzadscrqmyilbisexvyz`                   |
-| Production authority   | GitHub `main` plus the current Vercel production deployment; last verified `READY` on 2026-08-11 |
+## Current state
 
-The preview never relabels archive content as current, simulates playback, substitutes one persona for another, or publishes an unapproved variant.
+| Surface     | Repository and production state on 2026-08-11                                                                                           |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Lifecycle   | Truthful pre-launch preview                                                                                                             |
+| Production  | [fulltime.fm](https://fulltime.fm) serves the three-tab AI Pundit shell                                                                 |
+| Navigation  | Today, Teams, Settings                                                                                                                  |
+| Today       | Player-first show, six-AI-Pundit picker, real-media progress, same-pundit fallback, proof cards, recent shows, settled-only entry point |
+| AI Pundits  | All six are free and selectable without an account                                                                                      |
+| Avatars     | Abstract SVG visuals generated from the drop and AI Pundit IDs, so each edition gets a stable fresh look                                |
+| Feed        | `/feed` redirects to Today; the Reporter RSS endpoint remains available                                                                 |
+| Publication | Automated public publication remains disabled and fail-closed                                                                           |
+| Billing     | New checkout is disabled; existing subscribers retain billing management                                                                |
 
-## Start locally
+Two secondary surfaces still carry legacy behavior. Teams is the public label for `/following`, but the route has not yet enforced Premier-League-only beta filtering. Today checks settled-only records, but `/receipts` still renders the older searchable prediction ledger. These gaps are recorded in [`docs/product-state.json`](./docs/product-state.json) and must not be marketed as complete.
+
+## Try it locally
 
 Requirements: Node 24 and pnpm 11.
 
 ```powershell
-npm i -g pnpm@11.20.0  # only when pnpm is not already available
+npm i -g pnpm@11.20.0
 pnpm install
 Copy-Item .env.example .env.local
 pnpm run dev
 ```
 
-The public shell still renders when Supabase client values are absent. Generation, rehearsals, publishing, and billing remain unavailable until their server credentials and explicit feature flags are present.
+The shell renders without Supabase client values. Generation, rehearsals, publication, and billing need server credentials plus explicit feature flags.
 
-Run the same checks used for release verification:
+Run the full local gate:
 
 ```powershell
+pnpm run docs:check
 pnpm run typecheck
 pnpm test
 pnpm run lint
@@ -41,53 +46,55 @@ pnpm run build
 git diff --check
 ```
 
-## How the product works
+## What Today does
 
-1. The ingest layer builds structured match records.
-2. An immutable evidence pack separates facts, deterministic derivations, provenance, and unavailable evidence.
-3. The claim laboratory licenses candidate facts, judgments, counterfactuals, and predictions before prose exists.
-4. Each versioned pundit spec selects a separate thesis, uncertainty stance, humour mechanism, language, and prediction risk.
-5. A showrunner creates a ten-beat, 750 to 1,100-word script for each pundit.
-6. Hard gates and independent qualitative judges test the same candidate. Only failed beats may be repaired, for at most three rounds.
-7. An approved script becomes a separate performance plan. TTS, transcription, pronunciation, number, mastering, and asset checks fail closed.
-8. All six variants publish atomically only when every editorial, audio, asset, and release promise passes.
-9. Pre-kickoff predictions settle against their original rules and remain visible as receipts.
+1. Loads the selected AI Pundit's approved edition for the London coverage date.
+2. Falls back to that same AI Pundit's latest approved edition when today has none.
+3. Shows the date, title, hook, AI Pundit, play control, and real audio progress in the first mobile viewport.
+4. Lets the listener switch AI Pundits from a bottom drawer.
+5. Commits a switch and saves the preference only after the requested audio loads.
+6. Keeps the previous edition playable and offers retry when a switch fails.
+7. Reveals up to three proof cards projected from sealed evidence and licensed claim IDs.
+8. Shows recent approved editions and a quiet track-record entry only when those records exist.
 
-The structured-data tier can support analysis of score progression, game state, recorded events, shots, xG, possession, conversion, substitutions, variance, and calibrated probabilities. It cannot prove pressing shapes, rest defence, spacing, body position, coaching intent, confidence, effort, or dressing-room dynamics. The unsupported-tactics gate blocks those claims.
+No audio autoplays on first load. Request-time AI does not write proof cards. A missing AI Pundit never silently becomes another one.
 
-## Six pundits
+## The six AI Pundits
 
-| ID         | Pundit          | Lens                                                  | Failure to avoid          |
-| ---------- | --------------- | ----------------------------------------------------- | ------------------------- |
-| `zen`      | The Reporter    | Balanced evidence and news judgment                   | Bland chronology          |
-| `gaffer`   | The Gaffer      | Decisions, substitutions, game state, counterfactuals | Invented tactics          |
-| `stats`    | The Numbers Guy | Probability, xG, variance, process versus outcome     | Stat dumps                |
-| `romantic` | The Romantic    | Narrative turns and extraordinary actions             | Forced tactical lectures  |
-| `doomer`   | The Doomer      | Fragility, downside paths, warning signs              | Cruelty or false fatalism |
-| `banter`   | The Wind-Up     | Rivalry, contradiction, status, bold judgment         | Banter without evidence   |
+| ID         | AI Pundit       | Public promise                                |
+| ---------- | --------------- | --------------------------------------------- |
+| `zen`      | The Reporter    | Calm, clear, and first with the facts.        |
+| `gaffer`   | The Gaffer      | Spots the choices that changed the game.      |
+| `stats`    | The Numbers Guy | Counts everything. Trusts almost nothing.     |
+| `romantic` | The Romantic    | Finds the bit that made football feel magic.  |
+| `doomer`   | The Doomer      | Sees the wobble before anyone else.           |
+| `banter`   | The Wind-Up     | Starts arguments for fun. Football needs one. |
 
-No script or voice may imitate the recognizable style or vocal identity of a living pundit.
+User-facing material always says **AI Pundit**. Internal database and TypeScript identifiers retain `PunditId` and persona terminology where changing them would damage compatibility or technical accuracy.
+
+## Evidence contract
+
+The system can support claims about recorded scores, events, substitutions, shots, xG, possession, saves, conversion, game state, variance, and calibrated probabilities. It cannot claim that structured data observed pressing shapes, spacing, body position, coaching intent, confidence, effort, or dressing-room dynamics.
+
+Proof cards contain a plain claim, one to three recorded facts, and a boundary explaining what those facts cannot prove. They come from sealed evidence and licensed claims only.
 
 ## Repository map
 
 ```text
-src/routes/                 UI pages and HTTP endpoints
-src/workflows/              durable daily-pundit workflow and isolated steps
-src/lib/pundit/             evidence, claims, harnesses, forecasts, audio and release logic
-src/lib/api/                legacy application services and shared server functions
-src/components/             product components and UI primitives
-supabase/migrations/        ordered schema and security history
-scripts/                    bounded operator tools
-.github/workflows/          CI and manual recovery triggers
-vercel.ts                   production schedule configuration
-docs/                       product, engineering, operations and go-to-market handbook
+src/routes/                 Product pages, public APIs, and protected operator endpoints
+src/components/             Today player, AI Pundit picker, generated avatars, shell, and UI
+src/lib/pundit/             Evidence, claims, generation, forecasts, audio, and release logic
+src/workflows/              Durable six-variant workflow and isolated steps
+supabase/migrations/        Ordered schema, RLS, immutability, and publication functions
+scripts/                    Verification, research intake, and bounded operator tools
+docs/product-state.json     Machine-readable current product truth
+docs/21-go-to-market-agent.md  Marketing and sales agent operating manual
+docs/                       Product, engineering, operations, legal, and commercial handbook
 ```
 
-See [`src/routes/README.md`](./src/routes/README.md) for the route map and [`docs/02-developer.md`](./docs/02-developer.md) for engineering conventions.
+Read [`src/routes/README.md`](./src/routes/README.md) for the exact route map.
 
-## Safe configuration
-
-Pre-launch defaults are intentional:
+## Safe defaults
 
 ```text
 VITE_PRELAUNCH_MODE=true
@@ -104,36 +111,24 @@ ENABLE_EVALUATION_RUNS=false
 ENABLE_RELEASE_SNAPSHOT_WRITE=false
 ```
 
-Missing flags deny access. Keep secrets in the deployment environment; never commit or print them. [`.env.example`](./.env.example) is the variable inventory.
+Missing flags deny access. Keep secrets in the deployment environment and use [`.env.example`](./.env.example) only as a name inventory.
 
-The Vercel CLI is optional and not part of the repository baseline. Install it when an operator needs local environment, deployment, or log commands:
+The Vercel CLI is optional but useful for approved environment, preview, and log work:
 
 ```powershell
 npm i -g vercel
-vercel link
-vercel env pull .env.local
 ```
 
-Environment pull and deployment are separate production operations. Follow [`docs/06-ops.md`](./docs/06-ops.md).
-
-## Public interfaces
-
-- `GET /api/public/pundits`
-- `GET /api/public/drops/today?pundit=<id>`
-- `GET /api/public/drops/:id/variants/:pundit`
-- `PUT /api/profile/pundit`
-- `GET /api/public/pundits/:id/predictions`
-- `GET /api/public/pundits/:id/receipts`
-- `GET /api/public/feed.rss`
-
-The RSS feed is one canonical Reporter feed with one stable GUID per drop. Shared links can preview another pundit without overwriting the recipient's saved preference.
+Pulling environments, deploying previews, and promoting production are separate operations.
 
 ## Documentation
 
-Start with the [documentation index](./docs/README.md). The governing order is:
+Start with the [documentation index](./docs/README.md). Current product questions follow this order:
 
-1. [`docs/00-product.md`](./docs/00-product.md) for product doctrine.
-2. [`docs/18-world-class-pundit-system.md`](./docs/18-world-class-pundit-system.md) for implemented system behavior.
-3. [`docs/19-release-state.md`](./docs/19-release-state.md) for current production and launch state.
+1. [`docs/product-state.json`](./docs/product-state.json) for machine-readable shipped behavior, gaps, commercial state, and claim boundaries.
+2. [`docs/00-product.md`](./docs/00-product.md) for product doctrine.
+3. [`docs/18-world-class-pundit-system.md`](./docs/18-world-class-pundit-system.md) for implementation.
+4. [`docs/19-release-state.md`](./docs/19-release-state.md) for live and blocked state.
+5. [`docs/21-go-to-market-agent.md`](./docs/21-go-to-market-agent.md) for autonomous marketing and sales work.
 
-Historical plans never override those three files.
+Historical plans explain old decisions. They never override current code or the product-state record.

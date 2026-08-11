@@ -1,67 +1,114 @@
-# 18 - World-class pundit system
+# 18 - AI Pundit system
 
 - **Status:** Current implementation map
 - **Owner:** Product and engineering
-- **Purpose:** Describe what the six-pundit codebase implements and where its safety controls live.
-- **Last reviewed:** 2026-08-10
+- **Purpose:** Describe what the repository implements, how Today reaches the production pipeline, and where its safety controls live.
+- **Last reviewed:** 2026-08-11
 
 ## Implementation state
 
-The six-pundit pre-launch foundation is implemented, deployed to [fulltime.fm](https://fulltime.fm), and backed by the current additive migrations. Public launch, automated publication, new billing, and public forecast scores remain disabled.
+The repository implements an AI-native six-pundit production system and a player-first public Today surface. Production at [fulltime.fm](https://fulltime.fm) serves the three-tab shell and AI Pundit metadata. Automated public publication, new billing, and public forecast scores remain disabled.
 
-The system includes:
+The current product includes:
 
-- immutable evidence packs with deterministic formulas, provenance, and explicit missing evidence;
-- evidence-linked claims for facts, mechanisms, decisions, probabilities, counterfactuals, opinions, and predictions;
-- six versioned `PunditSpec` records with analytical preferences, humour rules, cadence, risk, examples, anti-examples, and thresholds;
-- separate thesis selection, ten-beat outlining, 750 to 1,100-word scripts, independent harnesses, and targeted repair;
-- deterministic fact, entity, number, consequence, causal-strength, unsupported-tactics, originality, and prediction gates;
-- separate performance plans, allowlisted TTS direction, licensed voice candidates, verified pronunciation, transcription, number identity, mastering, and asset checks;
-- calibrated forecasting, five-point persona adjustment limits, pre-kickoff locking, Brier score, log loss, automatic settlement, and public receipts;
-- content-addressed audio and 1200 by 630 share-card storage;
-- atomic run claiming, stale-run recovery, six-way bounded fan-out, promise checks, and all-or-nothing publication;
-- a 14-step durable Workflow orchestration with authenticated status and idempotent resume behavior;
-- bounded history backfill, held-out forecast training, prediction registration, 60-match corpus construction, and resumable 360-script evaluation;
-- revision-bound release-readiness evaluation across engineering and human gates;
-- public pundit, drop, variant, prediction, receipt, preference, and Reporter RSS interfaces;
-- truthful current-date UI, visible playback failures, real-media completion analytics, and strict cron authentication.
+- six versioned internal `PunditSpec` records exposed publicly as six AI Pundits;
+- a Today player within the first mobile viewport;
+- coverage date, title, hook, AI Pundit picker, play or pause, seek, real-media progress, and playback failure states;
+- safe AI Pundit switching that preloads requested media, restarts at zero, preserves play or pause intent, commits after load, and keeps the old edition on failure;
+- local and signed-in AI Pundit preference persistence after successful switching;
+- same-AI-Pundit latest fallback with the real coverage date;
+- up to three public proof cards projected from sealed evidence and licensed claim IDs;
+- recent published editions below the player;
+- a conditional settled-record entry on Today;
+- deterministic generated SVG avatars seeded by drop ID and AI Pundit ID;
+- three public navigation items: Today, Teams, and Settings;
+- a redirect from `/feed` to Today and a retained Reporter RSS endpoint;
+- immutable evidence packs, licensed claims, independent judges, targeted repairs, audio checks, forecasts, settlement, atomic publication, and release readiness controls.
 
-Relume is a component-pattern reference only. Product logic, design tokens, copy, data contracts, and source code remain repository-owned.
+[`product-state.json`](./product-state.json) records the exact shipped behaviors and known product gaps.
 
-## Pipeline map
+## Public Today flow
+
+```mermaid
+flowchart TD
+    O["Open Today"] --> P["Load saved AI Pundit"]
+    P --> C["Request current published edition"]
+    C -->|"current exists"| V["Render current edition"]
+    C -->|"current missing"| L["Offer latest approved edition for same AI Pundit"]
+    C -->|"nothing exists"| E["Honest empty state"]
+    V --> A["Play real audio"]
+    L --> A
+    V --> Q["Show me why"]
+    Q --> R["Licensed claim + sealed evidence + boundary"]
+    A --> S["Choose another AI Pundit"]
+    S --> T["Preload requested edition"]
+    T -->|"success"| U["Commit, save, restart at zero"]
+    T -->|"failure"| K["Keep old edition and offer retry"]
+```
+
+Key code:
+
+| Concern                                           | Canonical path                                                      |
+| ------------------------------------------------- | ------------------------------------------------------------------- |
+| Today route and data state                        | `src/routes/index.tsx`                                              |
+| Player, picker, proof, recent, track-record entry | `src/components/TodayShowPlayer.tsx`                                |
+| Real audio and transactional switching            | `src/lib/player-store.ts`                                           |
+| Current, latest, proof, match, and team response  | `src/lib/api/editorial-public.server.ts`                            |
+| Edition-to-player model                           | `src/lib/today-show-model.ts`                                       |
+| Public AI Pundit copy                             | `src/components/PersonalitySelector.tsx`                            |
+| Generated visual model                            | `src/components/PunditAvatar.tsx`, `src/lib/pundit/avatar-model.ts` |
+| Public APIs                                       | `src/routes/api/public`                                             |
+
+## Current public response
+
+`GET /api/public/drops/today?pundit=<id>` returns:
+
+- `coverageDate`;
+- `state`: `prelaunch`, `off_day`, `variant_unavailable`, or `published`;
+- the current `drop` and requested `variant` when published;
+- `latest`, the newest other published edition for the same AI Pundit;
+- `matchId` and `teamIds` from the sealed evidence pack;
+- `proofCards`, capped at three;
+- `recent`, up to four additional published editions for that AI Pundit.
+
+The shareable variant route applies the same proof-card projection. A proof card is omitted when a licensed claim has no referenced item in the sealed evidence.
+
+## Generated visual model
+
+The avatar is deterministic procedural art. `punditAvatarModel` hashes `dropId:punditId`, then produces rotation, orbit, and dot values. `PunditAvatar` combines those values with one of six fixed motifs.
+
+This gives each edition a fresh but stable abstract identity without a runtime image-generation provider. Tests verify stable output for the same seed and variation across editions and AI Pundits.
+
+## Production pipeline
 
 ```mermaid
 flowchart LR
     I["Structured match data"] --> E["Immutable evidence pack"]
     E --> C["Licensed claims"]
     C --> T["Six independent theses"]
-    T --> S["Six scripts"]
-    S --> H["Hard gates and independent harnesses"]
+    T --> S["Six complete scripts"]
+    S --> H["Hard gates and independent judges"]
     H --> P["Performance plans"]
     P --> A["Narration and asset gates"]
     A --> X["Atomic six-variant publication"]
-    X --> R["Predictions and receipts"]
-    R --> C
+    X --> W["Today and Reporter RSS"]
+    X --> R["Registered claims and settlement"]
 ```
 
-Key code:
-
-| Concern                   | Canonical path                                                                                |
-| ------------------------- | --------------------------------------------------------------------------------------------- |
-| Types and contracts       | `src/lib/pundit/types.ts`                                                                     |
-| Pundit specifications     | `src/lib/pundit/specs.ts`                                                                     |
-| Evidence and claims       | `src/lib/pundit/evidence.ts`, `src/lib/pundit/claim-lab.ts`                                   |
-| Generation and harnesses  | `src/lib/pundit/pundit-generator.server.ts`, `src/lib/pundit/harness.ts`                      |
-| Performance and narration | `src/lib/pundit/performance.ts`, `src/lib/api/narration.server.ts`                            |
-| Audio and assets          | `src/lib/pundit/audio-mastering.server.ts`, `asset-storage.server.ts`, `share-card.server.ts` |
-| Forecasts and predictions | `src/lib/pundit/forecast.ts`, `prediction-orchestrator.server.ts`                             |
-| Daily orchestration       | `src/lib/pundit/daily-orchestrator.server.ts`, `variant-production.server.ts`                 |
-| Release evaluation        | `src/lib/pundit/release-readiness.server.ts`                                                  |
-| Durable workflow          | `src/workflows/daily-pundit.ts`, `src/workflows/daily-pundit.steps.ts`                        |
+| Concern                           | Canonical path                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------ |
+| Types and contracts               | `src/lib/pundit/types.ts`                                                      |
+| Internal AI Pundit specifications | `src/lib/pundit/specs.ts`                                                      |
+| Evidence and claims               | `src/lib/pundit/evidence.ts`, `claim-lab.ts`                                   |
+| Generation and judges             | `pundit-generator.server.ts`, `harness.ts`                                     |
+| Performance and narration         | `performance.ts`, `src/lib/api/narration.server.ts`                            |
+| Audio and assets                  | `audio-mastering.server.ts`, `asset-storage.server.ts`, `share-card.server.ts` |
+| Forecasts and registered claims   | `forecast.ts`, `prediction-orchestrator.server.ts`                             |
+| Daily orchestration               | `daily-orchestrator.server.ts`, `variant-production.server.ts`                 |
+| Release evaluation                | `release-readiness.server.ts`                                                  |
+| Durable workflow                  | `src/workflows/daily-pundit.ts`, `daily-pundit.steps.ts`                       |
 
 ## Safety switches
-
-The safe state is explicit on both client and server:
 
 ```text
 VITE_PRELAUNCH_MODE=true
@@ -78,38 +125,42 @@ ENABLE_EVALUATION_RUNS=false
 ENABLE_RELEASE_SNAPSHOT_WRITE=false
 ```
 
-Checkout needs pre-launch explicitly false and both billing flags true. Publication, rehearsal, forecast training, prediction registration, evaluation, and release-snapshot writes each require their own server flag. Missing values deny access.
+Missing flags deny work. Checkout needs pre-launch explicitly false and both billing flags true. Each production capability has its own server flag.
 
-The legacy episode generator also requires `ENABLE_LEGACY_DAILY_DROP=true`. It is a recovery path, not part of the launch architecture.
+## Current secondary-surface gaps
+
+### Teams
+
+The shell says Teams and keeps `/following` for compatibility. The current server function still returns all stored teams and leagues. The UI still puts teams first and tells new users to pick at least three. Premier-League-only availability, disabled coming-later leagues, and the removal of that minimum remain unimplemented.
+
+### Track record
+
+Today calls the settled-only receipts endpoint and shows **How did they do?** only when rows exist. The direct `/receipts` page still calls the predictions endpoint, shows search and filters, and includes open-record logic. It is unlisted in navigation but is not yet the simplified settled-only page.
+
+### Settings
+
+Settings persists AI Pundit choice, account state, notification state, disclosure, and existing billing management. Some copy retains generic pundit language and legacy seams.
 
 ## Schedules
 
-[`vercel.ts`](../vercel.ts) is the production schedule source:
+[`vercel.ts`](../vercel.ts) schedules:
 
 | UTC             | Endpoint                             | Responsibility                                        |
 | --------------- | ------------------------------------ | ----------------------------------------------------- |
 | 00:15           | `/api/public/cron/ingest`            | Structured-data ingest and settlement                 |
 | 04:45           | `/api/internal/daily-rehearsal`      | Durable six-variant rehearsal or approved publication |
-| 06:30 and 16:30 | `/api/internal/predictions-register` | Pre-kickoff prediction registration                   |
+| 06:30 and 16:30 | `/api/internal/predictions-register` | Pre-kickoff registration                              |
 
-GitHub schedule files are manual recovery only. Every request requires the exact `Authorization: Bearer $CRON_SECRET` value. No publishable-key fallback exists in the current cron helper.
+Every request needs the exact cron bearer and its feature flag. GitHub workflows are manual recovery only.
 
-## Database state
+## Database and release state
 
-The production FullTime project is `hzadscrqmyilbisexvyz`. These release migrations were applied and read back on 2026-08-08:
+Production targets Supabase project `hzadscrqmyilbisexvyz`. Migrations are the schema authority. The available connector may lack access; never target a similarly named project.
 
-- `20260808194138_pundit_intelligence_system.sql`
-- `20260808200000_operational_release_gates.sql`
-- `20260809010938_security_advisor_search_path.sql`
-- `20260809011106_optimize_auth_rls_policies.sql`
-
-The current connector lacks permission for that project. Do not infer migration failure from the connector error. Confirm project identity before any future database write.
-
-## Local verification
-
-Use Node 24, pinned in `.node-version` and `package.json`:
+Run:
 
 ```powershell
+pnpm run docs:check
 pnpm run typecheck
 pnpm test
 pnpm run lint
@@ -117,19 +168,4 @@ pnpm run build
 git diff --check
 ```
 
-The test suite covers cron denial, London coverage dates, evidence derivation, unsupported-tactics attacks, deterministic licensing, falsifiability, persona differentiation, forecasts, RSS, audio quality, asset rendering, originality, migrations, and release readiness.
-
-## Evidence still required
-
-Code cannot self-approve:
-
-- rights-cleared research sources and founder-accepted original concept cards;
-- two commercially usable full-length voice auditions per pundit and founder selection;
-- at least 1.5 million approved TTS characters per month with usage alerting;
-- two seasons of provider history and a held-out forecast win over the base rate;
-- founder-approved 60-match corpus, 360 passing scripts, and blind fan/analyst review;
-- full-length audio panels and 99% verified launch-name pronunciation;
-- seven consecutive on-time six-variant rehearsals;
-- revision-bound legal, privacy, accessibility, monitoring, rollback, and feed validation.
-
-Until every item is recorded for one revision, the release evaluator must report `blocked` and the public product remains a preview.
+Code cannot approve rights-cleared research, voices, provider capacity, forecast superiority, 360 scripts, blind review, seven daily rehearsals, or revision-bound legal and accessibility gates. See [`19-release-state.md`](./19-release-state.md).

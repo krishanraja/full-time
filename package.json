@@ -16,6 +16,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
+    "docs:check": "node scripts/check-documentation.mjs",
     "format": "prettier --write .",
     "backfill:history": "node scripts/backfill-history.mjs",
     "research:new-week": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/new-research-week.ps1",

@@ -2,26 +2,99 @@
 
 - **Status:** Current
 - **Owner:** Founder and design
-- **Purpose:** Govern Full Time's visual language, brand voice, product copy, and share assets.
-- **Last reviewed:** 2026-08-10
+- **Purpose:** Govern Full Time's visual language, AI Pundit identity, public voice, copy, and generated assets.
+- **Last reviewed:** 2026-08-11
 
 ## Brand idea
 
-Full Time should feel like a modern broadcast desk after the noise has cleared: dark, exact, quick, opinionated, and alive in the details.
+Full Time is a playful AI football toy with serious facts underneath.
 
-The product has six personalities. The brand around them remains stable. It promises evidence, accountability, and a sharper morning, then gives each pundit room to perform.
+The surface feels simple, warm, quick, and slightly cheeky. The machine is visible and worth celebrating. Avoid the tone of a broadcast newsroom, betting terminal, analytics consultancy, or solemn product-marketing page.
+
+The product has six AI Pundits. The shell stays calm enough for each one to feel different.
 
 ## Name and proposition
 
-Use **Full Time**, two words and title case. Never use `FullTime`, `Fulltime`, or `FT` in public copy. The wordmark renders `FULL_TIME`; the underscore belongs to the mark, not the spoken name.
+Use **Full Time**, two words and title case. The wordmark renders `FULL_TIME`; the underscore belongs to the mark.
 
 Primary proposition:
 
-> One football morning. Six genuinely different minds. Every prediction gets a receipt.
+> One real match. Six AI Pundits. Pick the brain you fancy.
 
-Long-form proposition:
+Supporting explanation:
 
-> Six genuinely different pundits. One verified evidence base. Every opinion earns its reason, and every prediction comes back for judgment.
+> Each AI Pundit makes a complete show from the same checked football facts.
+
+Use **AI Pundit** everywhere a user can see or hear the term. Do not describe the product as a human podcast, a replacement pundit, or a voice skin.
+
+## Voice
+
+Primary copy should work for a ten-year-old:
+
+- short, concrete words;
+- one idea at a time;
+- football language people already use;
+- a warm joke where it helps;
+- no technical performance language on the first layer;
+- no fake certainty or fake excitement.
+
+| Brand does                              | Brand avoids                                |
+| --------------------------------------- | ------------------------------------------- |
+| Says what the listener can do now       | Lists pipeline features                     |
+| Makes AI the source of fun              | Apologizes for AI or hides it               |
+| Keeps facts plain                       | Uses academic evidence language             |
+| Names a wobble, miss, or limit honestly | Sounds grave or legalistic in normal states |
+| Uses one clear action                   | Adds several competing CTAs                 |
+
+Approved examples:
+
+- “Pick your AI Pundit.”
+- “Same match. Six complete shows.”
+- “Counts everything. Trusts almost nothing.”
+- “Show me why.”
+- “Nothing ready just yet.”
+- “Your old show is still here.”
+- “What they said, what happened, and the bit they missed.”
+- “The data shows what happened, but not always why.”
+
+Avoid in primary UI: `calibration`, `Brier score`, `variance`, `harness`, `baseline`, `ledger`, `synthetic profile`, `probabilistic`, `atomic`, and `evidence pack`. Use those terms internally or define them behind optional detail.
+
+Avoid marketing filler such as `game-changing`, `next-generation`, `must-listen`, `unmissable`, `unbiased`, `seamless`, `revolutionary`, and `AI-powered experience`.
+
+## AI Pundit personality copy
+
+| AI Pundit       | Short public line                             |
+| --------------- | --------------------------------------------- |
+| The Reporter    | Calm, clear, and first with the facts.        |
+| The Gaffer      | Spots the choices that changed the game.      |
+| The Numbers Guy | Counts everything. Trusts almost nothing.     |
+| The Romantic    | Finds the bit that made football feel magic.  |
+| The Doomer      | Sees the wobble before anyone else.           |
+| The Wind-Up     | Starts arguments for fun. Football needs one. |
+
+Longer settings copy may use each AI Pundit's strongest joke, but it must stay legible and avoid invented tactical certainty.
+
+## Generated avatar system
+
+Each AI Pundit needs a recognizable abstract motif, not a fake human face. The current component in `PunditAvatar.tsx` combines:
+
+- a fixed motif for the AI Pundit;
+- a seeded rotation, orbit, and dot field;
+- the daily-drop ID and AI Pundit ID as the seed.
+
+The result changes between editions and stays stable inside one edition. Describe it as a **fresh generated look** or **generated edition avatar**. Do not claim an image model produced it, that it represents a real person, or that every page view creates a new identity.
+
+## Hero and line wrapping
+
+Hero text must never leave a one-word orphan, hyphenate, or break a word unnaturally.
+
+- Use balanced wrapping and the `withoutOrphan` helper for dynamic titles.
+- Keep titles within roughly 18 to 20 characters per line at mobile sizes.
+- Use `hyphens: none` and normal overflow wrapping on display text.
+- Test real title extremes at 320, 393, tablet, and desktop widths.
+- Rewrite copy when CSS cannot produce a natural break.
+
+The same rule applies to cards, drawer titles, navigation labels, and empty states. A clever line that wraps badly is not approved.
 
 ## Assets
 
@@ -29,112 +102,51 @@ Canonical assets live in `src/assets`:
 
 - `full-time-mark.png.asset.json`: CDN pointer for the lime stopwatch/player mark;
 - `full-time-wordmark.png.asset.json`: CDN pointer for the white wordmark;
-- `full-time-icon-and-favicon.png`: application icon and favicon source;
-- `full-time-wordmark.png` and `full-time-wordmark-trim.png`: local production fallbacks.
+- `full-time-icon-and-favicon.png`: icon and favicon source;
+- `full-time-wordmark.png` and `full-time-wordmark-trim.png`: local fallbacks.
 
-Rules:
-
-- Keep the mark at least 24 pixels square and the wordmark at least 16 pixels high.
-- Leave clear space equal to the mark's dot radius on every side.
-- Do not recolor, stretch, outline, bevel, or animate the logo.
-- Use the white wordmark on dark surfaces. Use the mark alone when space is tight.
-- Do not use club, league, or broadcaster marks without recorded permission.
+Keep the mark at least 24 pixels square and the wordmark at least 16 pixels high. Do not recolor, stretch, outline, bevel, or animate the logo. Do not use club, league, broadcaster, player, or competition marks without recorded permission.
 
 ## Color
 
-[`src/styles.css`](../src/styles.css) is the source of truth. Components use semantic tokens or named brand tokens; they never hardcode colors.
+[`src/styles.css`](../src/styles.css) is authoritative.
 
-| Token                | Value                    | Job                                  |
-| -------------------- | ------------------------ | ------------------------------------ |
-| `--background`       | `oklch(0.155 0.008 240)` | Main pitch-black canvas              |
-| `--card`             | `oklch(0.195 0.01 240)`  | Raised surfaces                      |
-| `--pitch-line`       | `oklch(1 0 0 / 8%)`      | Hairlines and dividers               |
-| `--foreground`       | `oklch(0.985 0.004 240)` | Primary text                         |
-| `--muted-foreground` | `oklch(0.68 0.012 240)`  | Secondary text                       |
-| `--lime`             | `oklch(0.88 0.24 138)`   | Active controls, focus, key evidence |
-| `--lime-glow`        | `oklch(0.93 0.22 138)`   | Controlled halo                      |
-| `--ember`            | `oklch(0.72 0.2 35)`     | Genuine live or breaking state only  |
+| Token                | Value                    | Job                                   |
+| -------------------- | ------------------------ | ------------------------------------- |
+| `--background`       | `oklch(0.155 0.008 240)` | Main dark canvas                      |
+| `--card`             | `oklch(0.195 0.01 240)`  | Raised surfaces                       |
+| `--pitch-line`       | `oklch(1 0 0 / 8%)`      | Hairlines and dividers                |
+| `--foreground`       | `oklch(0.985 0.004 240)` | Primary text                          |
+| `--muted-foreground` | `oklch(0.68 0.012 240)`  | Secondary text                        |
+| `--lime`             | `oklch(0.88 0.24 138)`   | Play, focus, active state, key facts  |
+| `--lime-glow`        | `oklch(0.93 0.22 138)`   | Restrained halo                       |
+| `--ember`            | `oklch(0.72 0.2 35)`     | Genuine urgent or breaking state only |
 
-Lime is a signal, not a background. Use it for play, active progress, selected state, focus, the most important metric, and small editorial labels. If it dominates the viewport, the hierarchy has failed.
+Lime is a signal, not a wallpaper.
 
-## Typography
+## Typography and layout
 
-Full Time uses Geist for display and body copy, and Geist Mono for information that behaves like data. Font links live in `src/routes/__root.tsx`; family tokens live in `src/styles.css`.
+The font stack prefers Geist for display and body copy and Geist Mono for data-like labels, then falls back to system fonts when those faces are unavailable. The current repository does not load a web-font provider. Headings use compact line height and tight tracking. Body copy stays sentence case. Dates, times, durations, and small state labels may use mono.
 
-- Headings: 600 weight, tight tracking, compact line height.
-- Body: readable sentence case, usually `text-sm` or `text-base`.
-- Eyebrows: the `eyebrow` utility, uppercase, mono, tracked, and brief.
-- Scores, dates, times, percentages, model metrics, and durations: `text-mono` with tabular figures.
-- Use `text-foreground` and `text-muted-foreground`, never `text-white` or `text-black`.
+Today has one dominant object: the player. Secondary explanation sits below it. Avoid rows of marketing statistic cards above playback.
 
-## Surfaces and layout
-
-- Use `surface` for raised cards and `hairline` for dividers.
-- Prefer one dominant editorial object per viewport.
-- Build dense lists with clear grouping, not ornamental cards around every row.
-- Preserve generous touch targets and strong focus treatment on mobile.
-- Let the audio player remain visually persistent without overpowering the story.
-- Relume may supply interaction references. Do not copy its source or let its defaults override Full Time tokens.
+Use `surface`, `hairline`, `eyebrow`, and semantic tokens. Preserve 44-pixel touch targets, visible focus, pinch zoom, reduced motion, safe areas, and readable contrast.
 
 ## Motion
 
-Motion explains state:
-
-1. the daily-show hero enters once;
-2. the selected or playing state gains a lime edge and restrained glow;
-3. panels and disclosures use short, accessible transitions.
-
-Avoid hover scale, parallax, looping decoration, bouncing icons, or animated numbers. Respect reduced-motion preferences. A football product can feel fast without making everything move.
-
-## Brand voice and pundit voice
-
-Brand copy is composed, direct, and exact. Pundit copy may be warmer, drier, darker, nerdier, or more provocative according to the selected spec.
-
-| Brand does                      | Brand avoids                          |
-| ------------------------------- | ------------------------------------- |
-| Names the product state plainly | Manufactured urgency                  |
-| Uses concrete football language | Generic AI claims                     |
-| Makes one promise at a time     | Feature-list slogans                  |
-| Shows evidence and receipts     | "Trust us" language                   |
-| Uses short CTAs                 | Emoji, shouting, or false live labels |
-
-Approved examples:
-
-- "Choose your pundit. Keep the receipts."
-- "No approved show for this morning yet."
-- "The data shows what happened, but not why."
-- "Six editions. Same facts. Different judgments."
-- "This prediction was wrong. Here is what it missed."
-
-Avoid: `game-changing`, `next-generation`, `AI-powered experience`, `must-listen`, `unmissable`, `fine margins`, and `wanted it more`.
+Motion explains state. The selected or playing state may gain a restrained lime edge. Drawers and disclosures may use short transitions. Avoid hover scale, parallax, looping decoration, bouncing icons, and animated numbers.
 
 ## Share system
 
-Share cards are generated in `src/lib/pundit/share-card.server.ts` at 1200 by 630. They should contain:
-
-- Full Time mark and wordmark;
-- selected pundit identity;
-- one portable line or prediction receipt;
-- match identity and coverage date;
-- enough visual evidence to distinguish a prediction, a result, and a reversal.
-
-Shared links preview the chosen pundit but never overwrite the recipient's saved preference without confirmation.
-
-## Accessibility
-
-- Text and controls must meet WCAG contrast expectations against both background tokens.
-- Lime cannot be the sole state signal; pair it with copy, iconography, or shape.
-- Keyboard focus stays visible.
-- Audio has a transcript and meaningful failure state.
-- Pinch zoom remains enabled.
-- Motion respects `prefers-reduced-motion`.
-- Icon-only controls require accessible names.
+Share cards are generated at 1200 by 630. They may contain the Full Time mark, AI Pundit identity, one approved line or settled record, match identity, and coverage date. Shared links may preview the chosen AI Pundit but must not overwrite the recipient's saved choice.
 
 ## Review checklist
 
-- Uses repository assets and tokens.
-- Reads correctly without color or motion.
-- Separates brand voice from pundit performance.
-- Labels archive, demo, prediction, receipt, and live state honestly.
-- Contains no living-pundit imitation, unsupported club marks, or generic AI copy.
-- Looks deliberate at 320 pixels, tablet width, and desktop.
+- Says AI Pundit everywhere.
+- Leads with what the listener can do.
+- Feels playful and simple, not grave or over-engineered.
+- Reads naturally at roughly a ten-year-old level.
+- Uses a generated abstract identity, not a fake human likeness.
+- Has no awkward wrap, orphan, clipped text, or horizontal overflow.
+- Labels current, latest, archive, demo, settled, and pre-launch states honestly.
+- Contains no living-pundit imitation, unlicensed marks, betting framing, or unsupported football claim.

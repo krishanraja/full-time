@@ -1,13 +1,13 @@
-# 16 - Ask Your Pundit discovery spec
+# 16 - Ask Your AI Pundit discovery spec
 
 - **Status:** Proposed, not built
 - **Owner:** Product, editorial, and engineering
 - **Purpose:** Define a safe path to interactive match Q&A without expanding beyond licensed evidence.
-- **Last reviewed:** 2026-08-10
+- **Last reviewed:** 2026-08-11
 
 ## Opportunity
 
-After hearing a show, a listener asks one follow-up question and receives a concise answer from the selected pundit's analytical lens and personality.
+After hearing a show, a listener asks one follow-up question and receives a concise answer from the selected AI Pundit's analytical lens and personality.
 
 Examples:
 
@@ -20,7 +20,7 @@ The feature is valuable only if the six answers differ in reasoning without diff
 
 ## Product principle
 
-Ask Your Pundit is retrieval and reasoning over an approved evidence boundary, not an open football chatbot.
+Ask Your AI Pundit is retrieval and reasoning over an approved evidence boundary, not an open football chatbot.
 
 If the evidence cannot answer the question, the pundit says so in character and explains which missing evidence would be needed. Refusal quality is a launch criterion.
 

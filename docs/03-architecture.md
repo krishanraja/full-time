@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Engineering and operations
 - **Purpose:** Explain system boundaries, data flow, trust, orchestration, and failure behavior.
-- **Last reviewed:** 2026-08-10
+- **Last reviewed:** 2026-08-11
 
 ## System view
 
@@ -13,13 +13,13 @@ flowchart TD
     I --> D["Supabase football data"]
     D --> E["Immutable evidence pack"]
     E --> C["Claim laboratory"]
-    C --> G["Six persona generators"]
+    C --> G["Six AI Pundit generators"]
     G --> H["Hard gates and 12 independent harnesses"]
     H --> N["Performance and narration"]
     N --> Q["Transcript, pronunciation, number and audio gates"]
     Q --> A["Content-addressed audio and share assets"]
     A --> P["Promise checks and atomic publication"]
-    P --> W["Web app and Reporter RSS"]
+    P --> W["Player-first Today and Reporter RSS"]
     D --> M["Forecast model"]
     M --> R["Pre-kickoff predictions"]
     R --> S["Settlement and receipts"]
@@ -103,6 +103,14 @@ flowchart LR
 The database function `publish_daily_drop` is the atomic boundary. It may publish only after the expected six variants, assets, hard gates, harness floors, predictions, and release snapshot exist. A partial daily drop remains internal.
 
 Legacy `drops` and `episodes` support archive behavior. They are not the current six-pundit publication contract.
+
+## Public Today boundary
+
+The browser requests one AI Pundit edition at a time. The response may include the current variant, a latest same-AI-Pundit fallback, match and team IDs, up to three proof cards, and recent published editions. Proof projection reads internal sealed evidence through server-only code and returns plain strings; raw provider payloads and internal evidence objects do not cross the boundary.
+
+An AI Pundit switch is a media transaction. The client preloads the requested audio in a new element, commits the edition and saved preference only after readiness, then releases the previous element. A failure leaves the old edition and preference intact.
+
+Generated avatars are deterministic client-side SVGs seeded by daily-drop and AI Pundit IDs. They require no image provider or new durable data.
 
 ## Prediction model
 

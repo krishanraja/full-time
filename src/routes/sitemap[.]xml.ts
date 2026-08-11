@@ -4,7 +4,8 @@
 // path segment, and crawlers expect the literal /sitemap.xml. Referenced from
 // public/robots.txt.
 //
-// Static entries are the real public surfaces (home/today, archive, waitlist).
+// Static entries are real indexable public surfaces. `/feed` redirects to
+// Today and therefore does not belong in the sitemap.
 // Episode entries are generated from real `episodes` rows, never hardcoded, so
 // the sitemap can never advertise a share page that would 404. Same filters as
 // the RSS feed: published rows with real audio.
@@ -85,11 +86,10 @@ export const Route = createFileRoute("/sitemap.xml")({
           '<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
           urlXml("/", newestEpisodeDate),
-          urlXml("/feed", newestEpisodeDate),
           urlXml("/archive", newestEpisodeDate),
           urlXml("/waitlist", null),
-          // Un-parked 2026-08-07: /pro is a real pricing page again, so it
-          // belongs in the sitemap.
+          // /pro is a truthful pre-launch and existing-subscriber page. New
+          // checkout remains disabled.
           urlXml("/pro", null),
           // Static copy, no lastmod rather than a guess. Listed because
           // legal pages are a trust signal engines look for, not because
