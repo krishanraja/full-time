@@ -3,7 +3,7 @@
 This handbook is the operating contract for Full Time. It is written for founders, contributors, agents, operators, reviewers, and commercial partners who need accurate answers without reverse-engineering the codebase.
 
 - **Last reviewed:** 2026-08-10
-- **Current production revision:** `36fd607e2ef862894434a3aafd0c7e378f3d5f68`
+- **Production authority:** GitHub `main` plus the current Vercel production deployment
 
 ## Source-of-truth order
 

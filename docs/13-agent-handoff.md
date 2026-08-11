@@ -23,7 +23,7 @@ Full Time is a pre-launch autonomous football morning show. One immutable eviden
 ## Current truth
 
 - Production preview: [fulltime.fm](https://fulltime.fm).
-- Production revision: `36fd607e2ef862894434a3aafd0c7e378f3d5f68`.
+- Production source: GitHub `main` and the current Vercel production deployment, last externally verified `READY` on 2026-08-11.
 - Product mode: pre-launch.
 - Public publication, new billing, evaluation execution, and public forecast scores: disabled.
 - Six pundits: free and selectable.
