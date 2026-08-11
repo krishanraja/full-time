@@ -2,7 +2,7 @@
 
 - **Status:** Historical decision record
 - **Original period:** 2026-07-06 to 2026-08-08
-- **Last reviewed for provenance:** 2026-08-10
+- **Last reviewed for provenance:** 2026-08-11
 - **Purpose:** Explain earlier access experiments and the current replacement.
 
 ## Current access model
@@ -11,7 +11,7 @@ During pre-launch:
 
 | Capability                                 | Anonymous                             | Signed in            | Existing subscriber |
 | ------------------------------------------ | ------------------------------------- | -------------------- | ------------------- |
-| Choose any of six pundits                  | Yes                                   | Yes                  | Yes                 |
+| Choose any of six AI Pundits               | Yes                                   | Yes                  | Yes                 |
 | Save preference locally                    | Yes                                   | Yes                  | Yes                 |
 | Sync supported profile settings            | No                                    | Yes                  | Yes                 |
 | View approved current and archive surfaces | Yes                                   | Yes                  | Yes                 |
@@ -19,7 +19,7 @@ During pre-launch:
 | Start a new paid subscription              | No                                    | No                   | No                  |
 | Manage an existing subscription            | No                                    | No unless subscribed | Yes                 |
 
-All six pundits are free because private verification needs broad persona feedback. Billing and the paid value proposition are separate post-readiness decisions.
+All six AI Pundits are free because private verification needs broad product feedback. Billing and the paid value proposition are separate post-readiness decisions.
 
 ## Historical sequence
 
@@ -52,4 +52,4 @@ The six-pundit product replaced presentation-only personas. All pundits became f
 - `name a game` as the main paid-value proof.
 - Any claim that checkout is currently live for new subscribers.
 
-Current access behavior is defined in `src/lib/launch-config.ts`, `src/lib/entitlement.ts`, the relevant routes, and [`19-release-state.md`](./19-release-state.md).
+Current access behavior is defined in `src/lib/launch-config.ts`, `src/lib/entitlement.ts`, the relevant routes, [`product-state.json`](./product-state.json), and [`19-release-state.md`](./19-release-state.md).

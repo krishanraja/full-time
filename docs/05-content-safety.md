@@ -3,7 +3,7 @@
 - **Status:** Current and binding
 - **Owner:** Editorial, product, engineering, and legal
 - **Purpose:** Define what Full Time may claim, how humour works, what blocks publication, and how incidents are handled.
-- **Last reviewed:** 2026-08-10
+- **Last reviewed:** 2026-08-11
 
 ## Core rule
 
@@ -12,6 +12,8 @@ Full Time can be bold about judgments only because it is strict about facts.
 > Facts are closed-world and verified. Interpretations may differ. Predictions are timestamped. Mistakes are acknowledged plainly.
 
 The system publishes nothing rather than publish a factual error, unsupported tactical claim, unlicensed entity or number, unsafe joke, copied expression, broken narration, or evasive receipt.
+
+Public copy calls the six products AI Pundits. The playful surface does not lower the evidence standard.
 
 ## Evidence licensing
 
@@ -27,6 +29,10 @@ Every factual or analytical statement points to evidence IDs. A claim is rejecte
 - hides missing evidence that would materially change the judgment.
 
 Structured match data may support recorded events, statistics, game state, variance, and calibrated expectations. It does not prove pressing shapes, spacing, body position, coaching intent, confidence, effort, leadership, or dressing-room politics.
+
+## Public proof cards
+
+`Show me why` is a deterministic projection from licensed claims and sealed evidence. A public card contains a plain claim, one to three supporting fact lines, and an evidence boundary. It never exposes raw provider payloads, private research, internal prompts, or a request-time model explanation. A claim with no supporting referenced evidence produces no card.
 
 ## Claim and script sequence
 
@@ -130,7 +136,7 @@ NotebookLM and approved video sources are research workbenches, not production w
 
 ## User disclosure
 
-Public settings and player surfaces must state that scripts are AI-generated from match data, voices are synthetic, and no copyrighted broadcast audio is used. Do not hide or soften that disclosure in an experiment.
+Public settings and player surfaces must make clear that AI Pundits generate scripts from checked structured match data, voices are synthetic, and no copyrighted broadcast audio is used. Do not hide or soften that disclosure in an experiment.
 
 ## Incident response
 

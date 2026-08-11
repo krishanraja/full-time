@@ -2,96 +2,153 @@
 
 - **Status:** Current commercial posture
 - **Owner:** Founder and business development
-- **Purpose:** Define what can be sold, promised, licensed, or declined before and after launch.
-- **Last reviewed:** 2026-08-10
+- **Purpose:** Define what an agent may qualify, offer, promise, decline, and escalate before public launch.
+- **Last reviewed:** 2026-08-11
 
-## Current commercial truth
+## Commercial truth
 
-Full Time is pre-launch. New checkout and Pro promotion are disabled. All six pundits are free. Existing billing code and portal access do not constitute an approved public offer.
+Full Time has no approved paid offer for a new customer. All six AI Pundits are free during pre-launch, new checkout is disabled, and no public launch date or daily service level is approved.
 
-The current objective is product proof: repeat listening, editorial quality, distinct personas, prediction calibration, and trustworthy receipts. Do not quote revenue, subscribers, forecast superiority, daily reliability, or a future price without current evidence and founder approval.
+The current sellable decision is a next step, not a contract:
 
-## What we can offer now
+- a fan tries the preview or joins the launch note;
+- a potential partner agrees to a non-binding discovery call or approved demonstration;
+- a data, voice, rights, or distribution partner explores fit and permission.
 
-- private product demonstrations using approved content;
-- founder and analyst listening sessions;
-- conversations about licensed structured data, voices, research sources, and distribution;
-- non-binding discovery with sponsors, publishers, clubs, leagues, and podcast networks;
-- a clear rights-safe technical and editorial posture.
+An autonomous sales agent can qualify and draft. It cannot send, quote, contract, price, promise, or publish without exact approval.
 
-Do not accept payment, sign a delivery date, promise coverage, or grant exclusivity without release, legal, capacity, and founder approval.
+## One-sentence pitch
 
-## Commercial principles
+Full Time gives one real football match to six AI Pundits, so a fan can choose a complete show with a different brain, humour, and argument while the checked facts stay the same.
 
-1. The core morning show and pundit choice should earn a habit before monetization adds friction.
-2. The product's trust is more valuable than a premature sponsor.
-3. A paid tier must sell implemented value, not roadmap language.
-4. Rights and provenance are product infrastructure, not legal cleanup.
-5. Prediction performance must be shown with calibration, sample size, and baseline context.
+## Why a partner should care
 
-## Future revenue paths
+Full Time can turn one licensed evidence base into several distinct editorial products while preserving provenance, claim boundaries, AI disclosure, separate scripts, and auditable production gates.
 
-### Membership
+That mechanism may matter to a publisher, league, club, official app, data provider, voice partner, or distribution platform. It does not prove commercial demand, audience scale, operational capacity, or rights clearance for a specific deal.
 
-A future paid tier may add interactive analysis, deeper archives, advanced personalization, or other implemented benefits. It should not paywall the basic current show, receipts, disclosure, or correction record. Price, renewal, cancellation, refunds, and included features require a separate approved decision.
+## Qualification
 
-### Sponsorship
-
-The safest early format is a clearly separated, brief sponsor credit around the show or feed. Editorial conclusions, predictions, and receipts remain independent.
-
-Reject:
-
-- betting and gambling partners;
-- crypto or token promotions;
-- sponsors that require editorial influence;
-- disguised native advertising;
-- audio insertion that interrupts the argument;
-- campaigns targeting vulnerable or underage audiences.
-
-### Licensing and white-label
-
-Potential partners include leagues, clubs, publishers, and official apps that can provide licensed data or distribution. A white-label deal must preserve evidence provenance, synthetic-voice disclosure, quality gates, correction behavior, and separate model accountability.
-
-### Data and research partnerships
-
-High-value partners can improve the evidence boundary through licensed event, tracking, video, reporting, or historical data. New evidence does not automatically permit stronger claims; the claim license and evaluation corpus must expand with it.
-
-## Rights-holder conversation
-
-Say:
-
-- Full Time uses licensed or permitted structured match facts and original prose.
-- It does not use broadcast audio, highlight footage, or living-pundit imitation.
-- Every public claim is evidence-linked and every registered prediction is auditable.
-- The system can preserve attribution and source provenance.
+### Distribution or publisher
 
 Ask:
 
-- Which data, marks, clips, quotes, or archive uses are licensed?
-- May output be commercial, derivative, quoted, or redistributed?
-- What attribution and expiry rules apply?
-- Can the partner provide corrections and audit access?
+- Which audience and surface would carry the show?
+- Does the partner want a Full Time-branded product, a licensed format, or a discovery prototype?
+- Which competitions and territories matter?
+- What editorial review, correction, disclosure, and takedown rules apply?
+- Which current audience or distribution facts can the partner share under permission?
 
-Never promise use of logos, footage, quotes, or player likenesses before rights are recorded.
+### Data or rights partner
 
-## Voice and creator partnership
+Ask:
 
-Voice candidates need explicit commercial rights, permitted territories, synthetic-use terms, duration, revocation handling, and proof that the voice does not imitate a known pundit. Founder taste selection follows blind full-length testing; a short demo is insufficient.
+- Which events, statistics, history, tracking, video, marks, or reporting are licensed?
+- May those inputs support commercial derivative audio and text?
+- What attribution, storage, audit, correction, territory, and expiry rules apply?
+- Can the partner provide stable team, match, season, and competition identifiers?
 
-Research creators need a source record that specifies whether Full Time may quote, paraphrase, or use abstract concepts only. Permission to watch content is not permission to train or commercialize it.
+### Voice partner
 
-## Sponsor or partner checklist
+Ask:
 
-Before a proposal leaves Full Time:
+- Are commercial synthetic-use rights explicit?
+- Which territories, terms, revocation rules, and capacity limits apply?
+- Can the voice be tested on full-length football scripts?
+- Does it avoid recognizable imitation of a living pundit?
 
-- use real audience and performance figures only;
-- state pre-launch status and product limitations;
-- confirm data, voice, trademark, and distribution rights;
-- define deliverables, exclusions, review rights, and correction process;
-- route privacy, processor, and commercial terms to counsel;
-- protect editorial independence and the public receipt ledger;
-- tie technical commitments to capacity and release evidence.
+### Sponsor
+
+Treat sponsorship as discovery only. Ask about audience, category, message, territories, term, disclosure, and editorial separation. No package, rate, impression, or availability is approved.
+
+## Current offer menu
+
+| Next step                   | Available | Conditions                                                      |
+| --------------------------- | --------- | --------------------------------------------------------------- |
+| Public preview              | Yes       | Truthful pre-launch state only                                  |
+| Launch note                 | Yes       | One email when release gates pass                               |
+| Private demonstration       | Yes       | Approved content and founder-approved audience                  |
+| Product or rights discovery | Yes       | Non-binding and no implied delivery                             |
+| New subscription            | No        | Checkout disabled                                               |
+| Sponsor package             | No        | No approved inventory, audience proof, or pricing               |
+| White-label contract        | No        | Requires product, rights, capacity, legal, and founder approval |
+| Guaranteed daily coverage   | No        | Rehearsal and release gates incomplete                          |
+
+## Partner pitch structure
+
+1. Name the partner's relevant problem in their language.
+2. Explain the AI-native mechanism in one sentence.
+3. Demonstrate two AI Pundits using one checked match.
+4. Open one proof card and one evidence boundary.
+5. State pre-launch limits plainly.
+6. Ask for one low-friction next step, normally a discovery call or data-and-rights review.
+
+Do not open on technical architecture, model providers, a feature list, or predictions.
+
+## Objections
+
+### “Why not make one normal show?”
+
+One normal show throws away the advantage of AI. Full Time lets one evidence base produce several complete editorial products, so the listener chooses a point of view rather than accepting one house voice.
+
+### “Will it replace our presenters?”
+
+That is not the offer. Full Time is an original AI format with synthetic voices and explicit disclosure. It does not imitate a presenter's style or voice.
+
+### “Can you cover our competition now?”
+
+Coverage depends on recorded data rights, identifier quality, evaluation, pronunciation, voice capacity, and daily rehearsals. The current intended beta is Premier League first, but that restriction is not yet enforced in the Teams product. No competition promise can be made without release evidence.
+
+### “What results can you guarantee?”
+
+None yet. The repository proves the production and safety mechanism. It does not prove audience, retention, revenue, prediction superiority, or a delivery service level.
+
+### “What does it cost?”
+
+No partner price or new consumer price is approved. Scope, rights, capacity, and deliverables must be defined before a commercial proposal exists.
+
+## Rights-safe statements
+
+Safe:
+
+- Full Time uses licensed or permitted structured match facts and original AI-generated scripts.
+- Synthetic voices and AI-written scripts are disclosed.
+- Important public proof can link a claim to sealed evidence and state what the data cannot prove.
+- The product prohibits living-pundit imitation and copyrighted broadcast audio.
+
+Conditional:
+
+- Use of a league, club, player, competition, broadcaster, or partner mark.
+- Use of video, tracking, quotes, transcripts, creator concepts, or private reporting.
+- Commercial redistribution or white-label output.
+
+Each conditional item needs recorded rights for the exact use.
 
 ## Firm declines
 
-Decline deals that require betting integration, living-pundit imitation, hidden AI disclosure, false performance claims, user-data sale, editorial control, pay-for-prediction outcomes, or removal of wrong receipts.
+Decline or escalate any request for:
+
+- betting or gambling integration;
+- guaranteed picks or pay-for-prediction outcomes;
+- hidden AI or synthetic-voice disclosure;
+- a living pundit's voice, catchphrases, or recognizable performance;
+- sponsor control of editorial conclusions;
+- deletion of a wrong settled record for reputation management;
+- user-data sale;
+- unlicensed footage, transcripts, logos, likenesses, or marks;
+- false audience, coverage, accuracy, reliability, price, or launch claims.
+
+## Proposal gate
+
+Before any proposal leaves Full Time, verify:
+
+- exact recipient, organization, and desired decision;
+- current product and release state;
+- rights and data inputs;
+- deliverables, exclusions, timing, review, correction, and takedown;
+- capacity and operational evidence;
+- privacy and processor implications;
+- price, currency, tax, payment, renewal, and cancellation, if founder-approved;
+- one named owner for each unresolved condition.
+
+Draft approval does not authorize sending. A discovery conversation does not authorize pricing or a delivery commitment. See [`21-go-to-market-agent.md`](./21-go-to-market-agent.md) for the agent action boundary.

@@ -2,95 +2,125 @@
 
 - **Status:** Current release source of truth
 - **Owner:** Founder and release operator
-- **Purpose:** Record what is live, what is disabled, and what must happen next.
+- **Purpose:** Record what is live, what is disabled, what remains inconsistent, and what must happen next.
 - **Last verified:** 2026-08-11
 
-## Live state
+## Live readback
 
-| Item                           | Verified state                                                                                     |
-| ------------------------------ | -------------------------------------------------------------------------------------------------- |
-| Product                        | Fail-closed pre-launch                                                                             |
-| Production URL                 | [fulltime.fm](https://fulltime.fm)                                                                 |
-| Vercel production              | [fulltime.fm](https://fulltime.fm), `READY`, deployed from GitHub `main`, last verified 2026-08-11 |
-| Deployed revision              | Read from current Vercel deployment metadata at release time                                       |
-| Production branch              | `main`                                                                                             |
-| Public launch                  | Disabled                                                                                           |
-| Public publication automation  | Disabled                                                                                           |
-| New checkout and Pro marketing | Disabled                                                                                           |
-| Pundits                        | Six, free and selectable                                                                           |
-| Supabase project               | `hzadscrqmyilbisexvyz`                                                                             |
-| Release migrations             | Applied and independently read back on 2026-08-08                                                  |
+At 2026-08-11 19:53 UTC, `https://fulltime.fm` returned HTTP 200 from Vercel and served:
 
-Vercel confirmed that `fulltime.fm` is ready and deployed from GitHub `main`. Current deployment metadata is authoritative. Durable repository docs intentionally do not pin a deployment ID or SHA because committing that update would immediately create a newer revision. This is an engineering release in truthful preview mode, not product launch approval.
+- title: `Full Time - Six AI Pundits, one real match`;
+- description: `Pick an AI Pundit and play a complete football show built from checked match facts.`;
+- desktop and mobile navigation: Today, Teams, Settings;
+- pre-launch state;
+- the player-first Today application bundle.
 
-The Supabase connector available in this environment does not have permission to inspect the FullTime project. That is a tooling limitation, not a reason to target another project. Confirm the project name and reference before every future production write.
+`https://fulltime.fm/llms.txt` still served the legacy "Big Five leagues, about 60 seconds each" description at that readback. This documentation reconciliation corrects the route source. The correction is not live until the matching revision deploys and the endpoint is read back again.
 
-The founder confirmed an API-Football Pro plan with all endpoints and 7,500 daily requests on 2026-08-11. The scheduled 00:15 UTC ingest nevertheless failed its 2026 coverage preflight because none of the five configured leagues reported live fixture-event coverage. Treat this as a season, key-mapping, or provider-response investigation; do not assume a missing paid tier and do not bypass the coverage gate for daily production.
+## Current state
 
-## What is complete
+| Item                            | Verified state                                  |
+| ------------------------------- | ----------------------------------------------- |
+| Product                         | AI-native, player-first, fail-closed pre-launch |
+| Production URL                  | [fulltime.fm](https://fulltime.fm)              |
+| Production branch               | `main`                                          |
+| Public navigation               | Today, Teams, Settings                          |
+| Today metadata                  | Six AI Pundits, one real match                  |
+| Public launch                   | Disabled                                        |
+| Automated publication           | Disabled                                        |
+| New checkout and paid promotion | Disabled                                        |
+| AI Pundits                      | Six, free, selectable                           |
+| Reporter RSS                    | Retained                                        |
+| `/feed` page                    | Redirects to Today                              |
+| Supabase project                | `hzadscrqmyilbisexvyz`                          |
+| Release migrations              | Previously applied and read back on 2026-08-08  |
 
-1. Truthful pre-launch behavior, six free pundits, current-date semantics, real audio events, strict cron authorization, and no simulated completion.
-2. Immutable evidence, licensed claims, six pundit specs, independent gates, targeted repair, and quarantine.
-3. Performance plans, strict transcript and number identity, pronunciation licensing, mastering, share cards, and content-addressed storage.
-4. Atomic run claims, 14-step durable orchestration, parallel variant fan-out, authenticated status, promise checks, and atomic publication.
-5. History backfill tooling, forecast backtesting, active-model control, prediction registration, settlement, and public receipts.
-6. Deterministic 60-match corpus tooling, resumable 360-script evaluation, human-review records, and revision-bound readiness evaluation.
-7. Responsive product shell, pundit selection, daily-show presentation, archive labeling, and searchable receipt ledger.
-8. Production schema, function search-path fixes, optimized auth RLS policies, and a ready Vercel deployment.
-9. A private text-file research drop, three-day Codex heartbeat, rights attestation, reproducibility hashes, and fail-closed audit.
+Durable docs do not pin a deployment ID or SHA because committing that value immediately creates a newer revision. Deployment metadata and live readback remain authoritative.
 
-## What remains blocked
+## What is complete in code
 
-These gates require external evidence or founder judgment:
+1. Player-first Today with date, title, hook, AI Pundit picker, play or pause, seek, real-media progress, and honest loading, empty, error, and fallback states.
+2. Transactional AI Pundit switching with load-before-commit, restart from zero, play or pause intent preservation, saved preference after success, old-edition retention on failure, and retry.
+3. Same-AI-Pundit latest fallback, match and team identifiers, recent editions, and up to three proof cards from sealed evidence and licensed claims.
+4. Six abstract AI Pundit motifs with deterministic per-edition variation.
+5. Three-tab navigation and `/feed` redirect.
+6. Immutable evidence, licensed claims, six internal AI Pundit specs, independent gates, targeted repair, and quarantine.
+7. Performance plans, transcript and number identity, pronunciation controls, mastering, share cards, and content-addressed storage.
+8. Durable orchestration, bounded parallel production, promise checks, and atomic publication.
+9. Forecast backtesting, pre-kickoff registration, settlement, and public API controls.
+10. Evaluation, human-review, rehearsal, and revision-bound readiness records.
+11. Private text-file research intake with rights attestation, hashes, quarantine, and fail-closed audit.
 
-- rights-cleared research whitelist and approved concept cards;
-- two licensed full-length voice candidates per pundit;
+## Product gaps that remain in code
+
+These are implementation facts, not external launch gates:
+
+- **Teams beta:** `/following` still returns all stored leagues and teams, puts teams above leagues, and retains the old three-team prompt. Premier-League-only availability and coming-later states are not complete.
+- **Track record:** Today checks a settled-only endpoint, but `/receipts` still renders the legacy searchable prediction ledger and calls the broader predictions endpoint.
+- **Settings language:** functional but not fully reconciled to AI Pundit terminology and the simplified public voice.
+- **Personalization:** saved follows exist; a private club-built playlist does not.
+- **Machine-facing copy:** `/llms.txt` is stale in the currently observed deployment until this revision deploys.
+- **Production build gate:** the 2026-08-11 local Windows build emitted client, SSR, and Nitro bundles under Node 24.19.0, but Workflow registered zero steps and zero workflows. The manifest checker failed as designed. Reproduce on Linux CI or repair the Workflow/Vite integration before release.
+
+No marketing, support, sales, or agent output may claim those gaps are complete.
+
+## External and human gates
+
+Public launch remains blocked by:
+
+- rights-cleared research sources and approved original concepts;
+- two commercially usable full-length voice candidates per AI Pundit;
 - founder humour, editorial, and voice approval;
-- TTS capacity of at least 1.5 million approved characters per month with alerts;
-- two-season data backfill and a held-out forecast win over league base rates;
-- 60 approved evaluation matches, 360 passing scripts, and blind review thresholds;
-- full-length audio panels for persona, pronunciation, authority, naturalness, timing, and listenability;
+- at least 1.5 million approved TTS characters per month with alerts;
+- two seasons of provider history and a held-out forecast win over league base rates;
+- 60 approved evaluation matches, 360 passing scripts, and blind-review thresholds;
+- full-length audio review and 99% verified launch-name pronunciation;
 - seven consecutive on-time six-variant rehearsals;
-- legal, privacy, accessibility, monitoring, rollback, and feed-validation sign-offs tied to the release revision.
+- revision-bound legal, privacy, accessibility, monitoring, rollback, feed, and operational sign-offs.
 
-The release-readiness evaluator lists every missing gate. It cannot average failures away or store a passing snapshot unless every requirement passes.
+The founder confirmed an API-Football Pro plan with all endpoints and 7,500 daily requests on 2026-08-11. The 00:15 UTC ingest still failed its 2026 coverage preflight because the configured leagues did not report live fixture-event coverage. Investigate season mapping, key mapping, and provider response. Do not infer a missing paid tier or bypass the gate.
 
-## Next operator sequence
+## Next product sequence
 
-1. Confirm the intended Vercel project and Supabase project before touching live state.
-2. Reconcile the confirmed API-Football Pro entitlement with the failing 2026 coverage response while leaving all execution flags false.
-3. After coverage passes, backfill two seasons in bounded batches. Train a forecast without activation; activate only a held-out winner.
-4. Curate the 60-match set, run 360 scripts, and collect blinded editorial review.
-5. Add licensed voice candidates, verified pronunciations, and full-length audio reviews.
-6. Enable private rehearsals only. Complete seven consecutive runs before the UK deadline.
-7. Record every sign-off against the exact Git revision.
-8. Run the release-readiness endpoint and store a snapshot only for a passing revision.
-9. Verify a preview across browser, accessibility, feed, audio, assets, and receipts.
-10. Roll out production deliberately. Public launch and billing are two later, separate mutations.
+1. Finish Premier-League-only Teams behavior and preserve old non-Premier-League follows outside beta counts and promises.
+2. Replace `/receipts` with the quiet settled-only **How did they do?** experience and deep links.
+3. Finish the Settings language pass using AI Pundit and plain, playful copy.
+4. Verify `llms.txt`, sitemap, metadata, legal copy, and public routes against the matching deployment.
+5. Reconcile the provider coverage response, then backfill two seasons in bounded batches.
+6. Complete editorial, voice, rehearsal, rights, legal, accessibility, and release evidence.
+
+## Operator sequence
+
+1. Confirm Vercel and Supabase target identity before touching live state.
+2. Keep all execution and billing flags false during investigation.
+3. Run local documentation and repository checks on Node 24, and require the Workflow manifest to contain `dailyPunditWorkflow` plus all ten application steps.
+4. Verify a preview at 320, 393, tablet, desktop, Android Chrome, and iOS Safari.
+5. Read back Today, Teams, Settings, `/feed`, `/receipts`, `/llms.txt`, RSS, sitemap, legal pages, and failure states from the exact deployed revision.
+6. Store a release snapshot only after every required gate passes.
+7. Treat public launch and billing as separate later mutations.
 
 ## Vercel operator note
 
-The repository does not assume the Vercel CLI is installed. Install it when local environment, deployment, or log workflows require it:
+The Vercel CLI is not installed in the current workspace. Install it only for an approved environment, preview, deployment, or log task:
 
 ```powershell
 npm i -g vercel
-vercel link
-vercel env pull .env.local
 ```
 
-Do not pull secrets merely to inspect them. Prefer process-scoped injection or platform tooling, and never print or commit a value.
+Pulling environment values, deploying a preview, and promoting production are separate actions. Never print or commit a secret.
 
 ## Rollback
 
-- Application: promote the last known-good Vercel deployment.
-- Editorial: set release state to `paused` and disable publication flags.
-- Data: stop writers; do not drop additive tables during an incident.
-- Assets: preserve content-addressed files and immutable predictions and receipts.
-- Persona failure: show the failure. Never substitute another persona silently.
+- Promote the last known-good Vercel deployment.
+- Set release state to `paused` and turn publication flags off.
+- Stop writers before data changes.
+- Preserve additive schema, audit history, content-addressed assets, registered claims, and settled records.
+- Show an AI Pundit failure; never substitute another one.
 
 ## Verification baseline
 
 ```powershell
+pnpm run docs:check
 pnpm run typecheck
 pnpm test
 pnpm run lint
@@ -98,4 +128,4 @@ pnpm run build
 git diff --check
 ```
 
-Passing code checks proves engineering integrity only. It does not satisfy human, rights, provider, rehearsal, legal, or launch gates.
+Passing checks proves repository integrity only. Live parity needs matching-revision readback. Launch needs every external and human gate.

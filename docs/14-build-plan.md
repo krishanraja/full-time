@@ -2,7 +2,7 @@
 
 - **Status:** Historical, do not execute
 - **Original date:** 2026-06-17
-- **Last reviewed for provenance:** 2026-08-10
+- **Last reviewed for provenance:** 2026-08-11
 - **Purpose:** Preserve the assumptions that shaped the first prototype and explain what replaced them.
 
 ## Why this record exists
@@ -40,7 +40,7 @@ The June plan proposed:
 
 | Original plan                    | Current system                                      | Reason                                            |
 | -------------------------------- | --------------------------------------------------- | ------------------------------------------------- |
-| One voice and one sensibility    | Six distinct analytical products                    | Choice must change the mind, not just the timbre  |
+| One voice and one sensibility    | Six distinct AI Pundit products                     | Choice must change the mind, not just the timbre  |
 | About 60 seconds per match       | One 5 to 8-minute morning show per pundit           | Insight, story, humour, and receipts need room    |
 | No staked verdict                | Bold evidence-grounded judgment                     | Differentiation requires a point of view          |
 | One recap gate                   | Claim licensing plus hard and qualitative harnesses | Accuracy alone can still produce bland content    |

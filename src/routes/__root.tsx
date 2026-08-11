@@ -165,7 +165,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         rel: "alternate",
         type: "application/rss+xml",
-        title: "Full Time - daily football recaps",
+        title: "Full Time - AI Pundit football shows",
         href: `${SITE_URL}/api/public/feed.rss`,
       },
     ],

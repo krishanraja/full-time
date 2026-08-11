@@ -3,7 +3,7 @@
 - **Status:** Current operating posture; final launch requires qualified counsel
 - **Owner:** Founder and legal
 - **Purpose:** Record data, rights, disclosure, billing, processor, and incident requirements.
-- **Last reviewed:** 2026-08-10
+- **Last reviewed:** 2026-08-11
 
 > This document is an internal operating record, not legal advice.
 
@@ -24,7 +24,7 @@ Any change to collection, retention, processors, billing, rights, or disclosure 
 | ------------------------------ | -------------------------------------- | ----------------------------------------------------------------------- |
 | Email and auth identifiers     | Account and magic-link sign-in         | Until verified deletion request                                         |
 | Optional display name          | Profile                                | Until deletion                                                          |
-| Pundit preference              | Personalization                        | Local device; synced profile when signed in                             |
+| AI Pundit preference           | Personalization                        | Local device; synced profile when signed in                             |
 | Follows                        | Club and league ordering               | Until deletion                                                          |
 | Push endpoint and keys         | Opt-in notification delivery           | Until unsubscribe or deletion                                           |
 | Waitlist/launch-note record    | Launch communication and attribution   | Until fulfilled, withdrawn, or deleted                                  |
@@ -67,7 +67,7 @@ NotebookLM is an internal research workbench. It is not a production writer or a
 
 The user must be able to understand that:
 
-- scripts are AI-generated from structured match data and licensed research context;
+- AI Pundit scripts are AI-generated from checked structured match data and licensed research context;
 - voices are synthetic;
 - automated and human quality controls can still fail;
 - predictions are probabilistic, not guarantees;
@@ -77,7 +77,7 @@ Disclosure appears in Settings and on relevant player or transcript surfaces. It
 
 ## Billing and consumer terms
 
-New checkout is disabled. Existing subscriber management remains available.
+New checkout is disabled. All six AI Pundits are free during pre-launch. Existing subscriber management remains available.
 
 Before any paid offer:
 
@@ -95,15 +95,16 @@ Do not charge for roadmap items or imply that a disabled paid surface is current
 
 Current or retained integrations include:
 
-| Provider     | Role                                                     | Data category                                                                     |
-| ------------ | -------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Supabase     | Database, auth, storage, realtime                        | Account, preference, editorial, operational, media data                           |
-| Vercel       | Hosting, functions, workflow, delivery                   | Request metadata and server workloads                                             |
-| Anthropic    | Script and judge generation                              | Match evidence, research concepts, persona instructions; no account PII by design |
-| ElevenLabs   | TTS and transcription services                           | Approved script and pronunciation context; no account PII by design               |
-| Stripe       | Existing billing management and future reviewed checkout | Email, customer, subscription, and provider-held payment data                     |
-| PostHog      | Product analytics                                        | Pseudonymous usage events and request metadata                                    |
-| Google Fonts | Font delivery                                            | Browser request metadata unless self-hosted later                                 |
+| Provider   | Role                                                     | Data category                                                                     |
+| ---------- | -------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Supabase   | Database, auth, storage, realtime                        | Account, preference, editorial, operational, media data                           |
+| Vercel     | Hosting, functions, workflow, delivery                   | Request metadata and server workloads                                             |
+| Anthropic  | Script and judge generation                              | Match evidence, research concepts, persona instructions; no account PII by design |
+| ElevenLabs | TTS and transcription services                           | Approved script and pronunciation context; no account PII by design               |
+| Stripe     | Existing billing management and future reviewed checkout | Email, customer, subscription, and provider-held payment data                     |
+| PostHog    | Product analytics                                        | Pseudonymous usage events and request metadata                                    |
+
+The CSS font stack names Geist but the current repository does not request Google Fonts or another web-font provider. Do not list a font processor unless a deployed build makes that request.
 
 Confirm contracts, regions, retention, subprocessors, and deletion behavior before launch. The public privacy page must match reality.
 

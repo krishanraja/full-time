@@ -39,7 +39,7 @@ const TODAY = [
 ];
 const FULL_APP = [
   "Full-length six-variant mornings",
-  "A public prediction and receipt record",
+  "A plain check on settled AI Pundit calls",
   "Launch timing follows evidence, not a calendar",
 ];
 
@@ -141,7 +141,7 @@ function WaitlistPage() {
             Get the launch note.
           </h1>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Full Time is still proving six distinct, insightful and funny pundits over full-length
+            Full Time is still proving six distinct, useful and funny AI Pundits over full-length
             shows. Leave your email for one message when the evidence says it is ready.
           </p>
 

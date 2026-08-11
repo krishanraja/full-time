@@ -6,9 +6,9 @@
 // feed[.]rss.ts: TanStack Router's file-based routing turns a bare "." into
 // a "/" path segment, and the convention requires the literal /llms.txt.
 //
-// Episode entries are generated from real `episodes` rows, never hardcoded,
-// under the same filters as the sitemap and the RSS feed (published, with
-// real audio) so this file can never advertise a page that 404s.
+// Current product truth is written explicitly below. Episode entries come
+// from real legacy `episodes` rows under the same public filters as the
+// sitemap, so the file never advertises a fabricated page.
 
 import { createFileRoute } from "@tanstack/react-router";
 import { SITE_URL } from "@/lib/site-url";
@@ -78,25 +78,28 @@ export const Route = createFileRoute("/llms.txt")({
         const body = [
           "# Full Time",
           "",
-          "> Daily AI-narrated football recaps. Big Five leagues, about 60 seconds each.",
+          "> One real football match. Six AI Pundits. Pick the brain you fancy.",
           "",
-          "Full Time turns each day's notable matches into a short narrated audio recap.",
-          "Episodes are generated from match data and published as a podcast feed. Every",
-          "episode page carries the full narration transcript as text, so the content is",
-          "readable without playing the audio.",
+          "Full Time is an AI-native football audio product in pre-launch. One set of checked",
+          "match facts can produce six complete shows, each with a different AI Pundit,",
+          "argument, humour system, script, synthetic performance and generated edition look.",
+          "Important claims may include a Show me why card with the supporting match fact and",
+          "a boundary explaining what that fact cannot prove.",
           "",
           `Canonical origin: ${SITE_URL}`,
-          "Language: en. Publisher: Full Time.",
+          "Language: en. Publisher: Full Time. Lifecycle: pre-launch.",
           "",
           "## Key surfaces",
           "",
-          `- [Today](${SITE_URL}/): the current drop, newest first.`,
-          `- [Archive](${SITE_URL}/archive): request a narrated recap for a past match.`,
-          `- [Podcast RSS feed](${SITE_URL}/api/public/feed.rss): every published episode with audio enclosures and transcripts.`,
+          `- [Today](${SITE_URL}/): the player-first AI Pundit show.`,
+          `- [Teams](${SITE_URL}/following): saved team and league preferences; beta league restrictions are still being finished.`,
+          `- [Settings](${SITE_URL}/settings): AI Pundit choice, optional account, disclosure and product state.`,
+          `- [Archive](${SITE_URL}/archive): labelled legacy archive and demo material; new generation is paused in pre-launch.`,
+          `- [Reporter RSS feed](${SITE_URL}/api/public/feed.rss): the retained canonical Reporter distribution feed.`,
           `- [Sitemap](${SITE_URL}/sitemap.xml): every indexable URL.`,
-          `- [Waitlist](${SITE_URL}/waitlist): what the full product will do.`,
+          `- [Launch note](${SITE_URL}/waitlist): one email when the release gates pass.`,
           "",
-          "## Recent episodes",
+          "## Recent legacy episodes",
           "",
           rows.length
             ? rows.map(episodeLine).join("\n")
@@ -104,9 +107,14 @@ export const Route = createFileRoute("/llms.txt")({
           "",
           "## Notes for agents",
           "",
-          "- Scores, team names and competitions come from match data, not from the narration.",
-          "- The transcript on an episode page is the verbatim narration script, not a summary.",
-          "- Personalised surfaces (/settings, /following, /auth) are noindex and carry no public content.",
+          "- Call all six public products AI Pundits on every surface.",
+          "- Full Time is not a human podcast imitation and not a betting product.",
+          "- All six AI Pundits are free during pre-launch; new checkout is disabled.",
+          "- Do not claim a public launch date, daily reliability, forecast performance, personal show generation or Big Five coverage.",
+          "- The intended beta is Premier League first, but the Teams restriction is not complete and must not be promised yet.",
+          "- Today uses settled-only availability for How did they do?, while the direct receipts page still has a legacy ledger interface.",
+          "- Scores, team names and competitions on legacy episode pages come from match data, not narration.",
+          "- Personalised surfaces are noindex and carry no public editorial catalogue.",
           "",
         ].join("\n");
 

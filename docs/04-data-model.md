@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Data and engineering
 - **Purpose:** Map the production schema, ownership, immutability, RLS, and migration rules.
-- **Last reviewed:** 2026-08-10
+- **Last reviewed:** 2026-08-11
 
 ## Authority
 
@@ -55,6 +55,8 @@ erDiagram
 | `generation_requests` | Legacy on-demand usage ledger             | User-visible allowance, privileged writes                |
 
 New billing is disabled in application code. Retained columns support existing subscriber management and future reviewed reactivation.
+
+The intended Premier-League-only beta is an application-response rule, not a schema migration. Existing non-Premier-League follows remain stored. The current `getTeamsAndLeagues` function has not yet applied the beta restriction, so no document or agent may claim it has shipped.
 
 ### Editorial intelligence
 
@@ -121,6 +123,8 @@ Never use `user_metadata` for authorization. Never rely on `TO authenticated` wi
 | `share`    | Share cards and share media | Public read, privileged write |
 
 Current assets use content-addressed paths. Do not overwrite a published file in place.
+
+AI Pundit avatars do not use storage. The public component derives stable SVG geometry from the daily-drop and `PunditId` values.
 
 ## Migration order
 

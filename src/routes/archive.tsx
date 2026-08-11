@@ -25,7 +25,8 @@ export const Route = createFileRoute("/archive")({
     pageSeo({
       path: "/archive",
       title: "Archive • Full Time",
-      description: "Name a game. Any match we hold the data for, narrated on demand.",
+      description:
+        "Labelled archive and demo football audio. New narration is paused in pre-launch.",
     }),
   component: ArchivePage,
 });
