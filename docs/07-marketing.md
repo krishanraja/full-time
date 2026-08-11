@@ -1,78 +1,124 @@
-# 07 · Marketing
+# 07 - Marketing
 
-**Role:** Marketing, content, social, launch agent.
-**Read this when:** writing channel copy, planning a launch, briefing a designer, picking partners.
-**Don't read this when:** you need product strategy (→ `00-product.md`) or growth experiments (→ `09-growth.md`).
-
----
+- **Status:** Current pre-launch playbook
+- **Owner:** Founder and marketing
+- **Purpose:** Define positioning, audiences, distribution loops, copy, and the conditions for launch activity.
+- **Last reviewed:** 2026-08-10
 
 ## Positioning
 
-> **One football morning. Six genuinely different minds. Every prediction gets a receipt.**
+> One football morning. Six genuinely different minds. Every prediction gets a receipt.
 
-We are the *day-after* moment, not the *during-match* moment. We do not compete with Sky, BBC, TNT, talkSPORT. We compete with: scrolling Twitter half-asleep, the "highlights" tab on YouTube, missing the result entirely.
+Full Time is the day-after football show for people who want an argument worth remembering, not another recap that reads the score back to them.
 
-### Three things to never lead with
+The differentiator has three parts:
 
-- "AI" as the headline. AI is the *how*, not the *why*. Lead with the user benefit: one sharp morning show, a pundit worth choosing, and opinions that remain accountable.
-- "Podcast." We're shorter and tighter than a podcast, calling it a podcast under-sells the format.
-- "Free." Coming at the wallet first signals low value.
+1. six pundits make genuinely different judgments from one verified evidence base;
+2. each edition combines analysis, story, humour, and a portable point of view;
+3. predictions return as public receipts, including the wrong ones.
 
-## Audience segments
+Lead with the listener's benefit. AI explains how the product works, not why someone should care.
 
-| Segment | Hook |
-|---|---|
-| Time-poor super-fan | "Every match that mattered, in the time it takes to brew coffee." |
-| Lapsed fan | "Get back into football without watching highlights." |
-| Multi-league fan | "Big Five, every morning. One app." |
-| Commuter | "Lock screen, walk. We'll do the talking." |
+## Audience
 
-## Channels (priority order)
+| Audience                       | Tension                                          | Message                                             |
+| ------------------------------ | ------------------------------------------------ | --------------------------------------------------- |
+| Time-poor serious fan          | Knows there was a game, lacks time for the noise | "One sharp show before work."                       |
+| Multi-club or multi-league fan | Cannot watch every match                         | "The morning's argument, not yesterday's scroll."   |
+| Football tactics learner       | Wants insight without jargon                     | "See the pattern. Hear it in twenty seconds."       |
+| Punditry skeptic               | Distrusts hindsight and hot takes                | "Every prediction comes back for judgment."         |
+| Social football fan            | Shares rivalry and memorable lines               | "Choose the pundit your group chat can quote back." |
 
-1. **Word of mouth + Reddit.** r/soccer, r/PremierLeague, r/LaLiga, r/seriea, r/Bundesliga, r/Ligue1. Show up as a fan, share the product when relevant. Never spam.
-2. **Twitter/X.** Daily "today's drop is live" tweet with the headline match scoreline + a 15-second teaser clip.
-3. **TikTok / Reels.** Daily 30-sec auto-clip of the biggest moment recap. Vertical video, animated waveform, brand mark in the corner.
-4. **Football podcast cross-promo.** Mid-tier shows (10 to 50k listeners) will swap shout-outs if our product is genuinely good.
-5. **SEO-light.** Per-match share pages (roadmap) → "{Home} vs {Away} recap, Full Time".
+## Message hierarchy
 
-## Launch checklist
+1. A better football morning.
+2. Six different minds, not six voices reading one script.
+3. Evidence behind opinions.
+4. Prediction and accountability.
+5. Synthetic production disclosed plainly.
 
-- [ ] Landing page (or `/` itself) shows the product working, not a sign-up form.
-- [ ] OG / Twitter card image set (see `01-brand.md` notes).
-- [ ] PWA install prompt fires after second visit.
-- [x] PostHog wired, key events firing.
-- [ ] `/legal/privacy` and `/legal/terms` reachable.
-- [ ] First seven days' content is *certain*. No launch on a Tuesday with no Monday matches.
-- [ ] Three "anchor" reviewers / podcasters teed up with early access (1 week before).
-- [ ] Reddit posts drafted but not posted from a new account, use an existing fan account or post as the product transparently.
+Do not lead with `AI-powered`, `podcast platform`, `free`, feature counts, or a claim that Full Time replaces watching football.
+
+## Pre-launch discipline
+
+The live site is a preview. Marketing may invite private feedback and demonstrate approved archive material. It may not:
+
+- announce a public launch date;
+- call an unapproved drop current;
+- promote checkout or Pro;
+- imply daily reliability before seven complete rehearsals;
+- quote forecast performance before held-out superiority is recorded;
+- use unlicensed voices, club marks, footage, or research language.
+
+Every campaign points to the same revision-bound release gate as the product.
+
+## Distribution loops
+
+### Receipts
+
+The signature loop is a prediction before the match and a shareable settlement after it. Correct calls build authority; candid reversals build trust.
+
+### Portable lines
+
+Each approved show contains one line that teaches a reusable concept. Share the line with the evidence, match, pundit, and link back to the full edition.
+
+### Pundit choice
+
+Invite listeners to compare two judgments from the same facts. The tension is not "which voice sounds best?" but "which mind saw the match most clearly?"
+
+### Reporter feed
+
+Apple, Spotify, and YouTube receive one canonical Reporter edition. Episode descriptions and the spoken close send listeners to fulltime.fm to choose another pundit. Do not split public podcast subscribers across six feeds.
+
+## Channel priorities
+
+1. Founder-led private listening panels and football communities.
+2. Share pages for receipts and portable lines.
+3. X, Reddit, TikTok, and Reels with evidence-first excerpts.
+4. Cross-promotion with independent football shows and newsletters.
+5. Search pages for genuinely useful episode and receipt records, never content-farm pages.
+
+Community participation must be transparent and useful. Do not astroturf, impersonate fans, or spam match threads.
 
 ## Copy bank
 
-### App store / social one-liners
-- "Yesterday's biggest football story, told six genuinely different ways."
-- "Coffee in one hand. Football recap in the other ear."
-- "The morning drop. Up by 7am. Listen and go."
-- "Every match that mattered. In sixty seconds."
+Approved:
 
-### Push copy (the morning nudge)
-- "Today's recaps are live. 4 minutes total."
-- "Eight matches. Six minutes. We narrated them. Tap in."
-- "The Premier League weekend, in your ear."
+- "Six editions. Same facts. Different judgments."
+- "Choose your pundit. Keep the receipts."
+- "A football opinion should survive the replay."
+- "The result tells you what happened. The receipt tells you who understood it."
+- "Wrong call. No disappearing act."
+- "The data shows what happened. This pundit tells you what it means."
 
-Keep push under 80 chars. No emoji. No exclamation marks.
+Calls to action:
 
-### Anti-copy (do not ship)
-- ❌ "🔥 Don't miss out! 🔥"
-- ❌ "AI-powered next-gen football experience"
-- ❌ "Your personal football assistant"
-- ❌ "Game-changing way to enjoy football"
+- "Choose your pundit"
+- "Hear the case"
+- "See the receipt"
+- "Compare the editions"
+- "Join the launch note"
 
-## SEO
+Avoid:
 
-- Site title: `Full Time - Daily football recaps, narrated` (handled in `__root.tsx`).
-- Per-route title pattern: `{Section} • Full Time`.
-- We are *not* an SEO product at v1. No content-farm pages. The play here is direct + social.
+- "Game-changing AI football experience"
+- "Never miss a moment"
+- "Unbiased analysis"
+- "Guaranteed predictions"
+- "Your personal Gary Neville"
+- false urgency, emoji-heavy copy, or unsupported superlatives.
 
-## Brand stewardship
+## Launch checklist
 
-When in doubt, defer to `01-brand.md`. The brand is what makes us not generic AI slop.
+Marketing begins only when product, editorial, narration, forecast, operational, legal, and accessibility gates all pass for the release revision.
+
+- [ ] The 60-match, 360-script suite passes.
+- [ ] Full-length founder, fan, analyst, and audio panels pass.
+- [ ] Seven consecutive daily rehearsals meet the UK deadline.
+- [ ] Forecast beats its base-rate baseline on held-out data.
+- [ ] All rights, voice, legal, privacy, and accessibility approvals are recorded.
+- [ ] Feed, player, transcript, artwork, share, receipts, monitoring, and rollback checks pass.
+- [ ] The first seven coverage dates have a credible content plan.
+- [ ] Every public claim matches [`19-release-state.md`](./19-release-state.md).
+
+See [`01-brand.md`](./01-brand.md) for visual and copy execution.

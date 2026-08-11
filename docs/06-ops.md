@@ -1,125 +1,138 @@
 # 06 - Operations
 
-This is the current operating runbook. Release truth and required evidence live in `19-release-state.md`.
+- **Status:** Current runbook
+- **Owner:** Release operator and on-call
+- **Purpose:** Operate rehearsals, publication, incidents, secrets, deployments, and rollback safely.
+- **Last reviewed:** 2026-08-10
 
 ## Default posture
 
-- The product is in fail-closed pre-launch.
-- New checkout is disabled. Do not claim billing is live.
-- All six pundits are free.
-- Public publication is disabled.
-- Private rehearsals are disabled unless an operator explicitly enables them.
-- The legacy one-voice generator is disabled behind its own recovery flag.
-- No failed persona may be replaced silently by another persona.
-
-Required safe defaults:
+Production is a truthful pre-launch preview. These values are the safe baseline:
 
 ```text
+VITE_PRELAUNCH_MODE=true
 PRELAUNCH_MODE=true
+VITE_BILLING_ENABLED=false
 BILLING_ENABLED=false
 ENABLE_PRIVATE_REHEARSALS=false
 ENABLE_LEGACY_DAILY_DROP=false
 PUNDIT_PUBLICATION_ENABLED=false
+PUBLIC_FORECAST_SCORES_ENABLED=false
 ENABLE_FORECAST_TRAINING=false
 ENABLE_PREDICTION_REGISTRATION=false
 ENABLE_EVALUATION_RUNS=false
 ENABLE_RELEASE_SNAPSHOT_WRITE=false
 ```
 
-The matching client flags are `VITE_PRELAUNCH_MODE=true` and `VITE_BILLING_ENABLED=false`.
+Keep public publication, new checkout, legacy generation, and public forecast scores disabled until the exact revision passes [`19-release-state.md`](./19-release-state.md).
 
-## Production schedules
+## Schedules
 
-`vercel.ts` is the schedule source of truth:
+[`vercel.ts`](../vercel.ts) is authoritative:
 
-| Time, UTC | Endpoint | Purpose |
-| --- | --- | --- |
-| 00:15 | `/api/public/cron/ingest` | Structured match-data ingest and prediction settlement |
-| 04:45 | `/api/internal/daily-rehearsal` | Durable six-pundit rehearsal or publication run |
-| 06:30 and 16:30 | `/api/internal/predictions-register` | Pre-kickoff prediction registration |
+| UTC             | Endpoint                             | Job                                                          |
+| --------------- | ------------------------------------ | ------------------------------------------------------------ |
+| 00:15           | `/api/public/cron/ingest`            | Ingest structured match data and settle eligible predictions |
+| 04:45           | `/api/internal/daily-rehearsal`      | Run the six-variant durable workflow                         |
+| 06:30 and 16:30 | `/api/internal/predictions-register` | Register upcoming predictions before kickoff                 |
 
-GitHub workflows are manual recovery triggers only. Every scheduled or manual request requires the exact `Authorization: Bearer $CRON_SECRET` value. A missing secret fails closed.
+GitHub workflows are manual recovery only. Every request uses `Authorization: Bearer $CRON_SECRET`. A missing secret rejects the request.
 
-## Daily run procedure
+## Daily rehearsal
 
-1. Confirm ingest completed for the intended London coverage date.
-2. Confirm provider quotas, voice candidates, pronunciation entries and required feature flags.
-3. Trigger `POST /api/internal/daily-rehearsal` with cron authorization.
-4. Expect HTTP `202` with `runId` and `statusUrl`. A `202` means accepted, not passed.
-5. Poll the authenticated status URL or inspect Workflow observability until the run is terminal.
-6. Inspect the editorial run, all six variants and the stored promise checks.
-7. Treat `failed` and `quarantined` as visible release failures. Never publish a partial drop.
-
-The durable workflow has 14 steps. It claims an idempotent run, prepares one immutable evidence pack, creates six independent editorial variants in parallel, persists their harness evidence, creates six narrated variants in parallel, runs the exact publication promise set, and uses one atomic publication transaction only after every check passes.
+1. Confirm the London coverage date and successful ingest.
+2. Confirm provider quotas, selected licensed voices, and required pronunciation entries.
+3. Confirm only the flags needed for this private run are enabled.
+4. Call `POST /api/internal/daily-rehearsal` with the cron bearer.
+5. Record the `runId` returned with HTTP `202`. Accepted is not passed.
+6. Follow the authenticated status or Workflow observability to a terminal state.
+7. Inspect the editorial run, six variants, harness evidence, audio results, assets, predictions, and promise checks.
+8. Record the rehearsal result. Do not publish a partial drop.
+9. Return temporary execution flags to false.
 
 ## Failure guide
 
-| Symptom | Meaning | Operator response |
-| --- | --- | --- |
-| `401` | Missing or mismatched cron bearer | Rotate or reconcile `CRON_SECRET`; do not add a fallback credential |
-| `409 Private rehearsals are disabled` | Safe pre-launch flag is working | Enable only for an approved private run |
-| `409 Pundit publication is disabled` | Public publication kill switch is working | Leave disabled until the release snapshot passes |
-| No feature match | No complete structured-data candidate for the requested date | Fix ingest or use the correct coverage date |
-| Editorial quarantine | One or more hard or qualitative gates failed | Inspect `harness_runs`; repair only failed beats |
-| Narration quarantine | Fidelity, pronunciation, voice, quota or mastering gate failed | Fix the named input or provider issue; never accept unverified audio |
-| Promise-check quarantine | One or more required variant, asset, harness or receipt promises are missing | Repair the missing record and rerun idempotently |
-| Forecast activation rejected | Held-out model did not beat the baseline or lacked sufficient data | Keep scores private and improve the training data or model |
+| Signal                      | Meaning                                                               | Response                                                  |
+| --------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------- |
+| `401`                       | Cron bearer missing or wrong                                          | Reconcile or rotate `CRON_SECRET`; do not add a fallback  |
+| `409` with disabled message | Feature flag denied the operation                                     | Enable only for an approved run                           |
+| No candidate match          | Ingest/date/data completeness problem                                 | Fix data or coverage date                                 |
+| Editorial quarantine        | Hard gate or qualitative floor failed                                 | Repair failed beats only                                  |
+| Narration quarantine        | Voice, transcript, number, pronunciation, quota, or mastering failure | Fix the named input; never override                       |
+| Asset quarantine            | Required audio, transcript, artwork, or storage promise missing       | Repair and rerun idempotently                             |
+| Forecast rejected           | Held-out result did not beat baseline                                 | Keep inactive and scores private                          |
+| Release blocked             | One or more revision-bound gates missing                              | Complete evidence; never lower thresholds                 |
+| One persona failed          | Six-variant promise broken                                            | Keep the drop unpublished and show the failure internally |
 
-## Audio incidents
+## Audio runbook
 
-- A transcription outage blocks audio approval.
-- A missing or unverified proper name blocks narration.
-- More than three pronunciation dictionaries blocks narration; consolidate verified entries.
-- Each TTS request is sentence-safe and at most 4,500 characters.
-- FFmpeg must be available through the installed optional package or `FFMPEG_PATH`.
-- Mastered duration, loudness and true peak are measured from the produced file.
-- The account must expose at least 1.5 million monthly characters and sufficient retry reserve.
+- Require the selected, licensed voice for the exact pundit.
+- Require human-verified pronunciation for launch names.
+- Keep each sentence-safe TTS request at or below 4,500 characters.
+- Use no more than three pronunciation dictionaries per request.
+- Require transcription, number identity, duration, speaking rate, loudness, true peak, dynamic range, and artifact checks.
+- Require at least 1.5 million monthly approved characters plus retry reserve and usage alerts.
+- Treat provider or transcription outages as blocking.
 
-Do not delete a published prediction or receipt to hide a mistake. Pause publication, preserve the immutable audit trail and publish a correction or receipt through the normal product record.
+## Content incident
 
-## Content or safety incident
+1. Set release state to `paused` and disable publication.
+2. Preserve evidence, claims, script, performance plan, audio, harnesses, prediction, and asset paths.
+3. Quarantine the variant or drop through an additive record.
+4. Add a regression case for the escaped failure.
+5. Repair the smallest layer and rerun the held-out suite.
+6. Obtain the required editorial, legal, and founder approval.
+7. Publish a correction or receipt if the content reached users.
 
-1. Set the release state to `paused` and disable publication flags.
-2. Record the affected drop, variant, script, audio asset, evidence pack and harness versions.
-3. Quarantine the affected variant or drop through an additive incident record. Do not overwrite another persona into its place.
-4. Preserve registered predictions and settled receipts.
-5. Fix the smallest failed layer, add an adversarial regression case and rerun the held-out suite.
-6. Obtain the required editorial, legal or founder sign-off before resuming.
+Do not delete or rewrite an immutable prediction, receipt, or published asset during incident response.
 
 ## Secret rotation
 
-Server secrets live in Vercel environment variables. Manual recovery also needs the matching GitHub `CRON_SECRET` and `FULL_TIME_URL` values.
+Server secrets live in Vercel environment variables. GitHub manual recovery needs matching `CRON_SECRET` and `FULL_TIME_URL` values.
 
-1. Reissue the credential at the provider.
-2. Update every environment that legitimately uses it.
-3. Update the GitHub secret when rotating `CRON_SECRET`.
-4. Redeploy only with operator approval.
-5. Verify the relevant authenticated canary.
-6. Revoke the old value.
+1. Issue a replacement at the provider.
+2. update only the environments that use it;
+3. update GitHub recovery secrets when relevant;
+4. deploy or restart through an approved rollout;
+5. run a narrow authenticated canary;
+6. revoke the old value;
+7. confirm no value appeared in logs, chat, shell history, or files.
 
-Never print a secret in chat, logs, shell output or committed files. `.env.example` is the canonical variable inventory and contains no values.
+Never print a secret. [`.env.example`](../.env.example) records names only.
 
-## Deployment and rollback
+## Deployment
 
-The application targets Vercel Node 24 through the Nitro Vercel preset. Build with Node 24; the Workflow compiler is not supported by this repository's local ARM64 Node 25 installation.
+Production targets Vercel Node 24. Do not use the local ARM64 Node 25 runtime for a release build because it does not produce a valid Workflow manifest for this repository.
 
-Vercel CLI 58.9.0 is installed and the project is linked. An operator-approved environment pull uses:
+The Vercel CLI is optional and not assumed installed. Install it when an approved operator workflow requires local commands:
 
 ```powershell
+npm i -g vercel
+vercel link
 vercel env pull .env.local
 ```
 
-Environment pull, migration, preview deployment and production rollout are separate approval-gated actions.
+Linking, environment pull, migration, preview deployment, production promotion, public launch, and billing are separate actions. Approval for one does not imply the others.
 
-Rollback rules:
+Before production promotion:
 
-- Promote the last known-good Vercel deployment.
-- Set release state to `paused` and disable publication flags.
-- Stop writers rather than dropping additive schema.
-- Preserve content-addressed published assets and immutable prediction receipts.
+1. verify the exact Git revision;
+2. run the full local checks on Node 24;
+3. verify database migrations and advisors on the confirmed project;
+4. inspect the preview across mobile, desktop, accessibility, auth, player, receipts, RSS, and failure states;
+5. confirm pre-launch and billing flags;
+6. review build and runtime logs;
+7. record the deployment ID in [`19-release-state.md`](./19-release-state.md).
+
+## Rollback
+
+- Promote the previous known-good deployment.
+- Set release state to `paused` and turn publication flags off.
+- Stop writers before considering data changes.
+- Keep additive schema, audit history, predictions, receipts, and content-addressed assets.
 - Run promise checks against the rollback revision before resuming schedules.
 
-## Verification
+## Verification baseline
 
 ```powershell
 pnpm run typecheck
@@ -129,4 +142,4 @@ pnpm run build
 git diff --check
 ```
 
-A green local build is necessary but does not satisfy voice licensing, rights, human review, provider quota, database migration, seven-rehearsal or production sign-off gates.
+Record the revision, deployment ID, database project, operator, timestamp, and result for every production rehearsal or release action.

@@ -1,71 +1,91 @@
 # 19 - Release state
 
-This is the single source of truth for resuming the world-class pundit launch work. Historical documents remain useful for provenance but do not override this file, `docs/00-product.md`, or the two 2026-08-08 migrations.
+- **Status:** Current release source of truth
+- **Owner:** Founder and release operator
+- **Purpose:** Record what is live, what is disabled, and what must happen next.
+- **Last verified:** 2026-08-10
 
-## Current state
+## Live state
 
-- Product state: `prelaunch`.
-- Public launch: disabled and fail-closed.
-- New checkout and Pro marketing: disabled.
-- Six pundits: free and selectable.
-- Branch: `codex/world-class-pundits`.
-- Production deployment: this release branch is live at `fulltime.fm` in truthful pre-launch mode. Public launch, publication automation and billing remain disabled.
-- Production database: the pundit-system, operational-release-gate, function-search-path and auth-RLS optimization migrations were applied to the confirmed FullTime project on 2026-08-08 and independently read back.
-- Correct Supabase project reference: `hzadscrqmyilbisexvyz`.
-- The configured Supabase connector still does not include that project. Production operations used the authenticated FullTime dashboard and process-injected Vercel secrets after verifying the project reference; no secret was printed or persisted.
-- Database advisors after the migrations: performance has zero errors and zero warnings; security has zero errors and three accepted warnings (two deliberately public media buckets and password-leak protection on a passwordless customer flow).
-- Vercel CLI 58.9.0 is installed and the `full-time` project link is valid. Environment values are process-injected for checks rather than pulled into a plaintext file.
-- Relume is available as a React component catalogue. Its stacked-list interaction informed the searchable Receipts ledger and its grid-list structure validated the six-pundit selector. No Relume-owned source was copied, and Relume is not a product-logic or visual-design authority.
-- The repository targets Node 24. The local ARM64 Node 25 runtime does not produce a valid Workflow manifest and must not be used for release builds.
-- The dependency graph uses pnpm 11 with strict one-day release-age enforcement, blocked exotic transitive sources, six scoped security overrides, and an explicit four-package build-script allowlist.
+| Item                           | Verified state                                                         |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| Product                        | Fail-closed pre-launch                                                 |
+| Production URL                 | [fulltime.fm](https://fulltime.fm)                                     |
+| Vercel deployment              | `dpl_8phR7sbBEwsn1diWrfByHDsk5Tep`, `READY`, production, region `iad1` |
+| Git revision                   | `36fd607e2ef862894434a3aafd0c7e378f3d5f68`                             |
+| Git branch                     | `codex/world-class-pundits`                                            |
+| Public launch                  | Disabled                                                               |
+| Public publication automation  | Disabled                                                               |
+| New checkout and Pro marketing | Disabled                                                               |
+| Pundits                        | Six, free and selectable                                               |
+| Supabase project               | `hzadscrqmyilbisexvyz`                                                 |
+| Release migrations             | Applied and independently read back on 2026-08-08                      |
 
-## Implemented locally
+Vercel confirmed that `fulltime.fm` points to the revision above and that the deployment is ready. This is an engineering release in truthful preview mode, not product launch approval.
 
-1. Truthful pre-launch behavior, disabled checkout, six free pundits, current-date semantics, real audio playback, strict cron authentication and no simulated completion.
-2. Immutable evidence packs, evidence-linked claims, six versioned pundit specs, independent hard and qualitative harnesses, targeted repair and quarantine.
-3. Persona performance plans, strict transcription and number identity, pronunciation licensing, audio mastering, share-card rendering and content-addressed storage.
-4. Atomic run claims, 14-step durable Workflow orchestration, six-variant parallel fan-out, authenticated run status, promise checks, rehearsal ledger and atomic publication.
-5. Historical backfill operator, held-out forecast backtest, active-model control, pre-kickoff prediction registration, settlement and public receipts.
-6. Deterministic 60-match evaluation corpus, resumable 360-script runs, human-review records and a revision-bound release-readiness evaluator.
-7. Responsive mobile/desktop product shell, selectable pundit experience, premium daily-show state and clearer receipt ledger.
+The Supabase connector available in this environment does not have permission to inspect the FullTime project. That is a tooling limitation, not a reason to target another project. Confirm the project name and reference before every future production write.
 
-## Gates that code cannot self-approve
+## What is complete
 
-- Rights-cleared research-source whitelist and accepted original concept cards.
-- Two commercially usable full-length voice auditions per pundit.
-- Founder selection and humour/editorial/voice approval.
-- At least 1.5 million monthly TTS characters and verified usage alerting.
-- Two-season provider backfill and a held-out forecast win over the league base rate.
-- 60 founder-approved evaluation matches, 360 passing scripts and blind fan/analyst review thresholds.
-- Full-length audio panels meeting persona, pronunciation, authority, naturalness, timing and listenability thresholds.
-- Seven consecutive on-time six-variant rehearsals.
-- Revision-bound legal, privacy, accessibility, monitoring, rollback and feed-validation sign-offs.
+1. Truthful pre-launch behavior, six free pundits, current-date semantics, real audio events, strict cron authorization, and no simulated completion.
+2. Immutable evidence, licensed claims, six pundit specs, independent gates, targeted repair, and quarantine.
+3. Performance plans, strict transcript and number identity, pronunciation licensing, mastering, share cards, and content-addressed storage.
+4. Atomic run claims, 14-step durable orchestration, parallel variant fan-out, authenticated status, promise checks, and atomic publication.
+5. History backfill tooling, forecast backtesting, active-model control, prediction registration, settlement, and public receipts.
+6. Deterministic 60-match corpus tooling, resumable 360-script evaluation, human-review records, and revision-bound readiness evaluation.
+7. Responsive product shell, pundit selection, daily-show presentation, archive labeling, and searchable receipt ledger.
+8. Production schema, function search-path fixes, optimized auth RLS policies, and a ready Vercel deployment.
 
-The release-readiness endpoint reports every missing gate individually. It cannot average dimensions together and will not store a launch-ready snapshot unless every gate passes.
+## What remains blocked
 
-## Operator sequence
+These gates require external evidence or founder judgment:
 
-1. Confirm the existing Vercel project link and inject required environment values into individual processes without writing a local secret bundle.
-2. Connect tooling to Supabase project `hzadscrqmyilbisexvyz` and confirm the project name before any write.
-3. Apply migrations in timestamp order, run readbacks, and run database security and performance advisors.
-4. Configure provider keys and keep every execution flag false by default.
-5. Run the two-season history backfill in bounded date batches, then train the forecast without activation. Activate only a passing result.
-6. Build and founder-review the 60-match corpus. Run all 360 scripts and collect blinded script/audio reviews.
-7. Add licensed voice candidates, human-verified pronunciation entries and full-length audio reviews.
-8. Enable private rehearsals and complete seven consecutive runs before the UK deadline.
-9. Record every release sign-off against the exact Git revision.
-10. Read the release-readiness endpoint. Enable its snapshot write only for the passing revision and store the immutable snapshot.
-11. Deploy a preview, run browser/accessibility/feed/asset checks, then use a controlled Vercel production rollout.
-12. Public launch and billing remain separate explicit mutations. Launch does not automatically enable billing.
+- rights-cleared research whitelist and approved concept cards;
+- two licensed full-length voice candidates per pundit;
+- founder humour, editorial, and voice approval;
+- TTS capacity of at least 1.5 million approved characters per month with alerts;
+- two-season data backfill and a held-out forecast win over league base rates;
+- 60 approved evaluation matches, 360 passing scripts, and blind review thresholds;
+- full-length audio panels for persona, pronunciation, authority, naturalness, timing, and listenability;
+- seven consecutive on-time six-variant rehearsals;
+- legal, privacy, accessibility, monitoring, rollback, and feed-validation sign-offs tied to the release revision.
+
+The release-readiness evaluator lists every missing gate. It cannot average failures away or store a passing snapshot unless every requirement passes.
+
+## Next operator sequence
+
+1. Confirm the intended Vercel project and Supabase project before touching live state.
+2. Configure provider credentials while leaving all execution flags false.
+3. Backfill two seasons in bounded batches. Train a forecast without activation; activate only a held-out winner.
+4. Curate the 60-match set, run 360 scripts, and collect blinded editorial review.
+5. Add licensed voice candidates, verified pronunciations, and full-length audio reviews.
+6. Enable private rehearsals only. Complete seven consecutive runs before the UK deadline.
+7. Record every sign-off against the exact Git revision.
+8. Run the release-readiness endpoint and store a snapshot only for a passing revision.
+9. Verify a preview across browser, accessibility, feed, audio, assets, and receipts.
+10. Roll out production deliberately. Public launch and billing are two later, separate mutations.
+
+## Vercel operator note
+
+The repository does not assume the Vercel CLI is installed. Install it when local environment, deployment, or log workflows require it:
+
+```powershell
+npm i -g vercel
+vercel link
+vercel env pull .env.local
+```
+
+Do not pull secrets merely to inspect them. Prefer process-scoped injection or platform tooling, and never print or commit a value.
 
 ## Rollback
 
-- Application rollback: promote the last known-good Vercel deployment.
-- Editorial rollback: set release state to `paused`, disable publication flags and leave stored predictions/receipts immutable.
-- Data rollback: migrations are additive. Do not drop tables during incident response; stop writers and preserve audit records.
-- Asset rollback: published variants are immutable and content-addressed. A failed persona is visible and is never silently replaced with another persona.
+- Application: promote the last known-good Vercel deployment.
+- Editorial: set release state to `paused` and disable publication flags.
+- Data: stop writers; do not drop additive tables during an incident.
+- Assets: preserve content-addressed files and immutable predictions and receipts.
+- Persona failure: show the failure. Never substitute another persona silently.
 
-## Required verification commands
+## Verification baseline
 
 ```powershell
 pnpm run typecheck
@@ -74,3 +94,5 @@ pnpm run lint
 pnpm run build
 git diff --check
 ```
+
+Passing code checks proves engineering integrity only. It does not satisfy human, rights, provider, rehearsal, legal, or launch gates.

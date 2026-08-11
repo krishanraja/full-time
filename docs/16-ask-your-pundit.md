@@ -1,37 +1,119 @@
-# 16 · Ask Your Pundit (spec stub)
+# 16 - Ask Your Pundit discovery spec
 
-**Role:** Product / whoever builds the next Pro feature.
-**Read this when:** you are about to build "ask your pundit a question".
-**Status:** NOT BUILT. Named on `/pro` as explicitly-not-included roadmap. This is a stub captured on 2026-08-07 so the idea is not lost, not a finished spec. Expand before building.
+- **Status:** Proposed, not built
+- **Owner:** Product, editorial, and engineering
+- **Purpose:** Define a safe path to interactive match Q&A without expanding beyond licensed evidence.
+- **Last reviewed:** 2026-08-10
 
----
+## Opportunity
 
-## The idea
+After hearing a show, a listener asks one follow-up question and receives a concise answer from the selected pundit's analytical lens and personality.
 
-A Pro subscriber can ask a question about a match in natural language and get an answer back in their chosen pundit's voice. "Why did Frosinone lose that?" "Was the penalty soft?" "How many shots did they actually have?"
+Examples:
 
-## Why it fits
+- "Was the result better than the performance?"
+- "Did the substitution actually change the game?"
+- "How unlikely was that finishing?"
+- "What would change your mind about this team?"
 
-It is the only proposed Pro feature that uses the accuracy machinery already built rather than adding a new content pipeline. The engine already assembles a deterministic fact pack per match, already writes in a persona, already runs a code gate plus a judge, and already fails closed. A question is just a different prompt over the same fact pack.
+The feature is valuable only if the six answers differ in reasoning without differing on facts.
 
-## The hard constraint, inherited
+## Product principle
 
-**Answers must be fact-pack-bounded.** The whole product promise is that the model only phrases engine-proven facts. A free-form Q&A is the single easiest way to break that, because a user can ask something the fact pack does not cover. So:
+Ask Your Pundit is retrieval and reasoning over an approved evidence boundary, not an open football chatbot.
 
-- If the fact pack does not contain the answer, the pundit says so in character. It does not reason from general football knowledge, and it does not guess.
-- The same code gate applies: every number in the answer must appear in the fact pack.
-- The judge pass runs on answers exactly as it does on recaps.
-- Fail-closed beats a plausible answer, every time.
+If the evidence cannot answer the question, the pundit says so in character and explains which missing evidence would be needed. Refusal quality is a launch criterion.
 
-## Open questions, all unanswered
+## Initial scope
 
-1. **Scope of a question.** One match only, or cross-match ("has Frosinone been this wasteful all season")? One match is far safer and is where the fact pack already is.
-2. **Rate limiting.** Each question is an LLM call plus possibly a TTS render. Does it share the name-a-game daily allowance, or get its own? Sharing is simpler and honest, since both cost the same kind of money.
-3. **Text or audio.** Text is cheap and instant. Audio is the product's whole character. Probably text first, with a play button that renders on demand.
-4. **Where it lives.** On the episode page under the transcript is the obvious home, since the transcript is already the textual surface.
-5. **Persona conditioning.** Distinct per-pundit narration is still "rolling out". If the six pundits do not yet sound different, an answer "in your pundit's voice" is a claim we cannot honour. This probably has to land after per-pundit narration, not before.
-6. **Abuse.** Prompt injection through the question field into a system that has a service-role client nearby. The Q&A path must never touch anything but the fact pack.
+- One published match and one selected pundit.
+- Text response first; optional audio only after the text passes all gates.
+- Questions about recorded events, statistics, game state, decision quality, probability, the pundit's published thesis, or its registered prediction.
+- One answer with evidence links, uncertainty, and a direct response.
+- No cross-match, season, transfer, injury, news, or film-specific claims in the first version.
 
-## Definition of done
+## Non-goals
 
-Not "it answers questions". It is done when it refuses correctly: a question outside the fact pack gets an honest in-character "I do not have that", and the golden set proves it does that reliably. Until that holds, it does not ship, and it stays in the `NEXT_UP` block on `/pro` rather than the ticked feature list.
+- General football knowledge chat.
+- Live match conversation.
+- Search across the web or social media.
+- Private dressing-room, psychology, recruitment, or ownership inference.
+- Betting advice.
+- User-generated voice cloning.
+- A monetization promise before product value and cost are proven.
+
+## Proposed flow
+
+```mermaid
+flowchart LR
+    Q["User question"] --> V["Input validation and abuse filter"]
+    V --> R["Question intent and evidence requirements"]
+    R --> E["Published evidence pack, claims and thesis"]
+    E --> A["Persona answer candidate"]
+    A --> H["Fact, evidence, safety, clarity and persona gates"]
+    H --> T["Approved text answer"]
+    T --> O["Optional verified audio"]
+```
+
+## Answer contract
+
+Every approved answer contains:
+
+1. a direct answer in the first two sentences;
+2. the evidence IDs that support it;
+3. the selected pundit's judgment and reason;
+4. material uncertainty or alternative explanation;
+5. a refusal or missing-evidence statement when necessary;
+6. no new prediction unless it has a structured rule and valid pre-kickoff timing.
+
+Numbers, entities, events, and consequences must exist in the evidence pack. The answer cannot cite the model's general knowledge.
+
+## Safety and threat model
+
+Treat the question as untrusted data.
+
+- Keep user text out of system and tool instructions.
+- Never allow the question to select tables, SQL, files, URLs, tools, or credentials.
+- Fetch a fixed allowlist of records by validated match, user, and pundit IDs.
+- Apply rate limits, body limits, timeouts, and abuse logging.
+- Strip or reject attempts to override evidence, persona, policies, or output format.
+- Never place the service-role key, provider keys, or internal prompts in model context.
+- Store only the minimum question and answer data needed for product and abuse review.
+
+## Proposed evaluation
+
+Build a held-out set with:
+
+- answerable factual and analytical questions;
+- questions that need film, tracking, news, or private context;
+- false-premise questions;
+- requests for betting, abuse, or personal humiliation;
+- prompt-injection and data-exfiltration attempts;
+- ambiguous questions that need a clarifying response;
+- questions where each persona should disagree for a defensible reason;
+- pronunciation and optional-audio cases.
+
+Required gates:
+
+- 100% entity, number, evidence, and consequence licensing;
+- 100% correct refusal on unsupported-evidence adversarial cases;
+- no instruction or data leakage;
+- at least 80% casual-fan comprehension;
+- at least 80% blind persona identification;
+- founder approval of usefulness, humour, restraint, and optional audio;
+- documented latency and cost within an approved operating budget.
+
+## Open decisions
+
+- Whether a listener can ask a clarifying second question.
+- Whether answers persist publicly, privately, or only in session.
+- How moderation and deletion work if questions are stored.
+- Which rate limit reflects real provider cost and abuse risk.
+- Whether optional audio is rendered immediately or on demand.
+- Whether particularly strong approved answers can become public concept cards.
+
+## Definition of ready to build
+
+Implementation starts only after product approves the initial scope, legal approves question retention and moderation, the threat model has tests, the evidence allowlist is explicit, and the held-out refusal set exists.
+
+The feature is ready to ship only when it refuses unsupported questions as reliably and memorably as it answers supported ones.

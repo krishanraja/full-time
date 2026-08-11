@@ -1,102 +1,101 @@
-# 10 · Support
+# 10 - Support
 
-**Role:** User-facing support agent, or anyone answering a help request.
-**Read this when:** a user asks a question, reports a bug, or asks to delete their data.
-**Don't read this when:** the issue is an outage, that's ops (`06-ops.md`).
-
----
+- **Status:** Current
+- **Owner:** Support and product
+- **Purpose:** Provide approved user answers, first-line diagnosis, and escalation paths.
+- **Last reviewed:** 2026-08-10
 
 ## Tone
 
-Calm, brief, fan-to-fan. Sign off as "Full Time" not a person. No emoji. Reply in <24h.
+Be calm, brief, and specific. Acknowledge the user's experience before explaining the system. Never blame the model, argue that a wrong output was "technically" correct, or hide behind pre-launch status.
 
-If a user is angry about a wrong recap or a missing match, **acknowledge first, fix second, explain third**. Never argue the model was technically right.
+Sign as **Full Time**. Do not promise a launch date, refund, fix time, coverage expansion, or data deletion completion without the owner who can deliver it.
 
-## Canonical FAQ
+## Canonical answers
 
-> Authoritative copy. If the FAQ on the site ever drifts from this, update the site to match.
+### Where is today's show?
 
-### "Where are today's recaps?"
+Full Time is still in private verification. The home screen shows a genuinely current, fully approved drop or says that none has cleared the gates. It never substitutes archive material and calls it today.
 
-Full Time is in private verification with no public launch date. The home screen shows only a genuinely current, approved drop. If none has cleared the editorial and narration gates, it says so instead of substituting archive material.
+### Why is a match missing?
 
-### "Why is my team's match missing?"
+The match may be outside the current structured-data coverage, incomplete at ingest, or quarantined because one of the six editions or assets failed. Tell us the teams and date so we can identify which case applies.
 
-We cover the Big Five (Premier League, La Liga, Serie A, Bundesliga, Ligue 1). Cup matches and lower divisions aren't in v1. If you'd like to see them, reply and tell us which league, we track requests.
+### Did AI make this?
 
-### "The recap got a fact wrong."
+Yes. Full Time generates scripts from structured match data, runs deterministic and model-based quality checks, then uses synthetic voices. It does not use broadcast audio or imitate a living pundit. The transcript, evidence boundary, and prediction receipts remain visible.
 
-Apologies, please tell us the match and the line that was wrong. We'll take the recap down, fix the prompt, and credit it in our changelog if it's a pattern.
+### Can I choose another pundit?
 
-### "How is this made?"
+Yes. All six are free and selectable without an account. Each has a separate thesis, script, humour system, performance plan, and prediction record. Your local choice is not overwritten by a shared link.
 
-Recaps are written by an AI model (Anthropic's Claude) from publicly available match data (final scores, scorers, minutes, stats), then checked by an automated accuracy pass that blocks the recap if it gets the winner, the score, or a scorer wrong. The voice is synthetic (ElevenLabs). We never use copyrighted broadcast audio. Full disclosure on Settings.
+### Why does a pundit say the data cannot answer something?
 
-### "Can I pick a different voice?"
+That is deliberate. Structured data can show recorded events and statistics, but it cannot always show tactical intent, positioning, confidence, or dressing-room context. Full Time would rather name that limit than invent an explanation.
 
-All six pundits are free and selectable without an account. Your choice stays on the device; optional sign-in will sync it once the account flow is enabled. Each pundit has a separate script, thesis, prediction record and versioned synthetic performance profile, not just a different voice reading shared copy.
+### What is a receipt?
 
-### "What is the archive / name a game?"
+A receipt is the settlement of a prediction registered before kickoff. It shows the original claim, test, outcome, and what the pundit got right, wrong, or could not judge.
 
-Archive material is labelled archive or demo and is never presented as current. On-demand generation remains disabled during private verification; unapproved scripts and audio cannot be published from legacy harnesses.
+### Is Full Time free?
 
-### "What is the waitlist?"
+The preview and all six pundits are free. New checkout and paid promotion are disabled. No card is required.
 
-It is the launch-note list. There is no promised date: public launch waits for all six pundits to pass the editorial, narration, prediction, operational and human-review gates.
+### I already subscribed. How do I cancel?
 
-### "How do I get the morning push?"
+New subscriptions are disabled, but existing subscribers can still open the secure billing portal from Settings to manage or cancel.
 
-Notifications are paused during private verification. The control remains visibly disabled until approved daily publishing is operational.
+### Can I share an edition?
 
-### "I'm not getting push notifications."
+Approved drops and receipts can be shared with a selected-pundit preview. The link does not change the recipient's saved pundit without confirmation.
 
-- Check Settings → Notifications is on.
-- Check your browser/OS hasn't muted notifications for the site.
-- Reinstall the PWA (delete from home screen, re-add), old service workers occasionally get stuck.
-- If still broken after that, reply with your OS + browser.
+### Why will the audio not play?
 
-### "I want to delete my account / data."
+Full Time uses real audio only. If an approved file is missing, blocked, or unavailable, the player shows an error instead of simulating playback. Retry once, then send us the page URL, device, browser, and time.
 
-Sign out, then email support. We remove your `profiles`, `follows`, `push_subscriptions`, and `listens` rows on request. Reply with the email you signed up with.
+### Can I install it?
 
-### "Is this free? What's the catch?"
+Yes, as a progressive web app. On iOS, use Share then Add to Home Screen. On supported Android browsers, use Install app from the browser menu.
 
-The preview and all six pundits are free. New checkout, paid claims and on-demand generation are disabled during private verification. No card is requested.
+### Why are notifications unavailable?
 
-### "How do I manage or cancel Full Time Pro?"
+Morning notifications remain paused during private verification. They will stay disabled until the daily publication system proves reliable.
 
-New subscriptions are disabled. Existing subscribers can still use the secure Stripe portal to manage or cancel an existing subscription.
+### Can you add my league?
 
-### "Can I share a recap?"
+Tell us the competition. Expansion depends on licensed data, evidence quality, evaluation coverage, and operational capacity, not request volume alone.
 
-Approved drops can be shared with a selected-pundit preview. Opening that link does not overwrite the recipient's saved pundit without confirmation.
+### I want my account or data deleted.
 
-### "Why no comments / community?"
+Record the authenticated email and forward the request to the privacy owner. Do not ask for passwords or tokens. Confirm receipt promptly; the legal runbook owns identity verification and completion timing.
 
-By design. We're the morning briefing, not a forum. There are great football forums, go there.
+## First-line diagnosis
 
-### "Can I install this as an app?"
+| Report                         | Check first                                                    | Escalate with                                   |
+| ------------------------------ | -------------------------------------------------------------- | ----------------------------------------------- |
+| Blank or broken page           | URL, device, browser, hard refresh, screenshot                 | Timestamp and console/request ID if available   |
+| Audio unavailable              | Current approved variant, audio URL, network, browser autoplay | Variant ID, pundit, page, exact message         |
+| Wrong fact                     | Match, exact sentence, transcript and receipt link             | Evidence pack and variant ID                    |
+| Wrong pronunciation            | Entity, time in audio, expected pronunciation                  | Variant ID and lexicon entry                    |
+| Wrong pundit played            | Selected preference, shared-link preview, displayed label      | User state, link, variant ID                    |
+| Stale content labelled current | Coverage date and page                                         | Screenshot, URL, local time zone                |
+| Prediction settlement disputed | Original rule and settlement evidence                          | Prediction ID and cited data                    |
+| Sign-in link missing           | Spam, email typo, wait five minutes                            | Email domain, timestamp, provider logs          |
+| Billing issue                  | Existing subscriber or new checkout attempt                    | User ID and Stripe customer ID, never card data |
 
-Yes, it's a PWA. On iOS: Share → Add to Home Screen. On Android: the menu offers "Install app" automatically.
+## Severity
 
-### "Can you do my league / women's football / lower divisions?"
-
-On the roadmap. Tell us which one, we prioritise by request volume.
-
-## Common bug reports → first diagnosis
-
-| Report                       | First thing to ask / check                                                                                                           |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| "App is blank"               | What OS / browser? Hard refresh? Cache issue?                                                                                        |
-| "Player won't play"          | Is it a labelled archive/demo row without approved audio, or a current approved pundit variant? The player never simulates playback. |
-| "Score is wrong on the card" | Is the score wrong in `/feed` too? If only on home, frontend bug; if both, data bug.                                                 |
-| "Wrong team is leading"      | Source data bug, log the match id, escalate to dev                                                                                   |
-| "Audio cuts off"             | Likely TTS truncation, log the episode id, escalate                                                                                  |
-| "Sign in link didn't arrive" | Check spam. Try a different email if the first doesn't arrive within 5 min.                                                          |
+- **P0:** data exposure, unauthorized charge, widespread outage, or harmful content actively publishing. Pause affected systems and alert founder, engineering, legal, and operations immediately.
+- **P1:** wrong fact, wrong voice, public unsupported claim, broken current drop, or receipt integrity failure. Quarantine and respond the same day.
+- **P2:** isolated playback, auth, preference, pronunciation, or accessibility defect. Triage with reproduction evidence.
+- **P3:** feature request, coverage request, or copy feedback. Record for product review.
 
 ## Escalation
 
-- Safety / hallucination → tag content-safety (`05-content-safety.md`), product, legal.
-- Outage → ops on-call (`06-ops.md`).
-- Press / partnership inquiry via support → forward to BD (`08-sales.md`).
-- Legal / data-deletion request → legal (`11-legal.md`) within 30 days.
+- Editorial, factual, humour, or imitation issue: [`05-content-safety.md`](./05-content-safety.md).
+- Outage, audio, schedule, or deployment: [`06-ops.md`](./06-ops.md).
+- Privacy, takedown, deletion, or billing law: [`11-legal.md`](./11-legal.md).
+- Partnership or press: [`08-sales.md`](./08-sales.md).
+- Product request or doctrine question: [`12-roadmap.md`](./12-roadmap.md).
+
+Preserve the user's words, relevant IDs, timestamp, surface, and exact product state. Never paste secrets or full provider payloads into a ticket.

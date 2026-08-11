@@ -1,103 +1,107 @@
-# 13 · Agent Handoff
+# 13 - Agent and contributor handoff
 
-> **SUPERSEDED (2026-08-08):** Do not use the legacy operational state below for current work. Start with `00-product.md`, `18-world-class-pundit-system.md` and the single state artifact `19-release-state.md`.
+- **Status:** Current
+- **Owner:** Engineering
+- **Purpose:** Let a new contributor understand the product, risks, and next safe action in ten minutes.
+- **Last reviewed:** 2026-08-10
 
-**Role:** Any AI agent picking this codebase up cold.
-**Read this when:** the very first turn you work on Full Time.
-**Don't read this when:** you've already been working on this project this session.
+## Start here
 
----
+Read in this order:
 
-## What this project is
+1. [`00-product.md`](./00-product.md)
+2. [`18-world-class-pundit-system.md`](./18-world-class-pundit-system.md)
+3. [`19-release-state.md`](./19-release-state.md)
+4. the role guide for your task from [`README.md`](./README.md)
 
-Full Time is a daily AI-narrated football recap app. One paragraph: each morning we generate ~60-second audio recaps for the Big-5 leagues' previous-day matches, serve them as a tap-once PWA, and (when push is configured) fan them out to subscribers. It is deliberately day-after, not live. Calm voice, sharp writing.
+Do not begin from the historical build or access plans.
 
-Long form: `00-product.md`.
+## Project in one paragraph
 
-## What's already built
+Full Time is a pre-launch autonomous football morning show. One immutable evidence base produces six separate pundit editions, each with its own thesis, humour, script, delivery, voice, and prediction record. Hard gates prevent unsupported facts and tactics; independent harnesses score quality; audio verification fails closed; all six variants publish atomically; every pre-kickoff claim returns as a receipt.
 
-Most of it, and it is LIVE at https://fulltime.fm (Vercel, nitro vercel preset). Right now the app is deployed from the local working tree and is being merged to main. Reality check: 5 hand-authored episodes are live, and there are 0 real users, listens, or follows yet.
+## Current truth
 
-- **Backend.** Supabase project `hzadscrqmyilbisexvyz`: 15 public tables with RLS on all, magic-link auth, realtime, Storage (`episodes` + `share` buckets).
-- **Generation engine (the real work).** `src/lib/api/recap-generator.server.ts` + `runEpisodePipeline` in `src/lib/api/episode-pipeline.functions.ts`. A DETERMINISTIC fact-pack is built from `match_events` (goal log with running score, per-team scorer summary, own-goal and penalty tagging, cards, full-match stats). An Anthropic Opus writer, conditioned on the `voice_corpus` persona and examples, drafts the recap. A DETERMINISTIC CODE GATE checks it (exact final score, scorers are a subset of the fact-pack via diacritic-normalised surname matching, 105 to 135 words, no repeated score or minute, no "scored every goal", no em dashes, no banned cliches). A Sonnet CONTRADICTION JUDGE then flags only a wrong winner, wrong score, or a goal credited to the wrong team. Up to 5 surgical regens. It is FAIL-CLOSED: it publishes no episode rather than a wrong one. Accuracy is guaranteed BY CONSTRUCTION, not by a prompt instruction. Then ElevenLabs TTS (Daniel voice, `eleven_multilingual_v2`) to Supabase Storage to an `episodes` row. Proven end-to-end on production.
-- **Access ladder + waitlist (2026-07-06, `15-access-and-waitlist-plan.md`).** Anonymous: recent drops + two pundits (The Reporter, The Gaffer; pick in localStorage under `ft-voice-style`). Free account: synced settings, archive, name a game (3/day). Pundits unchanged from anonymous; the other four are Pro since 2026-08-07. Waitlist for the full app: `waitlist` table (own-row RLS + guard trigger), `/waitlist` page with one-tap join or magic-link-is-the-join for anonymous, CTAs on Today + Settings. Files: `src/lib/entitlement.ts`, `src/lib/api/waitlist.functions.ts`, `src/routes/waitlist.tsx`.
-- **Billing + Pro: LIVE (2026-08-07).** $4.99/mo on live Stripe keys in production (test key in preview/dev), live webhook, DB guard trigger. Pro gates all six pundits and 25/day name-a-game (free 3/day), both enforced server-side. Files: `src/lib/api/billing.functions.ts`, `src/routes/api/stripe/webhook.ts`, `src/lib/stripe.server.ts`, `src/lib/billing-sync.server.ts`, `src/hooks/use-entitlement.ts`, `src/routes/pro.tsx`.
-- **Daily drop cron.** `src/routes/api/public/cron.daily-drop.ts`, scheduled by GitHub Actions (`.github/workflows/daily-drop.yml`, 06:30 UTC). Requires a `CRON_SECRET` bearer token (a legacy Supabase-publishable-key fallback exists only when no secret is set), runs generation with bounded concurrency (3) under a 240s wall-clock budget to stay inside the 300s function limit, and is idempotent (skips matches that already have an episode).
-- **UX.** Club-first feed ordering (a followed club leads the drop), continuous playback (player-store queue, auto-advance, "Play the morning" on Today, MediaSession next/prev), magic-link auth, follows, voice preference, web push (client + fanout), PWA, PostHog analytics, full brand system, full docs.
+- Production preview: [fulltime.fm](https://fulltime.fm).
+- Production revision: `36fd607e2ef862894434a3aafd0c7e378f3d5f68`.
+- Product mode: pre-launch.
+- Public publication, new billing, evaluation execution, and public forecast scores: disabled.
+- Six pundits: free and selectable.
+- Current schema: applied to Supabase project `hzadscrqmyilbisexvyz`.
+- Launch blockers: licensed sources and voices, TTS capacity, two-season forecast proof, 360 scripts, full-length blind review, seven rehearsals, and revision-bound sign-offs.
 
-## First-turn checklist for any agent
+## Non-negotiable invariants
 
-1. **Read the role you're operating in.**
-   - Writing code? → `02-developer.md` + `01-brand.md`.
-   - Designing? → `01-brand.md`.
-   - Ops issue? → `06-ops.md`.
-   - Talking to a user? → `10-support.md`.
-   - Asked about money / partnerships? → `08-sales.md` / `11-legal.md`.
+- Evidence precedes claims; claims precede prose.
+- The structured-data tier cannot claim film-specific tactics or human intent.
+- Hard gates cannot be averaged away.
+- Only failed beats may be repaired, for at most three rounds.
+- A transcription outage cannot approve audio.
+- A prediction cannot change after kickoff.
+- A wrong receipt remains visible.
+- All six variants must pass before publication.
+- Real media events drive playback progress and completion.
+- A missing persona remains a visible failure.
+- Missing feature flags deny execution.
+- No living-pundit wording, style, or voice imitation.
 
-2. **Don't reintroduce these mistakes** (each cost us a turn earlier):
-   - Hardcoded colours like `text-white`, `bg-[#0a0a0c]`. Use tokens.
-   - `@import` of a URL in `styles.css`. Use a `<link>` in `__root.tsx`.
-   - Service-role import at module scope of a `.functions.ts` file. Import inside the handler.
-   - Creating `src/pages/` or `app/`. We use TanStack file-based routing in `src/routes/`.
-   - Calling a `requireSupabaseAuth` server fn from a public-route loader. Use a component + `useServerFn`.
-   - Re-adding mock reads in components. Read from the DB via `useTodayFeed`.
-   - Resurrecting the old Lovable AI Gateway path (Gemini 3 Flash + a single banned-words regex). It was fact-starved and non-functional. The engine is now the deterministic fact-pack → Opus writer → code gate → Sonnet judge → fail-closed pipeline. Do not swap it back for a single prompt-instruction generator.
-   - Writing to the `profiles` billing columns (`plan`, `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`, `current_period_end`, `price_id`) from client or user context. They are service_role-only, enforced by the `enforce_profile_billing_guard` trigger, which closed a real self-grant-Pro RLS hole. Never widen that.
+## Where to work
 
-3. **Use the docs as the contract**:
-   - Brand decisions ≠ vibe, `01-brand.md` is law.
-   - Banned terms / system prompt, `05-content-safety.md` is law.
-   - Decision log lives in `12-roadmap.md`, log new decisions there.
+| Task                       | Start with                                                                               |
+| -------------------------- | ---------------------------------------------------------------------------------------- |
+| Evidence or claims         | `src/lib/pundit/evidence.ts`, `claim-lab.ts`                                             |
+| Persona behavior           | `src/lib/pundit/specs.ts`                                                                |
+| Scripts or harnesses       | `pundit-generator.server.ts`, `harness.ts`                                               |
+| Narration or pronunciation | `performance.ts`, `narration.server.ts`, `pronunciation.server.ts`                       |
+| Audio or share assets      | `audio-mastering.server.ts`, `share-card.server.ts`                                      |
+| Forecast or receipts       | `forecast*.ts`, `prediction-*.server.ts`                                                 |
+| Rehearsal or publication   | `src/workflows/daily-pundit.ts`, `daily-pundit.steps.ts`, `daily-orchestrator.server.ts` |
+| Release gates              | `release-readiness.server.ts`                                                            |
+| UI                         | `src/routes`, `src/components`, `src/styles.css`                                         |
+| Schema or RLS              | `supabase/migrations`, [`04-data-model.md`](./04-data-model.md)                          |
+| Incident                   | [`06-ops.md`](./06-ops.md), [`05-content-safety.md`](./05-content-safety.md)             |
 
-4. **When in doubt about scope**, look at:
-   - The roadmap (`12-roadmap.md`) for what's in / out.
-   - The "Explicitly NOT doing" table, those are rejected with reasons.
+## First-turn checklist
 
-## What's gated on secrets and a live feed
+1. Inspect `git status` and preserve unrelated work.
+2. Confirm the current branch and revision.
+3. Read the owning docs and nearby tests.
+4. Verify assumptions against code, migrations, or platform state.
+5. Make the smallest coherent change.
+6. Add focused tests for the contract at risk.
+7. Run the full verification set before handoff.
 
-- **Keys that ARE set:** `ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY` (+ `ELEVENLABS_VOICE_ID`), and the Stripe keys (`STRIPE_SECRET_KEY` test, `STRIPE_PRO_PRICE_ID` test, `STRIPE_WEBHOOK_SECRET`). Generation, TTS, and the Pro checkout flow all run.
-- **The remaining gate is a live match-data feed.** Current match data is seeded (2023-24 season), and the cron is date-filtered to recent finished matches, so it is INERT until a live API-Football ingest exists (roadmap). Enabling real daily content also accepts ongoing Anthropic plus ElevenLabs cost.
-- **To activate the schedule,** set two GitHub repo secrets: `CRON_SECRET` (matching Vercel) and `FULL_TIME_URL`.
-- **Push fan-out** stays off until VAPID keys are set; it is a non-fatal step in the cron.
+## Verification
 
-## Cheat sheet: where things live
+Use Node 24:
 
+```powershell
+pnpm run typecheck
+pnpm test
+pnpm run lint
+pnpm run build
+git diff --check
 ```
-src/styles.css                                design tokens (the brand is here)
-src/components/AppHeader.tsx                   wordmark + lime hairline on every route
-src/components/AudioCard.tsx                   hero & carousel cards
-src/lib/api/recap-generator.server.ts          Opus writer + deterministic code gate + Sonnet judge
-src/lib/api/episode-pipeline.functions.ts      runEpisodePipeline: fact-pack -> recap -> TTS -> Storage -> row
-src/lib/api/billing.functions.ts               entitlement + Stripe checkout / portal / sync (LIVE)
-src/lib/api/waitlist.functions.ts              waitlist join + status (position = service-role count)
-src/lib/api/archive.functions.ts               archive list + name-a-game requestEpisode (rate-limited)
-src/routes/waitlist.tsx                        the waitlist page for the full live app
-src/routes/archive.tsx                         archive + name-a-game (free-gated)
-src/routes/api/stripe/webhook.ts               Stripe webhook -> profile billing sync
-src/lib/entitlement.ts                         client-safe Pro gate (voice styles, isProProfile)
-src/routes/pro.tsx                             the Pro upgrade page
-src/routes/api/public/cron.daily-drop.ts       the daily-drop cron endpoint
-supabase/migrations/                           DB schema (base 3 + magic_engine_extensions + billing)
-docs/                                          you are here
-```
 
-## Things that look weird but are deliberate
+A green build is not launch approval. Never mark external or founder gates complete without their recorded evidence.
 
-- The pipeline is FAIL-CLOSED. If the code gate or the Sonnet judge rejects all 5 attempts, we publish NO episode for that match instead of a wrong one. A missing recap is correct behaviour, not a bug.
-- The feed badge says "Daily", not "Live". The product is deliberately day-after. Don't re-add an always-on "Live drop" badge.
-- Anonymous and free listeners get two pundits (The Reporter, The Gaffer); the other four are **Pro**, enforced in the UI and re-checked in the server `setVoiceStyle` against the profile. Name a game is 3/day free, 25/day Pro, resolved per profile by `limitFor`. The `profiles` billing columns stay service_role-only regardless.
-- The mini-player progress bar is 2px and lime. It's the only persistently visible lime element. Don't thicken it.
-- BottomNav active state is a 2px underline, not a filled pill. We're broadcast tool, not consumer fluff.
-- The hero card shows the score in mono, with the away score muted. That's the editorial hierarchy, home is "the protagonist" of the line.
-- `public/sw.js` is push-only, not an app-shell cache. Don't add caching to it.
-- We ship a lot of `text-mono` for numbers. That's intentional. Don't convert them to the body font.
+## Production actions
 
-## What earns you a high-five
+Reading logs, deployment metadata, and database state is allowed when relevant. A migration, environment change, generation run, production deployment, public launch, or billing activation is a separate production mutation. Confirm the target and follow [`06-ops.md`](./06-ops.md).
 
-- A change ships without touching colours or fonts directly in components.
-- New routes set proper `head()` metadata (title, description, og:title, og:url, canonical).
-- New server functions live in `*.functions.ts` and import `supabaseAdmin` inside the handler.
-- New tables come with `GRANT` + `ENABLE RLS` + `CREATE POLICY` in the same migration.
-- The decision log gets a new entry when you make a real choice.
+The available Supabase connector may not have access to the FullTime project. Do not switch to a similarly named project. The target reference is `hzadscrqmyilbisexvyz`.
 
-Welcome to Full Time. Read the role file. Then ship.
+The repository does not assume the Vercel CLI is installed. Install it only when an approved operator task needs local Vercel commands.
+
+## Handoff format
+
+End substantive work with:
+
+- **Outcome:** what now works;
+- **Changed:** files and behavior;
+- **Verified:** exact commands, tests, deployment, or readbacks;
+- **Still blocked:** external evidence or follow-up, with owner;
+- **Production state:** whether anything live changed;
+- **Risks:** narrow known limitations, not generic caveats.
+
+Never say "done" when a required gate, check, or production action remains.

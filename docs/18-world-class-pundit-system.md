@@ -1,82 +1,135 @@
 # 18 - World-class pundit system
 
-## Implemented system
+- **Status:** Current implementation map
+- **Owner:** Product and engineering
+- **Purpose:** Describe what the six-pundit codebase implements and where its safety controls live.
+- **Last reviewed:** 2026-08-10
 
-The current branch implements the fail-closed pre-launch foundation and the code/data contracts for the next production pipeline:
+## Implementation state
 
-- `daily_drops`, immutable `evidence_packs`, `analysis_claims`, versioned `pundit_specs`, `pundit_variants`, `harness_runs`, `prediction_ledger`, `research_sources`, `concept_cards` and `pronunciation_lexicon`.
-- Six complete `PunditSpec` records in code with analytical priorities, evidence preferences, uncertainty rules, humour mechanisms and safety targets, cadence, prediction risk, voice keys, examples and anti-examples.
-- A closed-world evidence-pack builder with deterministic formulas and explicit unavailable evidence.
-- Claim and script licensing that blocks missing evidence, unsupported tactics, causal overreach, unfalsifiable counterfactuals, unlicensed numbers or names, unsupported season consequences and outcome-equals-decision reasoning.
-- A showrunner pipeline that generates claims before prose, creates a thesis and ten-beat 750-1100-word script, runs every qualitative harness independently in parallel behind a bounded provider semaphore, freezes passed beats and permits at most three targeted repairs.
-- Persona performance plans separate from script text. Code maps plans to allowlisted TTS directions and six separately configured voices.
-- Audio transcription now fails closed. A Scribe outage can no longer approve a take.
-- Forecast validation, five-point persona adjustment limits, Brier score, log loss and receipt construction.
-- Public endpoints for pundits, today, variants, predictions, receipts, RSS and signed pundit preference.
-- A Receipts UI, truthful coverage-date UI, visible player failures, real-media completion analytics and strict cron authorization.
-- Content-addressed Supabase Storage uploads for mastered audio and 1200x630 share cards.
-- Two-pass FFmpeg loudness normalization, duration/speaking-rate/dynamic-range analysis and strict audio quarantine.
-- Selected-voice and pronunciation-lexicon checks that require human-verified names and licensed full-length performance profiles.
-- Atomic daily-run claims, stale-run recovery, six-variant production with bounded concurrency, asset promise checks and atomic all-or-nothing publication.
-- A Node 24 durable Workflow SDK orchestration with 14 independently retryable steps, six-way editorial and narration fan-out, authenticated run status and idempotent resume behavior.
-- Historical backfill tooling, held-out forecast training, baseline comparison, active-model gating and upcoming-fixture prediction registration.
-- Deterministic 60-match scenario corpus construction and resumable 360-script evaluation batches.
-- One revision-bound release-readiness snapshot covering editorial, human, audio, forecast, prediction, rehearsal, rights and operational sign-offs.
-- Sentence-safe TTS chunking at 4,500 characters, at most three pronunciation dictionaries and provider-quota fail-closed checks.
-- Research-corpus licensing that accepts originality comparisons only when approved concept cards retain explicit source-language spans.
-- Relume component-catalogue patterns as UI references only. Product logic, data contracts and the visual system remain repository-owned.
+The six-pundit pre-launch foundation is implemented, deployed to [fulltime.fm](https://fulltime.fm), and backed by the current additive migrations. Public launch, automated publication, new billing, and public forecast scores remain disabled.
+
+The system includes:
+
+- immutable evidence packs with deterministic formulas, provenance, and explicit missing evidence;
+- evidence-linked claims for facts, mechanisms, decisions, probabilities, counterfactuals, opinions, and predictions;
+- six versioned `PunditSpec` records with analytical preferences, humour rules, cadence, risk, examples, anti-examples, and thresholds;
+- separate thesis selection, ten-beat outlining, 750 to 1,100-word scripts, independent harnesses, and targeted repair;
+- deterministic fact, entity, number, consequence, causal-strength, unsupported-tactics, originality, and prediction gates;
+- separate performance plans, allowlisted TTS direction, licensed voice candidates, verified pronunciation, transcription, number identity, mastering, and asset checks;
+- calibrated forecasting, five-point persona adjustment limits, pre-kickoff locking, Brier score, log loss, automatic settlement, and public receipts;
+- content-addressed audio and 1200 by 630 share-card storage;
+- atomic run claiming, stale-run recovery, six-way bounded fan-out, promise checks, and all-or-nothing publication;
+- a 14-step durable Workflow orchestration with authenticated status and idempotent resume behavior;
+- bounded history backfill, held-out forecast training, prediction registration, 60-match corpus construction, and resumable 360-script evaluation;
+- revision-bound release-readiness evaluation across engineering and human gates;
+- public pundit, drop, variant, prediction, receipt, preference, and Reporter RSS interfaces;
+- truthful current-date UI, visible playback failures, real-media completion analytics, and strict cron authentication.
+
+Relume is a component-pattern reference only. Product logic, design tokens, copy, data contracts, and source code remain repository-owned.
+
+## Pipeline map
+
+```mermaid
+flowchart LR
+    I["Structured match data"] --> E["Immutable evidence pack"]
+    E --> C["Licensed claims"]
+    C --> T["Six independent theses"]
+    T --> S["Six scripts"]
+    S --> H["Hard gates and independent harnesses"]
+    H --> P["Performance plans"]
+    P --> A["Narration and asset gates"]
+    A --> X["Atomic six-variant publication"]
+    X --> R["Predictions and receipts"]
+    R --> C
+```
+
+Key code:
+
+| Concern                   | Canonical path                                                                                |
+| ------------------------- | --------------------------------------------------------------------------------------------- |
+| Types and contracts       | `src/lib/pundit/types.ts`                                                                     |
+| Pundit specifications     | `src/lib/pundit/specs.ts`                                                                     |
+| Evidence and claims       | `src/lib/pundit/evidence.ts`, `src/lib/pundit/claim-lab.ts`                                   |
+| Generation and harnesses  | `src/lib/pundit/pundit-generator.server.ts`, `src/lib/pundit/harness.ts`                      |
+| Performance and narration | `src/lib/pundit/performance.ts`, `src/lib/api/narration.server.ts`                            |
+| Audio and assets          | `src/lib/pundit/audio-mastering.server.ts`, `asset-storage.server.ts`, `share-card.server.ts` |
+| Forecasts and predictions | `src/lib/pundit/forecast.ts`, `prediction-orchestrator.server.ts`                             |
+| Daily orchestration       | `src/lib/pundit/daily-orchestrator.server.ts`, `variant-production.server.ts`                 |
+| Release evaluation        | `src/lib/pundit/release-readiness.server.ts`                                                  |
+| Durable workflow          | `src/workflows/daily-pundit.ts`, `src/workflows/daily-pundit.steps.ts`                        |
 
 ## Safety switches
 
-Set both client and server pre-launch flags:
+The safe state is explicit on both client and server:
 
 ```text
 VITE_PRELAUNCH_MODE=true
 PRELAUNCH_MODE=true
 VITE_BILLING_ENABLED=false
 BILLING_ENABLED=false
+ENABLE_PRIVATE_REHEARSALS=false
+ENABLE_LEGACY_DAILY_DROP=false
+PUNDIT_PUBLICATION_ENABLED=false
+PUBLIC_FORECAST_SCORES_ENABLED=false
+ENABLE_FORECAST_TRAINING=false
+ENABLE_PREDICTION_REGISTRATION=false
+ENABLE_EVALUATION_RUNS=false
+ENABLE_RELEASE_SNAPSHOT_WRITE=false
 ```
 
-Checkout requires billing enabled and pre-launch explicitly false. Missing flags fail closed. Existing subscribers can still manage billing.
+Checkout needs pre-launch explicitly false and both billing flags true. Publication, rehearsal, forecast training, prediction registration, evaluation, and release-snapshot writes each require their own server flag. Missing values deny access.
 
-The legacy daily generator is blocked while `PRELAUNCH_MODE` is not exactly `false` and still requires the separate `ENABLE_LEGACY_DAILY_DROP=true` kill switch. Do not enable either path until six-pundit orchestration and every launch suite pass.
+The legacy episode generator also requires `ENABLE_LEGACY_DAILY_DROP=true`. It is a recovery path, not part of the launch architecture.
 
 ## Schedules
 
-`vercel.ts` owns production schedules. GitHub workflows are manual recovery only:
+[`vercel.ts`](../vercel.ts) is the production schedule source:
 
-- Ingest: 00:15 UTC.
-- Six-variant rehearsal/publication endpoint: 04:45 UTC.
-- Upcoming-fixture prediction registration: 06:30 and 16:30 UTC.
+| UTC             | Endpoint                             | Responsibility                                        |
+| --------------- | ------------------------------------ | ----------------------------------------------------- |
+| 00:15           | `/api/public/cron/ingest`            | Structured-data ingest and settlement                 |
+| 04:45           | `/api/internal/daily-rehearsal`      | Durable six-variant rehearsal or approved publication |
+| 06:30 and 16:30 | `/api/internal/predictions-register` | Pre-kickoff prediction registration                   |
 
-The daily endpoint is deliberately quarantined in pre-launch. GitHub workflows are manual recovery only. Every cron request requires the exact `Authorization: Bearer $CRON_SECRET` value; a missing secret rejects all requests.
+GitHub schedule files are manual recovery only. Every request requires the exact `Authorization: Bearer $CRON_SECRET` value. No publishable-key fallback exists in the current cron helper.
+
+## Database state
+
+The production FullTime project is `hzadscrqmyilbisexvyz`. These release migrations were applied and read back on 2026-08-08:
+
+- `20260808194138_pundit_intelligence_system.sql`
+- `20260808200000_operational_release_gates.sql`
+- `20260809010938_security_advisor_search_path.sql`
+- `20260809011106_optimize_auth_rls_policies.sql`
+
+The current connector lacks permission for that project. Do not infer migration failure from the connector error. Confirm project identity before any future database write.
 
 ## Local verification
 
+Use Node 24, pinned in `.node-version` and `package.json`:
+
 ```powershell
-# Use Node 24. The repository pins this in .node-version and package.json.
 pnpm run typecheck
 pnpm test
 pnpm run lint
 pnpm run build
+git diff --check
 ```
 
-The unit suite covers cron fail-closed behaviour, London/BST coverage boundaries, evidence derivations, unsupported-tactics attacks, deterministic number/entity/consequence licensing, falsifiability, persona differentiation, forecast scoring and performance/script identity.
+The test suite covers cron denial, London coverage dates, evidence derivation, unsupported-tactics attacks, deterministic licensing, falsifiability, persona differentiation, forecasts, RSS, audio quality, asset rendering, originality, migrations, and release readiness.
 
-## Database rollout
+## Evidence still required
 
-The migrations are additive and have not been applied to production by this branch. Review and deploy both new migrations in timestamp order through the normal Supabase migration workflow. Regenerate `src/integrations/supabase/types.ts` from the target project after deployment; do not hand-edit generated types.
+Code cannot self-approve:
 
-## External gates still requiring evidence
+- rights-cleared research sources and founder-accepted original concept cards;
+- two commercially usable full-length voice auditions per pundit and founder selection;
+- at least 1.5 million approved TTS characters per month with usage alerting;
+- two seasons of provider history and a held-out forecast win over the base rate;
+- founder-approved 60-match corpus, 360 passing scripts, and blind fan/analyst review;
+- full-length audio panels and 99% verified launch-name pronunciation;
+- seven consecutive on-time six-variant rehearsals;
+- revision-bound legal, privacy, accessibility, monitoring, rollback, and feed validation.
 
-Code cannot honestly manufacture these approvals:
-
-- Rights-cleared research-source whitelist and founder acceptance of concept cards.
-- Two commercially usable voice candidates per pundit and a final founder taste selection.
-- At least 1.5 million monthly approved TTS characters.
-- Two-season data backfill and held-out forecast superiority over the league base rate.
-- The 60-match/360-script evaluation corpus, blind fan/analyst panels and founder humour review.
-- Seven consecutive private six-variant rehearsals.
-- Production legal, privacy, accessibility, monitoring, rollback and feed-validator sign-off.
-
-Until those are recorded, the site remains an honest preview and the public tables remain empty.
+Until every item is recorded for one revision, the release evaluator must report `blocked` and the public product remains a preview.

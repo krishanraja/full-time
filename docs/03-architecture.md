@@ -1,179 +1,136 @@
-# 03 · Architecture
+# 03 - Architecture
 
-> **CURRENT-SYSTEM PRECEDENCE (2026-08-08):** This file documents the legacy recap topology. Use `18-world-class-pundit-system.md`, the two new migrations and `19-release-state.md` for the six-pundit pipeline.
+- **Status:** Current
+- **Owner:** Engineering and operations
+- **Purpose:** Explain system boundaries, data flow, trust, orchestration, and failure behavior.
+- **Last reviewed:** 2026-08-10
 
-**Role:** Developer or ops agent who needs the system topology.
-**Read this when:** designing a change that crosses the cron to generation to TTS to storage to realtime to push chain, or touching billing / entitlement.
-**Don't read this when:** you only need to touch a single component (see `02-developer.md`).
+## System view
 
----
-
-## High-level diagram (the daily drop)
-
-```text
-            ┌────────────────────────────┐
-            │ GitHub Actions cron         │  06:30 UTC daily (best-effort, ±10 min)
-            │ .github/workflows/          │
-            │   daily-drop.yml            │
-            └─────────────┬──────────────┘
-                          │ POST  Authorization: Bearer CRON_SECRET
-                          ▼
-            ┌───────────────────────────────────────────────┐
-            │  POST /api/public/cron/daily-drop             │  src/routes/api/public/cron.daily-drop.ts
-            │  - authorizes CRON_SECRET (pub-key fallback)  │
-            │  - picks finished Big-5 matches (last 36h)    │
-            │    without an episode, top 8 by importance    │
-            │  - bounded concurrency 3, 240s wall budget    │
-            └─────────────┬─────────────────────────────────┘
-                          │ per match
-                          ▼
-            ┌───────────────────────────────────────────────┐
-            │  runEpisodePipeline(matchId)                  │  src/lib/api/episode-pipeline.functions.ts
-            │  idempotent: skip if an episode already exists │
-            │    1. deterministic fact-pack (match_events)  │  ─┐
-            │    2. Opus writer (voice_corpus persona)      │   │  src/lib/api/
-            │    3. deterministic CODE GATE                 │   │  recap-generator.server.ts
-            │    4. Sonnet CONTRADICTION JUDGE              │   │  fail-closed: publish nothing
-            │    5. up to 5 surgical regens                 │  ─┘  rather than a wrong recap
-            │    6. ElevenLabs TTS (Daniel) -> mp3          │
-            │    7. upload to Storage bucket `episodes/`    │
-            │    8. INSERT episodes row (status published)  │
-            └─────────────┬─────────────────────────────────┘
-                          ▼
-            ┌───────────────────────────────────────────────┐
-            │  Postgres `episodes` (realtime on INSERT)      │
-            └─────────────┬─────────────────────────────────┘
-                          │
-            ┌─────────────┴─────────────┐
-            ▼                           ▼
-   ┌──────────────────┐      ┌────────────────────────┐
-   │ Browser subscribes│      │ fanoutMorningPush      │  src/lib/api/push-fanout.server.ts
-   │ -> animates new   │      │ - reads push_subs       │
-   │    episode in     │      │ - sends VAPID push      │
-   └──────────────────┘      └────────────────────────┘
+```mermaid
+flowchart TD
+    F["Licensed football providers"] --> I["Ingest and normalization"]
+    I --> D["Supabase football data"]
+    D --> E["Immutable evidence pack"]
+    E --> C["Claim laboratory"]
+    C --> G["Six persona generators"]
+    G --> H["Hard gates and 12 independent harnesses"]
+    H --> N["Performance and narration"]
+    N --> Q["Transcript, pronunciation, number and audio gates"]
+    Q --> A["Content-addressed audio and share assets"]
+    A --> P["Promise checks and atomic publication"]
+    P --> W["Web app and Reporter RSS"]
+    D --> M["Forecast model"]
+    M --> R["Pre-kickoff predictions"]
+    R --> S["Settlement and receipts"]
+    S --> W
 ```
 
-## Components
+The application is a TanStack Start service running on Vercel's Node runtime. Supabase owns durable data, auth, RLS, and media storage. Provider work runs server-side. The browser reads published records and user-scoped preferences only.
 
-### Cron entrypoint
-**File:** `src/routes/api/public/cron.daily-drop.ts` (TanStack file route, `POST` handler at `/api/public/cron/daily-drop`).
-**Auth:** hardened. When `CRON_SECRET` is set, the request must carry `Authorization: Bearer <CRON_SECRET>`. A backward-compatible fallback (the Supabase publishable key in the `apikey` header) applies only when no `CRON_SECRET` is configured. The old behaviour of trusting the public publishable key outright is gone.
-**Selection:** finished matches with `kickoff_at` in the last 36 hours, ordered by `importance_score` desc, capped at 8.
-**Scale discipline:** generation is heavy (Opus writer + Sonnet judge + TTS, roughly 15 to 40s per match), so matches run with bounded concurrency (`CONCURRENCY = 3`) under a 240s wall-clock budget (`BUDGET_MS`) to stay inside the 300s serverless function limit. Anything not reached is picked up next run.
-**Idempotency:** `runEpisodePipeline` skips any match that already has an `episodes` row, so retries and partial runs are safe.
-**Failure mode:** per-match `try/catch`. One bad match does not break the drop. Push fanout runs only if at least one new episode was created and VAPID is configured.
-**Inert until a live feed exists:** current match data is seeded (2023 to 24 season) and the date filter targets recent finished matches, so the endpoint returns without work most days. Real daily content needs a live API-Football ingest (see `12-roadmap.md`) and accepts ongoing Anthropic plus ElevenLabs cost.
+## Bounded contexts
 
-### Generation engine (fact-pack to writer to gate to judge, fail-closed)
-**Files:** `src/lib/api/recap-generator.server.ts` (`generateRecap`) and `src/lib/api/episode-pipeline.functions.ts` (`runEpisodePipeline`).
-**What it replaced:** the old Lovable AI Gateway path (`google/gemini-3-flash-preview` via `ai.gateway.lovable.dev` plus a single banned-words regex) is gone. It was fact-starved and non-functional. Accuracy is now guaranteed by construction, not by a prompt instruction.
+| Context              | Responsibility                                                  | Primary code/data                                      |
+| -------------------- | --------------------------------------------------------------- | ------------------------------------------------------ |
+| Football data        | Normalize fixtures, results, events, and statistics             | `matches`, `match_events`, `match_stats`, ingest route |
+| Editorial evidence   | Seal facts, derivations, provenance, and absent evidence        | `evidence_packs`, `analysis_claims`                    |
+| Pundit production    | Select thesis, write, judge, repair, quarantine                 | `pundit_specs`, `pundit_variants`, `harness_runs`      |
+| Narration            | Plan delivery, synthesize, verify, master, and store            | voice, lexicon, audio review, asset services           |
+| Forecasting          | Train, calibrate, activate, register, and settle                | `forecast_models`, `prediction_ledger`                 |
+| Evaluation           | Build held-out corpus and collect blinded reviews               | `evaluation_*` tables and runners                      |
+| Release control      | Claim runs, record rehearsals and sign-offs, publish atomically | `editorial_runs`, `rehearsal_runs`, `release_*`        |
+| Listener product     | Select pundit, play real media, follow, share, view receipts    | routes, components, user tables                        |
+| Legacy compatibility | Archive and old episode generation                              | `episodes`, `drops`, legacy API services               |
 
-The pipeline, in order:
+## Daily orchestration
 
-1. **Deterministic fact-pack.** Built in code from `match_events`: a `goal_log` with the running score after each goal, a `scorer_summary` grouping scorers by team, own-goal and penalty tagging (an own goal is credited to the correct team in code), cards and red cards, and full-match `match_stats` (possession, shots, on target, xG, corners). This is the ground truth the writer is handed.
-2. **Opus writer.** An Anthropic Opus call (`WRITER_MODEL`, default `claude-opus-4-8`) conditioned on the `voice_corpus` persona (`style_rule` rows) and a handful of `example` lines for register only. It returns JSON: `title`, `script`, `magic_sentence`, `referenced_scorers`, `stated_score`. The brief: get the winner and final score exactly right, name only decisive goals, never credit a goal to the wrong team, 105 to 135 words.
-3. **Deterministic code gate.** Every draft is checked in code: exact final score (`stated_score` equals the real scoreline), scorers are a subset of the fact-pack via diacritic-normalized surname matching, length in band, no repeated score or minute, no "scored every goal" claim when both teams scored, no em dashes, no banned cliches.
-4. **Sonnet contradiction judge.** A second Anthropic call (`JUDGE_MODEL`, default `claude-sonnet-4-6`) compares the recap to the correct result and returns a verdict only. It flags a contradiction only for a wrong winner, a wrong final score, or a named goal attributed to the wrong team. It ignores phrasing and any goal the recap chooses not to mention.
-5. **Up to 5 surgical regens.** On any gate or judge failure, the writer is re-prompted with the specific mechanical issues and factual errors and asked to fix only those.
-6. **Fail-closed.** If a draft never passes the gate and judge within 5 attempts, `runEpisodePipeline` throws. No episode is written. The product publishes nothing rather than a wrong recap.
+[`vercel.ts`](../vercel.ts) schedules ingest, daily rehearsal, and prediction registration. Each HTTP entry point performs two checks:
 
-**LLM transport:** direct calls to `https://api.anthropic.com/v1/messages` with `ANTHROPIC_API_KEY`, `anthropic-version: 2023-06-01`, and a 5-try retry on 429 / 5xx.
+1. timing-safe bearer authentication using `CRON_SECRET`;
+2. a feature-specific execution flag.
 
-### TTS, storage, and the episode row
-**File:** `src/lib/api/episode-pipeline.functions.ts`.
-**TTS:** ElevenLabs, model `eleven_multilingual_v2`, voice Daniel (`ELEVENLABS_VOICE_ID`, default `onwK4e9ZLuTAKqWW03F9`), output `mp3_44100_128`.
-**Storage path:** `episodes/YYYY-MM-DD/{matchId}.mp3` (public read), uploaded with upsert.
-**DB write:** `INSERT` into `episodes` with `script`, `hook`, `magic_sentence`, `segments`, `audio_url`, `duration_sec`, `badge`, `model` (`opus-4-8+gate+judge+eleven_multilingual_v2`), `status: "published"`. Uses `supabaseAdmin` (service role) imported INSIDE the handler, never at module scope (this file is reachable from the client bundle as a `*.functions.ts` module).
+The rehearsal route returns `202` with a run ID. Acceptance does not mean success. The durable workflow then:
 
-### Billing and entitlement (Stripe)
-**Model:** Free plus "Full Time Pro" at $4.99/mo USD. Wired to Stripe account `acct_1SiiexHqiZo6hj3e` (an old Lockstep account repurposed, display name `full-time`). **Production is on LIVE keys as of 2026-08-07**; preview and development stay on the TEST key. **Pro is live and reachable as of 2026-08-07**: `/pro` renders the pricing page and `createCheckout` is reachable from it. Pro gates all six pundits and a 25/day name-a-game allowance, both enforced server-side.
-**The Pro gates that actually enforce today:** (1) pundit SELECTION, where anonymous and free get `zen` + `gaffer` and the other four (`stats`, `romantic`, `doomer`, `banter`) are Pro, and (2) the name-a-game daily allowance, 3 free versus 25 Pro. Enforced in three places: the UI, the server function `setVoiceStyle` (`src/lib/api/profile.functions.ts`, which rejects a Pro pundit for a non-Pro caller), and the DB. Other Pro benefits (your clubs first, all leagues, full archive) are marketed honestly as "rolling out", not yet built.
+1. claims the coverage date idempotently;
+2. selects the feature match and builds one evidence pack;
+3. generates and judges six editorial variants in parallel under a provider semaphore;
+4. persists every harness result and repair attempt;
+5. renders and verifies six narrated variants in parallel;
+6. uploads content-addressed assets;
+7. runs the complete publication promise set;
+8. records a rehearsal result or publishes all six variants atomically.
 
-**Server functions** (`src/lib/api/billing.functions.ts`, all behind `requireSupabaseAuth`):
-- `getEntitlement` reads the caller's own profile under RLS and returns `{ plan, isPro, status, currentPeriodEnd }`.
-- `createCheckout` finds-or-creates the Stripe customer, then opens a subscription Checkout Session for `STRIPE_PRO_PRICE_ID`.
-- `createPortal` opens the Stripe billing portal for the stored customer.
-- `syncCheckout` reconciles entitlement straight from Stripe on the success page (belt and suspenders, so Pro reflects instantly even if the webhook is a beat behind).
+Stale claims can be recovered. Completed steps are idempotent. A retry must not create duplicate public content or mutate an immutable prediction.
 
-**Webhook** (`src/routes/api/stripe/webhook.ts`): a public route whose authenticity comes from the Stripe signature (`STRIPE_WEBHOOK_SECRET`) verified against the raw body. It handles `checkout.session.completed`, `customer.subscription.*`, and `invoice.paid` / `invoice.payment_failed`, and on transient failures returns 500 so Stripe retries.
+## Editorial trust boundary
 
-**Shared write** (`src/lib/billing-sync.server.ts`): `applySubscriptionToProfile` maps a Stripe subscription onto the profile's entitlement columns (`plan`, `subscription_status`, `stripe_subscription_id`, `stripe_customer_id`, `current_period_end`, `price_id`). Both the webhook and `syncCheckout` call it so both write entitlement identically, with the service-role client.
+The writer does not receive an open web context. It receives licensed evidence, permitted research concepts, a pundit spec, and failed-beat feedback.
 
-**Client wiring:** `src/lib/stripe.server.ts` (lazy server-only Stripe client, `getStripe` / `proPriceId`), `src/lib/entitlement.ts` (client-safe constants and `isProProfile` / `isProVoiceStyle`), `src/hooks/use-entitlement.ts` (TanStack Query over `getEntitlement`), and the `/pro` page `src/routes/pro.tsx`.
+Hard gates cover:
 
-```text
-   Browser (use-entitlement, /pro)
-        │  createCheckout / createPortal / syncCheckout   (billing.functions.ts)
-        ▼
-   Stripe (acct_1Siiex, LIVE in prod) ─ webhook ─▶  POST /api/stripe/webhook.ts
-        ▲                                              │ verifies STRIPE_WEBHOOK_SECRET (raw body)
-        │                                              ▼
-        │                                    applySubscriptionToProfile  (billing-sync.server.ts)
-        │                                              │ service-role write (only role past the guard)
-        │                                              ▼
-        └───────────  profiles.plan / subscription_status / current_period_end / ...
-                      guarded by trigger enforce_profile_billing_guard
+- match, score, entity, number, and consequence identity;
+- evidence-to-claim entailment and causal strength;
+- unsupported tactics and unavailable context;
+- falsifiability and prediction timestamps;
+- research originality and prohibited imitation;
+- display-script and spoken-script meaning;
+- transcript, pronunciation, and audio fidelity.
+
+Qualitative judges score one dimension each. A high humour score cannot rescue weak insight. A high story score cannot rescue an unsupported claim.
+
+## Data and access boundary
+
+```mermaid
+flowchart LR
+    B["Browser"] -->|"publishable key and RLS"| S["Supabase public/user rows"]
+    B -->|"validated HTTP"| V["Vercel server handlers"]
+    V -->|"service role"| I["Internal editorial and release rows"]
+    V -->|"server credentials"| X["AI, TTS, data and payment providers"]
+    X --> V
 ```
 
-**The billing guard (real security fix).** Migration `supabase/migrations/20260705120000_billing.sql` adds the billing columns and a `BEFORE INSERT OR UPDATE` trigger `enforce_profile_billing_guard`. When `current_user` is `authenticated` or `anon`, the trigger forces the billing columns back to their prior values (or defaults on insert), so those columns are writable only by `service_role`. This closed a real self-grant-Pro RLS hole: without it, the existing "Profiles self update" policy would have let a user set their own `plan` to `pro`.
+- Browser code never receives service-role, model, TTS, cron, or payment secrets.
+- Public reads expose only published or explicitly public rows.
+- User rows are owner-scoped with RLS.
+- Internal editorial, research, evaluation, voice, and release tables are service-role only.
+- Public storage contains approved media; write access remains privileged.
+- Stripe webhooks authenticate with the raw-body signature. New checkout is separately disabled by launch and billing flags.
 
-### Frontend reads and club-first ordering
-**Hook:** `src/hooks/use-episodes.ts` (`useTodayFeed`).
-- TanStack Query against `getTodayFeed()` (`src/lib/api/feed.functions.ts`), which returns `episodes`, `tonight`, and the `coda` (the "one thing we noticed" synthesis insight).
-- Subscribes to the realtime channel on `episodes` INSERT and invalidates the query so the morning drop animates in for anyone already on the page.
+## Publication model
 
-**Club-first ordering** lives in `src/routes/index.tsx`: a followed club (or league) leads the drop. A stable sort reorders the feed by whether each episode's `homeTeamId` / `awayTeamId` / `leagueId` is in the local follow set, keeping published order within each group. This keeps the "your clubs first" promise. Follows are stored locally, so no auth is required.
+`daily_drops` is the current release object. `pundit_variants` is the per-persona product. A variant may be drafted, judged, quarantined, approved, or published. Published variants are protected from mutation.
 
-### Player (continuous playback)
-**File:** `src/lib/player-store.ts`.
-- `useSyncExternalStore` over a singleton `<audio>` element.
-- A queue with auto-advance: `playAll(list)` starts the whole morning drop from the top (the "Play the morning" button on Today), and each episode auto-advances to the next on `ended`, so a hands-busy listener keeps going without touching the phone.
-- Wires `MediaSession` for lock-screen play / pause / seek / next / prev / artwork.
-- Falls back to a timer-based simulator when `audio_url` is empty (used by seeded demo episodes).
+The database function `publish_daily_drop` is the atomic boundary. It may publish only after the expected six variants, assets, hard gates, harness floors, predictions, and release snapshot exist. A partial daily drop remains internal.
 
-### Push
-- Subscribe: `src/lib/push-client.ts` (client) to `subscribeToPush` server fn, writing a row in `push_subscriptions`.
-- Fanout: `fanoutMorningPush(count)` in `src/lib/api/push-fanout.server.ts`. Reads all subs, sends a single payload, swallows individual failures.
-- Display: `public/sw.js` handles the `push` event and surfaces the notification.
+Legacy `drops` and `episodes` support archive behavior. They are not the current six-pundit publication contract.
 
-### Honesty sweep (2026-07-06)
-The always-on "Live drop" badge was false (the product is deliberately day-after, not live) and was replaced with a static "Daily". The Pro pundit copy is hedged to "rolling out" for the not-yet-built benefits. Pinch-zoom was restored (the viewport `maximum-scale=1` was removed).
+## Prediction model
 
-## Data flow rules
+One calibrated forecast supplies shared win/draw/loss probabilities. Pundits can adjust them by no more than five points without extra licensed evidence. Registration must occur before kickoff, and database protection prevents retrospective edits.
 
-- **Episodes are written only by the cron** (service role). Never from a client request.
-- **Billing columns on `profiles` are written only by the Stripe webhook / sync** (service role, enforced by `enforce_profile_billing_guard`). A user request can never change its own `plan`.
-- **Listens** can be written by anonymous device or signed-in user (see RLS in `04-data-model.md`).
-- **Follows / profiles / push subs** are user-scoped, RLS-gated to `auth.uid()`.
-- **`voice_corpus` is service-role only** and feeds generation; it is never read by the client.
+Settlement compares the original structured rule to recorded data. Public receipts retain wrong and partly correct calls. `unjudgeable` is valid only when the registered evidence cannot settle the rule.
+
+## Failure semantics
+
+| Failure                  | Product behavior                                                  |
+| ------------------------ | ----------------------------------------------------------------- |
+| Missing data             | No candidate or an explicit restraint claim                       |
+| Unsupported analysis     | Claim rejected before prose                                       |
+| Weak qualitative score   | Failed beats repaired or variant quarantined                      |
+| Provider outage          | Run remains failed/retryable; nothing silently approves           |
+| One persona fails        | Entire drop remains unpublished; failure stays visible internally |
+| Asset promise fails      | Atomic publication denied                                         |
+| Forecast underperforms   | Model stays inactive and public scores remain hidden              |
+| Release evidence missing | Readiness remains blocked                                         |
+| Runtime regression       | Roll back app; preserve audit and receipts                        |
 
 ## Deployment
 
-- Frontend plus server functions run on **Vercel** (TanStack Start with the nitro `vercel` preset). Deploys are driven from Git, connected to the `full-time` Vercel project.
-- Stable production URL: **`https://fulltime.fm`**. Use this for cron and external services (it is what `FULL_TIME_URL` points at).
-- Current reality: the live app is deployed from the local working tree and is being merged to `main`. There are 5 hand-authored episodes live and 0 real users, listens, or follows yet.
-- The daily-drop schedule is enabled by setting two GitHub repo secrets: `CRON_SECRET` (matching Vercel) and `FULL_TIME_URL`.
+- Production: [fulltime.fm](https://fulltime.fm), Vercel project `full-time`.
+- Current deployment state: ready, truthful pre-launch.
+- Runtime target: Node 24 on Vercel.
+- Schedule configuration: `vercel.ts`.
+- Database: Supabase project `hzadscrqmyilbisexvyz`.
+- Production and billing changes are explicit operator actions, not build side effects.
 
-## Environments
-
-| Env | Where | Used for |
-|---|---|---|
-| Production | `https://fulltime.fm` (Vercel project `full-time`) | Real users, cron target |
-| Preview (per branch) | Vercel preview deployment per PR / branch | Review before merge |
-| Local dev | `vite` dev server | Local development against the same Supabase project |
-
-Supabase project (Postgres / Auth / Storage / Realtime): `hzadscrqmyilbisexvyz`.
-
-## Failure modes (one-liners, see `06-ops.md` for runbooks)
-
-| Symptom | Likely cause |
-|---|---|
-| Cron 401 | `CRON_SECRET` mismatch between the GitHub Actions secret and Vercel (or the `Authorization: Bearer` header is missing) |
-| Cron runs but creates nothing | No finished matches in the last 36h with data (expected while match data is seeded and the live feed is not wired) |
-| Generation throws `ANTHROPIC_API_KEY missing` | Anthropic key not synced to the runtime |
-| A match is skipped with "recap failed gate/judge" | Fail-closed by design: the writer could not pass the code gate plus judge in 5 attempts, so no episode was published |
-| All TTS failures | `ELEVENLABS_API_KEY` missing or over quota |
-| Checkout / portal errors | `STRIPE_SECRET_KEY` or `STRIPE_PRO_PRICE_ID` missing for that target (production = live, preview/dev = test) |
-| Pro not reflected after paying | Webhook not receiving events or `STRIPE_WEBHOOK_SECRET` mismatch; `/pro` success page `syncCheckout` is the fallback |
-| No push delivered | VAPID keys missing or service worker not registered |
-| New episode does not appear without refresh | Realtime channel not connected |
+See [`06-ops.md`](./06-ops.md) for runbooks and [`19-release-state.md`](./19-release-state.md) for current live evidence.

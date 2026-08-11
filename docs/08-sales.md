@@ -1,84 +1,97 @@
-# 08 · Sales / BD
+# 08 - Sales and partnerships
 
-> **CURRENT-SYSTEM PRECEDENCE (2026-08-08):** New checkout and Pro promotion are disabled. All six pundits are free during pre-launch. Do not quote the legacy live-Pro status below as current.
+- **Status:** Current commercial posture
+- **Owner:** Founder and business development
+- **Purpose:** Define what can be sold, promised, licensed, or declined before and after launch.
+- **Last reviewed:** 2026-08-10
 
-**Role:** Sales, business development, partnership-facing agent.
-**Read this when:** considering monetization, approached for a partnership, talking to a rights holder.
-**Don't read this when:** doing direct-to-consumer marketing (→ `07-marketing.md`).
+## Current commercial truth
 
----
+Full Time is pre-launch. New checkout and Pro promotion are disabled. All six pundits are free. Existing billing code and portal access do not constitute an approved public offer.
 
-## Current monetization stance
+The current objective is product proof: repeat listening, editorial quality, distinct personas, prediction calibration, and trustworthy receipts. Do not quote revenue, subscribers, forecast superiority, daily reliability, or a future price without current evidence and founder approval.
 
-**Free, plus a paid tier that is deliberately not charging anyone yet.** No ads.
+## What we can offer now
 
-A Pro tier exists and is **live**: **Full Time Pro, $4.99/mo USD**, on live Stripe keys in production since 2026-08-07. Real cards can be charged. There is still **no revenue**, because there are no subscribers yet, and the metric we steer by is unchanged: habit-forming retention, not MRR.
+- private product demonstrations using approved content;
+- founder and analyst listening sessions;
+- conversations about licensed structured data, voices, research sources, and distribution;
+- non-binding discovery with sponsors, publishers, clubs, leagues, and podcast networks;
+- a clear rights-safe technical and editorial posture.
 
-Why we are not charging real money yet:
-- **0 users.** Charging before there is an audience is premature. The product has to earn the daily habit before it earns money, and adding friction at launch kills the loop.
-- **The Pro features that would justify a price are mostly not built.** Today Pro gates one thing (pundit selection, below). The rest is promised, not shipped. We are not going to take real money for a promise.
-- We have no negotiating leverage with rights holders, sponsors, or partners until we have audience.
-- The unit economics on TTS + bandwidth are manageable at our scale (see `06-ops.md`).
+Do not accept payment, sign a delivery date, promise coverage, or grant exclusivity without release, legal, capacity, and founder approval.
 
-The honest read: the plumbing is done so that flipping to live is a config change, not a build. The gate on going live is **audience plus real Pro value**, not engineering.
+## Commercial principles
 
-## Full Time Pro (what actually exists today)
+1. The core morning show and pundit choice should earn a habit before monetization adds friction.
+2. The product's trust is more valuable than a premature sponsor.
+3. A paid tier must sell implemented value, not roadmap language.
+4. Rights and provenance are product infrastructure, not legal cleanup.
+5. Prediction performance must be shown with calibration, sample size, and baseline context.
 
-- **Price:** $4.99/mo USD.
-- **Status:** **LIVE** (2026-08-07, `15-access-and-waitlist-plan.md` addendum). `/pro` is a real pricing page again on live Stripe keys. Pro gates two enforced things: all six pundits (free keeps The Reporter and The Gaffer) and 25 name-a-game narrations a day against the free 3. Do not promote it until the subscription terms and refund policy are published, see `11-legal.md`.
-- The user-visible ladder is anonymous → free account → waitlist. Demand capture happens on the waitlist, not a paywall.
-- The billing columns remain `service_role`-only (the guard trigger that closed the self-grant-Pro hole is untouched). When Pro returns, the entitlement seam (`entitlement.ts`, `use-entitlement`) is where it re-enters.
-- **What Pro must never paywall (unchanged):** the core daily drop, push notifications, and team-follow personalization. That is the loop, and it stays free forever.
-- **Files:** `billing.functions.ts`, `api/stripe/webhook.ts`, `stripe.server.ts`, `billing-sync.server.ts`, `entitlement.ts`, `use-entitlement.ts`, `pro.tsx`.
-- **Env:** `STRIPE_SECRET_KEY` (test), `STRIPE_PRO_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`.
-- **To go live (when the time is right):** build the real Pro features, create a live-mode Stripe webhook, swap the three Stripe env vars above to live values, redeploy. Until pundit selection is joined by genuine Pro value, leave it on test.
+## Future revenue paths
 
-## Future paths (in priority order)
+### Membership
 
-### 1. Light, brand-safe sponsorship
-- A single 5-second sponsor tag in the morning push and at the top of `/feed`. Not in-audio.
-- Target: football-adjacent but not betting (kit brands, boots, energy drinks, sports media).
-- **Hard nos:** betting, alcohol-led campaigns aimed at under-25s, crypto, fast-fashion fan-jerseys.
+A future paid tier may add interactive analysis, deeper archives, advanced personalization, or other implemented benefits. It should not paywall the basic current show, receipts, disclosure, or correction record. Price, renewal, cancellation, refunds, and included features require a separate approved decision.
 
-### 2. Deepen Pro into something worth paying for
-- Pundit selection alone is a thin reason to pay. The path to a real, live-charging Pro is to ship the benefits currently marked "rolling out": clubs-first, all leagues, archive. Add longer recaps and a full-week digest push if the audience wants them.
-- **Do not** paywall: the core daily drop, push notifications, the team-follow personalisation. These are the loop.
+### Sponsorship
 
-### 3. White-label
-- Recaps for a league's official app (LaLiga, Bundesliga, women's leagues). Their content rights, our pipeline.
-- Pricing: per-recap or flat monthly. Requires legal carve-out. See `11-legal.md`.
+The safest early format is a clearly separated, brief sponsor credit around the show or feed. Editorial conclusions, predictions, and receipts remain independent.
 
-### 4. Affiliate (deprioritised)
-- Kit / shirt links per team. Easy to add, low-trust outcome. Only if it doesn't dent the brand.
+Reject:
 
-## Conversations with rights holders
+- betting and gambling partners;
+- crypto or token promotions;
+- sponsors that require editorial influence;
+- disguised native advertising;
+- audio insertion that interrupts the argument;
+- campaigns targeting vulnerable or underage audiences.
 
-If a league, club, or broadcaster reaches out:
+### Licensing and white-label
 
-- **Confirm our stance**: we generate recaps from publicly available match data (final scores, scorers, minutes), with synthetic voices, and we don't use any copyrighted broadcast audio, real-broadcaster impressions, or proprietary highlight clips.
-- **What we'll happily do**: link out to their official highlights, credit feeds, run a "official partner" badge in exchange for data access.
-- **What we won't do without legal sign-off**: embed their content, use their broadcaster voices (even with permission, see `05-content-safety.md`), or pay a per-recap rights fee at this scale.
-- Loop in legal before promising anything (`11-legal.md`).
+Potential partners include leagues, clubs, publishers, and official apps that can provide licensed data or distribution. A white-label deal must preserve evidence provenance, synthetic-voice disclosure, quality gates, correction behavior, and separate model accountability.
 
-## Conversations with sponsors
+### Data and research partnerships
 
-- Send the deck (not yet written, see `12-roadmap.md`).
-- Quote audience size from PostHog. Never invent numbers.
-- Sponsor placement is **brand mention only**, no audio inserts in the recap itself. The recap is the product; protect it.
-- Three-month minimum contract. We don't churn week-to-week sponsors.
+High-value partners can improve the evidence boundary through licensed event, tracking, video, reporting, or historical data. New evidence does not automatically permit stronger claims; the claim license and evaluation corpus must expand with it.
 
-## Conversations with other apps / podcast networks
+## Rights-holder conversation
 
-- Cross-promotion is fine and free.
-- Acquisition: we are too early to entertain. Politely decline, ask them to follow the public roadmap.
+Say:
 
-## Pricing thinking (for when we get there)
+- Full Time uses licensed or permitted structured match facts and original prose.
+- It does not use broadcast audio, highlight footage, or living-pundit imitation.
+- Every public claim is evidence-linked and every registered prediction is auditable.
+- The system can preserve attribution and source provenance.
 
-- Free tier remains the daily morning drop, push, follows. Forever.
-- Pro tier targets the user who'd happily pay for The Athletic: football-literate, 25 to 45, urban, already paying for three or more subscriptions.
-- Price point is set at **$4.99/mo**. Don't discount below it; a low anchor undersells the product. An annual option can follow once monthly Pro proves it retains, but there is no annual price today, so don't quote one.
-- When Pro earns its price (real features, some audience), an annual plan with a free month and a downloadable per-month digest is a natural add.
+Ask:
 
-## What "sales" means in v1
+- Which data, marks, clips, quotes, or archive uses are licensed?
+- May output be commercial, derivative, quoted, or redistributed?
+- What attribution and expiry rules apply?
+- Can the partner provide corrections and audit access?
 
-Mostly *not selling*. The job is keeping the door closed to bad partners and open to the right ones. A live price now exists, but it is not being promoted, and the number we measure is not revenue, it is habit-forming retention (`00-product.md`).
+Never promise use of logos, footage, quotes, or player likenesses before rights are recorded.
+
+## Voice and creator partnership
+
+Voice candidates need explicit commercial rights, permitted territories, synthetic-use terms, duration, revocation handling, and proof that the voice does not imitate a known pundit. Founder taste selection follows blind full-length testing; a short demo is insufficient.
+
+Research creators need a source record that specifies whether Full Time may quote, paraphrase, or use abstract concepts only. Permission to watch content is not permission to train or commercialize it.
+
+## Sponsor or partner checklist
+
+Before a proposal leaves Full Time:
+
+- use real audience and performance figures only;
+- state pre-launch status and product limitations;
+- confirm data, voice, trademark, and distribution rights;
+- define deliverables, exclusions, review rights, and correction process;
+- route privacy, processor, and commercial terms to counsel;
+- protect editorial independence and the public receipt ledger;
+- tie technical commitments to capacity and release evidence.
+
+## Firm declines
+
+Decline deals that require betting integration, living-pundit imitation, hidden AI disclosure, false performance claims, user-data sale, editorial control, pay-for-prediction outcomes, or removal of wrong receipts.
