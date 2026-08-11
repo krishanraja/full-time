@@ -1,8 +1,5 @@
 # Full Time research intake - **WEEK**
 
-1. Drop approved source files into `inbox/`.
-2. Add each source and its rights record to `manifest.json`.
-3. Set the manifest to `"status": "ready"` only when every source has a final decision.
-4. Tell Codex: `ingest research week __WEEK__`.
+This folder is maintained automatically. Drop new rights-cleared `.txt` files into the permanent `drop/` folder one level above `weekly-intake/`; the scheduled scanner registers and routes them here.
 
-Keep credentials and unrelated personal or customer data out of this folder. Source files remain private and outside the public Git repository.
+Keep credentials and unrelated personal or customer data out of all corpus folders. Source files remain private and outside the public Git repository.

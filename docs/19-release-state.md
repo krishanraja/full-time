@@ -37,7 +37,7 @@ The founder confirmed an API-Football Pro plan with all endpoints and 7,500 dail
 6. Deterministic 60-match corpus tooling, resumable 360-script evaluation, human-review records, and revision-bound readiness evaluation.
 7. Responsive product shell, pundit selection, daily-show presentation, archive labeling, and searchable receipt ledger.
 8. Production schema, function search-path fixes, optimized auth RLS policies, and a ready Vercel deployment.
-9. A private weekly research intake, rights manifest, reproducibility hashes, and fail-closed readiness audit.
+9. A private text-file research drop, three-day Codex heartbeat, rights attestation, reproducibility hashes, and fail-closed audit.
 
 ## What remains blocked
 
