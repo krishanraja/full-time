@@ -1,96 +1,105 @@
-# 09 · Growth
+# 09 - Growth and measurement
 
-**Role:** Growth experiments, retention, acquisition loops.
-**Read this when:** designing an experiment, picking a metric, instrumenting an event.
-**Don't read this when:** doing broad marketing (→ `07-marketing.md`).
+- **Status:** Current
+- **Owner:** Product and growth
+- **Purpose:** Define the product metrics, event taxonomy, growth loops, and experiment rules.
+- **Last reviewed:** 2026-08-10
 
----
+## Measurement principle
 
-## North-star metric
+Measure the listener behavior Full Time exists to create: choosing a mind, finishing the argument, returning the next morning, and checking the receipt.
 
-**Daily completed listens per active user** during the 07:00 to 10:00 window.
+Do not optimize opens, page views, or outrage in isolation.
 
-Not DAU, not opens, not installs. Completed = listened past 90% of the recap (`listens.completed = true`). The product wins when users tap play 3 to 5 times in their morning and walk away, the metric should reflect that exact shape.
+## Metrics by stage
 
-## Supporting metrics
+### Pre-launch quality
 
-| Metric | Why |
-|---|---|
-| Day-7 retention of new installs | Habit-forming proxy |
-| Push opt-in % (of signed-in users) | The loop's most fragile step |
-| Follows-set after first session | Personalisation = stickier morning |
-| Share rate (taps on share, future) | Organic acquisition signal |
+| Metric                                              | Release threshold or use          |
+| --------------------------------------------------- | --------------------------------- |
+| Hard-gate pass                                      | 100%                              |
+| Median per qualitative dimension                    | At least 4/5, humour at least 3/5 |
+| Blind persona identification                        | At least 80%                      |
+| Preference over current and generic baselines       | At least 70%                      |
+| Casual-fan main-claim comprehension                 | At least 80%                      |
+| Audio authority, naturalness, timing, listenability | Mean at least 4/5                 |
+| Proper-name pronunciation                           | At least 99% verified             |
+| Complete rehearsals                                 | Seven consecutive on-time days    |
 
-## PostHog event taxonomy
+### Public product
 
-We use **fewer events on purpose**. Add an event only if it changes a decision.
+Primary metric: **completed approved shows per weekly active listener**, segmented by pundit and coverage date.
 
-Status column is the honest one: **live** means the call exists in the code and fires in production.
+Supporting metrics:
 
-| Event | Properties (as actually sent) | Fired by | Status |
-|---|---|---|---|
-| `play` | `{ id }` | `player-store.ts` on play | live |
-| `complete` | `{ id }` | `player-store.ts` on ended | live |
-| `push_opt_in` | none | `push-client.ts` after the subscription saves | live |
-| `waitlist_join` | `{ source: "waitlist_page"\|"settings"\|"today"\|"auth_redirect" }` | `waitlist.tsx` on confirmed join | live |
-| `signin_gate_shown` | `{ surface }` | `archive.tsx` locked view, `settings.tsx` pundit gate | live |
-| `name_a_game` | `{ generated: "true"\|"false" }` | `archive.tsx` on-demand narration | live |
-| `follow` | `{ entity_type: "team"\|"league", entity_id, action: "follow"\|"unfollow" }` | `follow-store.ts` in `useToggleFollow`, the chokepoint behind every `FollowButton` | live from 2026-08-05 |
-| `install_prompt_shown` / `install_prompt_accepted` | none | install prompt component | not built (roadmap) |
-| `share` | `{ episode_id, channel }` | per-episode share | not built (roadmap) |
+- day-7 and day-28 listener retention;
+- completion rate and median listening time;
+- pundit selection and switching rate;
+- receipt return rate;
+- share rate by portable line, prediction, and correction;
+- push opt-in and delivery success;
+- playback error rate;
+- percentage of listeners who can identify their chosen persona.
 
-Unfollow is not its own event. It is `follow` with `action: "unfollow"`, for the same reason `name_a_game` carries `generated` instead of splitting in two: the taxonomy is deliberately small, both directions come out of one `useToggleFollow` call, and PostHog breaks down by property as easily as by event name. Keeping them together also means the net follow count for a user is one series filtered two ways rather than two series that can drift apart. Filter to `action = "follow"` for gross adds; leave the filter off for total follow-button engagement.
+Guardrails: factual incidents, quarantine rate, unsupported-claim escapes, audio failures, complaints, deletion requests, and accessibility defects.
 
-One caveat on reading `follow`: it records the tap, not the persisted row. Signed-out users are counted (their follows live in `localStorage` only, never in the `follows` table), and a signed-in tap whose server write fails still leaves an event behind after the UI rolls back. Treat it as an engagement signal, and count rows in `follows` when you need the durable number.
+## Implemented analytics events
 
-One known gap remains to close when someone touches this next: `play` does not carry the `source` the surface came from.
+All calls pass through `src/lib/analytics.ts`. The helper queues briefly while PostHog loads, no-ops on the server, stops after 30 seconds, and never breaks playback.
 
-We do **not** track: scrolls, hovers, page-views beyond PostHog's automatic ones.
+| Event               | Properties                           | Source                   | Decision it supports               |
+| ------------------- | ------------------------------------ | ------------------------ | ---------------------------------- |
+| `play_intent`       | `{ id }`                             | `player-store.ts`        | User tried to start an item        |
+| `play_started`      | `{ id }`                             | real media `play` event  | Approved media actually began      |
+| `listen_completed`  | `{ id }`                             | real media `ended` event | Item reached true completion       |
+| `playback_error`    | `{ id, message }`                    | media failure            | Reliability and asset diagnosis    |
+| `push_opt_in`       | none                                 | `push-client.ts`         | Notification conversion            |
+| `follow`            | `{ entity_type, entity_id, action }` | `follow-store.ts`        | Follow/unfollow engagement         |
+| `waitlist_join`     | `{ source }`                         | `waitlist.tsx`           | Launch-note source attribution     |
+| `signin_gate_shown` | `{ surface }`                        | gated surfaces           | Auth friction                      |
+| `name_a_game`       | `{ generated }`                      | `archive.tsx`            | Legacy archive demand and failures |
 
-Implementation: import `track` from `src/lib/analytics.ts` and call `track(eventName, { ... })`. Never call the vendor global directly. The helper is the single place that knows the vendor, no-ops on the server, no-ops when the script has not loaded or is ad-blocked, and never throws.
+`listen_completed` comes only from the audio element. Missing media cannot generate completion.
 
-PostHog loads unconditionally from `routes/__root.tsx`, no env var gates it. Plausible was removed on 2026-08-05: it was only ever loaded when `VITE_PLAUSIBLE_DOMAIN` was set, that variable was never set in any environment, and every event above silently no-opped from the day it was written until this change.
+## Event rules
 
-## Acquisition loops (priority)
+- Add an event only when it changes a decision.
+- Use stable snake-case names and documented properties.
+- Do not send script text, questions, emails, tokens, provider errors containing secrets, or sensitive profile data.
+- Distinguish intent, start, completion, and failure.
+- Record pundit, surface, and coverage date when the product contract needs attribution.
+- Update this table in the same change as event code.
 
-### 1. Per-episode share link (roadmap, biggest unlock)
-`/episode/{id}`, page that auto-plays the recap, has a custom OG image with the scoreline, and a strong "get tomorrow's at 7am" CTA. The viral loop is *not* the app, it's the share of a specific match someone wants their friend to hear about.
+## Growth loops
 
-### 2. PWA install prompt
-After the user's second visit and second completed listen, surface an install card. Don't ask earlier; the user hasn't decided yet.
+### Prediction to receipt
 
-### 3. Push as a re-engagement loop
-A signed-in user who never enables push will churn. Surface the opt-in prompt:
-- On the second morning they visit
-- After they hit follow on a team
-- On Settings as a card, not buried
+Publish a falsifiable claim before kickoff, then send users back to a plain settlement. This loop compounds authority because wrong calls remain visible.
 
-Never auto-trigger the browser prompt, that's an instant block. Use a custom card → then trigger.
+### Portable insight
 
-### 4. Referral (later)
-"Send a friend tomorrow's drop." Generates a unique link that pre-follows the sender's teams. Easy to build once accounts are sticky.
+Turn one approved concept or line into a share card linked to its evidence and full edition. The share should teach something even if the recipient never installs the app.
 
-## Retention levers
+### Pundit comparison
 
-| Lever | Owner |
-|---|---|
-| Morning push reliability (must hit ≥99% of subs) | Ops (`06-ops.md`) |
-| Recap quality (no hallucinations, no awkward TTS) | Pipeline (`05-content-safety.md`) |
-| Personalised lead (their team first) | Feed function (`src/lib/api/feed.functions.ts`) |
-| Speed (TTFB < 800ms on mobile 4G) | Frontend (`02-developer.md`) |
+Let users compare two editions grounded in the same match. The useful social question is which interpretation was stronger, not which synthetic voice was louder.
 
-A drop in completed-listens almost always traces to one of these four. Diagnose in order.
+### Morning habit
+
+Once daily reliability is proven, use opt-in push at the listener's relevant morning. Never trigger the browser permission prompt on first contact.
+
+### Reporter feed to web
+
+Podcast directories carry the Reporter. The close and description route listeners to the web for other minds, receipts, and comparison.
 
 ## Experiment policy
 
-- One change at a time.
-- Minimum sample: 1,000 unique users or 7 days, whichever longer.
-- Pre-register what would make the change permanent.
-- Negative results count. Log all experiments in `12-roadmap.md` decision log.
+1. State the decision the experiment will inform.
+2. Pre-register primary metric, guardrails, audience, duration, and stopping rule.
+3. Change one material variable at a time.
+4. Require at least seven days and a sample sized for the expected effect; do not treat `1,000 users` as universally sufficient.
+5. Segment by new/returning listener, pundit, source, device, and coverage quality where relevant.
+6. Record negative and inconclusive results.
+7. Stop an experiment immediately if factual, safety, accessibility, privacy, or billing guardrails fail.
 
-## Things we will not A/B test
-
-- AI disclosure copy / removal of disclosure.
-- The brand colour, mark, or wordmark.
-- The 60-second target length (changing this is a product decision, not a test).
-- Whether to add a paywall.
+Never test removal of AI disclosure, weaker evidence gates, hidden wrong receipts, unsupported urgency, dark-pattern consent, or payment before legal approval.

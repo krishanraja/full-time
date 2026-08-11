@@ -1,12 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, ListMusic, Library, Heart, Settings as Cog } from "lucide-react";
+import { Home, ListMusic, ReceiptText, Heart, Settings as Cog } from "lucide-react";
 import { haptic } from "../lib/haptics";
 import { cn } from "../lib/utils";
 
 const ITEMS = [
   { to: "/", label: "Today", Icon: Home },
   { to: "/feed", label: "Feed", Icon: ListMusic },
-  { to: "/archive", label: "Archive", Icon: Library },
+  { to: "/receipts", label: "Receipts", Icon: ReceiptText },
   { to: "/following", label: "Following", Icon: Heart },
   { to: "/settings", label: "Settings", Icon: Cog },
 ] as const;
@@ -16,7 +16,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 backdrop-blur-xl"
+      className="fixed inset-x-0 bottom-0 z-40 backdrop-blur-xl md:hidden"
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
         background:

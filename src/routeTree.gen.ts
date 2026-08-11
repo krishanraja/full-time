@@ -9,62 +9,41 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WaitlistRouteImport } from './routes/waitlist'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as ProRouteImport } from './routes/pro'
-import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
-import { Route as FollowingRouteImport } from './routes/following'
-import { Route as FeedRouteImport } from './routes/feed'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as LegalTermsRouteImport } from './routes/legal.terms'
-import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
+import { Route as ArchiveRouteImport } from './routes/archive'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as FeedRouteImport } from './routes/feed'
+import { Route as FollowingRouteImport } from './routes/following'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
+import { Route as ProRouteImport } from './routes/pro'
+import { Route as ReceiptsRouteImport } from './routes/receipts'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as WaitlistRouteImport } from './routes/waitlist'
 import { Route as EpisodeIdRouteImport } from './routes/episode.$id'
-import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
+import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
+import { Route as LegalTermsRouteImport } from './routes/legal.terms'
+import { Route as ApiInternalDailyRehearsalRouteImport } from './routes/api/internal/daily-rehearsal'
+import { Route as ApiInternalEvaluationCorpusRouteImport } from './routes/api/internal/evaluation-corpus'
+import { Route as ApiInternalEvaluationRunRouteImport } from './routes/api/internal/evaluation-run'
+import { Route as ApiInternalForecastTrainRouteImport } from './routes/api/internal/forecast-train'
+import { Route as ApiInternalPredictionsRegisterRouteImport } from './routes/api/internal/predictions-register'
+import { Route as ApiInternalRehearsalRouteImport } from './routes/api/internal/rehearsal'
+import { Route as ApiInternalReleaseReadinessRouteImport } from './routes/api/internal/release-readiness'
+import { Route as ApiProfilePunditRouteImport } from './routes/api/profile/pundit'
 import { Route as ApiPublicFeedDotrssRouteImport } from './routes/api/public/feed[.]rss'
-import { Route as ApiPublicCronIngestRouteImport } from './routes/api/public/cron.ingest'
+import { Route as ApiPublicPunditsRouteImport } from './routes/api/public/pundits'
+import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
 import { Route as ApiPublicCronDailyDropRouteImport } from './routes/api/public/cron.daily-drop'
+import { Route as ApiPublicCronIngestRouteImport } from './routes/api/public/cron.ingest'
+import { Route as ApiPublicDropsTodayRouteImport } from './routes/api/public/drops.today'
+import { Route as ApiPublicPunditsIdPredictionsRouteImport } from './routes/api/public/pundits.$id.predictions'
+import { Route as ApiPublicPunditsIdReceiptsRouteImport } from './routes/api/public/pundits.$id.receipts'
+import { Route as ApiPublicDropsIdVariantsPunditRouteImport } from './routes/api/public/drops.$id.variants.$pundit'
 
-const WaitlistRoute = WaitlistRouteImport.update({
-  id: '/waitlist',
-  path: '/waitlist',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProRoute = ProRouteImport.update({
-  id: '/pro',
-  path: '/pro',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
-  id: '/llms.txt',
-  path: '/llms.txt',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FollowingRoute = FollowingRouteImport.update({
-  id: '/following',
-  path: '/following',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeedRoute = FeedRouteImport.update({
-  id: '/feed',
-  path: '/feed',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ArchiveRoute = ArchiveRouteImport.update({
@@ -72,19 +51,49 @@ const ArchiveRoute = ArchiveRouteImport.update({
   path: '/archive',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LegalTermsRoute = LegalTermsRouteImport.update({
-  id: '/legal/terms',
-  path: '/legal/terms',
+const FeedRoute = FeedRouteImport.update({
+  id: '/feed',
+  path: '/feed',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
-  id: '/legal/privacy',
-  path: '/legal/privacy',
+const FollowingRoute = FollowingRouteImport.update({
+  id: '/following',
+  path: '/following',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProRoute = ProRouteImport.update({
+  id: '/pro',
+  path: '/pro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReceiptsRoute = ReceiptsRouteImport.update({
+  id: '/receipts',
+  path: '/receipts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WaitlistRoute = WaitlistRouteImport.update({
+  id: '/waitlist',
+  path: '/waitlist',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EpisodeIdRoute = EpisodeIdRouteImport.update({
@@ -92,9 +101,60 @@ const EpisodeIdRoute = EpisodeIdRouteImport.update({
   path: '/episode/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
-  id: '/api/stripe/webhook',
-  path: '/api/stripe/webhook',
+const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
+  id: '/legal/privacy',
+  path: '/legal/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalTermsRoute = LegalTermsRouteImport.update({
+  id: '/legal/terms',
+  path: '/legal/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInternalDailyRehearsalRoute =
+  ApiInternalDailyRehearsalRouteImport.update({
+    id: '/api/internal/daily-rehearsal',
+    path: '/api/internal/daily-rehearsal',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiInternalEvaluationCorpusRoute =
+  ApiInternalEvaluationCorpusRouteImport.update({
+    id: '/api/internal/evaluation-corpus',
+    path: '/api/internal/evaluation-corpus',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiInternalEvaluationRunRoute =
+  ApiInternalEvaluationRunRouteImport.update({
+    id: '/api/internal/evaluation-run',
+    path: '/api/internal/evaluation-run',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiInternalForecastTrainRoute =
+  ApiInternalForecastTrainRouteImport.update({
+    id: '/api/internal/forecast-train',
+    path: '/api/internal/forecast-train',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiInternalPredictionsRegisterRoute =
+  ApiInternalPredictionsRegisterRouteImport.update({
+    id: '/api/internal/predictions-register',
+    path: '/api/internal/predictions-register',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiInternalRehearsalRoute = ApiInternalRehearsalRouteImport.update({
+  id: '/api/internal/rehearsal',
+  path: '/api/internal/rehearsal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInternalReleaseReadinessRoute =
+  ApiInternalReleaseReadinessRouteImport.update({
+    id: '/api/internal/release-readiness',
+    path: '/api/internal/release-readiness',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiProfilePunditRoute = ApiProfilePunditRouteImport.update({
+  id: '/api/profile/pundit',
+  path: '/api/profile/pundit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicFeedDotrssRoute = ApiPublicFeedDotrssRouteImport.update({
@@ -102,9 +162,14 @@ const ApiPublicFeedDotrssRoute = ApiPublicFeedDotrssRouteImport.update({
   path: '/api/public/feed.rss',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicCronIngestRoute = ApiPublicCronIngestRouteImport.update({
-  id: '/api/public/cron/ingest',
-  path: '/api/public/cron/ingest',
+const ApiPublicPunditsRoute = ApiPublicPunditsRouteImport.update({
+  id: '/api/public/pundits',
+  path: '/api/public/pundits',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+  id: '/api/stripe/webhook',
+  path: '/api/stripe/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicCronDailyDropRoute = ApiPublicCronDailyDropRouteImport.update({
@@ -112,6 +177,34 @@ const ApiPublicCronDailyDropRoute = ApiPublicCronDailyDropRouteImport.update({
   path: '/api/public/cron/daily-drop',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCronIngestRoute = ApiPublicCronIngestRouteImport.update({
+  id: '/api/public/cron/ingest',
+  path: '/api/public/cron/ingest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicDropsTodayRoute = ApiPublicDropsTodayRouteImport.update({
+  id: '/api/public/drops/today',
+  path: '/api/public/drops/today',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPunditsIdPredictionsRoute =
+  ApiPublicPunditsIdPredictionsRouteImport.update({
+    id: '/$id/predictions',
+    path: '/$id/predictions',
+    getParentRoute: () => ApiPublicPunditsRoute,
+  } as any)
+const ApiPublicPunditsIdReceiptsRoute =
+  ApiPublicPunditsIdReceiptsRouteImport.update({
+    id: '/$id/receipts',
+    path: '/$id/receipts',
+    getParentRoute: () => ApiPublicPunditsRoute,
+  } as any)
+const ApiPublicDropsIdVariantsPunditRoute =
+  ApiPublicDropsIdVariantsPunditRouteImport.update({
+    id: '/api/public/drops/$id/variants/$pundit',
+    path: '/api/public/drops/$id/variants/$pundit',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -121,16 +214,30 @@ export interface FileRoutesByFullPath {
   '/following': typeof FollowingRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/pro': typeof ProRoute
+  '/receipts': typeof ReceiptsRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/waitlist': typeof WaitlistRoute
   '/episode/$id': typeof EpisodeIdRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/api/internal/daily-rehearsal': typeof ApiInternalDailyRehearsalRoute
+  '/api/internal/evaluation-corpus': typeof ApiInternalEvaluationCorpusRoute
+  '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
+  '/api/internal/forecast-train': typeof ApiInternalForecastTrainRoute
+  '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
+  '/api/internal/rehearsal': typeof ApiInternalRehearsalRoute
+  '/api/internal/release-readiness': typeof ApiInternalReleaseReadinessRoute
+  '/api/profile/pundit': typeof ApiProfilePunditRoute
   '/api/public/feed.rss': typeof ApiPublicFeedDotrssRoute
+  '/api/public/pundits': typeof ApiPublicPunditsRouteWithChildren
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
   '/api/public/cron/ingest': typeof ApiPublicCronIngestRoute
+  '/api/public/drops/today': typeof ApiPublicDropsTodayRoute
+  '/api/public/pundits/$id/predictions': typeof ApiPublicPunditsIdPredictionsRoute
+  '/api/public/pundits/$id/receipts': typeof ApiPublicPunditsIdReceiptsRoute
+  '/api/public/drops/$id/variants/$pundit': typeof ApiPublicDropsIdVariantsPunditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -140,16 +247,30 @@ export interface FileRoutesByTo {
   '/following': typeof FollowingRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/pro': typeof ProRoute
+  '/receipts': typeof ReceiptsRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/waitlist': typeof WaitlistRoute
   '/episode/$id': typeof EpisodeIdRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/api/internal/daily-rehearsal': typeof ApiInternalDailyRehearsalRoute
+  '/api/internal/evaluation-corpus': typeof ApiInternalEvaluationCorpusRoute
+  '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
+  '/api/internal/forecast-train': typeof ApiInternalForecastTrainRoute
+  '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
+  '/api/internal/rehearsal': typeof ApiInternalRehearsalRoute
+  '/api/internal/release-readiness': typeof ApiInternalReleaseReadinessRoute
+  '/api/profile/pundit': typeof ApiProfilePunditRoute
   '/api/public/feed.rss': typeof ApiPublicFeedDotrssRoute
+  '/api/public/pundits': typeof ApiPublicPunditsRouteWithChildren
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
   '/api/public/cron/ingest': typeof ApiPublicCronIngestRoute
+  '/api/public/drops/today': typeof ApiPublicDropsTodayRoute
+  '/api/public/pundits/$id/predictions': typeof ApiPublicPunditsIdPredictionsRoute
+  '/api/public/pundits/$id/receipts': typeof ApiPublicPunditsIdReceiptsRoute
+  '/api/public/drops/$id/variants/$pundit': typeof ApiPublicDropsIdVariantsPunditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -160,16 +281,30 @@ export interface FileRoutesById {
   '/following': typeof FollowingRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/pro': typeof ProRoute
+  '/receipts': typeof ReceiptsRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/waitlist': typeof WaitlistRoute
   '/episode/$id': typeof EpisodeIdRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/api/internal/daily-rehearsal': typeof ApiInternalDailyRehearsalRoute
+  '/api/internal/evaluation-corpus': typeof ApiInternalEvaluationCorpusRoute
+  '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
+  '/api/internal/forecast-train': typeof ApiInternalForecastTrainRoute
+  '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
+  '/api/internal/rehearsal': typeof ApiInternalRehearsalRoute
+  '/api/internal/release-readiness': typeof ApiInternalReleaseReadinessRoute
+  '/api/profile/pundit': typeof ApiProfilePunditRoute
   '/api/public/feed.rss': typeof ApiPublicFeedDotrssRoute
+  '/api/public/pundits': typeof ApiPublicPunditsRouteWithChildren
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/public/cron/daily-drop': typeof ApiPublicCronDailyDropRoute
   '/api/public/cron/ingest': typeof ApiPublicCronIngestRoute
+  '/api/public/drops/today': typeof ApiPublicDropsTodayRoute
+  '/api/public/pundits/$id/predictions': typeof ApiPublicPunditsIdPredictionsRoute
+  '/api/public/pundits/$id/receipts': typeof ApiPublicPunditsIdReceiptsRoute
+  '/api/public/drops/$id/variants/$pundit': typeof ApiPublicDropsIdVariantsPunditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -181,16 +316,30 @@ export interface FileRouteTypes {
     | '/following'
     | '/llms.txt'
     | '/pro'
+    | '/receipts'
     | '/settings'
     | '/sitemap.xml'
     | '/waitlist'
     | '/episode/$id'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/api/internal/daily-rehearsal'
+    | '/api/internal/evaluation-corpus'
+    | '/api/internal/evaluation-run'
+    | '/api/internal/forecast-train'
+    | '/api/internal/predictions-register'
+    | '/api/internal/rehearsal'
+    | '/api/internal/release-readiness'
+    | '/api/profile/pundit'
     | '/api/public/feed.rss'
+    | '/api/public/pundits'
     | '/api/stripe/webhook'
     | '/api/public/cron/daily-drop'
     | '/api/public/cron/ingest'
+    | '/api/public/drops/today'
+    | '/api/public/pundits/$id/predictions'
+    | '/api/public/pundits/$id/receipts'
+    | '/api/public/drops/$id/variants/$pundit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -200,16 +349,30 @@ export interface FileRouteTypes {
     | '/following'
     | '/llms.txt'
     | '/pro'
+    | '/receipts'
     | '/settings'
     | '/sitemap.xml'
     | '/waitlist'
     | '/episode/$id'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/api/internal/daily-rehearsal'
+    | '/api/internal/evaluation-corpus'
+    | '/api/internal/evaluation-run'
+    | '/api/internal/forecast-train'
+    | '/api/internal/predictions-register'
+    | '/api/internal/rehearsal'
+    | '/api/internal/release-readiness'
+    | '/api/profile/pundit'
     | '/api/public/feed.rss'
+    | '/api/public/pundits'
     | '/api/stripe/webhook'
     | '/api/public/cron/daily-drop'
     | '/api/public/cron/ingest'
+    | '/api/public/drops/today'
+    | '/api/public/pundits/$id/predictions'
+    | '/api/public/pundits/$id/receipts'
+    | '/api/public/drops/$id/variants/$pundit'
   id:
     | '__root__'
     | '/'
@@ -219,16 +382,30 @@ export interface FileRouteTypes {
     | '/following'
     | '/llms.txt'
     | '/pro'
+    | '/receipts'
     | '/settings'
     | '/sitemap.xml'
     | '/waitlist'
     | '/episode/$id'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/api/internal/daily-rehearsal'
+    | '/api/internal/evaluation-corpus'
+    | '/api/internal/evaluation-run'
+    | '/api/internal/forecast-train'
+    | '/api/internal/predictions-register'
+    | '/api/internal/rehearsal'
+    | '/api/internal/release-readiness'
+    | '/api/profile/pundit'
     | '/api/public/feed.rss'
+    | '/api/public/pundits'
     | '/api/stripe/webhook'
     | '/api/public/cron/daily-drop'
     | '/api/public/cron/ingest'
+    | '/api/public/drops/today'
+    | '/api/public/pundits/$id/predictions'
+    | '/api/public/pundits/$id/receipts'
+    | '/api/public/drops/$id/variants/$pundit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -239,74 +416,37 @@ export interface RootRouteChildren {
   FollowingRoute: typeof FollowingRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   ProRoute: typeof ProRoute
+  ReceiptsRoute: typeof ReceiptsRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WaitlistRoute: typeof WaitlistRoute
   EpisodeIdRoute: typeof EpisodeIdRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
   LegalTermsRoute: typeof LegalTermsRoute
+  ApiInternalDailyRehearsalRoute: typeof ApiInternalDailyRehearsalRoute
+  ApiInternalEvaluationCorpusRoute: typeof ApiInternalEvaluationCorpusRoute
+  ApiInternalEvaluationRunRoute: typeof ApiInternalEvaluationRunRoute
+  ApiInternalForecastTrainRoute: typeof ApiInternalForecastTrainRoute
+  ApiInternalPredictionsRegisterRoute: typeof ApiInternalPredictionsRegisterRoute
+  ApiInternalRehearsalRoute: typeof ApiInternalRehearsalRoute
+  ApiInternalReleaseReadinessRoute: typeof ApiInternalReleaseReadinessRoute
+  ApiProfilePunditRoute: typeof ApiProfilePunditRoute
   ApiPublicFeedDotrssRoute: typeof ApiPublicFeedDotrssRoute
+  ApiPublicPunditsRoute: typeof ApiPublicPunditsRouteWithChildren
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiPublicCronDailyDropRoute: typeof ApiPublicCronDailyDropRoute
   ApiPublicCronIngestRoute: typeof ApiPublicCronIngestRoute
+  ApiPublicDropsTodayRoute: typeof ApiPublicDropsTodayRoute
+  ApiPublicDropsIdVariantsPunditRoute: typeof ApiPublicDropsIdVariantsPunditRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/waitlist': {
-      id: '/waitlist'
-      path: '/waitlist'
-      fullPath: '/waitlist'
-      preLoaderRoute: typeof WaitlistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pro': {
-      id: '/pro'
-      path: '/pro'
-      fullPath: '/pro'
-      preLoaderRoute: typeof ProRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/llms.txt': {
-      id: '/llms.txt'
-      path: '/llms.txt'
-      fullPath: '/llms.txt'
-      preLoaderRoute: typeof LlmsDottxtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/following': {
-      id: '/following'
-      path: '/following'
-      fullPath: '/following'
-      preLoaderRoute: typeof FollowingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/feed': {
-      id: '/feed'
-      path: '/feed'
-      fullPath: '/feed'
-      preLoaderRoute: typeof FeedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/archive': {
@@ -316,25 +456,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArchiveRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/legal/terms': {
-      id: '/legal/terms'
-      path: '/legal/terms'
-      fullPath: '/legal/terms'
-      preLoaderRoute: typeof LegalTermsRouteImport
+    '/feed': {
+      id: '/feed'
+      path: '/feed'
+      fullPath: '/feed'
+      preLoaderRoute: typeof FeedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/legal/privacy': {
-      id: '/legal/privacy'
-      path: '/legal/privacy'
-      fullPath: '/legal/privacy'
-      preLoaderRoute: typeof LegalPrivacyRouteImport
+    '/following': {
+      id: '/following'
+      path: '/following'
+      fullPath: '/following'
+      preLoaderRoute: typeof FollowingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pro': {
+      id: '/pro'
+      path: '/pro'
+      fullPath: '/pro'
+      preLoaderRoute: typeof ProRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/receipts': {
+      id: '/receipts'
+      path: '/receipts'
+      fullPath: '/receipts'
+      preLoaderRoute: typeof ReceiptsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/waitlist': {
+      id: '/waitlist'
+      path: '/waitlist'
+      fullPath: '/waitlist'
+      preLoaderRoute: typeof WaitlistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/episode/$id': {
@@ -344,11 +526,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EpisodeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/stripe/webhook': {
-      id: '/api/stripe/webhook'
-      path: '/api/stripe/webhook'
-      fullPath: '/api/stripe/webhook'
-      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+    '/legal/privacy': {
+      id: '/legal/privacy'
+      path: '/legal/privacy'
+      fullPath: '/legal/privacy'
+      preLoaderRoute: typeof LegalPrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/terms': {
+      id: '/legal/terms'
+      path: '/legal/terms'
+      fullPath: '/legal/terms'
+      preLoaderRoute: typeof LegalTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/daily-rehearsal': {
+      id: '/api/internal/daily-rehearsal'
+      path: '/api/internal/daily-rehearsal'
+      fullPath: '/api/internal/daily-rehearsal'
+      preLoaderRoute: typeof ApiInternalDailyRehearsalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/evaluation-corpus': {
+      id: '/api/internal/evaluation-corpus'
+      path: '/api/internal/evaluation-corpus'
+      fullPath: '/api/internal/evaluation-corpus'
+      preLoaderRoute: typeof ApiInternalEvaluationCorpusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/evaluation-run': {
+      id: '/api/internal/evaluation-run'
+      path: '/api/internal/evaluation-run'
+      fullPath: '/api/internal/evaluation-run'
+      preLoaderRoute: typeof ApiInternalEvaluationRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/forecast-train': {
+      id: '/api/internal/forecast-train'
+      path: '/api/internal/forecast-train'
+      fullPath: '/api/internal/forecast-train'
+      preLoaderRoute: typeof ApiInternalForecastTrainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/predictions-register': {
+      id: '/api/internal/predictions-register'
+      path: '/api/internal/predictions-register'
+      fullPath: '/api/internal/predictions-register'
+      preLoaderRoute: typeof ApiInternalPredictionsRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/rehearsal': {
+      id: '/api/internal/rehearsal'
+      path: '/api/internal/rehearsal'
+      fullPath: '/api/internal/rehearsal'
+      preLoaderRoute: typeof ApiInternalRehearsalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/release-readiness': {
+      id: '/api/internal/release-readiness'
+      path: '/api/internal/release-readiness'
+      fullPath: '/api/internal/release-readiness'
+      preLoaderRoute: typeof ApiInternalReleaseReadinessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/profile/pundit': {
+      id: '/api/profile/pundit'
+      path: '/api/profile/pundit'
+      fullPath: '/api/profile/pundit'
+      preLoaderRoute: typeof ApiProfilePunditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/feed.rss': {
@@ -358,11 +603,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFeedDotrssRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/ingest': {
-      id: '/api/public/cron/ingest'
-      path: '/api/public/cron/ingest'
-      fullPath: '/api/public/cron/ingest'
-      preLoaderRoute: typeof ApiPublicCronIngestRouteImport
+    '/api/public/pundits': {
+      id: '/api/public/pundits'
+      path: '/api/public/pundits'
+      fullPath: '/api/public/pundits'
+      preLoaderRoute: typeof ApiPublicPunditsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stripe/webhook': {
+      id: '/api/stripe/webhook'
+      path: '/api/stripe/webhook'
+      fullPath: '/api/stripe/webhook'
+      preLoaderRoute: typeof ApiStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/cron/daily-drop': {
@@ -372,8 +624,56 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronDailyDropRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/ingest': {
+      id: '/api/public/cron/ingest'
+      path: '/api/public/cron/ingest'
+      fullPath: '/api/public/cron/ingest'
+      preLoaderRoute: typeof ApiPublicCronIngestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/drops/today': {
+      id: '/api/public/drops/today'
+      path: '/api/public/drops/today'
+      fullPath: '/api/public/drops/today'
+      preLoaderRoute: typeof ApiPublicDropsTodayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/pundits/$id/predictions': {
+      id: '/api/public/pundits/$id/predictions'
+      path: '/$id/predictions'
+      fullPath: '/api/public/pundits/$id/predictions'
+      preLoaderRoute: typeof ApiPublicPunditsIdPredictionsRouteImport
+      parentRoute: typeof ApiPublicPunditsRoute
+    }
+    '/api/public/pundits/$id/receipts': {
+      id: '/api/public/pundits/$id/receipts'
+      path: '/$id/receipts'
+      fullPath: '/api/public/pundits/$id/receipts'
+      preLoaderRoute: typeof ApiPublicPunditsIdReceiptsRouteImport
+      parentRoute: typeof ApiPublicPunditsRoute
+    }
+    '/api/public/drops/$id/variants/$pundit': {
+      id: '/api/public/drops/$id/variants/$pundit'
+      path: '/api/public/drops/$id/variants/$pundit'
+      fullPath: '/api/public/drops/$id/variants/$pundit'
+      preLoaderRoute: typeof ApiPublicDropsIdVariantsPunditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
+
+interface ApiPublicPunditsRouteChildren {
+  ApiPublicPunditsIdPredictionsRoute: typeof ApiPublicPunditsIdPredictionsRoute
+  ApiPublicPunditsIdReceiptsRoute: typeof ApiPublicPunditsIdReceiptsRoute
+}
+
+const ApiPublicPunditsRouteChildren: ApiPublicPunditsRouteChildren = {
+  ApiPublicPunditsIdPredictionsRoute: ApiPublicPunditsIdPredictionsRoute,
+  ApiPublicPunditsIdReceiptsRoute: ApiPublicPunditsIdReceiptsRoute,
+}
+
+const ApiPublicPunditsRouteWithChildren =
+  ApiPublicPunditsRoute._addFileChildren(ApiPublicPunditsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -383,16 +683,28 @@ const rootRouteChildren: RootRouteChildren = {
   FollowingRoute: FollowingRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
   ProRoute: ProRoute,
+  ReceiptsRoute: ReceiptsRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WaitlistRoute: WaitlistRoute,
   EpisodeIdRoute: EpisodeIdRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
   LegalTermsRoute: LegalTermsRoute,
+  ApiInternalDailyRehearsalRoute: ApiInternalDailyRehearsalRoute,
+  ApiInternalEvaluationCorpusRoute: ApiInternalEvaluationCorpusRoute,
+  ApiInternalEvaluationRunRoute: ApiInternalEvaluationRunRoute,
+  ApiInternalForecastTrainRoute: ApiInternalForecastTrainRoute,
+  ApiInternalPredictionsRegisterRoute: ApiInternalPredictionsRegisterRoute,
+  ApiInternalRehearsalRoute: ApiInternalRehearsalRoute,
+  ApiInternalReleaseReadinessRoute: ApiInternalReleaseReadinessRoute,
+  ApiProfilePunditRoute: ApiProfilePunditRoute,
   ApiPublicFeedDotrssRoute: ApiPublicFeedDotrssRoute,
+  ApiPublicPunditsRoute: ApiPublicPunditsRouteWithChildren,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiPublicCronDailyDropRoute: ApiPublicCronDailyDropRoute,
   ApiPublicCronIngestRoute: ApiPublicCronIngestRoute,
+  ApiPublicDropsTodayRoute: ApiPublicDropsTodayRoute,
+  ApiPublicDropsIdVariantsPunditRoute: ApiPublicDropsIdVariantsPunditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

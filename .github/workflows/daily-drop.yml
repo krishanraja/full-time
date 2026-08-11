@@ -1,9 +1,6 @@
-name: Full Time — Daily Drop
+name: Full Time - Manual Daily Drop Recovery
 
 on:
-  schedule:
-    # 06:30 UTC daily. GitHub cron is best-effort; expect ±10 min.
-    - cron: "30 6 * * *"
   workflow_dispatch:
 
 jobs:
@@ -14,7 +11,7 @@ jobs:
         run: |
           set -euo pipefail
           curl --fail --silent --show-error \
-            -X POST "$FULL_TIME_URL/api/public/cron/daily-drop" \
+            -X POST "$FULL_TIME_URL/api/internal/daily-rehearsal" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $CRON_SECRET" \
             -d '{}'

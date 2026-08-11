@@ -5,7 +5,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 // Anonymous-friendly; falls back to anon insert with NULL user_id.
 export const recordListen = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ episodeId: z.string().uuid(), completed: z.boolean() }))
+  .validator(z.object({ episodeId: z.string().uuid(), completed: z.boolean() }))
   .handler(async ({ data }) => {
     const sb = createClient<Database>(
       process.env.SUPABASE_URL!,
@@ -16,7 +16,7 @@ export const recordListen = createServerFn({ method: "POST" })
       .from("listens")
       .insert({ episode_id: data.episodeId, completed: data.completed });
     if (error) {
-      // Non-fatal — analytics should never break playback
+      // Non-fatal. Analytics should never break playback.
       console.warn("[listens] insert failed", error.message);
     }
     return { ok: true };

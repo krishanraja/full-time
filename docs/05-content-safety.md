@@ -1,139 +1,148 @@
-# 05 · Content Safety
+# 05 - Editorial quality and content safety
 
-**Role:** Developer, product, legal, anyone touching the generation pipeline or considering loosening a constraint.
-**Read this when:** changing the writer prompt, the deterministic code gate, the contradiction judge, the regen / fail-closed policy, the voice, or the AI disclosure copy.
-**Don't read this when:** you only need user-facing FAQ (→ `10-support.md`).
+- **Status:** Current and binding
+- **Owner:** Editorial, product, engineering, and legal
+- **Purpose:** Define what Full Time may claim, how humour works, what blocks publication, and how incidents are handled.
+- **Last reviewed:** 2026-08-10
 
----
+## Core rule
 
-## Why this matters
+Full Time can be bold about judgments only because it is strict about facts.
 
-We narrate football. Football media is full of three things we must never do:
+> Facts are closed-world and verified. Interpretations may differ. Predictions are timestamped. Mistakes are acknowledged plainly.
 
-1. **Hallucinated facts:** invented goals, scorers, minutes, the wrong winner, the wrong scoreline, a goal credited to the wrong team.
-2. **Real-broadcaster impressions:** imitating named commentators is an IP and trust hazard.
-3. **Adjacent harms:** transfer rumours, injury speculation, betting language, political takes, slurs, mockery of a club, player, or manager.
+The system publishes nothing rather than publish a factual error, unsupported tactical claim, unlicensed entity or number, unsafe joke, copied expression, broken narration, or evasive receipt.
 
-Any of these in production is a brand-ending event. Treat this file as the binding constraint, not a guideline.
+## Evidence licensing
 
-## Accuracy by construction
+Every factual or analytical statement points to evidence IDs. A claim is rejected before prose if it:
 
-The old path (Lovable AI Gateway, Gemini flash, a single banned-words regex) is gone. It was fact-starved: it asked the model to stay truthful and hoped it would. A prompt instruction is not a guarantee.
+- has no evidence reference;
+- is stronger than its evidence;
+- needs film, tracking, reporting, or private context that is absent;
+- turns correlation into intent;
+- uses a number, entity, score state, or consequence outside the licensed pack;
+- treats a good outcome as proof of a good decision;
+- presents an unfalsifiable counterfactual or prediction;
+- hides missing evidence that would materially change the judgment.
 
-The engine now guarantees the result **by construction**, and it is **fail-closed**: it publishes no episode rather than a wrong one. Five stages, in order:
+Structured match data may support recorded events, statistics, game state, variance, and calibrated expectations. It does not prove pressing shapes, spacing, body position, coaching intent, confidence, effort, leadership, or dressing-room politics.
 
-1. **Deterministic fact-pack** (code, not the model) built from `match_events` and `match_stats`.
-2. **Opus writer** conditioned on the voice corpus, writing prose only.
-3. **Deterministic code gate** that mechanically checks score, scorers, length, repetition, and banned text.
-4. **Sonnet contradiction judge** that flags a wrong winner, wrong score, or a goal credited to the wrong team.
-5. **Fail-closed publish** after up to 5 surgical regens.
+## Claim and script sequence
 
-Then ElevenLabs TTS → Supabase Storage → the `episodes` row.
+1. Code constructs and seals the evidence pack.
+2. The claim laboratory licenses candidate analysis.
+3. Each pundit selects a thesis and states what would change its mind.
+4. A ten-beat outline separates story, evidence, judgment, counterpoint, humour, and prediction.
+5. The writer realizes the approved outline in 750 to 1,100 spoken words.
+6. Hard gates and independent qualitative harnesses review the same candidate.
+7. Only failed beats may change, for at most three rounds.
+8. Persistent safe-but-forgettable output is quarantined.
 
-Lives in `src/lib/api/recap-generator.server.ts` (`generateRecap`) and `src/lib/api/episode-pipeline.functions.ts` (`runEpisodePipeline`). Models are set by `WRITER_MODEL` (default `claude-opus-4-8`) and `JUDGE_MODEL` (default `claude-sonnet-4-6`), with `ANTHROPIC_API_KEY`.
+Independent judges never rewrite the whole script. The showrunner owns repairs so personality does not dissolve through serial rewrites.
 
-**Rule:** any change to the writer prompt, the code gate, or the judge requires:
-1. Updating this file in the same change.
-2. Logging a decision in `12-roadmap.md`.
+## Hard gates
 
-### 1. The deterministic fact-pack
+Any failure blocks publication:
 
-Assembled in code, never by the model. The model cannot introduce a scorer or a score the data does not contain, because it is only ever handed the truth:
+- factual accuracy and licensed entities;
+- score, number, event, attribution, and consequence identity;
+- evidence-to-claim entailment and causal strength;
+- unsupported-tactics and unavailable-context prohibition;
+- outcome-versus-decision separation;
+- falsifier, kickoff timestamp, and settlement-rule validity;
+- research originality and recognizable-imitation prohibition;
+- humour safety;
+- display-script and spoken-script semantic identity;
+- transcription, numerical, pronunciation, and selected-voice fidelity;
+- required asset and publication promises.
 
-- **Running goal log:** each goal in order, with the team it counts for and the score after it. The running score is computed in code (`h`, `a`), not narrated by the model.
-- **Scorer summary by team:** exactly how many goals each side scored and who scored them.
-- **Own-goal and penalty tagging:** an own goal is credited to the other team in code and annotated (the named player put it into his own net). Penalties are tagged.
-- **Cards and red cards:** counted; sendings-off named with minute.
-- **Full-match stats:** possession, shots, shots on target, xG, corners (when `match_stats` exists, else "no detailed stats").
+## Qualitative harnesses
 
-We do **not** pass: rumours, betting lines, player quotes, news headlines, prior commentary, or our own past episodes. The `voice_corpus` (127 rows, service-role only) supplies the persona (`style_rule`) and register examples (`example`); it feeds **voice**, not facts.
+| Dimension                 | Floor | Passing behavior                                    |
+| ------------------------- | ----: | --------------------------------------------------- |
+| Insight                   |   4/5 | Finds a non-obvious, supported implication          |
+| Clarity                   |   4/5 | A casual fan can restate the claim after one listen |
+| Judgment                  |   4/5 | Makes a decision and gives its reason               |
+| Outcome separation        |   4/5 | Separates process from result when relevant         |
+| Probability               |   4/5 | Handles uncertainty and sample size correctly       |
+| Independence              |   4/5 | Does more than repeat consensus                     |
+| Story                     |   4/5 | Has setup, turn, consequence, and close             |
+| Persona                   |   4/5 | Could plausibly come only from the selected pundit  |
+| Humour                    |   3/5 | Earned, original, relevant, and persona-specific    |
+| Memorability              |   4/5 | Leaves one useful line or concept                   |
+| Restraint                 |   4/5 | Stops where the evidence stops                      |
+| Prediction/accountability |   4/5 | Registers or grades a falsifiable thesis plainly    |
 
-### 2. The writer (Opus)
+Scores never average across dimensions. A joke cannot compensate for weak football intelligence.
 
-Conditioned on the fact-pack and the persona, the writer produces prose only and returns JSON (`title`, `script`, `magic_sentence`, `referenced_scorers`, `stated_score`). Its brief in `recap-generator.server.ts` (`WRITER`) carries the safety-relevant rules, reproduced here so changes are reviewed:
+## Humour policy
 
-```
-- 105 to 135 words, one continuous piece.
-- State each fact once. No repeated scoreline, scorer, minute, or stat.
-- ONE angle, the most interesting TRUE one. Do not list multiple stats.
-- Never say a team "scored every goal" / "all the goals" unless the other side scored zero.
-- Never credit a goal to the wrong team. An own goal counts for the OTHER team. A penalty: say so.
-- Stats are full-match unless a minute is given. No invented sweeping claims.
-- Calm, dry, identity-safe: mock the game or the situation, never a club, player, or manager.
-- No exclamation marks. No em dashes (periods and commas). No emoji. Numbers as digits.
-```
+Good humour sharpens the argument. It uses surprise, specificity, timing, relevance, and persona fit.
 
-The writer is told to get the winner and final score exactly right and that it need not mention every goal. Naming only decisive goals is allowed; naming a scorer who did not score is not.
+Allowed targets:
 
-### 3. The deterministic code gate
+- decisions and contradictions;
+- institutions and club PR;
+- match situations and statistical absurdity;
+- rivalry, status, and football culture;
+- the pundit's own habits or analytical limitations.
 
-Runs on every draft. Pure code, no model. All checks must pass:
+Prohibited targets:
 
-| Check | What it enforces |
-|---|---|
-| `score` | `stated_score` equals the real final score `{home}-{away}`. |
-| `goalsConsistent` | Number of goal events equals the sum of the two scores. |
-| `scorers` | Every named scorer is a subset of the real scorers, matched by **diacritic-normalized surname** (so accents and first-name variants do not cause false rejects). |
-| `length_ok` | 90 to 150 words (the writer is asked for 105 to 135). |
-| `no_score_repeat` | The scoreline appears at most once. |
-| `no_minute_repeat` | No minute is stated twice. |
-| `no_every_goal` | No "scored / netted every / all the goals" when both teams scored. |
-| `noDash` | No em dash or en dash. |
-| `noCliche` | None of the banned house cliches: "draw your own conclusions", "not drawing them for you", "table does not ask". |
+- injuries, grief, protected traits, private lives, or mental health;
+- personal humiliation, dehumanization, cruelty, or abuse;
+- unsupported claims about character, effort, confidence, or leadership;
+- recognizable jokes, phrasing, or performance copied from a living pundit or research source.
 
-A failure here is mechanical and specific, so the regen feedback can be surgical (the exact fixed facts, the failing checks, the only scorers that exist).
+The Wind-Up may sting. The Doomer may escalate. Both return immediately to evidence.
 
-### 4. The contradiction judge (Sonnet)
+## Research originality
 
-A second model reads the draft against the correct result and returns a verdict only. It flags a contradiction **only** if the recap states the wrong winner, the wrong final score, or attributes a named goal to the wrong team. It ignores phrasing, observations, vague adjectives, and any goal the recap chooses not to mention. This catches the class of error a regex cannot: a fluent, well-formed script that quietly names the wrong winner.
+NotebookLM and approved video sources are research workbenches, not production writers or match-data sources.
 
-### 5. Fail-closed publish
+- Every research source records permission, allowed use, attribution, approval, and expiry.
+- Only approved `ConceptCard` records enter the corpus.
+- Cards abstract a technique or mechanism; they do not copy source language.
+- Originality checks retain source-language spans so the comparison is auditable.
+- No general YouTube transcript scraper is permitted.
+- Corpus changes trigger the held-out editorial suite.
 
-On any gate failure or judge contradiction, the engine regenerates with the corrective feedback appended, up to **5 attempts**. If no attempt passes both the gate and the judge, `generateRecap` returns `ok: false` and `runEpisodePipeline` **throws**. No episode row is written, no audio is synthesized. The cron logs the failure and moves on; the match is retried on the next run (the pipeline is idempotent and skips matches that already have an episode). We would rather ship nothing for a match than ship a wrong recap.
+## Prediction integrity
 
-## Banned terms and cliches
+- Public predictions lock before kickoff.
+- Every claim includes a measurable rule and falsifier.
+- Settlement uses the registered rule, not a post-match reinterpretation.
+- Wrong predictions remain public.
+- The language gate rejects evasions such as claiming to be right "in principle" after the test failed.
+- `unjudgeable` requires missing settlement evidence, not embarrassment.
 
-The only **deterministic text filters** now live in the code gate (see check `noDash` and `noCliche` above): em / en dashes, and the three named house cliches. Add or change these in the `cc` object in `recap-generator.server.ts`, and log the change here plus in `12-roadmap.md`.
+## Narration integrity
 
-The policy categories we never say aloud (betting, transfer rumours, injury speculation, slurs, broadcaster impressions) are prevented **by construction** rather than by a standalone banned-words regex: the model is only ever handed a structured match fact-pack, so there is no rumour or betting data for it to surface, and the identity-safe voice rules keep it off people. If a category ever needs a hard deterministic block, add a check to the code gate rather than trusting the prompt.
+- Display and spoken scripts must preserve meaning.
+- Code, not the writer, renders allowlisted delivery directions.
+- A transcription outage blocks approval.
+- A missing or unverified proper name blocks the affected narration.
+- Numbers must survive synthesis exactly.
+- Wrong voice, clipped words, repetition, monotone, overacting, misplaced emphasis, and synthesis artifacts trigger quarantine.
+- Full-length samples, not demos alone, determine voice approval.
+- Living-pundit voice cloning or imitation is prohibited.
 
-## What we don't filter (deliberately)
+## User disclosure
 
-- **Player and scorer names.** We name scorers exactly as the source data names them.
-- **Sharp language about performance** ("collapsed", "outplayed", "ragged") grounded in the scoreline. Match reporting needs colour.
-- **Manager names and tactical critique** grounded in the result.
+Public settings and player surfaces must state that scripts are AI-generated from match data, voices are synthetic, and no copyrighted broadcast audio is used. Do not hide or soften that disclosure in an experiment.
 
-The line is identity safety: mock the game or the situation, never a club, player, or manager (writer rule, backed by the judge for factual attribution).
+## Incident response
 
-## Voice / TTS constraints
+If harmful, unsupported, copied, or factually wrong content appears:
 
-- TTS uses one **synthetic** voice: Daniel (`onwK4e9ZLuTAKqWW03F9`), model `eleven_multilingual_v2`, output `mp3_44100_128`. Overridable via `ELEVENLABS_VOICE_ID`; documented changes go in `12-roadmap.md`. Don't change the output format without product sign-off; it affects file size and bandwidth cost.
-- **No cloning of real broadcasters**, even with a licence claim, without legal sign-off.
-- Pundit **selection** is a separate, persona-level choice, not a cloned voice. The free tier gets one pundit ("The Reporter" / `zen`); the other five are Full Time Pro, enforced server-side in `setVoiceStyle` (`src/lib/api/profile.functions.ts`) so a lower tier cannot select them via a direct RPC.
+1. pause release state and disable publication flags;
+2. preserve the drop, variant, evidence pack, claims, harness versions, script, audio, and registered prediction;
+3. quarantine the affected item without substituting another persona;
+4. identify the smallest failed control;
+5. add an adversarial regression case;
+6. rerun the held-out suite and required human review;
+7. publish a correction or receipt when users saw the failure;
+8. resume only after the relevant editorial, legal, and founder sign-offs.
 
-## AI disclosure (user-facing)
-
-The Settings page surfaces:
-
-> Recaps on Full Time are generated by AI from publicly available match data. Voices are synthetic. No copyrighted broadcast audio is used.
-
-Every player surface shows a low-volume `AI · {duration}` tag. Do not hide either. See `11-legal.md` for the legal stance.
-
-## What to do if something slips through
-
-1. Take the offending episode down immediately: delete the `episodes` row and the Storage object at `episodes/YYYY-MM-DD/{matchId}.mp3`. Runbook in `06-ops.md`.
-2. Log the script that produced it in an internal note.
-3. **If it was a wrong fact** (wrong winner, score, or scorer) it means the gate and judge both missed it. That is a fail-closed breach: capture the fact-pack and the script, and tighten the gate check or the judge brief in the same change. Also confirm the source data (`matches`, `match_events`) was correct, because the fact-pack is only as true as the rows.
-4. **If it was banned text** (an em dash or a house cliche) the gate should have caught it; find why the check missed and fix the check.
-5. **If it was a new category** we want blocked deterministically, add a check to the code gate rather than the prompt.
-6. Post a short note on Settings / changelog if the fix is user-visible.
-
-## Things we will not do, even if asked
-
-- "Make it funnier" by loosening the code gate or the contradiction judge, or by weakening the fail-closed rule so borderline drafts still publish.
-- Feed the writer anything beyond the structured match fact-pack (rumours, betting lines, headlines, quotes).
-- Use real broadcaster voices, even with a licence claim, without legal sign-off.
-- Include "what's the betting" type asides.
-- Pipe in rumour news from any RSS / aggregator.
-
-If a stakeholder asks for any of the above, point them at this file.
+Never delete a prediction or receipt to make the record look better.

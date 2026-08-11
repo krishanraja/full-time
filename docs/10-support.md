@@ -1,86 +1,101 @@
-# 10 · Support
+# 10 - Support
 
-**Role:** User-facing support agent, or anyone answering a help request.
-**Read this when:** a user asks a question, reports a bug, or asks to delete their data.
-**Don't read this when:** the issue is an outage, that's ops (`06-ops.md`).
-
----
+- **Status:** Current
+- **Owner:** Support and product
+- **Purpose:** Provide approved user answers, first-line diagnosis, and escalation paths.
+- **Last reviewed:** 2026-08-10
 
 ## Tone
 
-Calm, brief, fan-to-fan. Sign off as "Full Time" not a person. No emoji. Reply in <24h.
+Be calm, brief, and specific. Acknowledge the user's experience before explaining the system. Never blame the model, argue that a wrong output was "technically" correct, or hide behind pre-launch status.
 
-If a user is angry about a wrong recap or a missing match, **acknowledge first, fix second, explain third**. Never argue the model was technically right.
+Sign as **Full Time**. Do not promise a launch date, refund, fix time, coverage expansion, or data deletion completion without the owner who can deliver it.
 
-## Canonical FAQ
+## Canonical answers
 
-> Authoritative copy. If the FAQ on the site ever drifts from this, update the site to match.
+### Where is today's show?
 
-### "Where are today's recaps?"
-Drops at ~07:00 local. If it's after 08:00 and nothing's there, check `/feed` directly. If still empty, please reply, that's an outage, not a content gap.
+Full Time is still in private verification. The home screen shows a genuinely current, fully approved drop or says that none has cleared the gates. It never substitutes archive material and calls it today.
 
-### "Why is my team's match missing?"
-We cover the Big Five (Premier League, La Liga, Serie A, Bundesliga, Ligue 1). Cup matches and lower divisions aren't in v1. If you'd like to see them, reply and tell us which league, we track requests.
+### Why is a match missing?
 
-### "The recap got a fact wrong."
-Apologies, please tell us the match and the line that was wrong. We'll take the recap down, fix the prompt, and credit it in our changelog if it's a pattern.
+The match may be outside the current structured-data coverage, incomplete at ingest, or quarantined because one of the six editions or assets failed. Tell us the teams and date so we can identify which case applies.
 
-### "How is this made?"
-Recaps are written by an AI model (Anthropic's Claude) from publicly available match data (final scores, scorers, minutes, stats), then checked by an automated accuracy pass that blocks the recap if it gets the winner, the score, or a scorer wrong. The voice is synthetic (ElevenLabs). We never use copyrighted broadcast audio. Full disclosure on Settings.
+### Did AI make this?
 
-### "Can I pick a different voice?"
-In Settings → Your pundit. Everyone gets The Reporter and The Gaffer, no account needed (your pick stays on that device). A free account syncs your choice across devices. Full Time Pro adds the other four (The Numbers Guy, The Romantic, The Doomer, The Wind-Up). Distinct per-pundit narration is rolling out.
+Yes. Full Time generates scripts from structured match data, runs deterministic and model-based quality checks, then uses synthetic voices. It does not use broadcast audio or imitate a living pundit. The transcript, evidence boundary, and prediction receipts remain visible.
 
-### "What is the archive / name a game?"
-Signed-in (free), the Archive tab lists every match we hold data for. Anything already narrated plays instantly. Anything with minute-by-minute data can be narrated on the spot: the engine writes it, checks it against the match facts, and only publishes if it can prove it right. That check is why it can refuse ("we could not verify this recap"), and a refusal does not count against your day. Limit: 3 narrations per day on a free account, 25 on Pro, resets midnight UTC.
+### Can I choose another pundit?
 
-### "What is the waitlist?"
-The full app: every matchday narrated and live by 7am local, with the morning push. It switches on when the waitlist proves demand, and we admit the list in join order. Joining is free; the sign-in link is the join. Your place shows on the waitlist page and in Settings.
+Yes. All six are free and selectable without an account. Each has a separate thesis, script, humour system, performance plan, and prediction record. Your local choice is not overwritten by a shared link.
 
-### "How do I get the morning push?"
-Sign in (Settings → "Sync across devices"), then toggle Notifications. Your browser will ask for permission. We send one push per day at the drop time. No marketing pushes, ever.
+### Why does a pundit say the data cannot answer something?
 
-### "I'm not getting push notifications."
-- Check Settings → Notifications is on.
-- Check your browser/OS hasn't muted notifications for the site.
-- Reinstall the PWA (delete from home screen, re-add), old service workers occasionally get stuck.
-- If still broken after that, reply with your OS + browser.
+That is deliberate. Structured data can show recorded events and statistics, but it cannot always show tactical intent, positioning, confidence, or dressing-room context. Full Time would rather name that limit than invent an explanation.
 
-### "I want to delete my account / data."
-Sign out, then email support. We remove your `profiles`, `follows`, `push_subscriptions`, and `listens` rows on request. Reply with the email you signed up with.
+### What is a receipt?
 
-### "Is this free? What's the catch?"
-The daily drop is always free, no ads, no card, and so is the archive. A free account syncs your settings and gives you 3 name-a-game narrations a day. Full Time Pro ($4.99/mo) is optional: it adds the other four pundits and raises that limit to 25. We use only first-party product analytics (PostHog) to see which recaps get listened to.
+A receipt is the settlement of a prediction registered before kickoff. It shows the original claim, test, outcome, and what the pundit got right, wrong, or could not judge.
 
-### "How do I manage or cancel Full Time Pro?"
-Settings shows a Manage billing button when your account holds an active subscription. It opens the secure Stripe portal (update card, cancel any time). Cancelling stops the next renewal; Pro stays active until the end of the period you have already paid for.
+### Is Full Time free?
 
-### "Can I share a recap?"
-Per-episode share links are coming. For now: screenshot the card and tag us on the channel you're sharing to.
+The preview and all six pundits are free. New checkout and paid promotion are disabled. No card is required.
 
-### "Why no comments / community?"
-By design. We're the morning briefing, not a forum. There are great football forums, go there.
+### I already subscribed. How do I cancel?
 
-### "Can I install this as an app?"
-Yes, it's a PWA. On iOS: Share → Add to Home Screen. On Android: the menu offers "Install app" automatically.
+New subscriptions are disabled, but existing subscribers can still open the secure billing portal from Settings to manage or cancel.
 
-### "Can you do my league / women's football / lower divisions?"
-On the roadmap. Tell us which one, we prioritise by request volume.
+### Can I share an edition?
 
-## Common bug reports → first diagnosis
+Approved drops and receipts can be shared with a selected-pundit preview. The link does not change the recipient's saved pundit without confirmation.
 
-| Report | First thing to ask / check |
-|---|---|
-| "App is blank" | What OS / browser? Hard refresh? Cache issue? |
-| "Player won't play" | Is it the seeded demo (simulated audio) or a real recap? |
-| "Score is wrong on the card" | Is the score wrong in `/feed` too? If only on home, frontend bug; if both, data bug. |
-| "Wrong team is leading" | Source data bug, log the match id, escalate to dev |
-| "Audio cuts off" | Likely TTS truncation, log the episode id, escalate |
-| "Sign in link didn't arrive" | Check spam. Try a different email if the first doesn't arrive within 5 min. |
+### Why will the audio not play?
+
+Full Time uses real audio only. If an approved file is missing, blocked, or unavailable, the player shows an error instead of simulating playback. Retry once, then send us the page URL, device, browser, and time.
+
+### Can I install it?
+
+Yes, as a progressive web app. On iOS, use Share then Add to Home Screen. On supported Android browsers, use Install app from the browser menu.
+
+### Why are notifications unavailable?
+
+Morning notifications remain paused during private verification. They will stay disabled until the daily publication system proves reliable.
+
+### Can you add my league?
+
+Tell us the competition. Expansion depends on licensed data, evidence quality, evaluation coverage, and operational capacity, not request volume alone.
+
+### I want my account or data deleted.
+
+Record the authenticated email and forward the request to the privacy owner. Do not ask for passwords or tokens. Confirm receipt promptly; the legal runbook owns identity verification and completion timing.
+
+## First-line diagnosis
+
+| Report                         | Check first                                                    | Escalate with                                   |
+| ------------------------------ | -------------------------------------------------------------- | ----------------------------------------------- |
+| Blank or broken page           | URL, device, browser, hard refresh, screenshot                 | Timestamp and console/request ID if available   |
+| Audio unavailable              | Current approved variant, audio URL, network, browser autoplay | Variant ID, pundit, page, exact message         |
+| Wrong fact                     | Match, exact sentence, transcript and receipt link             | Evidence pack and variant ID                    |
+| Wrong pronunciation            | Entity, time in audio, expected pronunciation                  | Variant ID and lexicon entry                    |
+| Wrong pundit played            | Selected preference, shared-link preview, displayed label      | User state, link, variant ID                    |
+| Stale content labelled current | Coverage date and page                                         | Screenshot, URL, local time zone                |
+| Prediction settlement disputed | Original rule and settlement evidence                          | Prediction ID and cited data                    |
+| Sign-in link missing           | Spam, email typo, wait five minutes                            | Email domain, timestamp, provider logs          |
+| Billing issue                  | Existing subscriber or new checkout attempt                    | User ID and Stripe customer ID, never card data |
+
+## Severity
+
+- **P0:** data exposure, unauthorized charge, widespread outage, or harmful content actively publishing. Pause affected systems and alert founder, engineering, legal, and operations immediately.
+- **P1:** wrong fact, wrong voice, public unsupported claim, broken current drop, or receipt integrity failure. Quarantine and respond the same day.
+- **P2:** isolated playback, auth, preference, pronunciation, or accessibility defect. Triage with reproduction evidence.
+- **P3:** feature request, coverage request, or copy feedback. Record for product review.
 
 ## Escalation
 
-- Safety / hallucination → tag content-safety (`05-content-safety.md`), product, legal.
-- Outage → ops on-call (`06-ops.md`).
-- Press / partnership inquiry via support → forward to BD (`08-sales.md`).
-- Legal / data-deletion request → legal (`11-legal.md`) within 30 days.
+- Editorial, factual, humour, or imitation issue: [`05-content-safety.md`](./05-content-safety.md).
+- Outage, audio, schedule, or deployment: [`06-ops.md`](./06-ops.md).
+- Privacy, takedown, deletion, or billing law: [`11-legal.md`](./11-legal.md).
+- Partnership or press: [`08-sales.md`](./08-sales.md).
+- Product request or doctrine question: [`12-roadmap.md`](./12-roadmap.md).
+
+Preserve the user's words, relevant IDs, timestamp, surface, and exact product state. Never paste secrets or full provider payloads into a ticket.

@@ -36,7 +36,7 @@ export const getWaitlistStatus = createServerFn({ method: "GET" })
 
 export const joinWaitlist = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       source: z.enum(["waitlist_page", "settings", "today", "auth_redirect"]),
     }),

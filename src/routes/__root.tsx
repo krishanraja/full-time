@@ -4,10 +4,12 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { MotionConfig } from "framer-motion";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -16,12 +18,13 @@ import { AppHeader } from "../components/AppHeader";
 import { MiniPlayer } from "../components/MiniPlayer";
 import { CompletionToast } from "../components/CompletionToast";
 import { supabase } from "@/integrations/supabase/client";
+import { hasClientSupabaseConfig } from "@/lib/supabase-availability";
 import { SITE_URL, DEFAULT_COVER_IMAGE_URL } from "@/lib/site-url";
 import { ldJson } from "@/lib/seo";
 
-const SITE_NAME_TITLE = "Full Time - Daily football recaps, narrated";
+const SITE_NAME_TITLE = "Full Time - Six AI football pundits, one accountable morning show";
 const SITE_DESCRIPTION =
-  "Daily AI-narrated football recaps. Big 5 leagues, 60 seconds each. Tap once, listen on the move.";
+  "Choose one of six distinct AI football pundits for evidence-backed analysis, original humour and prediction receipts.";
 
 // Site-wide schema.org graph: the publisher, the website, and the show.
 // Split into three linked nodes because search and answer engines treat the
@@ -198,8 +201,11 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const wideLayout = pathname === "/" || pathname === "/receipts";
 
   useEffect(() => {
+    if (!hasClientSupabaseConfig()) return;
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
@@ -209,14 +215,20 @@ function RootComponent() {
   }, [router, queryClient]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <CompletionToast />
-      <div className="mx-auto min-h-screen w-full max-w-md px-4 pb-[150px]">
-        <AppHeader />
-        <Outlet />
-      </div>
-      <MiniPlayer />
-      <BottomNav />
-    </QueryClientProvider>
+    <MotionConfig reducedMotion="user">
+      <QueryClientProvider client={queryClient}>
+        <CompletionToast />
+        <div
+          className={`mx-auto min-h-screen w-full px-4 pb-[150px] transition-[max-width] md:pb-16 ${
+            wideLayout ? "max-w-5xl" : "max-w-md"
+          }`}
+        >
+          <AppHeader />
+          <Outlet />
+        </div>
+        <MiniPlayer />
+        <BottomNav />
+      </QueryClientProvider>
+    </MotionConfig>
   );
 }

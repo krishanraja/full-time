@@ -17,4 +17,7 @@ export type Episode = {
   homeTeamId?: string | null;
   awayTeamId?: string | null;
   leagueId?: string | null;
+  format?: "match" | "daily";
+  punditName?: string;
+  script?: string;
 };

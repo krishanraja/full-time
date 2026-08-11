@@ -1,4 +1,4 @@
-// Full Time service worker — push delivery only. No app-shell caching;
+// Full Time service worker: push delivery only. No app-shell caching;
 // Lovable previews must always hit the network for the SPA shell.
 
 self.addEventListener("install", (event) => {

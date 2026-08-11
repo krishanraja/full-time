@@ -19,20 +19,35 @@ export function AppHeader() {
     >
       <div className="flex h-14 items-center justify-between px-4">
         <Link to="/" aria-label="Full Time home" className="tap inline-flex items-center gap-2">
-          <img
-            src="/icon-192.png"
-            alt=""
-            aria-hidden
-            className="h-8 w-8"
-            draggable={false}
-          />
+          <img src="/icon-192.png" alt="" aria-hidden className="h-8 w-8" draggable={false} />
           <Wordmark className="h-[22px] w-auto" />
         </Link>
+        <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
+          {[
+            ["/", "Morning"],
+            ["/receipts", "Receipts"],
+            ["/following", "Following"],
+            ["/settings", "Settings"],
+          ].map(([to, label]) => (
+            <Link
+              key={to}
+              to={to}
+              activeOptions={{ exact: to === "/" }}
+              className="inline-flex min-h-11 items-center rounded-full px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-white/[0.04] hover:text-foreground"
+              activeProps={{
+                className:
+                  "inline-flex min-h-11 items-center rounded-full bg-white/[0.06] px-3 py-2 text-xs font-semibold text-foreground",
+              }}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
         {/* Honest, calm status. The product is deliberately the day-after
             moment, not live, so no real-time claim here. */}
         <div className="text-mono inline-flex items-center text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
-          <span className="ml-2">Daily</span>
+          <span className="ml-2">Pre-launch</span>
         </div>
       </div>
       <div className="h-px w-full bg-gradient-to-r from-transparent via-[color:color-mix(in_oklab,var(--lime)_45%,transparent)] to-transparent" />

@@ -1,7 +1,6 @@
-// Real-audio-first player store with simulated-timer fallback when an
-// episode has no audio URL yet (pre-AI-pipeline seed data). MediaSession
-// metadata + action handlers are wired so lock-screen controls work in
-// the installed PWA.
+// Real-audio-only player store. A missing or rejected media source is an
+// explicit listener-visible error. Progress and completion only come from the
+// media element, so silence can never be counted as a listen.
 
 import { useEffect, useSyncExternalStore } from "react";
 import type { Episode } from "../data/mockEpisodes";
@@ -12,13 +11,22 @@ type State = {
   episode: Episode | null;
   isPlaying: boolean;
   progress: number; // 0..1
+  status: "idle" | "loading" | "playing" | "paused" | "error" | "ended";
+  error: string | null;
+  playbackRate: number;
 };
 
-let state: State = { episode: null, isPlaying: false, progress: 0 };
+let state: State = {
+  episode: null,
+  isPlaying: false,
+  progress: 0,
+  status: "idle",
+  error: null,
+  playbackRate: 1,
+};
 const listeners = new Set<() => void>();
 const completedListeners = new Set<(ep: Episode) => void>();
 let audioEl: HTMLAudioElement | null = null;
-let fallbackTimer: ReturnType<typeof setInterval> | null = null;
 // The "drop": a queue the player advances through so listening is continuous
 // and hands-busy, instead of one tap per clip.
 let queue: Episode[] = [];
@@ -49,14 +57,26 @@ function getAudio(): HTMLAudioElement | null {
     audioEl.addEventListener("ended", () => {
       handleComplete();
     });
+    audioEl.addEventListener("waiting", () => {
+      if (!state.episode) return;
+      state = { ...state, isPlaying: false, status: "loading" };
+      emit();
+    });
+    audioEl.addEventListener("error", () => {
+      failPlayback("This episode could not be loaded. Check your connection and try again.");
+    });
     audioEl.addEventListener("pause", () => {
       if (!state.episode) return;
-      state = { ...state, isPlaying: false };
+      if (state.status !== "ended" && state.status !== "error") {
+        state = { ...state, isPlaying: false, status: "paused" };
+      }
       emit();
     });
     audioEl.addEventListener("play", () => {
-      if (!state.episode) return;
-      state = { ...state, isPlaying: true };
+      const episodeId = state.episode?.id;
+      if (!episodeId) return;
+      state = { ...state, isPlaying: true, status: "playing", error: null };
+      track("play_started", { id: episodeId });
       emit();
     });
   }
@@ -66,10 +86,9 @@ function getAudio(): HTMLAudioElement | null {
 function handleComplete() {
   if (!state.episode) return;
   const ep = state.episode;
-  state = { ...state, progress: 1, isPlaying: false };
-  stopFallback();
+  state = { ...state, progress: 1, isPlaying: false, status: "ended", error: null };
   haptic("success");
-  track("complete", { id: ep.id });
+  track("listen_completed", { id: ep.id });
   completedListeners.forEach((l) => l(ep));
   emit();
   // Auto-advance the drop: play the next recap so a hands-busy listener
@@ -78,29 +97,29 @@ function handleComplete() {
   if (nxt) playerStore.play(nxt, queue);
 }
 
-function tick() {
-  if (!state.episode || !state.isPlaying) return;
-  const step = 1 / (state.episode.durationSec * 4);
-  const next = state.progress + step;
-  if (next >= 1) {
-    handleComplete();
-    return;
-  }
-  state = { ...state, progress: next };
+function failPlayback(message: string) {
+  const id = state.episode?.id;
+  state = { ...state, isPlaying: false, status: "error", error: message };
+  if (id) track("playback_error", { id, message });
   emit();
-}
-
-function startFallback() {
-  if (fallbackTimer) return;
-  fallbackTimer = setInterval(tick, 250);
-}
-function stopFallback() {
-  if (fallbackTimer) clearInterval(fallbackTimer);
-  fallbackTimer = null;
 }
 
 function setMediaSession(ep: Episode) {
   if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
+  if (ep.format === "daily") {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: ep.title,
+      artist: `${ep.punditName ?? "Full Time"} edition`,
+      album: "Full Time morning drop",
+    });
+    navigator.mediaSession.setActionHandler("play", () => playerStore.toggle());
+    navigator.mediaSession.setActionHandler("pause", () => playerStore.toggle());
+    navigator.mediaSession.setActionHandler("seekbackward", () => playerStore.skip(-15));
+    navigator.mediaSession.setActionHandler("seekforward", () => playerStore.skip(15));
+    navigator.mediaSession.setActionHandler("nexttrack", () => playerStore.next());
+    navigator.mediaSession.setActionHandler("previoustrack", () => playerStore.prev());
+    return;
+  }
   navigator.mediaSession.metadata = new MediaMetadata({
     title: ep.title,
     artist: `${ep.homeTeam} ${ep.homeScore}–${ep.awayScore} ${ep.awayTeam}`,
@@ -108,12 +127,8 @@ function setMediaSession(ep: Episode) {
   });
   navigator.mediaSession.setActionHandler("play", () => playerStore.toggle());
   navigator.mediaSession.setActionHandler("pause", () => playerStore.toggle());
-  navigator.mediaSession.setActionHandler("seekbackward", () =>
-    playerStore.seek(Math.max(0, state.progress - 0.1)),
-  );
-  navigator.mediaSession.setActionHandler("seekforward", () =>
-    playerStore.seek(Math.min(1, state.progress + 0.1)),
-  );
+  navigator.mediaSession.setActionHandler("seekbackward", () => playerStore.skip(-15));
+  navigator.mediaSession.setActionHandler("seekforward", () => playerStore.skip(15));
   navigator.mediaSession.setActionHandler("nexttrack", () => playerStore.next());
   navigator.mediaSession.setActionHandler("previoustrack", () => playerStore.prev());
 }
@@ -136,27 +151,30 @@ export const playerStore = {
     const same = state.episode?.id === ep.id;
     state = {
       episode: ep,
-      isPlaying: true,
+      isPlaying: false,
       progress: same && state.progress < 1 ? state.progress : 0,
+      status: "loading",
+      error: null,
+      playbackRate: state.playbackRate,
     };
     haptic("tap");
-    track("play", { id: ep.id });
+    track("play_intent", { id: ep.id });
     setMediaSession(ep);
 
     const audio = getAudio();
     if (audio && ep.audioUrl) {
-      stopFallback();
       if (!same || audio.src !== ep.audioUrl) {
         audio.src = ep.audioUrl;
-        if (audio.duration) audio.currentTime = 0;
+        audio.currentTime = 0;
       }
+      audio.playbackRate = state.playbackRate;
       audio.play().catch((err) => {
-        console.warn("[player] play failed, falling back to timer", err);
-        startFallback();
+        console.warn("[player] play failed", err);
+        failPlayback("Playback was blocked or the audio is unavailable. Tap to retry.");
       });
     } else {
       if (audio) audio.pause();
-      startFallback();
+      failPlayback("Audio is not available for this episode yet.");
     }
     emit();
   },
@@ -175,17 +193,34 @@ export const playerStore = {
   toggle() {
     const ep = state.episode;
     if (!ep) return;
-    const next = !state.isPlaying;
-    state = { ...state, isPlaying: next };
-    haptic(next ? "tap" : "soft");
     const audio = getAudio();
-    if (audio && ep.audioUrl) {
-      if (next) audio.play().catch(() => startFallback());
-      else audio.pause();
-    } else {
-      if (next) startFallback();
-      else stopFallback();
+    if (!audio || !ep.audioUrl) {
+      failPlayback("Audio is not available for this episode yet.");
+      return;
     }
+    if (state.isPlaying) {
+      haptic("soft");
+      audio.pause();
+      return;
+    }
+    haptic("tap");
+    state = { ...state, status: "loading", error: null };
+    emit();
+    audio
+      .play()
+      .catch(() => failPlayback("Playback was blocked or the audio is unavailable. Tap to retry."));
+  },
+  skip(seconds: number) {
+    const audio = getAudio();
+    if (!audio || !Number.isFinite(audio.duration)) return;
+    audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + seconds));
+  },
+  setPlaybackRate(rate: number) {
+    const allowed = [0.75, 1, 1.25, 1.5, 2];
+    const next = allowed.includes(rate) ? rate : 1;
+    state = { ...state, playbackRate: next };
+    const audio = getAudio();
+    if (audio) audio.playbackRate = next;
     emit();
   },
   seek(p: number) {

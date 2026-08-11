@@ -1,17 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { checkoutSessionBelongsToUser, trustedAppOrigin } from "@/lib/billing-security";
 import { isProProfile, type Entitlement, type Plan } from "@/lib/entitlement";
 
-// Origin for Stripe redirect URLs: honour the forwarded host on Vercel, else env.
+// Redirect destinations must come from trusted server configuration. Forwarded
+// host headers are caller-controlled at some proxy boundaries and are never a
+// safe source for billing URLs.
 function getOrigin(): string {
-  const req = getRequest();
-  const h = req?.headers;
-  const host = h?.get("x-forwarded-host") ?? h?.get("host");
-  const proto = h?.get("x-forwarded-proto") ?? "https";
-  if (host) return `${proto}://${host}`;
-  return process.env.APP_URL ?? "https://fulltime.fm";
+  return trustedAppOrigin(process.env.APP_URL);
+}
+
+function checkoutEnabled(): boolean {
+  return process.env.PRELAUNCH_MODE === "false" && process.env.BILLING_ENABLED === "true";
 }
 
 // What the client uses to gate UI. Reads the caller's own profile under RLS.
@@ -35,6 +36,9 @@ export const getEntitlement = createServerFn({ method: "GET" })
 export const createCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ url: string }> => {
+    if (!checkoutEnabled()) {
+      throw new Error("New subscriptions are paused while Full Time is in pre-launch.");
+    }
     const { getStripe, proPriceId } = await import("@/lib/stripe.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const stripe = getStripe();
@@ -47,11 +51,15 @@ export const createCheckout = createServerFn({ method: "POST" })
       .eq("id", userId)
       .maybeSingle();
 
-    let customerId = (prof as { stripe_customer_id?: string } | null)?.stripe_customer_id ?? undefined;
+    let customerId =
+      (prof as { stripe_customer_id?: string } | null)?.stripe_customer_id ?? undefined;
     if (!customerId) {
       const customer = await stripe.customers.create({ email, metadata: { user_id: userId } });
       customerId = customer.id;
-      await supabaseAdmin.from("profiles").update({ stripe_customer_id: customerId }).eq("id", userId);
+      await supabaseAdmin
+        .from("profiles")
+        .update({ stripe_customer_id: customerId })
+        .eq("id", userId);
     }
 
     const origin = getOrigin();
@@ -94,7 +102,7 @@ export const createPortal = createServerFn({ method: "POST" })
 // success page, so Pro reflects instantly even if the webhook is a beat behind.
 export const syncCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ sessionId: z.string().min(1) }))
+  .validator(z.object({ sessionId: z.string().min(1) }))
   .handler(async ({ data, context }): Promise<{ ok: boolean; isPro: boolean }> => {
     const { getStripe } = await import("@/lib/stripe.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -104,7 +112,7 @@ export const syncCheckout = createServerFn({ method: "POST" })
     const session = await stripe.checkout.sessions.retrieve(data.sessionId, {
       expand: ["subscription"],
     });
-    if (session.client_reference_id && session.client_reference_id !== context.userId) {
+    if (!checkoutSessionBelongsToUser(session.client_reference_id, context.userId)) {
       throw new Error("This checkout session does not belong to you.");
     }
     const sub = session.subscription;

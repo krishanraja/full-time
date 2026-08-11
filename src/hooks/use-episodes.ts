@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getTodayFeed } from "@/lib/api/feed.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { hasClientSupabaseConfig } from "@/lib/supabase-availability";
 
 export type TodayFeed = Awaited<ReturnType<typeof getTodayFeed>>;
 
@@ -17,12 +18,11 @@ export function useTodayFeed(initialData?: TodayFeed) {
   const qc = useQueryClient();
 
   useEffect(() => {
+    if (!hasClientSupabaseConfig()) return;
     const ch = supabase
       .channel("episodes-feed")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "episodes" },
-        () => qc.invalidateQueries({ queryKey: ["today-feed"] }),
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "episodes" }, () =>
+        qc.invalidateQueries({ queryKey: ["today-feed"] }),
       )
       .subscribe();
     return () => {

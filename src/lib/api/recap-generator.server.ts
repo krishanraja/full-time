@@ -208,6 +208,7 @@ async function llm(
           { role: "user", content: user + (i ? "\n\nRespond with ONLY the JSON object." : "") },
         ],
       }),
+      signal: AbortSignal.timeout(120_000),
     });
     if (!r.ok) {
       const b = await r.text();
@@ -440,7 +441,7 @@ export function runGate(input: GateInput): GateResult {
         script,
       )
     ),
-    noDash: !/[—–]/.test(script),
+    noDash: !/[\u2014\u2013]/.test(script),
     noCliche: !CLICHE.test(script),
     angle_id_valid: usedAngle === "none" || offered.some((x) => x.id === usedAngle),
     numeric_licence: unlicensedNumbers.length === 0,

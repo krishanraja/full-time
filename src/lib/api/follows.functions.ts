@@ -14,7 +14,7 @@ export const getMyFollows = createServerFn({ method: "GET" })
 
 export const toggleFollow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       entityType: z.enum(["team", "league"]),
       entityId: z.string().min(1).max(64),

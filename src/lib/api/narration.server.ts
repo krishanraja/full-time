@@ -9,23 +9,42 @@
 // If the model emitted a tagged script, the gate would check one string and
 // ElevenLabs would speak a different one, with nothing proving they match.
 //
-//   script  --(gate passes)-->  speakNumbers()  -->  applyHouseCadence()
-//           -->  spoken_script  -->  ElevenLabs  -->  Scribe  -->  fidelity gate
+// script --(gate passes)--> speakNumbers() --> applyHouseCadence()
+// --> spoken_script --> ElevenLabs --> Scribe --> fidelity gate
 //
 // `script` is the display transcript and never contains a bracket (enforced by
 // the gate AND a DB CHECK constraint). `spoken_script` is TTS-only and never
 // reaches a screen or the RSS feed.
 
-const VOICE_ID = process.env.ELEVENLABS_VOICE_ID || "onwK4e9ZLuTAKqWW03F9"; // Daniel
+import { assertPerformanceIdentity } from "@/lib/pundit/performance";
+import { concatenateNarrationMp3 } from "@/lib/pundit/audio-mastering.server";
+import type { PerformanceBeat, PunditId } from "@/lib/pundit/types";
+
 const MP3_BITRATE = 128_000; // matches ?output_format=mp3_44100_128
 
-/** Sober direction only. This allowlist is a CONTENT SAFETY surface, not a
- *  taste knob: docs/00-product.md promises no opinion and no takes, and an
- *  emotion tag is an editorial act delivered in the voice. [excited] on a title
- *  decider or [sarcastic] on a relegation result violates writer rule 8 without
- *  a single word of script changing. Daniel is labelled `formal`, and the docs
- *  warn a formal voice responds badly to playful tags, so the sober set is also
- *  the technically correct one. */
+const VOICE_ENV: Record<PunditId, string> = {
+  zen: "ELEVENLABS_VOICE_REPORTER",
+  gaffer: "ELEVENLABS_VOICE_GAFFER",
+  stats: "ELEVENLABS_VOICE_NUMBERS",
+  romantic: "ELEVENLABS_VOICE_ROMANTIC",
+  doomer: "ELEVENLABS_VOICE_DOOMER",
+  banter: "ELEVENLABS_VOICE_WINDUP",
+};
+
+function voiceIdFor(punditId: PunditId, candidate: "A" | "B" | "selected" = "selected") {
+  const base = VOICE_ENV[punditId];
+  const selected = process.env[base];
+  const audition = candidate === "selected" ? undefined : process.env[`${base}_${candidate}`];
+  const fallback = punditId === "zen" ? process.env.ELEVENLABS_VOICE_ID : undefined;
+  const voiceId = audition ?? selected ?? fallback;
+  if (!voiceId) throw new Error(`No licensed voice configured for ${punditId} (${base}).`);
+  return voiceId;
+}
+
+/** Delivery directions are a CONTENT SAFETY surface. The approved script owns
+ *  the opinion and the performance plan owns the delivery; writers never emit
+ *  TTS tags. The allowlist keeps performance expressive without introducing a
+ *  second, unaudited editorial layer or enabling impersonation-style prompts. */
 export const TAG_ALLOWLIST = new Set([
   "measured",
   "dry",
@@ -36,6 +55,11 @@ export const TAG_ALLOWLIST = new Set([
   "matter of fact",
   "quietly",
   "resigned",
+  "thoughtful",
+  "curious",
+  "excited",
+  "sarcastic",
+  "mischievously",
 ]);
 
 // ------------------------------------------------------- numbers to words
@@ -168,6 +192,140 @@ export function applyHouseCadence(spoken: string, magicSpoken: string): string {
   return out.join(" ");
 }
 
+const PERSONA_TAGS: Record<
+  PunditId,
+  { setup: string; evidence: string; verdict: string; punchline: string; close: string }
+> = {
+  zen: {
+    setup: "measured",
+    evidence: "matter of fact",
+    verdict: "dry",
+    punchline: "wry",
+    close: "warmer",
+  },
+  gaffer: {
+    setup: "matter of fact",
+    evidence: "measured",
+    verdict: "dry",
+    punchline: "wry",
+    close: "resigned",
+  },
+  stats: {
+    setup: "measured",
+    evidence: "excited",
+    verdict: "thoughtful",
+    punchline: "wry",
+    close: "warmer",
+  },
+  romantic: {
+    setup: "warmer",
+    evidence: "curious",
+    verdict: "thoughtful",
+    punchline: "wry",
+    close: "warmer",
+  },
+  doomer: {
+    setup: "quietly",
+    evidence: "measured",
+    verdict: "resigned",
+    punchline: "dry",
+    close: "quietly",
+  },
+  banter: {
+    setup: "mischievously",
+    evidence: "matter of fact",
+    verdict: "dry",
+    punchline: "sarcastic",
+    close: "measured",
+  },
+};
+
+function tagForBeat(punditId: PunditId, beat: PerformanceBeat, index: number, total: number) {
+  const tags = PERSONA_TAGS[punditId];
+  if (index === total - 1) return tags.close;
+  if (beat.pace === "slow" || beat.energy <= 2) return "thoughtful";
+  if (beat.intent === "evidence" || beat.intent === "explanation") return tags.evidence;
+  if (beat.intent === "verdict" || beat.intent === "prediction" || beat.intent === "receipt") {
+    return tags.verdict;
+  }
+  if (beat.intent === "punchline") return tags.punchline;
+  return tags.setup;
+}
+
+function applyEmphasis(text: string, emphasis: readonly string[] | undefined) {
+  let rendered = text;
+  for (const phrase of (emphasis ?? []).slice(0, 3)) {
+    const wanted = phrase.trim();
+    if (!wanted || wanted.length > 40) continue;
+    const index = rendered.toLocaleLowerCase("en-GB").indexOf(wanted.toLocaleLowerCase("en-GB"));
+    if (index < 0) continue;
+    rendered = `${rendered.slice(0, index)}${rendered.slice(index, index + wanted.length).toUpperCase()}${rendered.slice(index + wanted.length)}`;
+  }
+  return rendered;
+}
+
+function taggedBeatIndexes(plan: readonly PerformanceBeat[]) {
+  const indexes = new Set<number>([0, plan.length - 1]);
+  for (const intents of [
+    ["evidence", "explanation"],
+    ["punchline", "verdict", "prediction", "receipt"],
+  ] as const) {
+    const index = plan.findIndex((beat) => intents.some((intent) => intent === beat.intent));
+    if (index >= 0) indexes.add(index);
+  }
+  return indexes;
+}
+
+export function applyPerformanceCadence(
+  displayScript: string,
+  punditId: PunditId,
+  plan?: readonly PerformanceBeat[],
+  magicSentence = "",
+): string {
+  if (!plan?.length) {
+    const base = applyHouseCadence(speakNumbers(displayScript.trim()), speakNumbers(magicSentence));
+    const houseTags = PERSONA_TAGS[punditId];
+    return base
+      .replace("[measured]", `[${houseTags.setup}]`)
+      .replace("[slower]", `[${houseTags.evidence}]`)
+      .replace("[warmer]", `[${houseTags.close}]`);
+  }
+
+  const identity = assertPerformanceIdentity(plan, displayScript);
+  if (!identity.passed) throw new Error(identity.failure);
+  const tagged = taggedBeatIndexes(plan);
+  return plan
+    .map((beat, index) => {
+      const tag = tagForBeat(punditId, beat, index, plan.length);
+      const pause =
+        (beat.pauseBeforeMs && beat.pauseBeforeMs >= 250) || beat.pace === "slow" ? "... " : "";
+      const text = applyEmphasis(speakNumbers(beat.text.trim()), beat.emphasis);
+      return `${pause}${tagged.has(index) ? `[${tag}] ` : ""}${text}`;
+    })
+    .join(" ");
+}
+
+export function chunkSpokenForTts(spoken: string, maxCharacters = 4_500): string[] {
+  if (maxCharacters < 500) throw new Error("TTS chunk size is too small for stable narration.");
+  const chunks: string[] = [];
+  let remaining = spoken.trim();
+  while (remaining.length > maxCharacters) {
+    const window = remaining.slice(0, maxCharacters + 1);
+    const boundaries = [
+      window.lastIndexOf(". "),
+      window.lastIndexOf("? "),
+      window.lastIndexOf("! "),
+    ];
+    let boundary = Math.max(...boundaries);
+    if (boundary < Math.floor(maxCharacters * 0.6)) boundary = window.lastIndexOf(" ");
+    if (boundary <= 0) throw new Error("Narration contains a TTS segment with no safe boundary.");
+    chunks.push(remaining.slice(0, boundary + 1).trim());
+    remaining = remaining.slice(boundary + 1).trim();
+  }
+  if (remaining) chunks.push(remaining);
+  return chunks;
+}
+
 export const stripTags = (s: string) => s.replace(/\[[^\]]*\]/g, " ").replace(/\.\.\./g, " ");
 
 /** Lowercase, strip punctuation, spell out numerals. Used on BOTH sides of
@@ -291,6 +449,11 @@ async function tts(
   modelId: string,
   seed: number,
   apiKey: string,
+  voiceId: string,
+  pronunciationDictionaryLocators: Array<{
+    pronunciation_dictionary_id: string;
+    version_id: string;
+  }> = [],
 ): Promise<Uint8Array> {
   const body: Record<string, unknown> = {
     text: spoken,
@@ -302,6 +465,9 @@ async function tts(
     voice_settings: { stability: 0.5, similarity_boost: 0.8 },
     seed,
   };
+  if (pronunciationDictionaryLocators.length) {
+    body.pronunciation_dictionary_locators = pronunciationDictionaryLocators;
+  }
   // v3 verifiably ignores style / speed / use_speaker_boost, so they are not
   // sent. v2 is the fallback and does use style.
   if (modelId === "eleven_v3") body.apply_text_normalization = "off";
@@ -314,11 +480,12 @@ async function tts(
     };
 
   const res = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
     {
       method: "POST",
       headers: { "xi-api-key": apiKey, "Content-Type": "application/json", Accept: "audio/mpeg" },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(120_000),
     },
   );
   if (!res.ok)
@@ -334,28 +501,39 @@ async function transcribe(audio: Uint8Array, apiKey: string): Promise<string> {
     method: "POST",
     headers: { "xi-api-key": apiKey },
     body: form,
+    signal: AbortSignal.timeout(120_000),
   });
   if (!res.ok) throw new Error(`Scribe ${res.status}: ${(await res.text()).slice(0, 160)}`);
   const d = (await res.json()) as { text?: string };
   return d.text ?? "";
 }
 
-/** Monthly tripwire. 300k characters on Creator, and the budget models 219k of
- *  steady-state use. Stop narrating rather than blow the quota mid-month. */
-async function quotaState(apiKey: string): Promise<{ used: number; stop: boolean } | null> {
-  try {
-    const r = await fetch("https://api.elevenlabs.io/v1/user/subscription", {
-      headers: { "xi-api-key": apiKey },
-    });
-    if (!r.ok) return null;
-    const d = (await r.json()) as { character_count?: number };
-    const used = d.character_count ?? 0;
-    if (used > 285_000) return { used, stop: true };
-    if (used > 260_000) console.warn(`[narrate] ElevenLabs at ${used} characters this month.`);
-    return { used, stop: false };
-  } catch {
-    return null; // never let a metering call take down the drop
+/** Quota tripwire for six full variants plus retries. Production provisioning
+ *  must expose at least 1.5m characters and leave enough room for three takes. */
+async function quotaState(
+  apiKey: string,
+  requestedCharacters: number,
+): Promise<{ used: number; limit: number; remaining: number; stop: boolean }> {
+  const r = await fetch("https://api.elevenlabs.io/v1/user/subscription", {
+    headers: { "xi-api-key": apiKey },
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!r.ok) {
+    throw new Error(`ElevenLabs capacity verification failed (${r.status}).`);
   }
+  const d = (await r.json()) as { character_count?: number; character_limit?: number };
+  if (!Number.isFinite(d.character_count) || !Number.isFinite(d.character_limit)) {
+    throw new Error("ElevenLabs capacity response is incomplete.");
+  }
+  const used = d.character_count!;
+  const limit = d.character_limit!;
+  const remaining = Math.max(0, limit - used);
+  const retryReserve = requestedCharacters * 3 + 10_000;
+  const stop = limit < 1_500_000 || remaining < retryReserve;
+  if (stop) {
+    console.warn(`[narrate] quota gate: used=${used} limit=${limit} remaining=${remaining}`);
+  }
+  return { used, limit, remaining, stop };
 }
 
 export type NarrationResult = {
@@ -364,8 +542,20 @@ export type NarrationResult = {
   ttsModel: string;
   ttsSeed: number;
   ttsVoiceId: string;
+  ttsSegments: number;
   durationSec: number;
   fidelity: { wer: number; numbers: boolean; transcript: string };
+};
+
+export type NarrationOptions = {
+  punditId?: PunditId;
+  performancePlan?: readonly PerformanceBeat[];
+  voiceCandidate?: "A" | "B" | "selected";
+  voiceId?: string;
+  pronunciationDictionaryLocators?: Array<{
+    pronunciation_dictionary_id: string;
+    version_id: string;
+  }>;
 };
 
 /** The ladder: v3, v3, then eleven_multilingual_v2 once, then fail closed.
@@ -375,19 +565,25 @@ export async function narrate(
   magicSentence: string,
   matchId: string,
   entities: string[] = [],
+  options: NarrationOptions = {},
 ): Promise<NarrationResult> {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("ELEVENLABS_API_KEY missing");
+  const punditId = options.punditId ?? "zen";
+  const voiceId = options.voiceId ?? voiceIdFor(punditId, options.voiceCandidate);
 
-  const q = await quotaState(apiKey);
-  if (q?.stop)
+  const q = await quotaState(apiKey, displayScript.length);
+  if (q.stop)
     throw new Error(
-      `ElevenLabs monthly quota tripwire at ${q.used} characters: refusing to narrate`,
+      `ElevenLabs capacity gate failed: used=${q.used}, limit=${q.limit}, remaining=${q.remaining}`,
     );
 
-  const spokenBase = speakNumbers(displayScript.trim());
-  const magicSpoken = magicSentence ? speakNumbers(magicSentence.trim()) : "";
-  const spokenScript = applyHouseCadence(spokenBase, magicSpoken);
+  const spokenScript = applyPerformanceCadence(
+    displayScript.trim(),
+    punditId,
+    options.performancePlan,
+    magicSentence,
+  );
 
   // Pre-flight, before a single character is spent.
   if (!tagsAllowlisted(spokenScript))
@@ -403,24 +599,26 @@ export async function narrate(
 
   for (const modelId of ladder) {
     try {
-      const audio = await tts(spokenScript, modelId, seed, apiKey);
-      let transcript = "";
-      let wer = 0;
-      let numbersOk = true;
+      const providerScript =
+        modelId === "eleven_v3" ? spokenScript : spokenScript.replace(/\[[^\]]*\]/g, " ");
+      const chunks = chunkSpokenForTts(providerScript);
+      const segments: Uint8Array[] = [];
+      for (const chunk of chunks) {
+        segments.push(
+          await tts(chunk, modelId, seed, apiKey, voiceId, options.pronunciationDictionaryLocators),
+        );
+      }
+      const audio = await concatenateNarrationMp3({ segments });
+      let transcript: string;
+      let wer: number;
+      let numbersOk: boolean;
       try {
         transcript = await transcribe(audio, apiKey);
         numbersOk = fidelityNumbers(transcript, displayScript);
         wer = fidelityWer(transcript, displayScript, entities);
       } catch (e) {
-        // A Scribe outage must not take down the drop. Log and accept the take:
-        // the deterministic spoken_identity check above already proved the text
-        // sent to ElevenLabs is the gated script.
-        console.warn("[narrate] fidelity check unavailable, accepting take:", e);
-        return finish(audio, spokenScript, modelId, seed, {
-          wer: 0,
-          numbers: true,
-          transcript: "",
-        });
+        lastErr = new Error(`fidelity verification unavailable: ${String(e)}`);
+        continue;
       }
       if (!numbersOk) {
         lastErr = new Error("fidelity_numbers failed");
@@ -430,7 +628,11 @@ export async function narrate(
         lastErr = new Error(`fidelity_wer ${wer.toFixed(3)} > 0.05`);
         continue;
       }
-      return finish(audio, spokenScript, modelId, seed, { wer, numbers: numbersOk, transcript });
+      return finish(audio, spokenScript, modelId, seed, voiceId, chunks.length, {
+        wer,
+        numbers: numbersOk,
+        transcript,
+      });
     } catch (e) {
       lastErr = e;
       console.warn(`[narrate] ${modelId} take failed:`, e);
@@ -444,6 +646,8 @@ function finish(
   spokenScript: string,
   ttsModel: string,
   ttsSeed: number,
+  ttsVoiceId: string,
+  ttsSegments: number,
   fidelity: { wer: number; numbers: boolean; transcript: string },
 ): NarrationResult {
   return {
@@ -451,11 +655,10 @@ function finish(
     spokenScript,
     ttsModel,
     ttsSeed,
-    ttsVoiceId: VOICE_ID,
-    // The old estimate was words/155*60 and ran 19 percent short (46 stored
-    // against 54.61 measured). The output is CBR, so duration is exact
-    // arithmetic on the byte length. This value is published in the RSS
-    // enclosure, so it is user-visible.
+    ttsVoiceId,
+    ttsSegments,
+    // This pre-mastering estimate is never published. FFmpeg measures the
+    // mastered asset duration before it reaches the variant or RSS record.
     durationSec: Math.round((audio.byteLength * 8) / MP3_BITRATE),
     fidelity,
   };

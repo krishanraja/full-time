@@ -21,7 +21,7 @@ export function AudioCard({
   /** The drop to play through when this card starts. Enables continuous playback. */
   queue?: Episode[];
 }) {
-  const { episode: current, isPlaying, progress } = usePlayer();
+  const { episode: current, isPlaying, progress, status, error } = usePlayer();
   const active = current?.id === episode.id;
   const playing = active && isPlaying;
 
@@ -55,14 +55,11 @@ export function AudioCard({
         )}
       </div>
 
-      {/* score block — the visual anchor */}
+      {/* score block: the visual anchor */}
       <div className={cn("mt-5 flex items-end gap-4", hero ? "mt-7" : "mt-5")}>
         <div className="min-w-0 flex-1">
           <div
-            className={cn(
-              "truncate font-semibold tracking-tight",
-              hero ? "text-base" : "text-sm",
-            )}
+            className={cn("truncate font-semibold tracking-tight", hero ? "text-base" : "text-sm")}
           >
             {episode.homeTeam}
           </div>
@@ -105,7 +102,9 @@ export function AudioCard({
       {/* transport */}
       <div className="mt-5 flex items-center gap-4">
         <HapticButton
-          onClick={() => (active ? playerStore.toggle() : playerStore.play(episode, queue ?? [episode]))}
+          onClick={() =>
+            active ? playerStore.toggle() : playerStore.play(episode, queue ?? [episode])
+          }
           aria-label={playing ? "Pause" : "Play"}
           className={cn(
             "grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--lime)] text-[var(--primary-foreground)] transition-transform active:scale-95",
@@ -152,6 +151,11 @@ export function AudioCard({
           </div>
         </div>
       </div>
+      {active && status === "error" && error && (
+        <p role="alert" className="mt-3 text-xs leading-snug text-[color:#ff8a8a]">
+          {error}
+        </p>
+      )}
     </motion.div>
   );
 }

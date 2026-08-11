@@ -8,8 +8,7 @@ export const Route = createFileRoute("/feed")({
     pageSeo({
       path: "/feed",
       title: "Feed • Full Time",
-      description:
-        "Every recap from today's matches in one tap-and-go list.",
+      description: "Every approved recap from the current coverage date in one tap-and-go list.",
     }),
   component: Feed,
 });
@@ -20,7 +19,7 @@ function Feed() {
     <div className="pb-6 pt-4">
       <div className="eyebrow">Feed</div>
       <h1 className="mb-6 mt-2 text-[30px] font-semibold leading-tight tracking-tight">
-        Every recap from today.
+        The current approved drop.
       </h1>
       {isLoading || !data ? (
         <div className="flex flex-col gap-2">
@@ -29,7 +28,9 @@ function Feed() {
           ))}
         </div>
       ) : data.episodes.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No recaps yet today.</p>
+        <p className="text-sm text-muted-foreground">
+          No recap has passed the current editorial and audio gates.
+        </p>
       ) : (
         <div className="flex flex-col gap-1">
           {data.episodes.map((ep) => (

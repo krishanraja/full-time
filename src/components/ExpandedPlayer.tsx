@@ -22,7 +22,7 @@ function fmt(sec: number) {
 }
 
 export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
-  const { episode, isPlaying, progress } = usePlayer();
+  const { episode, isPlaying, progress, status, error, playbackRate } = usePlayer();
   const wave = useMemo(() => bars(episode?.id ?? "x"), [episode?.id]);
   if (!episode) return null;
 
@@ -54,20 +54,23 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
 
       <div className="mt-12">
         <div className="text-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-          {episode.competition}
+          {episode.format === "daily" ? `${episode.punditName} edition` : episode.competition}
         </div>
-        <div className="mt-3 flex items-baseline gap-3">
-          <div className="text-mono text-[64px] leading-none tabular-nums">
-            {episode.homeScore}
-            <span className="text-muted-foreground/40">·</span>
-            <span className="text-muted-foreground">{episode.awayScore}</span>
-          </div>
-        </div>
-        <div className="mt-3 text-lg font-semibold tracking-tight">
-          {episode.homeTeam}{" "}
-          <span className="text-muted-foreground">vs</span>{" "}
-          {episode.awayTeam}
-        </div>
+        {episode.format !== "daily" && (
+          <>
+            <div className="mt-3 flex items-baseline gap-3">
+              <div className="text-mono text-[64px] leading-none tabular-nums">
+                {episode.homeScore}
+                <span className="text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground">{episode.awayScore}</span>
+              </div>
+            </div>
+            <div className="mt-3 text-lg font-semibold tracking-tight">
+              {episode.homeTeam} <span className="text-muted-foreground">vs</span>{" "}
+              {episode.awayTeam}
+            </div>
+          </>
+        )}
         <div className="mt-6 text-2xl font-semibold leading-tight tracking-tight">
           {episode.title}
         </div>
@@ -102,9 +105,9 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
         <div className="mt-8 flex items-center justify-center gap-10">
           <HapticButton
             hapticPattern="swipe"
-            onClick={() => playerStore.seek(Math.max(0, progress - 0.1))}
+            onClick={() => playerStore.skip(-15)}
             className="grid h-12 w-12 place-items-center rounded-full border border-[var(--pitch-line)]"
-            aria-label="Back"
+            aria-label="Back 15 seconds"
           >
             <SkipBack className="h-5 w-5" fill="currentColor" />
           </HapticButton>
@@ -121,13 +124,38 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
           </HapticButton>
           <HapticButton
             hapticPattern="swipe"
-            onClick={() => playerStore.seek(Math.min(1, progress + 0.1))}
+            onClick={() => playerStore.skip(15)}
             className="grid h-12 w-12 place-items-center rounded-full border border-[var(--pitch-line)]"
-            aria-label="Forward"
+            aria-label="Forward 15 seconds"
           >
             <SkipForward className="h-5 w-5" fill="currentColor" />
           </HapticButton>
         </div>
+
+        <div className="mt-5 flex items-center justify-center gap-2">
+          {[0.75, 1, 1.25, 1.5, 2].map((rate) => (
+            <button
+              key={rate}
+              type="button"
+              onClick={() => playerStore.setPlaybackRate(rate)}
+              aria-pressed={playbackRate === rate}
+              className={
+                "rounded-full border px-2.5 py-1 text-mono text-[10px] tabular-nums " +
+                (playbackRate === rate
+                  ? "border-[var(--lime)] text-[var(--lime)]"
+                  : "border-[var(--pitch-line)] text-muted-foreground")
+              }
+            >
+              {rate}x
+            </button>
+          ))}
+        </div>
+
+        {status === "error" && error && (
+          <p role="alert" className="mt-4 text-center text-xs text-[color:#ff8a8a]">
+            {error}
+          </p>
+        )}
 
         <div className="text-mono mt-8 text-center text-[10px] uppercase tracking-[0.22em] text-muted-foreground/70">
           AI-narrated · Full Time

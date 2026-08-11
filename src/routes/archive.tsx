@@ -18,25 +18,34 @@ import {
   type ArchiveMatch,
 } from "@/lib/api/archive.functions";
 import type { Episode } from "../data/mockEpisodes";
+import { PRELAUNCH_MODE } from "@/lib/launch-config";
 
 export const Route = createFileRoute("/archive")({
   head: () =>
     pageSeo({
       path: "/archive",
       title: "Archive • Full Time",
-      description:
-        "Name a game. Any match we hold the data for, narrated on demand.",
+      description: "Name a game. Any match we hold the data for, narrated on demand.",
     }),
   component: ArchivePage,
 });
 
 function dateLabel(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function ArchivePage() {
   const { user, loading: authLoading } = useAuth();
-  if (authLoading) return <div className="pb-6 pt-4"><div className="h-4 w-32 animate-pulse rounded bg-white/5" /></div>;
+  if (authLoading)
+    return (
+      <div className="pb-6 pt-4">
+        <div className="h-4 w-32 animate-pulse rounded bg-white/5" />
+      </div>
+    );
   return user ? <ArchiveSignedIn /> : <ArchiveLocked />;
 }
 
@@ -56,8 +65,8 @@ function ArchiveLocked() {
         Name a game.
       </h1>
       <p className="text-sm leading-relaxed text-muted-foreground">
-        Any match we hold the data for, narrated on demand in the Full Time voice, checked
-        against the facts before you hear it.
+        Archive and demo material from the current structured-data system. On-demand generation is
+        paused during pre-launch verification.
       </p>
 
       <div className="surface mt-6 rounded-[var(--radius-lg)] p-5">
@@ -69,7 +78,8 @@ function ArchiveLocked() {
           {overview.data
             ? `${overview.data.finishedMatches} matches in the vault, ${overview.data.narrated} already narrated. `
             : ""}
-          Sign in free to browse the archive and narrate {DAILY_GENERATION_LIMIT} games a day.
+          Sign in free to browse the archive. New narration remains paused until the six-pundit
+          harness passes.
         </p>
         <Link
           to="/auth"
@@ -98,10 +108,11 @@ function ArchiveSignedIn() {
   const [generating, setGenerating] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  const matches = archive.data?.matches ?? [];
+  const matches = useMemo(() => archive.data?.matches ?? [], [archive.data?.matches]);
   const leagues = useMemo(() => {
     const seen = new Map<string, string>();
-    for (const m of matches) if (m.leagueId && !seen.has(m.leagueId)) seen.set(m.leagueId, m.competition);
+    for (const m of matches)
+      if (m.leagueId && !seen.has(m.leagueId)) seen.set(m.leagueId, m.competition);
     return [...seen.entries()];
   }, [matches]);
   const shown = league ? matches.filter((m) => m.leagueId === league) : matches;
@@ -144,18 +155,25 @@ function ArchiveSignedIn() {
         Name a game.
       </h1>
       <p className="text-sm leading-relaxed text-muted-foreground">
-        Tap play on anything already narrated. Anything else with match data, we narrate on
-        the spot, checked against the facts first.
+        Existing audio is labelled archive/demo. New on-demand narration is paused until every
+        pundit passes the editorial and audio gates.
       </p>
-      <p className="text-mono mt-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
-        {remaining} of {dailyLimit} narrations left today
-      </p>
+      {!PRELAUNCH_MODE && (
+        <p className="text-mono mt-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+          {remaining} of {dailyLimit} narrations left today
+        </p>
+      )}
 
       {leagues.length > 1 && (
         <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <LeagueChip label="All" active={league === null} onClick={() => setLeague(null)} />
           {leagues.map(([id, name]) => (
-            <LeagueChip key={id} label={name} active={league === id} onClick={() => setLeague(id)} />
+            <LeagueChip
+              key={id}
+              label={name}
+              active={league === id}
+              onClick={() => setLeague(id)}
+            />
           ))}
         </div>
       )}
@@ -189,7 +207,15 @@ function ArchiveSignedIn() {
   );
 }
 
-function LeagueChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function LeagueChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
     <HapticButton
       hapticPattern="soft"
@@ -226,7 +252,9 @@ function ArchiveRow({
     <div
       className={cn(
         "flex items-center gap-3 rounded-[var(--radius-lg)] border border-transparent p-3 transition-colors",
-        active ? "border-[color:color-mix(in_oklab,var(--lime)_35%,var(--pitch-line))] bg-card/80" : "hover:bg-card/40",
+        active
+          ? "border-[color:color-mix(in_oklab,var(--lime)_35%,var(--pitch-line))] bg-card/80"
+          : "hover:bg-card/40",
       )}
     >
       {ep ? (
@@ -263,7 +291,9 @@ function ArchiveRow({
 
       {ep ? (
         <HapticButton
-          onClick={() => (active ? playerStore.toggle() : playerStore.play(ep as unknown as Episode))}
+          onClick={() =>
+            active ? playerStore.toggle() : playerStore.play(ep as unknown as Episode)
+          }
           aria-label={playing ? "Pause" : "Play"}
           className={cn(
             "grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--pitch-line)] bg-card text-foreground",
@@ -276,7 +306,7 @@ function ArchiveRow({
             <Play className="h-4 w-4 translate-x-[1px]" fill="currentColor" />
           )}
         </HapticButton>
-      ) : match.generatable ? (
+      ) : match.generatable && !PRELAUNCH_MODE ? (
         <HapticButton
           hapticPattern="success"
           onClick={onGenerate}
@@ -291,7 +321,9 @@ function ArchiveRow({
           {generating ? (
             <>
               <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--lime)]" />
-              <span className="text-mono text-[10px] uppercase tracking-[0.14em]">Checking facts…</span>
+              <span className="text-mono text-[10px] uppercase tracking-[0.14em]">
+                Checking facts…
+              </span>
             </>
           ) : (
             <>
@@ -302,7 +334,7 @@ function ArchiveRow({
         </HapticButton>
       ) : (
         <span className="text-mono shrink-0 text-[9px] uppercase tracking-[0.14em] text-muted-foreground/60">
-          No data yet
+          {PRELAUNCH_MODE ? "Pre-launch" : "No data yet"}
         </span>
       )}
     </div>
