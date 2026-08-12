@@ -17,6 +17,7 @@ export default defineConfig({
   // zero workflows, so mark all three integration plugins as pre.
   plugins: workflowPlugins,
   vite: {
+    server: { allowedHosts: [".vercel.run"] },
     // The package is optional because it has no Windows ARM64 binary. Keep it
     // external so Linux production installs can supply it while unsupported
     // runtimes fail closed through FFMPEG_PATH validation.
