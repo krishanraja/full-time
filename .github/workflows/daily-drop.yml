@@ -2,6 +2,10 @@ name: Full Time - Manual Daily Drop Recovery
 
 on:
   workflow_dispatch:
+    inputs:
+      date:
+        description: "YYYY-MM-DD coverage date (default: yesterday, London time)"
+        required: false
 
 jobs:
   drop:
@@ -10,11 +14,14 @@ jobs:
       - name: Trigger daily drop
         run: |
           set -euo pipefail
+          QS=""
+          if [ -n "${DATE_IN:-}" ]; then QS="?date=${DATE_IN}"; fi
           curl --fail --silent --show-error \
-            -X POST "$FULL_TIME_URL/api/internal/daily-rehearsal" \
+            -X POST "${FULL_TIME_URL}/api/internal/daily-rehearsal${QS}" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
             -d '{}'
         env:
           FULL_TIME_URL: ${{ secrets.FULL_TIME_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          DATE_IN: ${{ inputs.date }}
