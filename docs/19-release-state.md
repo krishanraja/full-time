@@ -3,38 +3,51 @@
 - **Status:** Current release source of truth
 - **Owner:** Founder and release operator
 - **Purpose:** Record what is live, what is disabled, what remains inconsistent, and what must happen next.
-- **Last verified:** 2026-08-11
+- **Last verified:** 2026-09-04
 
 ## Live readback
 
-At 2026-08-11 19:53 UTC, `https://fulltime.fm` returned HTTP 200 from Vercel and served:
+At 2026-09-04 20:50 UTC, before this revision deployed:
 
-- title: `Full Time - Six AI Pundits, one real match`;
-- description: `Pick an AI Pundit and play a complete football show built from checked match facts.`;
-- desktop and mobile navigation: Today, Teams, Settings;
-- pre-launch state;
-- the player-first Today application bundle.
+- `https://fulltime.fm` served the player-first Today shell with the "Nothing ready just yet" empty state.
+- Supabase `hzadscrqmyilbisexvyz` held 225 `matches` rows (90 for season 2026, 84 finished in the last 14 days, latest coverage date 2026-09-03), 2,904 `match_events`, 169 `match_stats`, 122 `h2h_cache`, 2,252 `players`. The 00:15 UTC ingest is healthy; the coverage-preflight failure recorded on 2026-08-11 no longer occurs.
+- `editorial_runs`, `rehearsal_runs`, `harness_runs`, `evidence_packs`, `daily_drops`, `pundit_variants`, `voice_candidates`, `pronunciation_lexicon` were all empty. The six-variant workflow had never been admitted past its flag check.
+- Vercel deployment `dpl_FMwDiq4sqwioGfAR3KHrh6rqsGYv` logged `GET /api/internal/daily-rehearsal 409` at 04:45 UTC: `ENABLE_PRIVATE_REHEARSALS` was not `true` while `PRELAUNCH_MODE` was on.
+- `release_state.public_launch_enabled` was `false` with no gate snapshot, so `publish_daily_drop()` would have refused every drop.
 
-`https://fulltime.fm/llms.txt` still served the legacy "Big Five leagues, about 60 seconds each" description at that readback. This documentation reconciliation corrects the route source. The correction is not live until the matching revision deploys and the endpoint is read back again.
+## Founder launch override, 2026-09-04
+
+The founder decided to launch publicly before the external launch gates are met. Migration `20260904120000_founder_launch_override.sql` records an explicit `release_gate_runs` snapshot (`revision = founder-override-2026-09-04`, `override = true`, waived gates listed on the row) and sets `release_state` to `live` with `public_launch_enabled = true`.
+
+Waived by that snapshot: evaluation manifest and scripts, hard-gate evaluation approval, founder gold and humour samples, voice auditions and licensing review, forecast backtest and calibration, seven consecutive rehearsals, prediction receipts, the nine revision-bound sign-offs, research rights review, the 1.5 million character TTS floor, TTS alerting, and the pre-launch truthfulness gate.
+
+Still enforced on every drop by `publish_daily_drop()` and the workflow: sealed evidence and licensed claims, the 25 required harnesses per AI Pundit, six approved editions with distinct audio, transcript fidelity, script identity, loudness, true peak, speaking rate, five to eight minute duration, a measured 99 percent proper-name rate, share cards, asset reachability, and immutability after publication.
+
+Code changes in the same revision:
+
+- `src/lib/pundit/pronunciation.server.ts`: the selected voice per AI Pundit is self-seeded from the configured `ELEVENLABS_VOICE_*` value with a founder attestation on the `voice_candidates` row; missing human lexicon entries no longer block narration.
+- `src/lib/pundit/variant-production.server.ts`: proper-name verification is measured against the verified transcript.
+- `src/lib/api/narration.server.ts`: the monthly character floor is `TTS_MONTHLY_CHARACTER_CAPACITY` (optional); the three-take retry reserve still applies.
+- `src/components/TodayShowPlayer.tsx`: the empty state distinguishes no published show yet, an off day, and an edition that failed its checks.
 
 ## Current state
 
-| Item                            | Verified state                                  |
-| ------------------------------- | ----------------------------------------------- |
-| Product                         | AI-native, player-first, fail-closed pre-launch |
-| Production URL                  | [fulltime.fm](https://fulltime.fm)              |
-| Production branch               | `main`                                          |
-| Public navigation               | Today, Teams, Settings                          |
-| Today metadata                  | Six AI Pundits, one real match                  |
-| Public launch                   | Disabled                                        |
-| Automated publication           | Disabled                                        |
-| New checkout and paid promotion | Disabled                                        |
-| AI Pundits                      | Six, free, selectable                           |
-| Reporter RSS                    | Retained                                        |
-| `/feed` page                    | Redirects to Today                              |
-| Supabase project                | `hzadscrqmyilbisexvyz`                          |
-| Release migrations              | Previously applied and read back on 2026-08-08  |
-| Repository verification         | GitHub Actions run `31533126034` passed         |
+| Item                            | Verified state                                                                    |
+| ------------------------------- | --------------------------------------------------------------------------------- |
+| Product                         | AI-native, player-first, live beta                                                |
+| Production URL                  | [fulltime.fm](https://fulltime.fm)                                                |
+| Production branch               | `main`                                                                            |
+| Public navigation               | Today, Teams, Settings                                                            |
+| Today metadata                  | Six AI Pundits, one real match                                                    |
+| Public launch                   | Enabled by founder override once the migration is applied                         |
+| Automated publication           | Enabled once `PRELAUNCH_MODE=false` and `PUNDIT_PUBLICATION_ENABLED=true` are set |
+| New checkout and paid promotion | Disabled                                                                          |
+| AI Pundits                      | Six, free, selectable                                                             |
+| Reporter RSS                    | Retained                                                                          |
+| `/feed` page                    | Redirects to Today                                                                |
+| Supabase project                | `hzadscrqmyilbisexvyz`                                                            |
+| Release migrations              | Applied through 2026-08-09; override migration pending apply                      |
+| First published drop            | None yet; expected after the first passing publication run                        |
 
 Durable docs do not pin a deployment ID or SHA because committing that value immediately creates a newer revision. Deployment metadata and live readback remain authoritative.
 
@@ -67,19 +80,29 @@ No marketing, support, sales, or agent output may claim those gaps are complete.
 
 ## External and human gates
 
-Public launch remains blocked by:
+These gates were waived by the founder override on 2026-09-04 and remain open work, not launch blockers:
 
 - rights-cleared research sources and approved original concepts;
 - two commercially usable full-length voice candidates per AI Pundit;
 - founder humour, editorial, and voice approval;
-- at least 1.5 million approved TTS characters per month with alerts;
+- TTS capacity alerts;
 - two seasons of provider history and a held-out forecast win over league base rates;
 - 60 approved evaluation matches, 360 passing scripts, and blind-review thresholds;
-- full-length audio review and 99% verified launch-name pronunciation;
+- full-length human audio review;
 - seven consecutive on-time six-variant rehearsals;
 - revision-bound legal, privacy, accessibility, monitoring, rollback, feed, and operational sign-offs.
 
-The founder confirmed an API-Football Pro plan with all endpoints and 7,500 daily requests on 2026-08-11. The 00:15 UTC ingest still failed its 2026 coverage preflight because the configured leagues did not report live fixture-event coverage. Investigate season mapping, key mapping, and provider response. Do not infer a missing paid tier or bypass the gate.
+No public material may claim any of these were completed. The API-Football Pro plan confirmed on 2026-08-11 is working: the ingest has populated fixtures, events, statistics, lineups, and head-to-head data daily through 2026-09-03.
+
+## Go-live sequence
+
+1. Apply `20260904120000_founder_launch_override.sql` to `hzadscrqmyilbisexvyz` and read back `release_state` (`status = live`, `public_launch_enabled = true`, `verified_revision = founder-override-2026-09-04`).
+2. Deploy this revision to production.
+3. Set Vercel production env: `PRELAUNCH_MODE=false`, `VITE_PRELAUNCH_MODE=false`, `PUNDIT_PUBLICATION_ENABLED=true`. Keep `BILLING_ENABLED`, `VITE_BILLING_ENABLED`, `ENABLE_PREDICTION_REGISTRATION`, `ENABLE_EVALUATION_RUNS`, `ENABLE_FORECAST_TRAINING`, `PUBLIC_FORECAST_SCORES_ENABLED` false. Confirm `CRON_SECRET`, `ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`, and all six `ELEVENLABS_VOICE_*` values are present. Redeploy.
+4. Trigger `POST /api/internal/daily-rehearsal?date=<latest coverage date with finished matches>` with the cron bearer, or run the manual GitHub recovery workflow. Expect HTTP 202 and a `runId`.
+5. Follow the run: `editorial_runs.failure`, `harness_runs` where `passed = false`, `pundit_variants.audio_quality`, `daily_drops.promise_checks`. Fix the named gate input and rerun with the next date until `daily_drops.status = published`.
+6. Read back fulltime.fm in a private window: the show plays, `/api/public/feed.rss` lists it, and the header no longer says Pre-launch.
+7. Leave the 04:45 UTC cron to publish daily. A day whose drop fails any automated check stays unpublished and Today keeps the latest published edition.
 
 ## Next product sequence
 
@@ -87,18 +110,8 @@ The founder confirmed an API-Football Pro plan with all endpoints and 7,500 dail
 2. Replace `/receipts` with the quiet settled-only **How did they do?** experience and deep links.
 3. Finish the Settings language pass using AI Pundit and plain, playful copy.
 4. Verify `llms.txt`, sitemap, metadata, legal copy, and public routes against the matching deployment.
-5. Reconcile the provider coverage response, then backfill two seasons in bounded batches.
-6. Complete editorial, voice, rehearsal, rights, legal, accessibility, and release evidence.
-
-## Operator sequence
-
-1. Confirm Vercel and Supabase target identity before touching live state.
-2. Keep all execution and billing flags false during investigation.
-3. Run local documentation and repository checks on Node 24, and require the Workflow manifest to contain `dailyPunditWorkflow` plus all ten application steps.
-4. Verify a preview at 320, 393, tablet, desktop, Android Chrome, and iOS Safari.
-5. Read back Today, Teams, Settings, `/feed`, `/receipts`, `/llms.txt`, RSS, sitemap, legal pages, and failure states from the exact deployed revision.
-6. Store a release snapshot only after every required gate passes.
-7. Treat public launch and billing as separate later mutations.
+5. Backfill two seasons in bounded batches.
+6. Work the waived gates above in order of listener impact: voice review, humour review, legal and privacy sign-off, then evaluation and forecast evidence.
 
 ## Vercel operator note
 
@@ -129,4 +142,4 @@ pnpm run build
 git diff --check
 ```
 
-Passing checks proves repository integrity only. Live parity needs matching-revision readback. Launch needs every external and human gate.
+Passing checks proves repository integrity only. Live parity needs matching-revision readback. The waived external and human gates remain open work after launch.
