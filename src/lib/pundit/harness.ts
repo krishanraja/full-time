@@ -69,7 +69,7 @@ const FOOTBALL_CONSTANTS = [1, 3, 11, 45, 90];
 const normalize = (value: string) =>
   value
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/\p{M}/gu, "")
     .toLowerCase()
     .trim();
 
