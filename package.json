@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && node scripts/check-workflow-manifest.mjs",
+    "build": "vite build && node scripts/copy-ffmpeg-static.mjs && node scripts/check-workflow-manifest.mjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
