@@ -106,7 +106,10 @@ async function ensureSelectedVoice(punditId: PunditId): Promise<VoiceCandidateRo
   if (selected[0]) return selected[0];
 
   const envKey = getPunditSpec(punditId).voiceEnvKey;
-  const voiceRef = process.env[envKey]?.trim();
+  // The Reporter keeps the legacy single-voice fallback that narration.server.ts
+  // already honours, so the original launch voice carries over unchanged.
+  const legacy = punditId === "zen" ? process.env.ELEVENLABS_VOICE_ID?.trim() : undefined;
+  const voiceRef = process.env[envKey]?.trim() || legacy;
   if (!voiceRef) {
     throw new Error(`No selected voice exists for ${punditId} and ${envKey} is not configured.`);
   }

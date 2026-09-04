@@ -40,10 +40,14 @@ function fmt(seconds: number) {
   return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
 }
 
+/** Joins the last two words with a non-breaking space so a title never ends
+ *  on a one-word orphan. */
+const NO_BREAK_SPACE = String.fromCharCode(160);
+
 function withoutOrphan(value: string) {
   const words = value.trim().split(/\s+/);
   if (words.length < 3) return value;
-  return `${words.slice(0, -2).join(" ")} ${words.slice(-2).join(" ")}`;
+  return `${words.slice(0, -2).join(" ")} ${words.slice(-2).join(NO_BREAK_SPACE)}`;
 }
 
 /** Each empty state says what is true. No published show has ever existed
