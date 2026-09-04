@@ -508,8 +508,28 @@ async function transcribe(audio: Uint8Array, apiKey: string): Promise<string> {
   return d.text ?? "";
 }
 
-/** Quota tripwire for six full variants plus retries. Production provisioning
- *  must expose at least 1.5m characters and leave enough room for three takes. */
+/** Minimum monthly character capacity the plan must expose before narration
+ *  starts. TTS_MONTHLY_CHARACTER_CAPACITY is optional; when unset or zero the
+ *  only protection is the retry reserve below. */
+export function monthlyCapacityFloor(env: NodeJS.ProcessEnv = process.env) {
+  const value = Number(env.TTS_MONTHLY_CHARACTER_CAPACITY ?? 0);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+/** Fails closed when the plan is below the configured floor or cannot afford
+ *  three takes of the requested script plus a margin. */
+export function quotaShouldStop(input: {
+  used: number;
+  limit: number;
+  requestedCharacters: number;
+  floor: number;
+}) {
+  const remaining = Math.max(0, input.limit - input.used);
+  const retryReserve = input.requestedCharacters * 3 + 10_000;
+  return { remaining, stop: input.limit < input.floor || remaining < retryReserve };
+}
+
+/** Quota tripwire for six full variants plus retries. */
 async function quotaState(
   apiKey: string,
   requestedCharacters: number,
@@ -527,9 +547,12 @@ async function quotaState(
   }
   const used = d.character_count!;
   const limit = d.character_limit!;
-  const remaining = Math.max(0, limit - used);
-  const retryReserve = requestedCharacters * 3 + 10_000;
-  const stop = limit < 1_500_000 || remaining < retryReserve;
+  const { remaining, stop } = quotaShouldStop({
+    used,
+    limit,
+    requestedCharacters,
+    floor: monthlyCapacityFloor(),
+  });
   if (stop) {
     console.warn(`[narrate] quota gate: used=${used} limit=${limit} remaining=${remaining}`);
   }
