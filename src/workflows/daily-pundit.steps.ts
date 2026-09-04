@@ -9,10 +9,7 @@ function assertCoverageDate(value: string) {
   return value;
 }
 
-export async function claimEditorialRunStep(input: {
-  coverageDate: string;
-  mode: DailyRunMode;
-}) {
+export async function claimEditorialRunStep(input: { coverageDate: string; mode: DailyRunMode }) {
   "use step";
   const { claimRun } = await import("@/lib/pundit/daily-orchestrator.server");
   const { stepId } = getStepMetadata();
@@ -90,16 +87,43 @@ export async function persistEditorialStep(input: {
   });
 }
 
+type ProducedVariant = {
+  punditId: PunditId;
+  passed: boolean;
+  reused?: boolean;
+  failures?: readonly string[];
+  assets?: { audioUrl: string; audioPath: string; shareImageUrl: string; sharePath: string };
+};
+
+/** Production runs in the Nitro server function, which is the only runtime
+ *  that ships sharp and the ffmpeg binary. The step bundle calls it over HTTP
+ *  with the cron bearer instead of importing the native modules itself. */
 export async function producePunditStep(input: {
   dropId: string;
   coverageDate: string;
   variantId: string;
   generated: GeneratedPunditVariant;
   entities: string[];
-}) {
+}): Promise<ProducedVariant> {
   "use step";
-  const { producePunditVariant } = await import("@/lib/pundit/variant-production.server");
-  return producePunditVariant(input);
+  const base = (process.env.APP_URL ?? "https://fulltime.fm").replace(/\/$/, "");
+  const secret = process.env.CRON_SECRET;
+  if (!secret) throw new Error("CRON_SECRET is required to call variant production.");
+  const response = await fetch(`${base}/api/internal/produce-variant`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
+    body: JSON.stringify(input),
+    signal: AbortSignal.timeout(800_000),
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    return {
+      punditId: input.generated.candidate.punditId,
+      passed: false,
+      failures: [`Variant production ${response.status}: ${text.slice(0, 300)}`],
+    };
+  }
+  return JSON.parse(text) as ProducedVariant;
 }
 producePunditStep.maxRetries = 0;
 

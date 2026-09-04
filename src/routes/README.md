@@ -73,17 +73,18 @@ Unknown AI Pundit IDs and malformed drop IDs return `400`. Missing published var
 
 ## Protected operator API
 
-| Endpoint                             | Purpose                                         |
-| ------------------------------------ | ----------------------------------------------- |
-| `/api/public/cron/ingest`            | Scheduled structured-data ingest and settlement |
-| `/api/public/cron/daily-drop`        | Disabled legacy recovery generator              |
-| `/api/internal/daily-rehearsal`      | Durable six-variant workflow                    |
-| `/api/internal/rehearsal`            | Rehearsal inspection and control                |
-| `/api/internal/predictions-register` | Pre-kickoff registration                        |
-| `/api/internal/forecast-train`       | Held-out forecast training                      |
-| `/api/internal/evaluation-corpus`    | Evaluation-set construction                     |
-| `/api/internal/evaluation-run`       | Resumable 360-script evaluation                 |
-| `/api/internal/release-readiness`    | Revision-bound release-gate report              |
+| Endpoint                             | Purpose                                                                                |
+| ------------------------------------ | -------------------------------------------------------------------------------------- |
+| `/api/public/cron/ingest`            | Scheduled structured-data ingest and settlement                                        |
+| `/api/public/cron/daily-drop`        | Disabled legacy recovery generator                                                     |
+| `/api/internal/daily-rehearsal`      | Durable six-variant workflow                                                           |
+| `/api/internal/rehearsal`            | Rehearsal inspection and control                                                       |
+| `/api/internal/produce-variant`      | Narration, mastering and share card for one AI Pundit edition (called by the workflow) |
+| `/api/internal/predictions-register` | Pre-kickoff registration                                                               |
+| `/api/internal/forecast-train`       | Held-out forecast training                                                             |
+| `/api/internal/evaluation-corpus`    | Evaluation-set construction                                                            |
+| `/api/internal/evaluation-run`       | Resumable 360-script evaluation                                                        |
+| `/api/internal/release-readiness`    | Revision-bound release-gate report                                                     |
 
 Internal and cron handlers use the shared timing-safe bearer validator and a feature-specific fail-closed flag.
 

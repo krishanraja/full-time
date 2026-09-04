@@ -11,6 +11,16 @@ const workflowPlugins = workflow({ dirs: ["src/workflows"], runtime: "nodejs24.x
   (plugin) => ({ ...plugin, enforce: "pre" as const }),
 );
 
+// The Lovable wrapper types only a few Nitro keys but spreads the whole object
+// into the Nitro plugin, so the extra production options are typed as an
+// opaque object here.
+const nitroProductionOptions = {
+  // Variant production (TTS, transcription, mastering, share card) runs in the
+  // server function via /api/internal/produce-variant and needs the full budget.
+  // The ffmpeg binary itself is copied in by scripts/copy-ffmpeg-static.mjs.
+  vercel: { functions: { maxDuration: 800 } },
+} as object;
+
 export default defineConfig({
   // Lovable appends custom plugins after its internal TanStack/Nitro plugins.
   // Workflow directives must transform first or the build silently registers
@@ -31,5 +41,5 @@ export default defineConfig({
   },
   // Force-enable the Nitro deploy build outside the Lovable environment and target Vercel,
   // otherwise the wrapper skips the server bundle and the deployment 404s on SSR routes.
-  nitro: { preset: "vercel" },
+  nitro: { preset: "vercel", ...nitroProductionOptions },
 });

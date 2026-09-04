@@ -28,6 +28,7 @@ import { Route as ApiInternalEvaluationCorpusRouteImport } from './routes/api/in
 import { Route as ApiInternalEvaluationRunRouteImport } from './routes/api/internal/evaluation-run'
 import { Route as ApiInternalForecastTrainRouteImport } from './routes/api/internal/forecast-train'
 import { Route as ApiInternalPredictionsRegisterRouteImport } from './routes/api/internal/predictions-register'
+import { Route as ApiInternalProduceVariantRouteImport } from './routes/api/internal/produce-variant'
 import { Route as ApiInternalRehearsalRouteImport } from './routes/api/internal/rehearsal'
 import { Route as ApiInternalReleaseReadinessRouteImport } from './routes/api/internal/release-readiness'
 import { Route as ApiProfilePunditRouteImport } from './routes/api/profile/pundit'
@@ -141,6 +142,12 @@ const ApiInternalPredictionsRegisterRoute =
     path: '/api/internal/predictions-register',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiInternalProduceVariantRoute =
+  ApiInternalProduceVariantRouteImport.update({
+    id: '/api/internal/produce-variant',
+    path: '/api/internal/produce-variant',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiInternalRehearsalRoute = ApiInternalRehearsalRouteImport.update({
   id: '/api/internal/rehearsal',
   path: '/api/internal/rehearsal',
@@ -226,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
   '/api/internal/forecast-train': typeof ApiInternalForecastTrainRoute
   '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
+  '/api/internal/produce-variant': typeof ApiInternalProduceVariantRoute
   '/api/internal/rehearsal': typeof ApiInternalRehearsalRoute
   '/api/internal/release-readiness': typeof ApiInternalReleaseReadinessRoute
   '/api/profile/pundit': typeof ApiProfilePunditRoute
@@ -259,6 +267,7 @@ export interface FileRoutesByTo {
   '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
   '/api/internal/forecast-train': typeof ApiInternalForecastTrainRoute
   '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
+  '/api/internal/produce-variant': typeof ApiInternalProduceVariantRoute
   '/api/internal/rehearsal': typeof ApiInternalRehearsalRoute
   '/api/internal/release-readiness': typeof ApiInternalReleaseReadinessRoute
   '/api/profile/pundit': typeof ApiProfilePunditRoute
@@ -293,6 +302,7 @@ export interface FileRoutesById {
   '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
   '/api/internal/forecast-train': typeof ApiInternalForecastTrainRoute
   '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
+  '/api/internal/produce-variant': typeof ApiInternalProduceVariantRoute
   '/api/internal/rehearsal': typeof ApiInternalRehearsalRoute
   '/api/internal/release-readiness': typeof ApiInternalReleaseReadinessRoute
   '/api/profile/pundit': typeof ApiProfilePunditRoute
@@ -328,6 +338,7 @@ export interface FileRouteTypes {
     | '/api/internal/evaluation-run'
     | '/api/internal/forecast-train'
     | '/api/internal/predictions-register'
+    | '/api/internal/produce-variant'
     | '/api/internal/rehearsal'
     | '/api/internal/release-readiness'
     | '/api/profile/pundit'
@@ -361,6 +372,7 @@ export interface FileRouteTypes {
     | '/api/internal/evaluation-run'
     | '/api/internal/forecast-train'
     | '/api/internal/predictions-register'
+    | '/api/internal/produce-variant'
     | '/api/internal/rehearsal'
     | '/api/internal/release-readiness'
     | '/api/profile/pundit'
@@ -394,6 +406,7 @@ export interface FileRouteTypes {
     | '/api/internal/evaluation-run'
     | '/api/internal/forecast-train'
     | '/api/internal/predictions-register'
+    | '/api/internal/produce-variant'
     | '/api/internal/rehearsal'
     | '/api/internal/release-readiness'
     | '/api/profile/pundit'
@@ -428,6 +441,7 @@ export interface RootRouteChildren {
   ApiInternalEvaluationRunRoute: typeof ApiInternalEvaluationRunRoute
   ApiInternalForecastTrainRoute: typeof ApiInternalForecastTrainRoute
   ApiInternalPredictionsRegisterRoute: typeof ApiInternalPredictionsRegisterRoute
+  ApiInternalProduceVariantRoute: typeof ApiInternalProduceVariantRoute
   ApiInternalRehearsalRoute: typeof ApiInternalRehearsalRoute
   ApiInternalReleaseReadinessRoute: typeof ApiInternalReleaseReadinessRoute
   ApiProfilePunditRoute: typeof ApiProfilePunditRoute
@@ -575,6 +589,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalPredictionsRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/produce-variant': {
+      id: '/api/internal/produce-variant'
+      path: '/api/internal/produce-variant'
+      fullPath: '/api/internal/produce-variant'
+      preLoaderRoute: typeof ApiInternalProduceVariantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/internal/rehearsal': {
       id: '/api/internal/rehearsal'
       path: '/api/internal/rehearsal'
@@ -695,6 +716,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalEvaluationRunRoute: ApiInternalEvaluationRunRoute,
   ApiInternalForecastTrainRoute: ApiInternalForecastTrainRoute,
   ApiInternalPredictionsRegisterRoute: ApiInternalPredictionsRegisterRoute,
+  ApiInternalProduceVariantRoute: ApiInternalProduceVariantRoute,
   ApiInternalRehearsalRoute: ApiInternalRehearsalRoute,
   ApiInternalReleaseReadinessRoute: ApiInternalReleaseReadinessRoute,
   ApiProfilePunditRoute: ApiProfilePunditRoute,

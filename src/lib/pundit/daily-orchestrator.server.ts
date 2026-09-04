@@ -1,5 +1,4 @@
 import { addCalendarDays, londonDayBounds, londonLocalTime } from "@/lib/london-date";
-import { runPrivatePunditRehearsal } from "./pundit-rehearsal.server";
 import { serviceRest, serviceRpc } from "./service-rest.server";
 
 export type RunMode = "full_rehearsal" | "publication";
@@ -117,6 +116,9 @@ export async function runDailyPunditPipeline(input: {
   let matchId: string | undefined;
   try {
     matchId = await selectFeatureMatch(coverageDate);
+    // Loaded lazily: the rehearsal module pulls in sharp and ffmpeg, which the
+    // Workflow step bundle must never import at module scope.
+    const { runPrivatePunditRehearsal } = await import("./pundit-rehearsal.server");
     const result = await runPrivatePunditRehearsal(matchId, { includeAudio: true });
     const successfulVariants = result.variants.filter(
       (variant) => variant.production?.passed === true,
