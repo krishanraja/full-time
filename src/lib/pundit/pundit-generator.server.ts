@@ -209,6 +209,12 @@ function assembleCandidate(
   const missing = beatNames.filter((name) => !beatsByName.has(name));
   if (missing.length) throw new Error(`Writer omitted beats: ${missing.join(", ")}`);
   const ordered = beatNames.map((name) => beatsByName.get(name)!);
+  // A prediction is only a prediction when it was registered before kickoff.
+  // Without registration timing (the daily show runs after full time) the
+  // script may still reason about what comes next, but no claim is recorded
+  // as a formal, timestamped prediction.
+  if (!predictionTiming)
+    draft = { ...draft, thesis: { ...draft.thesis, predictionClaimId: undefined } };
   const outline = Object.fromEntries(ordered.map((beat) => [beat.name, beat.text])) as BeatOutline;
   const displayScript = ordered.map((beat) => beat.text.trim()).join(" ");
   const performancePlan: PerformanceBeat[] = ordered.map((beat) => ({
@@ -241,6 +247,7 @@ async function writeDraft(input: {
   claims: AnalysisClaim[];
   prior?: PunditVariantCandidate;
   failures?: ReturnType<typeof requestedRepairs>;
+  predictionTiming?: { lockedAt: string; kickoffAt: string };
 }): Promise<z.infer<typeof draftSchema>> {
   const spec = getPunditSpec(input.punditId);
   return anthropicJson({
@@ -248,7 +255,7 @@ async function writeDraft(input: {
     maxTokens: 6_000,
     schema: draftSchema,
     system:
-      "You are the single Full Time showrunner. Write original English; never imitate a living pundit. The evidence is closed-world. Produce 750-1100 spoken words across exactly ten named beats. Every judgment needs a reason. Interpret numbers rather than listing them. Humour must intensify insight and stay within the supplied safety boundaries. When repairing, change only failed beats and preserve every passed beat verbatim.",
+      "You are the single Full Time showrunner. Write original English; never imitate a living pundit. The evidence is closed-world: every number you write, in digits or words, must be a value present in the evidence pack (a point, three points for a win, eleven players, forty-five and ninety minutes are the only universal constants), and every proper noun must be a team, player, competition or place named in the evidence pack. Copy claim ids exactly from licensedClaims. Produce 750-1100 spoken words across exactly ten named beats. Every judgment needs a reason. Interpret numbers rather than listing them. Humour must intensify insight and stay within the supplied safety boundaries. When repairing, change only failed beats and preserve every passed beat verbatim.",
     user: JSON.stringify({
       punditSpec: spec,
       evidencePack: compactEvidence(input.pack),
@@ -257,6 +264,9 @@ async function writeDraft(input: {
         ? { thesis: input.prior.thesis, priorTextByBeatName: input.prior.outline }
         : undefined,
       targetedRepairs: input.failures,
+      predictionRegistration: input.predictionTiming
+        ? "A registered pre-kickoff prediction exists; you may set predictionClaimId to its licensed prediction claim."
+        : "No prediction was registered before kickoff. Omit predictionClaimId. The prediction_or_receipt beat gives a conditional expectation for the next match without a formal prediction.",
       outputContract: {
         thesis: {
           headline: "string",
@@ -419,7 +429,12 @@ export async function generatePunditVariant(input: {
 
   for (let attempt = 1; attempt <= 3; attempt++) {
     const draft = freezePassedBeats(
-      await writeDraft({ ...input, prior, failures }),
+      await writeDraft({
+        ...input,
+        prior,
+        failures,
+        predictionTiming: input.predictionTiming,
+      }),
       prior,
       failures,
     );

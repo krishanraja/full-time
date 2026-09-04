@@ -55,12 +55,40 @@ const NAME_STOPWORDS = new Set(
     .map((word) => word.toLowerCase()),
 );
 
+const NUMBER_WORDS = new Set(
+  "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty thirty forty fifty sixty seventy eighty ninety hundred first second third fourth fifth sixth seventh eighth ninth tenth".split(
+    " ",
+  ),
+);
+
+/** Football constants every listener already holds: a point, three for a win,
+ *  eleven players, forty-five minute halves, ninety minutes. These are not
+ *  match facts and never need evidence. */
+const FOOTBALL_CONSTANTS = [1, 3, 11, 45, 90];
+
 const normalize = (value: string) =>
   value
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\p{M}/gu, "")
     .toLowerCase()
     .trim();
+
+function isNumberPhrase(phrase: string) {
+  const tokens = normalize(phrase)
+    .split(/[\s-]+/)
+    .filter(Boolean);
+  return tokens.length > 0 && tokens.every((token) => NUMBER_WORDS.has(token));
+}
+
+/** A short window of script around a span, so a repair prompt says where the
+ *  problem sits rather than only what it is. */
+function contextFor(script: string, span: string) {
+  const index = script.indexOf(span);
+  if (index < 0) return span;
+  const start = Math.max(0, script.lastIndexOf(" ", Math.max(0, index - 30)));
+  const end = Math.min(script.length, script.indexOf(" ", index + span.length + 30));
+  return `${span} (in: "${script.slice(start, end < 0 ? script.length : end).trim()}")`;
+}
 
 function collectEvidenceValues(value: unknown, numbers: Set<number>, entities: Set<string>): void {
   if (typeof value === "number" && Number.isFinite(value)) numbers.add(value);
@@ -85,21 +113,53 @@ function licensedScriptValues(pack: EvidencePack, candidate: PunditVariantCandid
   if (typeof homeScore === "number" && typeof awayScore === "number") {
     for (let count = 0; count <= homeScore + awayScore; count++) numbers.add(count);
   }
+  for (const constant of FOOTBALL_CONSTANTS) numbers.add(constant);
   return { numbers, entities };
 }
 
-function properNouns(script: string): string[] {
-  const found: string[] = [];
+const PHRASE_CONNECTORS = new Set(["of", "de", "van", "der", "del", "i"]);
+
+/** Trims connector words and the pronoun "I" from the ends of a matched
+ *  phrase, so "Ten of" becomes "Ten" and "But I" becomes "But". */
+function trimPhrase(phrase: string) {
+  const tokens = phrase.split(/\s+/);
+  while (tokens.length && PHRASE_CONNECTORS.has(tokens[0].toLowerCase())) tokens.shift();
+  while (tokens.length && PHRASE_CONNECTORS.has(tokens.at(-1)!.toLowerCase())) tokens.pop();
+  return tokens.join(" ");
+}
+
+/** Capitalised phrases that look like names. A capitalised word at the start
+ *  of a sentence is only ordinary English, so it counts as a name only when the
+ *  same phrase also appears capitalised mid-sentence somewhere in the script.
+ *  Spelled numbers and ordinals are never names. */
+export function properNouns(script: string): string[] {
+  const midSentence: string[] = [];
+  const sentenceInitial: string[] = [];
   for (const sentence of script.split(/(?<=[.?!])\s+/)) {
     const pattern = /\b[A-Z][a-zA-Z'’-]*(?:\s+(?:[A-Z][a-zA-Z'’-]*|of|de|van|der|del))*/g;
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(sentence))) {
-      const phrase = match[0].trim();
-      if (NAME_STOPWORDS.has(normalize(phrase))) continue;
-      found.push(phrase);
+      const phrase = trimPhrase(match[0].trim());
+      if (!phrase) continue;
+      const key = normalize(phrase);
+      if (NAME_STOPWORDS.has(key) || isNumberPhrase(phrase)) continue;
+      const leading = sentence.slice(0, match.index).trim();
+      const atSentenceStart = leading === "" || /^["'“‘(]+$/.test(leading);
+      if (!atSentenceStart) {
+        midSentence.push(phrase);
+        continue;
+      }
+      sentenceInitial.push(phrase);
+      // "Because North FC kept the ball": the starter word is ordinary English
+      // but the rest of the phrase is a name in its own right.
+      const rest = trimPhrase(phrase.split(/\s+/).slice(1).join(" "));
+      if (rest && !NAME_STOPWORDS.has(normalize(rest)) && !isNumberPhrase(rest)) {
+        midSentence.push(rest);
+      }
     }
   }
-  return found;
+  const confirmed = new Set(midSentence.map(normalize));
+  return [...midSentence, ...sentenceInitial.filter((phrase) => confirmed.has(normalize(phrase)))];
 }
 
 function entityLicensed(entity: string, licensed: ReadonlySet<string>) {
@@ -220,7 +280,9 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
       "numeric_licence",
       unlicensedNumbers.length === 0,
       unlicensedNumbers.length
-        ? `Unlicensed numerical claims: ${unlicensedNumbers.map((item) => item.span).join(", ")}.`
+        ? `Unlicensed numerical claims (every number must appear in the evidence pack): ${unlicensedNumbers
+            .map((item) => contextFor(candidate.displayScript, item.span))
+            .join("; ")}.`
         : undefined,
       unlicensedNumbers.map((item) => item.span).join(", ") || undefined,
       beatsContaining(
@@ -232,7 +294,9 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
       "entity_licence",
       unlicensedEntities.length === 0,
       unlicensedEntities.length
-        ? `Unlicensed proper nouns: ${unlicensedEntities.join(", ")}.`
+        ? `Unlicensed proper nouns (only names present in the evidence pack may appear): ${unlicensedEntities
+            .map((entity) => contextFor(candidate.displayScript, entity))
+            .join("; ")}.`
         : undefined,
       unlicensedEntities.join(", ") || undefined,
       beatsContaining(candidate, unlicensedEntities),
