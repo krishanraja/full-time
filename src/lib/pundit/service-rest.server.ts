@@ -5,6 +5,22 @@ function serviceConfig() {
   return { url, key };
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** PostgREST rejects a bulk insert whose rows do not share the same keys
+ *  (PGRST102). Optional fields that are `undefined` vanish from JSON, so rows
+ *  drift apart. Give every row the union of keys, with explicit nulls, before
+ *  serialising. Non-array bodies and arrays of non-objects pass through. */
+export function uniformRows(body: unknown): unknown {
+  if (!Array.isArray(body) || !body.length || !body.every(isPlainObject)) return body;
+  const keys = [...new Set(body.flatMap((row) => Object.keys(row)))];
+  return body.map((row) =>
+    Object.fromEntries(keys.map((key) => [key, row[key] === undefined ? null : row[key]])),
+  );
+}
+
 export async function serviceRest<T>(
   path: string,
   init: {
@@ -24,7 +40,7 @@ export async function serviceRest<T>(
       ...(init.prefer ? { Prefer: init.prefer } : {}),
       ...(init.range ? { Range: `${init.range.from}-${init.range.to}` } : {}),
     },
-    body: init.body === undefined ? undefined : JSON.stringify(init.body),
+    body: init.body === undefined ? undefined : JSON.stringify(uniformRows(init.body)),
     signal: AbortSignal.timeout(30_000),
   });
   if (!response.ok) {
