@@ -56,7 +56,7 @@ async function acquirePermit(): Promise<ReleasePermit> {
 export async function anthropicJson<T>(input: {
   system: string;
   user: string;
-  schema: z.ZodType<T>;
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>;
   model: string;
   maxTokens: number;
 }): Promise<T> {

@@ -67,6 +67,47 @@ const beatNames = [
   "close",
 ] as const;
 
+const beatSchema = z.object({
+  name: z.enum(beatNames),
+  text: z.string().min(1),
+  intent: z.enum([
+    "setup",
+    "explanation",
+    "evidence",
+    "pivot",
+    "verdict",
+    "punchline",
+    "prediction",
+    "receipt",
+  ]),
+  pace: z.enum(["slow", "measured", "brisk"]),
+  energy: z.number().int().min(1).max(5),
+  pauseBeforeMs: z.number().int().min(0).max(1500).optional(),
+  emphasis: z.array(z.string()).optional(),
+  direction: z.string().optional(),
+});
+
+/** Writers sometimes return the ten beats keyed by beat name instead of as an
+ *  ordered array. Accept that shape by folding the key back into `name`, in
+ *  canonical beat order, so validation judges the content rather than the
+ *  container. Anything else is passed through for the schema to reject. */
+export function normaliseBeats(value: unknown): unknown {
+  if (Array.isArray(value) || !value || typeof value !== "object") return value;
+  const entries = Object.entries(value as Record<string, unknown>);
+  const known = new Set<string>(beatNames);
+  const ordered = [
+    ...entries
+      .filter(([name]) => known.has(name))
+      .sort(([a], [b]) => beatNames.indexOf(a as BeatName) - beatNames.indexOf(b as BeatName)),
+    ...entries.filter(([name]) => !known.has(name)),
+  ];
+  return ordered.map(([name, beat]) =>
+    beat && typeof beat === "object" && !Array.isArray(beat)
+      ? { name, ...(beat as Record<string, unknown>) }
+      : beat,
+  );
+}
+
 const draftSchema = z.object({
   thesis: z.object({
     headline: z.string(),
@@ -77,29 +118,7 @@ const draftSchema = z.object({
     changeMyMind: z.string(),
     predictionClaimId: z.string().optional(),
   }),
-  beats: z
-    .array(
-      z.object({
-        name: z.enum(beatNames),
-        text: z.string().min(1),
-        intent: z.enum([
-          "setup",
-          "explanation",
-          "evidence",
-          "pivot",
-          "verdict",
-          "punchline",
-          "prediction",
-          "receipt",
-        ]),
-        pace: z.enum(["slow", "measured", "brisk"]),
-        energy: z.number().int().min(1).max(5),
-        pauseBeforeMs: z.number().int().min(0).max(1500).optional(),
-        emphasis: z.array(z.string()).optional(),
-        direction: z.string().optional(),
-      }),
-    )
-    .length(10),
+  beats: z.preprocess(normaliseBeats, z.array(beatSchema).length(10)),
 });
 
 const judgeSchema = z.object({
@@ -235,7 +254,7 @@ async function writeDraft(input: {
       evidencePack: compactEvidence(input.pack),
       licensedClaims: input.claims,
       priorCandidate: input.prior
-        ? { thesis: input.prior.thesis, beats: input.prior.outline }
+        ? { thesis: input.prior.thesis, priorTextByBeatName: input.prior.outline }
         : undefined,
       targetedRepairs: input.failures,
       outputContract: {
@@ -248,7 +267,9 @@ async function writeDraft(input: {
           changeMyMind: "string",
           predictionClaimId: "optional licensed prediction claim id",
         },
-        beat: {
+        beats:
+          "A JSON array of exactly ten beat objects in beatNames order. Never an object keyed by beat name.",
+        beatObjectShape: {
           name: beatNames.join(" | "),
           text: "string",
           intent:
