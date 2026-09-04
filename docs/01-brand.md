@@ -53,6 +53,8 @@ Approved examples:
 - “Counts everything. Trusts almost nothing.”
 - “Show me why.”
 - “Nothing ready just yet.”
+- “First show is on the way.”
+- “No match to cover today.”
 - “Your old show is still here.”
 - “What they said, what happened, and the bit they missed.”
 - “The data shows what happened, but not always why.”

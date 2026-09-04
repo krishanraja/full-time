@@ -8,16 +8,16 @@ The product is meant to feel brilliant because it is AI, not like a cheaper imit
 
 ## Current state
 
-| Surface     | Repository and production state on 2026-08-11                                                                                           |
+| Surface     | Repository and production state on 2026-09-04                                                                                           |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Lifecycle   | Truthful pre-launch preview                                                                                                             |
+| Lifecycle   | Live beta by founder override; human review gates waived and listed in `docs/19-release-state.md`                                       |
 | Production  | [fulltime.fm](https://fulltime.fm) serves the three-tab AI Pundit shell                                                                 |
 | Navigation  | Today, Teams, Settings                                                                                                                  |
 | Today       | Player-first show, six-AI-Pundit picker, real-media progress, same-pundit fallback, proof cards, recent shows, settled-only entry point |
 | AI Pundits  | All six are free and selectable without an account                                                                                      |
 | Avatars     | Abstract SVG visuals generated from the drop and AI Pundit IDs, so each edition gets a stable fresh look                                |
 | Feed        | `/feed` redirects to Today; the Reporter RSS endpoint remains available                                                                 |
-| Publication | Automated public publication remains disabled and fail-closed                                                                           |
+| Publication | The 04:45 UTC workflow publishes a drop automatically when all six editions pass the automated evidence, harness, and audio checks      |
 | Billing     | New checkout is disabled; existing subscribers retain billing management                                                                |
 
 Two secondary surfaces still carry legacy behavior. Teams is the public label for `/following`, but the route has not yet enforced Premier-League-only beta filtering. Today checks settled-only records, but `/receipts` still renders the older searchable prediction ledger. These gaps are recorded in [`docs/product-state.json`](./docs/product-state.json) and must not be marketed as complete.

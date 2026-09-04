@@ -40,10 +40,37 @@ function fmt(seconds: number) {
   return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
 }
 
+/** Joins the last two words with a non-breaking space so a title never ends
+ *  on a one-word orphan. */
+const NO_BREAK_SPACE = String.fromCharCode(160);
+
 function withoutOrphan(value: string) {
   const words = value.trim().split(/\s+/);
   if (words.length < 3) return value;
-  return `${words.slice(0, -2).join(" ")} ${words.slice(-2).join("\u00a0")}`;
+  return `${words.slice(0, -2).join(" ")} ${words.slice(-2).join(NO_BREAK_SPACE)}`;
+}
+
+/** Each empty state says what is true. No published show has ever existed
+ *  (`prelaunch`), no match was covered on this date (`off_day`), or this AI
+ *  Pundit's edition did not pass its checks (`variant_unavailable`). */
+function emptyStateCopy(state: TodayEditorialResponse["state"]) {
+  switch (state) {
+    case "prelaunch":
+      return {
+        title: "First show is on the way",
+        body: "We publish the moment a match passes every check. Your AI Pundit will be ready.",
+      };
+    case "off_day":
+      return {
+        title: "No match to cover today",
+        body: "Nothing finished on this date. Your AI Pundit is back for the next one.",
+      };
+    default:
+      return {
+        title: "Nothing ready just yet",
+        body: "We only play shows that passed every check. Come back soon and we will keep your AI Pundit ready.",
+      };
+  }
 }
 
 function editionFor(response: TodayEditorialResponse): PublicEdition | null {
@@ -223,16 +250,16 @@ export function TodayShowPlayer({
           : "READY";
 
   if (!edition || !episode) {
+    const empty = emptyStateCopy(response.state);
     return (
       <main className="px-0 pb-8 pt-4">
         <p className="eyebrow">{coverageDateLabel(response.coverageDate)}</p>
         <section className="surface rounded-[26px] border-t-2 border-t-[var(--lime)] p-5">
           <h1 className="max-w-[18ch] text-[clamp(30px,9vw,46px)] font-semibold leading-[0.98] tracking-[-0.055em] [text-wrap:balance]">
-            Nothing ready just yet
+            {empty.title}
           </h1>
           <p className="mt-4 max-w-[36ch] text-[15px] leading-relaxed text-muted-foreground [text-wrap:pretty]">
-            We only play shows that passed every check. Come back soon and we will keep your AI
-            Pundit ready.
+            {empty.body}
           </p>
         </section>
       </main>

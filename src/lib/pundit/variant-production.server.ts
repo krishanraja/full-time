@@ -1,7 +1,7 @@
 import { evaluateAudioQuality, type AudioQualityMetrics } from "./audio-quality";
 import { masterNarrationAudio } from "./audio-mastering.server";
 import { storeVariantAssets } from "./asset-storage.server";
-import { loadPronunciationPlan } from "./pronunciation.server";
+import { countVerifiedProperNames, loadPronunciationPlan } from "./pronunciation.server";
 import { renderPunditShareCard } from "./share-card.server";
 import { serviceRest } from "./service-rest.server";
 import type { GeneratedPunditVariant } from "./pundit-generator.server";
@@ -117,9 +117,13 @@ export async function producePunditVariant(input: {
       audio: narration.audio,
       script: candidate.displayScript,
     });
+    const properNamesVerified = countVerifiedProperNames(
+      pronunciation.usedEntities,
+      narration.fidelity.transcript,
+    );
     const metrics: AudioQualityMetrics = {
       ...mastered.metrics,
-      properNamesVerified: pronunciation.properNamesVerified,
+      properNamesVerified,
       properNamesTotal: pronunciation.properNamesTotal,
       transcriptVerified: narration.fidelity.wer <= 0.05,
       numbersVerified: narration.fidelity.numbers,
@@ -181,6 +185,7 @@ export async function producePunditVariant(input: {
         audio_quality: {
           passed: true,
           failures: [],
+          lexiconMisses: pronunciation.lexiconMisses,
           metrics,
           mastering: mastered.mastering,
           fidelityWer: narration.fidelity.wer,

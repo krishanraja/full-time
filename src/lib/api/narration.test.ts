@@ -3,6 +3,8 @@ import {
   applyPerformanceCadence,
   chunkSpokenForTts,
   fidelityNumbers,
+  monthlyCapacityFloor,
+  quotaShouldStop,
   spokenIdentity,
   stripTags,
   tagBudgetOk,
@@ -48,5 +50,35 @@ describe("persona narration plans", () => {
     expect(chunks.length).toBeGreaterThan(1);
     expect(chunks.every((chunk) => chunk.length <= 800)).toBe(true);
     expect(chunks.join(" ")).toBe(long);
+  });
+});
+
+describe("narration capacity gate", () => {
+  it("reads an optional monthly floor from the environment", () => {
+    expect(monthlyCapacityFloor({})).toBe(0);
+    expect(monthlyCapacityFloor({ TTS_MONTHLY_CHARACTER_CAPACITY: "0" })).toBe(0);
+    expect(monthlyCapacityFloor({ TTS_MONTHLY_CHARACTER_CAPACITY: "abc" })).toBe(0);
+    expect(monthlyCapacityFloor({ TTS_MONTHLY_CHARACTER_CAPACITY: "1500000" })).toBe(1_500_000);
+  });
+
+  it("allows a small plan that can still afford three takes", () => {
+    const result = quotaShouldStop({
+      used: 10_000,
+      limit: 100_000,
+      requestedCharacters: 6_000,
+      floor: 0,
+    });
+    expect(result.stop).toBe(false);
+    expect(result.remaining).toBe(90_000);
+  });
+
+  it("stops when the retry reserve or the configured floor is not met", () => {
+    expect(
+      quotaShouldStop({ used: 95_000, limit: 100_000, requestedCharacters: 6_000, floor: 0 }).stop,
+    ).toBe(true);
+    expect(
+      quotaShouldStop({ used: 0, limit: 100_000, requestedCharacters: 6_000, floor: 1_500_000 })
+        .stop,
+    ).toBe(true);
   });
 });

@@ -32,9 +32,9 @@ try {
 
 if (state) {
   if (state.schemaVersion !== 1) failures.push(`${statePath}: unsupported schemaVersion`);
-  if (state.asOf !== "2026-08-11")
+  if (state.asOf !== "2026-09-04")
     failures.push(`${statePath}: asOf must match this reconciliation`);
-  if (state.product?.lifecycle !== "pre-launch") failures.push(`${statePath}: lifecycle drifted`);
+  if (state.product?.lifecycle !== "live-beta") failures.push(`${statePath}: lifecycle drifted`);
   if (
     state.product?.publicNavigation?.map((item) => item.label).join(",") !== "Today,Teams,Settings"
   ) {
@@ -72,7 +72,13 @@ for (const path of currentDocs) {
   requireText(path, /\*\*Status:\*\*/, "missing Status field");
   requireText(path, /\*\*Owner:\*\*/, "missing Owner field");
   requireText(path, /\*\*Purpose:\*\*/, "missing Purpose field");
-  requireText(path, /\*\*Last (?:reviewed|verified):\*\* 2026-08-11/, "review date is stale");
+  // 2026-08-11 was the full handbook reconciliation. 2026-09-04 is the founder
+  // launch override; only the documents that changed carry that date.
+  requireText(
+    path,
+    /\*\*Last (?:reviewed|verified):\*\* 2026-0(?:8-11|9-04)/,
+    "review date is stale",
+  );
 }
 
 for (const path of [

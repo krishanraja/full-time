@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-08-11",
+  "asOf": "2026-09-04",
   "authority": {
     "repository": "https://github.com/krishanraja/full-time",
     "branch": "main",
@@ -10,7 +10,7 @@
   "product": {
     "name": "Full Time",
     "category": "AI-native football audio product",
-    "lifecycle": "pre-launch",
+    "lifecycle": "live-beta",
     "oneSentence": "Full Time turns one set of checked football facts into six complete shows, each made and performed by a different AI Pundit.",
     "coreValue": "The product is valuable because AI can create six genuinely different readings of the same match, while deterministic evidence controls keep the underlying facts honest.",
     "primaryAudience": "Football fans who want a playful, useful take on a match without sitting through the usual pundit noise.",
@@ -69,9 +69,10 @@
       "Legacy archive and episode pages remain available and must stay labelled as archive or demo material."
     ],
     "operations": [
-      "Automated public publication, new checkout, public forecast scores, and public launch remain disabled by fail-closed flags.",
-      "The durable six-variant production pipeline, evidence gates, narration checks, atomic publication boundary, forecasts, settlements, and release evaluator exist in code.",
-      "Passing code checks does not satisfy rights, voice, editorial, rehearsal, legal, accessibility, or launch gates."
+      "On 2026-09-04 the founder enabled public launch by recording an explicit override gate snapshot (migration 20260904120000_founder_launch_override.sql). The external human, rights, voice-audition, rehearsal, forecast, and sign-off gates were waived and are listed on that snapshot.",
+      "The 04:45 UTC daily workflow runs in publication mode and publishes a drop automatically once all six AI Pundit editions pass the automated evidence, harness, transcript, audio, and asset checks enforced by publish_daily_drop().",
+      "Selected voices are the configured ELEVENLABS_VOICE values, attested by the founder on the voice_candidates row. Proper-name pronunciation is measured against the verified transcript, not a human lexicon.",
+      "New checkout, public forecast scores, prediction registration, and evaluation runs remain disabled by flags."
     ]
   },
   "currentGaps": [
@@ -97,18 +98,18 @@
     }
   ],
   "commercialState": {
-    "consumerPrice": "All six AI Pundits are free during pre-launch.",
+    "consumerPrice": "All six AI Pundits are free during the live beta.",
     "newCheckout": "disabled",
     "existingSubscribers": "Existing subscribers may still manage billing through Settings.",
     "availableNow": [
-      "Invite a person to try the truthful pre-launch preview.",
+      "Invite a person to listen to the live beta on fulltime.fm once the first drop publishes.",
       "Invite a person to join the launch note.",
       "Run a private product demonstration with approved material.",
       "Hold non-binding discovery with data, voice, distribution, club, league, publisher, or sponsor partners."
     ],
     "notAvailable": [
       "A new paid subscription",
-      "A guaranteed daily publishing service",
+      "A guaranteed daily publishing service (a drop publishes only when all six editions pass the automated checks)",
       "A commercial sponsor package",
       "An approved white-label offer",
       "A confirmed public launch date",
@@ -116,14 +117,15 @@
     ]
   },
   "verification": {
-    "checkedAt": "2026-08-11",
+    "checkedAt": "2026-09-04",
     "passed": [
       "Documentation contract and relative-link check",
       "TypeScript typecheck",
-      "53 tests across 19 test files",
+      "61 tests across 20 test files",
       "ESLint with zero errors and six existing fast-refresh warnings",
       "Git diff whitespace check",
-      "GitHub Actions run 31533126034, including dependency audit, production build, generated-type checks, and migration checks"
+      "Linux production build with the Workflow manifest verified (1 workflow, 10 application steps)",
+      "Founder override migration applied to hzadscrqmyilbisexvyz on 2026-09-04 and read back as live"
     ],
     "localLimitations": [
       "The Windows production build emits the application bundles but the Workflow plugin registers zero steps and zero workflows under both Node 25.5.0 and the required Node 24.19.0. The manifest gate fails as designed. GitHub Actions run 31533126034 passed the production build on Ubuntu and Node 24 for merge 0933a63, so Linux CI or a matching Vercel build is the current build authority."
@@ -136,7 +138,8 @@
       "Public proof cards use sealed evidence and licensed claims rather than request-time generated explanations.",
       "Full Time discloses AI-written scripts and synthetic voices.",
       "Full Time does not use copyrighted broadcast audio or imitate a living pundit's recognizable voice or style.",
-      "All six AI Pundits are free during pre-launch."
+      "All six AI Pundits are free during the live beta.",
+      "Every published show passed automated evidence, harness, transcript, and audio checks."
     ],
     "conditional": [
       "Daily reliability requires seven complete rehearsals and revision-bound release approval.",
@@ -151,7 +154,8 @@
       "Personally generated shows or playlists",
       "Big Five launch coverage",
       "Current paid availability",
-      "Daily publication before the release gates pass",
+      "Any claim that human editorial, humour, rights, or voice review has been completed",
+      "Guaranteed publication on any given day",
       "Film-level tactical observations without licensed film or tracking evidence"
     ]
   },

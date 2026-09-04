@@ -3,20 +3,20 @@
 - **Status:** Current runbook
 - **Owner:** Release operator and on-call
 - **Purpose:** Operate rehearsals, publication, incidents, secrets, deployments, and rollback safely.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-04
 
 ## Default posture
 
-Production is a truthful pre-launch preview. These values are the safe baseline:
+Production is a live beta under the founder launch override recorded in [`19-release-state.md`](./19-release-state.md). These values are the production baseline:
 
 ```text
-VITE_PRELAUNCH_MODE=true
-PRELAUNCH_MODE=true
+VITE_PRELAUNCH_MODE=false
+PRELAUNCH_MODE=false
 VITE_BILLING_ENABLED=false
 BILLING_ENABLED=false
 ENABLE_PRIVATE_REHEARSALS=false
 ENABLE_LEGACY_DAILY_DROP=false
-PUNDIT_PUBLICATION_ENABLED=false
+PUNDIT_PUBLICATION_ENABLED=true
 PUBLIC_FORECAST_SCORES_ENABLED=false
 ENABLE_FORECAST_TRAINING=false
 ENABLE_PREDICTION_REGISTRATION=false
@@ -24,7 +24,7 @@ ENABLE_EVALUATION_RUNS=false
 ENABLE_RELEASE_SNAPSHOT_WRITE=false
 ```
 
-Keep public publication, new checkout, legacy generation, and public forecast scores disabled until the exact revision passes [`19-release-state.md`](./19-release-state.md).
+Publication is automatic: the 04:45 UTC workflow runs in `publication` mode and `publish_daily_drop()` publishes only a drop whose six editions passed every automated check. Keep new checkout, legacy generation, prediction registration, and public forecast scores disabled.
 
 ## Schedules
 
@@ -66,12 +66,12 @@ GitHub workflows are manual recovery only. Every request uses `Authorization: Be
 
 ## Audio runbook
 
-- Require the selected, licensed voice for the exact pundit.
-- Require human-verified pronunciation for launch names.
+- Require the selected voice for the exact pundit. When no `voice_candidates` row is selected, the pipeline records one from the configured `ELEVENLABS_VOICE_*` value with a founder attestation; never substitute another pundit's voice.
+- Use human-verified pronunciation dictionary entries when they exist. Proper-name accuracy is measured against the verified transcript and must reach 99 percent.
 - Keep each sentence-safe TTS request at or below 4,500 characters.
 - Use no more than three pronunciation dictionaries per request.
 - Require transcription, number identity, duration, speaking rate, loudness, true peak, dynamic range, and artifact checks.
-- Require at least 1.5 million monthly approved characters plus retry reserve and usage alerts.
+- Require enough remaining monthly characters for three takes of the script plus margin. `TTS_MONTHLY_CHARACTER_CAPACITY` is an optional plan floor.
 - Treat provider or transcription outages as blocking.
 
 ## Content incident
