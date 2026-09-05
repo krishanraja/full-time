@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DIMENSION_STANDARDS } from "./dimensions";
 import { licenseClaims } from "./claim-lab";
 import { anthropicJson } from "./anthropic-json.server";
 import { spentThisStepUsd } from "./model-cost";
@@ -343,8 +344,11 @@ async function writeDraft(input: {
     cachedContext: [
       // Fixed for the whole run.
       { evidencePack: compactEvidence(input.pack), licensedClaims: claims.listed },
-      // Fixed for this pundit across all of its repair rounds.
-      { punditSpec: spec },
+      // Fixed for this pundit across all of its repair rounds. The judged
+      // dimensions travel with the spec: a script is rejected against these
+      // twelve standards, so the writer is told them rather than left to infer
+      // them from repair notes one failure at a time.
+      { punditSpec: spec, judgedDimensions: DIMENSION_STANDARDS },
     ],
     user: JSON.stringify({
       priorCandidate: input.prior
@@ -465,7 +469,11 @@ async function judgeOne(
     ],
     user: JSON.stringify({
       rubric: harness,
-      instruction: `Judge only ${harness}. Score it 1 to 5.`,
+      // The standard the writer was given for this dimension. Both sides read
+      // the same words, so a rejection is a real shortfall rather than a
+      // disagreement about what the dimension means.
+      standard: DIMENSION_STANDARDS[harness],
+      instruction: `Judge only ${harness}, against the standard given. Score it 1 to 5.`,
     }),
   });
   return {

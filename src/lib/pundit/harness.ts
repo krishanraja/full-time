@@ -31,7 +31,7 @@ const PROHIBITED_HUMOUR = [
 /** Season-level outcomes the structured evidence tier cannot support. These
  *  words carry the consequence on their own, whatever surrounds them. */
 const CONSEQUENCE_ALWAYS =
-  /\b(?:relegat\w*|stay(?:ed|s|ing)?\s+up|survival|survived|top\s+four|play-?offs?|promotion|promoted|Europa|Champions\s+League|champions?|European\s+(?:place|football|spot)|titles?|drop\s+zone|the\s+drop)\b/gi;
+  /\b(?:relegat\w*|stay(?:ed|s|ing)?\s+up|survival|top\s+four|play-?offs?|promotion|promoted|Europa|Champions\s+League|champions?|European\s+(?:place|football|spot)|titles?|drop\s+zone|the\s+drop)\b/gi;
 
 /** Season-level stakes used to disambiguate the verbs below. */
 const SEASON_STAKES =
@@ -40,9 +40,17 @@ const SEASON_STAKES =
 /** "Secured", "sealed" and "confirmed" are ordinary match verbs: a side secures
  *  three points without any season claim. They only assert a consequence when a
  *  season-level stake sits beside them in the same sentence. */
+// "Survive" is an ordinary match verb before it is a season one. A side
+// survives a corner, a spell of pressure, ten minutes of it. The Numbers pundit
+// wrote "Liverpool didn't survive pressure, they survived optimism" and this
+// gate failed the script, which was the single harness standing between that
+// run and a published show. The noun "survival" stays absolute, because in
+// football it means the season; the verb needs a season stake beside it.
+const CONSEQUENCE_VERBS = "(?:clinch|seal|secur|confirm|guarantee|qualif|surviv)";
+
 const CONSEQUENCE_NEAR_STAKES = new RegExp(
-  `\\b(?:clinch|seal|secur|confirm|guarantee|qualif)\\w*\\b[^.?!]{0,60}?\\b${SEASON_STAKES}\\b` +
-    `|\\b${SEASON_STAKES}\\b[^.?!]{0,60}?\\b(?:clinch|seal|secur|confirm|guarantee|qualif)\\w*\\b`,
+  `\\b${CONSEQUENCE_VERBS}\\w*\\b[^.?!]{0,60}?\\b${SEASON_STAKES}\\b` +
+    `|\\b${SEASON_STAKES}\\b[^.?!]{0,60}?\\b${CONSEQUENCE_VERBS}\\w*\\b`,
   "gi",
 );
 
