@@ -175,10 +175,20 @@ export async function persistEditorialRehearsal(input: {
     })),
   );
   const approved = input.variants.every((variant) => variant.status === "approved");
+  // Each pundit runs as its own step and reports what it spent. Summing here is
+  // the only place with all six in hand, and the figure is what an on-demand
+  // unlock has to be priced against.
+  const generationCostUsd = input.variants.reduce(
+    (total, variant) => total + (variant.costUsd ?? 0),
+    0,
+  );
   await serviceRest<null>(`daily_drops?id=eq.${dropId}`, {
     method: "PATCH",
     prefer: "return=minimal",
-    body: { status: approved ? "narration_review" : "quarantined" },
+    body: {
+      status: approved ? "narration_review" : "quarantined",
+      generation_cost_usd: Number(generationCostUsd.toFixed(4)),
+    },
   });
   return {
     dropId,
