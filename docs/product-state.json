@@ -70,7 +70,7 @@
     ],
     "operations": [
       "On 2026-09-04 the founder enabled public launch by recording an explicit override gate snapshot (migration 20260904120000_founder_launch_override.sql). The external human, rights, voice-audition, rehearsal, forecast, and sign-off gates were waived and are listed on that snapshot.",
-      "The 04:45 UTC daily workflow runs in publication mode and publishes a drop automatically once all six AI Pundit editions pass the automated evidence, harness, transcript, audio, and asset checks enforced by publish_daily_drop().",
+      "The 04:45 UTC daily workflow runs in publication mode and publishes every AI Pundit edition that passes the automated evidence, harness, transcript, audio, and asset checks enforced by publish_daily_drop(). An edition that falls short is withheld; the ones that passed still publish.",
       "Selected voices are the configured ELEVENLABS_VOICE values, attested by the founder on the voice_candidates row. Proper-name pronunciation is measured against the verified transcript, not a human lexicon.",
       "New checkout, public forecast scores, prediction registration, and evaluation runs remain disabled by flags."
     ]
@@ -109,7 +109,7 @@
     ],
     "notAvailable": [
       "A new paid subscription",
-      "A guaranteed daily publishing service (a drop publishes only when all six editions pass the automated checks)",
+      "A guaranteed daily publishing service, or a guarantee that all six AI Pundits appear on any given day (each edition publishes only on its own automated checks)",
       "A commercial sponsor package",
       "An approved white-label offer",
       "A confirmed public launch date",

@@ -129,72 +129,6 @@ export async function runDropPromiseChecks(input: {
         `harness_runs?variant_id=in.(${variantIds})&select=variant_id,harness_name,attempt,passed,created_at`,
       )
     : [];
-  const checks: PromiseCheck[] = [];
-  const expected = new Set(PUNDIT_IDS);
-  const actual = new Set(variants.map((variant) => variant.pundit_id));
-  checks.push(
-    check(
-      "six_variants",
-      variants.length === 6 && actual.size === 6,
-      `${variants.length} variants`,
-    ),
-    check(
-      "pundit_identity",
-      [...expected].every((pundit) => actual.has(pundit)),
-      [...actual].join(", "),
-    ),
-    check(
-      "variant_status",
-      variants.every((variant) => ["approved", "published"].includes(variant.status)),
-      variants.map((variant) => `${variant.pundit_id}:${variant.status}`).join(", "),
-    ),
-    check(
-      "script_identity",
-      variants.every((variant) => variant.script_identity_verified),
-      "display and spoken scripts retain semantic identity",
-    ),
-    check(
-      "audio_quality",
-      variants.every((variant) => variant.audio_quality?.passed === true),
-      "all produced audio passed its independent gates",
-    ),
-    check(
-      "pronunciation",
-      variants.every((variant) => (variant.pronunciation_rate ?? 0) >= 0.99),
-      "all variants meet the 99 percent proper-name floor",
-    ),
-    check(
-      "show_duration",
-      variants.every(
-        (variant) =>
-          (variant.audio_duration_sec ?? 0) >= 300 && (variant.audio_duration_sec ?? 0) <= 480,
-      ),
-      variants
-        .map((variant) => `${variant.pundit_id}:${variant.audio_duration_sec ?? 0}s`)
-        .join(", "),
-    ),
-    check(
-      "distinct_audio",
-      new Set(variants.map((variant) => variant.audio_url).filter(Boolean)).size === 6,
-      "no persona silently substitutes another persona's audio",
-    ),
-    check(
-      "distinct_voices",
-      new Set(variants.map((variant) => variant.voice_candidate_id).filter(Boolean)).size === 6,
-      "six selected voice candidates",
-    ),
-    check(
-      "transcripts",
-      variants.every((variant) => Boolean(variant.transcript?.trim())),
-      "six non-empty verified transcripts",
-    ),
-    check(
-      "artwork",
-      variants.every((variant) => Boolean(variant.share_image_url)),
-      "six PNG share cards",
-    ),
-  );
-
   const latest = latestHarnesses(harnesses);
   const latestByVariant = new Map<string, Map<string, HarnessRow>>();
   for (const row of latest) {
@@ -202,19 +136,67 @@ export async function runDropPromiseChecks(input: {
     forVariant.set(row.harness_name, row);
     latestByVariant.set(row.variant_id, forVariant);
   }
-  const missingOrFailed = variants.flatMap((variant) => {
+
+  // Why one variant is not publishable. Every gate is per variant and none of
+  // them is relaxed here; what changed is that a neighbour's failure no longer
+  // withholds a pundit who passed. The reasons are reported rather than
+  // summarised, because "the drop failed" was never actionable.
+  const shortfalls = (variant: VariantRow): string[] => {
+    const reasons: string[] = [];
+    if (!["approved", "published"].includes(variant.status)) reasons.push(variant.status);
+    if (!variant.script_identity_verified) reasons.push("script identity");
+    if (variant.audio_quality?.passed !== true) reasons.push("audio quality");
+    if ((variant.pronunciation_rate ?? 0) < 0.99) reasons.push("pronunciation");
+    const seconds = variant.audio_duration_sec ?? 0;
+    if (seconds < 300 || seconds > 480) reasons.push(`duration ${seconds}s`);
+    if (!variant.audio_url) reasons.push("no audio");
+    if (!variant.share_image_url) reasons.push("no share card");
+    if (!variant.transcript?.trim()) reasons.push("no transcript");
+    if (!variant.voice_candidate_id) reasons.push("no licensed voice");
     const forVariant = latestByVariant.get(variant.id);
-    return REQUIRED_HARNESS_NAMES.filter((name) => !forVariant?.get(name)?.passed).map(
-      (name) => `${variant.pundit_id}:${name}`,
-    );
-  });
+    const harnessFailures = REQUIRED_HARNESS_NAMES.filter((name) => !forVariant?.get(name)?.passed);
+    if (harnessFailures.length) reasons.push(harnessFailures.join(", "));
+    return reasons;
+  };
+
+  const publishable = variants.filter((variant) => shortfalls(variant).length === 0);
+  const withheld = variants
+    .filter((variant) => shortfalls(variant).length > 0)
+    .map((variant) => `${variant.pundit_id}: ${shortfalls(variant).join(", ")}`);
+  const missing = PUNDIT_IDS.filter(
+    (pundit) => !variants.some((variant) => variant.pundit_id === pundit),
+  );
+
+  const checks: PromiseCheck[] = [];
   checks.push(
     check(
-      "latest_harnesses",
-      missingOrFailed.length === 0,
-      missingOrFailed.length
-        ? `${missingOrFailed.length} required harness results missing or failed: ${missingOrFailed.slice(0, 6).join(", ")}`
-        : `${REQUIRED_HARNESS_NAMES.length} required harnesses passed for each pundit`,
+      "publishable_variants",
+      publishable.length >= 1,
+      publishable.length
+        ? `publishing ${publishable.map((variant) => variant.pundit_id).join(", ")}`
+        : "no pundit passed every gate",
+    ),
+    check(
+      "withheld_variants",
+      true,
+      withheld.length
+        ? `withheld ${withheld.join(" | ")}${missing.length ? ` | never generated: ${missing.join(", ")}` : ""}`
+        : "every pundit passed",
+    ),
+    check(
+      "pundit_identity",
+      new Set(publishable.map((variant) => variant.pundit_id)).size === publishable.length,
+      "no pundit appears twice in the same drop",
+    ),
+    check(
+      "distinct_audio",
+      new Set(publishable.map((variant) => variant.audio_url)).size === publishable.length,
+      "no persona silently substitutes another persona's audio",
+    ),
+    check(
+      "distinct_voices",
+      new Set(publishable.map((variant) => variant.voice_candidate_id)).size === publishable.length,
+      "each published pundit has its own selected voice",
     ),
     check(
       "prediction_receipts",
@@ -225,7 +207,7 @@ export async function runDropPromiseChecks(input: {
     ),
   );
 
-  const reporter = variants.find((variant) => variant.pundit_id === "zen");
+  const reporter = publishable.find((variant) => variant.pundit_id === "zen");
   if (reporter?.audio_url && reporter.share_image_url) {
     const publishedAt = reporter.published_at ?? new Date().toISOString();
     const item: ReporterFeedItem = {
@@ -248,12 +230,13 @@ export async function runDropPromiseChecks(input: {
       ),
     );
   } else {
-    checks.push(check("rss", false, "Reporter assets are incomplete."));
+    // The feed carries the Reporter alone, so a day it is withheld adds no item.
+    checks.push(check("rss", true, "The Reporter is not publishing today, so the feed is unchanged."));
   }
 
   const fetcher = input.fetcher ?? fetch;
   const assetChecks = await Promise.all(
-    variants.flatMap((variant) => [
+    publishable.flatMap((variant) => [
       variant.audio_url
         ? assetCheck(variant.audio_url, "audio", fetcher)
         : Promise.resolve(check("audio_asset", false, `${variant.pundit_id} audio URL missing`)),
@@ -263,5 +246,9 @@ export async function runDropPromiseChecks(input: {
     ]),
   );
   checks.push(...assetChecks);
-  return { passed: checks.every((item) => item.passed), checks };
+  return {
+    passed: checks.every((item) => item.passed),
+    checks,
+    publishing: publishable.map((variant) => variant.pundit_id),
+  };
 }

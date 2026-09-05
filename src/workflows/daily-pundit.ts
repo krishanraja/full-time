@@ -72,7 +72,7 @@ export async function dailyPunditWorkflow(input: DailyPunditWorkflowInput) {
     if (persisted.status !== "narration_review") {
       const promise = await quarantineEditorialDropStep(
         persisted.dropId,
-        "One or more pundit scripts failed independent editorial harnesses.",
+        "No pundit script passed its independent editorial harnesses.",
       );
       await completeRunStep({
         runId: run.id,
@@ -83,22 +83,28 @@ export async function dailyPunditWorkflow(input: DailyPunditWorkflowInput) {
         dropId,
         successfulVariants: 0,
         promiseChecks: promise,
-        failure: "Six-variant editorial promise checks failed.",
+        failure: "No variant passed the editorial harnesses.",
       });
       return { dropId, matchId, published: false, promise };
     }
 
     const variantIds = new Map(persisted.variantIds.map((item) => [item.punditId, item.variantId]));
+    // Only the pundits that passed their own harnesses are narrated. Paying
+    // ElevenLabs to voice a script that can never publish is money spent on
+    // nothing, and a quarantined variant with audio attached reads as ready.
+    const approved = new Set<string>(persisted.approvedPundits);
     const production = await Promise.all(
-      variants.map((generated) =>
-        producePunditStep({
-          dropId: persisted.dropId,
-          coverageDate,
-          variantId: variantIds.get(generated.candidate.punditId)!,
-          generated,
-          entities: prepared.entities,
-        }),
-      ),
+      variants
+        .filter((generated) => approved.has(generated.candidate.punditId))
+        .map((generated) =>
+          producePunditStep({
+            dropId: persisted.dropId,
+            coverageDate,
+            variantId: variantIds.get(generated.candidate.punditId)!,
+            generated,
+            entities: prepared.entities,
+          }),
+        ),
     );
     const promise = await finalizeProducedDropStep({
       dropId: persisted.dropId,
@@ -116,7 +122,7 @@ export async function dailyPunditWorkflow(input: DailyPunditWorkflowInput) {
         dropId,
         successfulVariants,
         promiseChecks: promise,
-        failure: "Six-variant production promise checks failed.",
+        failure: "No variant survived production and the promise checks.",
       });
       return { dropId, matchId, published: false, promise };
     }

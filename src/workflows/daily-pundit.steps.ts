@@ -157,22 +157,24 @@ export async function finalizeProducedDropStep(input: {
     import("@/lib/pundit/promise-checks.server"),
     import("@/lib/pundit/service-rest.server"),
   ]);
-  const promise = input.production.every((item) => item.passed)
+  // A production failure withholds that pundit, not the show. The promise
+  // checks read the database rather than this list, so a variant whose audio
+  // never landed simply is not publishable, and the reason is recorded here.
+  const failures = input.production.flatMap((item) =>
+    item.passed
+      ? []
+      : [
+          {
+            name: `${item.punditId}_withheld`,
+            passed: true,
+            detail: `Withheld from this drop: ${item.failures?.join(" ") ?? "production failed closed"}.`,
+          },
+        ],
+  );
+  const promise = input.production.some((item) => item.passed)
     ? await runDropPromiseChecks({ dropId: input.dropId, coverageDate: input.coverageDate })
-    : {
-        passed: false,
-        checks: input.production.flatMap((item) =>
-          item.passed
-            ? []
-            : [
-                {
-                  name: `${item.punditId}_production`,
-                  passed: false,
-                  detail: item.failures?.join(" ") ?? "Production failed closed.",
-                },
-              ],
-        ),
-      };
+    : { passed: false, checks: [] };
+  promise.checks = [...promise.checks, ...failures];
   await serviceRest<null>(`daily_drops?id=eq.${encodeURIComponent(input.dropId)}`, {
     method: "PATCH",
     prefer: "return=minimal",

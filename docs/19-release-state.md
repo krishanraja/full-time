@@ -21,7 +21,7 @@ The founder decided to launch publicly before the external launch gates are met.
 
 Waived by that snapshot: evaluation manifest and scripts, hard-gate evaluation approval, founder gold and humour samples, voice auditions and licensing review, forecast backtest and calibration, seven consecutive rehearsals, prediction receipts, the nine revision-bound sign-offs, research rights review, the 1.5 million character TTS floor, TTS alerting, and the pre-launch truthfulness gate.
 
-Still enforced on every drop by `publish_daily_drop()` and the workflow: sealed evidence and licensed claims, the 25 required harnesses per AI Pundit, six approved editions with distinct audio, transcript fidelity, script identity, loudness, true peak, speaking rate, five to eight minute duration, a measured 99 percent proper-name rate, share cards, asset reachability, and immutability after publication.
+Still enforced on every drop by `publish_daily_drop()` and the workflow: sealed evidence and licensed claims, the 25 required harnesses per AI Pundit, distinct audio and a distinct licensed voice per published edition, transcript fidelity, script identity, loudness, true peak, speaking rate, five to eight minute duration, a measured 99 percent proper-name rate, share cards, asset reachability, and immutability after publication. Every one of those is a per-edition condition. From 2026-09-05 a drop publishes the editions that met them, and withholds the ones that did not, rather than withholding all six because one fell short.
 
 Code changes in the same revision:
 
