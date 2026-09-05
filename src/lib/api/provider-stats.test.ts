@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { statNumber } from "./provider-stats";
+import { hasStat, statLabels, statNumber } from "./provider-stats";
 
 /** The shape the provider actually sends, using its display names. */
 const stats = [
@@ -48,5 +48,27 @@ describe("reading a provider statistic", () => {
   it("copes with a missing statistics list", () => {
     expect(statNumber(null, "Total Shots")).toBeNull();
     expect(statNumber([], "Total Shots")).toBeNull();
+  });
+});
+
+describe("telling absence from an unreadable value", () => {
+  it("reports a statistic the provider did send", () => {
+    expect(hasStat(stats, "Total Shots")).toBe(true);
+    expect(hasStat([{ type: "Total Shots", value: "n/a" }], "Total Shots")).toBe(true);
+  });
+
+  it("reports a statistic the provider did not send", () => {
+    expect(hasStat(stats, "Corner Kicks")).toBe(false);
+    expect(hasStat(null, "Total Shots")).toBe(false);
+  });
+
+  it("lists the labels the provider used, in its own words", () => {
+    expect(statLabels(stats)).toEqual([
+      "Total Shots",
+      "Shots on Goal",
+      "Ball Possession",
+      "expected_goals",
+    ]);
+    expect(statLabels(null)).toEqual([]);
   });
 });
