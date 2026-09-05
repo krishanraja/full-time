@@ -22,6 +22,22 @@ async function handle({ request }: { request: Request }) {
   } catch {
     return Response.json({ error: "Body must be JSON." }, { status: 400 });
   }
+  // A request carrying only a variant id rebuilds the rest from what is stored.
+  // That is how a narration is retried after a fault is fixed, and how the
+  // production half is rehearsed against a script already paid for.
+  if (input?.variantId && !input.generated) {
+    try {
+      const { rehydrateVariantForProduction } = await import(
+        "@/lib/pundit/variant-rehydrate.server"
+      );
+      input = await rehydrateVariantForProduction(input.variantId);
+    } catch (error) {
+      return Response.json(
+        { error: error instanceof Error ? error.message : String(error) },
+        { status: 409 },
+      );
+    }
+  }
   if (!input?.dropId || !input.variantId || !input.coverageDate || !input.generated) {
     return Response.json(
       { error: "dropId, coverageDate, variantId and generated are required." },

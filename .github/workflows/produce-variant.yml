@@ -1,0 +1,32 @@
+name: Full Time - Narrate One Variant
+
+# Narration, mastering, transcription and the share card run only after the
+# writing is paid for, so a fault there is the most expensive kind to find.
+# This runs that half alone, against a script already stored, at no model cost.
+# It is also how a variant is recovered after a transient narration failure.
+
+on:
+  workflow_dispatch:
+    inputs:
+      variantId:
+        description: "pundit_variants.id to narrate from what is stored"
+        required: true
+
+jobs:
+  produce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Narrate the stored variant
+        run: |
+          set -uo pipefail
+          curl --silent --show-error --max-time 900 \
+            -X POST "${FULL_TIME_URL}/api/internal/produce-variant" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -d "{\"variantId\":\"${VARIANT_IN}\"}" | tee result.json
+          echo
+          grep -q '"passed":true' result.json
+        env:
+          FULL_TIME_URL: ${{ secrets.FULL_TIME_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VARIANT_IN: ${{ inputs.variantId }}
