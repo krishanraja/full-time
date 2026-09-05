@@ -234,14 +234,57 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     if (total <= 0) continue;
     derivations.push(
       derived(
-        `derived.${side}_inside_box_share`,
-        `${label} share of shots taken from inside the box`,
-        Number((inside / total).toFixed(3)),
+        // Stated as whole percent, because that is how a pundit says it out
+        // loud. Given 0.286 the writer reaches for "under thirty percent", and
+        // thirty is a number the evidence does not carry, so the numeric
+        // licence refuses the script. Give it a figure it can speak exactly.
+        `derived.${side}_inside_box_percent`,
+        `${label} percentage of shots taken from inside the box`,
+        Math.round((inside / total) * 100),
         stats.source,
         `stats.${side}_shots_inside_box,stats.${side}_shots_outside_box`,
-        "round(shots_inside_box / (shots_inside_box + shots_outside_box), 3)",
+        "round(100 * shots_inside_box / (shots_inside_box + shots_outside_box))",
       ),
     );
+  }
+
+  // How long a side had to respond to a goal.
+  //
+  // "Ipswich had eighty-one minutes to solve it" is subtraction from two
+  // numbers the evidence carries, the goal's minute and the ninety a match
+  // lasts, but the numeric licence sees only an eighty-one that appears
+  // nowhere and refuses the script. Writers reach for this constantly, because
+  // it is how anyone describes an early goal, so the pack states it.
+  const goalMinutes = input.events
+    .filter((event) => event.type === "goal" || event.type === "own_goal")
+    .map((event) => event.minute)
+    .filter((minute): minute is number => finite(minute) && minute > 0 && minute <= 90)
+    .sort((left, right) => left - right);
+  if (goalMinutes.length) {
+    const first = goalMinutes[0];
+    const last = goalMinutes[goalMinutes.length - 1];
+    derivations.push(
+      derived(
+        "derived.minutes_after_opening_goal",
+        "Minutes of normal time played after the opening goal",
+        90 - first,
+        "derived",
+        "match_events.minute",
+        "90 - opening_goal_minute",
+      ),
+    );
+    if (last !== first) {
+      derivations.push(
+        derived(
+          "derived.minutes_after_last_goal",
+          "Minutes of normal time played after the last goal",
+          90 - last,
+          "derived",
+          "match_events.minute",
+          "90 - last_goal_minute",
+        ),
+      );
+    }
   }
 
   if (finite(stats?.homeShots) && stats.homeShots > 0) {

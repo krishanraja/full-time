@@ -265,17 +265,65 @@ describe("shot location, the chance-quality signal that survived", () => {
       awayShotsOutsideBox: 3,
     });
     // Fourteen shots each way is the same number and a different match.
-    expect(derivation(pack, "derived.home_inside_box_share")?.value).toBe(0.286);
-    expect(derivation(pack, "derived.away_inside_box_share")?.value).toBe(0.7);
+    // Stated as whole percent because that is how a pundit says it, and a
+    // figure it cannot say exactly is one it will round into a refusal.
+    expect(derivation(pack, "derived.home_inside_box_percent")?.value).toBe(29);
+    expect(derivation(pack, "derived.away_inside_box_percent")?.value).toBe(70);
   });
 
   it("says nothing when the provider sent no locations", () => {
     const pack = withShots({ homeShots: 14 });
-    expect(derivation(pack, "derived.home_inside_box_share")).toBeUndefined();
+    expect(derivation(pack, "derived.home_inside_box_percent")).toBeUndefined();
   });
 
   it("says nothing rather than dividing by no shots at all", () => {
     const pack = withShots({ homeShotsInsideBox: 0, homeShotsOutsideBox: 0 });
-    expect(derivation(pack, "derived.home_inside_box_share")).toBeUndefined();
+    expect(derivation(pack, "derived.home_inside_box_percent")).toBeUndefined();
+  });
+});
+
+describe("time a side had to respond to a goal", () => {
+  const packWith = (minutes: number[]) =>
+    buildEvidencePack({
+      match: {
+        id: "m",
+        homeTeam: "Ipswich",
+        awayTeam: "Liverpool",
+        homeScore: 0,
+        awayScore: 2,
+        kickoffAt: "2026-09-04T19:00:00Z",
+        competition: "Premier League",
+        source: "p",
+      },
+      events: minutes.map((minute, index) => ({
+        id: `g${index}`,
+        type: "goal",
+        minute,
+        team: "Liverpool",
+        player: "Alexander Isak",
+        source: "p",
+      })),
+      stats: { source: "p" },
+    } as never);
+
+  const value = (pack: ReturnType<typeof packWith>, id: string) =>
+    pack.derivations.find((item) => item.id === id)?.value;
+
+  // "Ipswich had eighty-one minutes to solve it" is subtraction from two
+  // licensed numbers, and the numeric licence refused the script for it twice.
+  it("states the minutes after the opening and the last goal", () => {
+    const pack = packWith([4, 9]);
+    expect(value(pack, "derived.minutes_after_opening_goal")).toBe(86);
+    expect(value(pack, "derived.minutes_after_last_goal")).toBe(81);
+  });
+
+  it("states one figure when a single goal decided it", () => {
+    const pack = packWith([73]);
+    expect(value(pack, "derived.minutes_after_opening_goal")).toBe(17);
+    expect(value(pack, "derived.minutes_after_last_goal")).toBeUndefined();
+  });
+
+  it("says nothing about a goalless match", () => {
+    expect(value(packWith([]), "derived.minutes_after_opening_goal")).toBeUndefined();
   });
 });
