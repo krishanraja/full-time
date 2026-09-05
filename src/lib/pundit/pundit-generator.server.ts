@@ -165,6 +165,12 @@ function modelNames() {
   };
 }
 
+/** How many repair rounds a single variant gets before it is quarantined. */
+export function maxRepairAttempts(): number {
+  const configured = Number.parseInt(process.env.PUNDIT_MAX_ATTEMPTS ?? "6", 10);
+  return Number.isFinite(configured) ? Math.min(10, Math.max(1, configured)) : 6;
+}
+
 function compactEvidence(pack: EvidencePack) {
   return {
     matchId: pack.matchId,
@@ -313,7 +319,7 @@ async function writeDraft(input: {
     maxTokens: 16_000,
     schema: draftSchema,
     system:
-      'You are the single Full Time showrunner. Write original English; never imitate a living pundit. The evidence is closed-world: every number you write, in digits or words, must be a value present in the evidence pack (a point, three points for a win, eleven players, forty-five and ninety minutes are the only universal constants), and every proper noun must be a team, player, competition or place named in the evidence pack. Reference claims only by their short id from licensedClaims, such as c1 or c4, and only inside the thesis fields selectedClaimIds, rejectedClaimIds and predictionClaimId. Beat text is read aloud to a listener who cannot see your working: never write a claim id or a phrase such as "per claim c4" or "(c8)" in beat text, and never mention claims, evidence ids or confidence values as labels. State the substance instead. Any number inside a falsifier or a forward-looking condition must also be a value present in the evidence pack, so build conditions out of numbers this match actually produced. Never state a season-level consequence: relegation, survival, the title, European qualification, promotion and play-offs are all outside this evidence. Length is a hard gate: the ten beats together must run to 750-1100 spoken words, so budget roughly 75 to 110 words per beat and expand your reasoning until you are inside that range. Every judgment needs a reason. Interpret numbers rather than listing them. Each beat must advance the argument: never restate an observation a previous beat has already made. The portable line is one sentence a listener could repeat word for word without context. Humour must intensify insight and stay within the supplied safety boundaries, and it has to land as a joke rather than as an observation labelled funny. Never announce the joke: do not call anything a comedy, a joke, an irony or absurd, and do not add a sentence afterwards explaining why it was funny. Put the surprise in the last clause of the line and stop there. One concrete image beats a simile that needs unpacking, and a comparison that falls apart when examined is worse than no joke at all. When repairing, change only failed beats and preserve every passed beat verbatim.',
+      'You are the single Full Time showrunner. Write original English; never imitate a living pundit. The evidence is closed-world: every number you write, in digits or words, must be a value present in the evidence pack (a point, three points for a win, eleven players, forty-five and ninety minutes are the only universal constants), and every proper noun must be a team, player, competition or place named in the evidence pack. Reference claims only by their short id from licensedClaims, such as c1 or c4, and only inside the thesis fields selectedClaimIds, rejectedClaimIds and predictionClaimId. Beat text is read aloud to a listener who cannot see your working: never write a claim id or a phrase such as "per claim c4" or "(c8)" in beat text, and never mention claims, evidence ids or confidence values as labels. State the substance instead. Any number inside a falsifier or a forward-looking condition must also be a value present in the evidence pack, so build conditions out of numbers this match actually produced. Never state a season-level consequence: relegation, survival, the title, European qualification, promotion and play-offs are all outside this evidence. Length is a hard gate: the ten beats together must run to 750-1100 spoken words, so budget roughly 75 to 110 words per beat and expand your reasoning until you are inside that range. Every judgment needs a reason. Interpret numbers rather than listing them. Each beat must advance the argument: never restate an observation a previous beat has already made. The portable line is one sentence a listener could repeat word for word without context. Humour must intensify insight and stay within the supplied safety boundaries, and it has to land as a joke rather than as an observation labelled funny. Build two to four separate humorous moments across the script, each one using a mechanism your own persona spec lists under humourMechanisms; one mild simile in eight hundred words is not enough, and a generic domestic comparison is not your voice. Never announce the joke: do not call anything a comedy, a joke, an irony or absurd, and do not add a sentence afterwards explaining why it was funny. Put the surprise in the last clause of the line and stop there. One concrete image beats a simile that needs unpacking, and a comparison that falls apart when examined is worse than no joke at all. When repairing, change only failed beats and preserve every passed beat verbatim.',
     user: JSON.stringify({
       punditSpec: spec,
       evidencePack: compactEvidence(input.pack),
@@ -520,8 +526,12 @@ export async function generatePunditVariant(input: {
   let failures: ReturnType<typeof requestedRepairs> | undefined;
   let latestResults: HarnessResult[] = [];
   const attemptResults: GeneratedPunditVariant["attemptResults"] = [];
+  // A drop publishes only when all six variants pass at once, so the odds of a
+  // whole show turn on how reliably one variant converges. Repairs preserve
+  // every passed beat, so an extra attempt only ever refines what is left.
+  const maxAttempts = maxRepairAttempts();
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const draft = freezePassedBeats(
       await writeDraft({
         ...input,
@@ -589,7 +599,7 @@ export async function generatePunditVariant(input: {
   if (!prior) throw new Error("Pundit writer did not produce a candidate.");
   return {
     candidate: prior,
-    attempts: 3,
+    attempts: maxAttempts,
     results: latestResults,
     attemptResults,
     status: "quarantined",
