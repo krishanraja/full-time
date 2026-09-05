@@ -22,35 +22,148 @@ const PROHIBITED_HUMOUR = [
   /(?:race|religion|sex|sexuality|disability).{0,25}(?:joke|banter|laugh)/i,
 ];
 
-const CONSEQUENCE_LANGUAGE =
-  /\b(relegat\w*|stay(?:ed|s|ing)? up|(?:went|go|goes|going|sends?|sent)\s+(?:\w+\s+){0,3}down|survival|survived|safety|clinch\w*|seal\w*|secur\w*|confirm\w*|guarantee\w*|qualif\w*|title|champions?|Europa|European (?:place|football|spot)|top four|play-?offs?)\b/gi;
+/** Season-level outcomes the structured evidence tier cannot support. These
+ *  words carry the consequence on their own, whatever surrounds them. */
+const CONSEQUENCE_ALWAYS =
+  /\b(?:relegat\w*|stay(?:ed|s|ing)?\s+up|survival|survived|top\s+four|play-?offs?|promotion|promoted|Europa|Champions\s+League|champions?|European\s+(?:place|football|spot)|titles?|drop\s+zone|the\s+drop)\b/gi;
 
-const SPELLED_NUMBERS: Record<string, number> = {
+/** Season-level stakes used to disambiguate the verbs below. */
+const SEASON_STAKES =
+  "(?:titles?|europe|european|europa|champions|relegation|survival|safety|top\\s+four|play-?offs?|promotion|drop\\s+zone)";
+
+/** "Secured", "sealed" and "confirmed" are ordinary match verbs: a side secures
+ *  three points without any season claim. They only assert a consequence when a
+ *  season-level stake sits beside them in the same sentence. */
+const CONSEQUENCE_NEAR_STAKES = new RegExp(
+  `\\b(?:clinch|seal|secur|confirm|guarantee|qualif)\\w*\\b[^.?!]{0,60}?\\b${SEASON_STAKES}\\b` +
+    `|\\b${SEASON_STAKES}\\b[^.?!]{0,60}?\\b(?:clinch|seal|secur|confirm|guarantee|qualif)\\w*\\b`,
+  "gi",
+);
+
+/** Cardinals that can stand alone as a counted claim. */
+const SPELLED_UNITS: Record<string, number> = {
+  nil: 0,
+  zero: 0,
+  one: 1,
   two: 2,
-  twice: 2,
-  double: 2,
-  brace: 2,
   three: 3,
-  "hat-trick": 3,
-  hattrick: 3,
-  treble: 3,
   four: 4,
   five: 5,
   six: 6,
   seven: 7,
   eight: 8,
   nine: 9,
+  ten: 10,
+  eleven: 11,
+  twelve: 12,
+  thirteen: 13,
+  fourteen: 14,
+  fifteen: 15,
+  sixteen: 16,
+  seventeen: 17,
+  eighteen: 18,
+  nineteen: 19,
 };
 
+/** Ordinals only count inside a compound ("fifty-seventh minute"). Alone they
+ *  are ordinary English structure ("the second half", "the third time") rather
+ *  than a claim about a quantity, so they are never checked on their own. */
+const SPELLED_ORDINAL_UNITS: Record<string, number> = {
+  first: 1,
+  second: 2,
+  third: 3,
+  fourth: 4,
+  fifth: 5,
+  sixth: 6,
+  seventh: 7,
+  eighth: 8,
+  ninth: 9,
+  tenth: 10,
+  eleventh: 11,
+  twelfth: 12,
+  thirteenth: 13,
+  fourteenth: 14,
+  fifteenth: 15,
+  sixteenth: 16,
+  seventeenth: 17,
+  eighteenth: 18,
+  nineteenth: 19,
+};
+
+const SPELLED_TENS: Record<string, number> = {
+  twenty: 20,
+  twentieth: 20,
+  thirty: 30,
+  thirtieth: 30,
+  forty: 40,
+  fortieth: 40,
+  fifty: 50,
+  fiftieth: 50,
+  sixty: 60,
+  sixtieth: 60,
+  seventy: 70,
+  seventieth: 70,
+  eighty: 80,
+  eightieth: 80,
+  ninety: 90,
+  ninetieth: 90,
+};
+
+/** Football idioms that state a count without spelling it. */
+const COUNT_IDIOMS: Record<string, number> = {
+  twice: 2,
+  double: 2,
+  brace: 2,
+  "hat-trick": 3,
+  hattrick: 3,
+  treble: 3,
+};
+
+/** Compound numbers are matched whole so that "twenty-four" reads as 24 rather
+ *  than as an unlicensed "four", and "fifty-seventh" as 57 rather than "seven".
+ *  The compound alternative comes first: regex alternation is ordered, so the
+ *  longer form wins and its parts are never rescanned. */
 const SPELLED_NUMBER_RE = new RegExp(
-  `\\b(${Object.keys(SPELLED_NUMBERS)
-    .map((word) => word.replace("-", "[- ]?"))
-    .join("|")})\\b`,
+  [
+    `\\b(?:${Object.keys(SPELLED_TENS).join("|")})(?:[-\\s](?:${[
+      ...Object.keys(SPELLED_UNITS),
+      ...Object.keys(SPELLED_ORDINAL_UNITS),
+    ].join("|")}))?\\b`,
+    `\\b(?:${Object.keys(SPELLED_UNITS).join("|")})\\b`,
+    `\\b(?:${Object.keys(COUNT_IDIOMS)
+      .map((word) => word.replace("-", "[- ]?"))
+      .join("|")})\\b`,
+  ].join("|"),
   "gi",
 );
 
+/** Season-level consequence language in a script. Empty when the script only
+ *  describes the match in front of it. */
+export function consequenceSpans(script: string): string[] {
+  CONSEQUENCE_ALWAYS.lastIndex = 0;
+  CONSEQUENCE_NEAR_STAKES.lastIndex = 0;
+  return [
+    ...[...script.matchAll(CONSEQUENCE_ALWAYS)].map((match) => match[0]),
+    ...[...script.matchAll(CONSEQUENCE_NEAR_STAKES)].map((match) => match[0]),
+  ];
+}
+
+/** The value a matched spelled number states, or undefined when the phrase is
+ *  not a number after all. */
+export function spelledNumberValue(phrase: string): number | undefined {
+  const key = phrase.toLowerCase().trim().replace(/\s+/g, "-");
+  if (key in COUNT_IDIOMS) return COUNT_IDIOMS[key];
+  let total = 0;
+  for (const token of key.split("-")) {
+    const value = SPELLED_TENS[token] ?? SPELLED_UNITS[token] ?? SPELLED_ORDINAL_UNITS[token];
+    if (value === undefined) return undefined;
+    total += value;
+  }
+  return total;
+}
+
 const NAME_STOPWORDS = new Set(
-  "the a an and but or so yet for nor if then than that this these those he she they it we there here when where what who which why how while after before during since until at in on by with from into over under between both all each every no not only just still even now once again however instead perhaps ultimately sometimes simply first second third half full time goal goals match football evidence result score data point process decision probability counterpoint verdict var xg saturday sunday monday tuesday wednesday thursday friday january february march april may june july august september october november december"
+  "i the a an and but or so yet for nor if then than that this these those he she they it we there here when where what who which why how while after before during since until at in on by with from into over under between both all each every no not only just still even now once again however instead perhaps ultimately sometimes simply first second third half full time goal goals match football evidence result score data point process decision probability counterpoint verdict var xg saturday sunday monday tuesday wednesday thursday friday january february march april may june july august september october november december"
     .split(" ")
     .map((word) => word.toLowerCase()),
 );
@@ -70,8 +183,13 @@ const normalize = (value: string) =>
   value
     .normalize("NFD")
     .replace(/\p{M}/gu, "")
+    .replace(/[‘’]/g, "'")
     .toLowerCase()
     .trim();
+
+/** "I'll" and "he's" are the pronoun plus a contraction, never a name. Strip
+ *  the contracted tail so the stopword list recognises the word underneath. */
+const withoutContraction = (word: string) => word.replace(/'(?:ll|m|ve|d|re|s|t)$/, "");
 
 function isNumberPhrase(phrase: string) {
   const tokens = normalize(phrase)
@@ -142,7 +260,8 @@ export function properNouns(script: string): string[] {
       const phrase = trimPhrase(match[0].trim());
       if (!phrase) continue;
       const key = normalize(phrase);
-      if (NAME_STOPWORDS.has(key) || isNumberPhrase(phrase)) continue;
+      if (NAME_STOPWORDS.has(key) || NAME_STOPWORDS.has(withoutContraction(key))) continue;
+      if (isNumberPhrase(phrase)) continue;
       const leading = sentence.slice(0, match.index).trim();
       const atSentenceStart = leading === "" || /^["'“‘(]+$/.test(leading);
       if (!atSentenceStart) {
@@ -153,7 +272,13 @@ export function properNouns(script: string): string[] {
       // "Because North FC kept the ball": the starter word is ordinary English
       // but the rest of the phrase is a name in its own right.
       const rest = trimPhrase(phrase.split(/\s+/).slice(1).join(" "));
-      if (rest && !NAME_STOPWORDS.has(normalize(rest)) && !isNumberPhrase(rest)) {
+      const restKey = normalize(rest);
+      if (
+        rest &&
+        !NAME_STOPWORDS.has(restKey) &&
+        !NAME_STOPWORDS.has(withoutContraction(restKey)) &&
+        !isNumberPhrase(rest)
+      ) {
         midSentence.push(rest);
       }
     }
@@ -236,20 +361,19 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
     value: Number(match[0]),
   }));
   SPELLED_NUMBER_RE.lastIndex = 0;
-  const writtenSpelled = [...candidate.displayScript.matchAll(SPELLED_NUMBER_RE)].map((match) => ({
-    span: match[0],
-    value: SPELLED_NUMBERS[match[0].toLowerCase().replace(" ", "-")],
-  }));
-  const unlicensedNumbers = [...writtenNumbers, ...writtenSpelled].filter(
-    (item) => !licensed.numbers.has(item.value),
-  );
+  const writtenSpelled = [...candidate.displayScript.matchAll(SPELLED_NUMBER_RE)]
+    .map((match) => ({ span: match[0], value: spelledNumberValue(match[0]) }))
+    .filter((item): item is { span: string; value: number } => item.value !== undefined);
+  const unlicensedNumbers = [...writtenNumbers, ...writtenSpelled]
+    .filter((item) => !licensed.numbers.has(item.value))
+    .filter(
+      (item, index, all) =>
+        all.findIndex((other) => other.span.toLowerCase() === item.span.toLowerCase()) === index,
+    );
   const unlicensedEntities = properNouns(candidate.displayScript).filter(
     (entity) => !entityLicensed(entity, licensed.entities),
   );
-  CONSEQUENCE_LANGUAGE.lastIndex = 0;
-  const consequences = [...candidate.displayScript.matchAll(CONSEQUENCE_LANGUAGE)].map(
-    (match) => match[0],
-  );
+  const consequences = consequenceSpans(candidate.displayScript);
   const predictionIsValid =
     !candidate.thesis.predictionClaimId ||
     (Boolean(candidate.predictionLockedAt) &&
@@ -360,7 +484,15 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
       wordCount >= 750 && wordCount <= 1100,
       wordCount >= 750 && wordCount <= 1100
         ? undefined
-        : `Script is ${wordCount} words; required range is 750-1100.`,
+        : wordCount < 750
+          ? `Script is ${wordCount} words; required range is 750-1100. Add at least ${
+              750 - wordCount
+            } more words by developing the existing beats (roughly ${Math.ceil(
+              (750 - wordCount) / 10,
+            )} per beat). Deepen the reasoning already present; introduce no new facts, numbers or names.`
+          : `Script is ${wordCount} words; required range is 750-1100. Cut at least ${
+              wordCount - 1100
+            } words without dropping any beat.`,
       undefined,
       wordCount >= 750 && wordCount <= 1100
         ? undefined
