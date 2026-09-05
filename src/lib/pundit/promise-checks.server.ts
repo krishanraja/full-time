@@ -3,7 +3,7 @@ import { renderReporterFeed } from "./reporter-rss";
 import { serviceRest } from "./service-rest.server";
 import { PUNDIT_IDS, type PunditId } from "./types";
 
-type VariantRow = {
+export type VariantRow = {
   id: string;
   drop_id: string;
   pundit_id: PunditId;
@@ -26,7 +26,7 @@ type VariantRow = {
   voice_candidate_id: string | null;
 };
 
-type HarnessRow = {
+export type HarnessRow = {
   variant_id: string;
   harness_name: string;
   attempt: number;
@@ -110,26 +110,28 @@ function latestHarnesses(rows: HarnessRow[]) {
   return [...latest.values()];
 }
 
-export async function runDropPromiseChecks(input: {
-  dropId: string;
-  coverageDate: string;
-  fetcher?: typeof fetch;
-}) {
-  const [variants, invalidReceipts] = await Promise.all([
-    serviceRest<VariantRow[]>(
-      `pundit_variants?drop_id=eq.${encodeURIComponent(input.dropId)}&select=id,drop_id,pundit_id,spec_version,thesis,title,description,display_script,performance_plan,audio_url,audio_bytes,audio_duration_sec,share_image_url,transcript,published_at,status,script_identity_verified,audio_quality,pronunciation_rate,voice_candidate_id&order=pundit_id`,
-    ),
-    serviceRest<Array<{ id: string }>>(
-      "prediction_ledger?status=in.(correct,partly_correct,wrong)&receipt=is.null&select=id&limit=1",
-    ),
-  ]);
-  const variantIds = variants.map((variant) => variant.id).join(",");
-  const harnesses = variantIds
-    ? await serviceRest<HarnessRow[]>(
-        `harness_runs?variant_id=in.(${variantIds})&select=variant_id,harness_name,attempt,passed,created_at`,
-      )
-    : [];
-  const latest = latestHarnesses(harnesses);
+/** Which pundits publish, which are withheld, and why.
+ *
+ *  This is the decision `publish_daily_drop` makes in SQL, made again here so
+ *  the drop records it in words. Both sides read the same per-variant
+ *  conditions: nothing published here would be refused there, and nothing
+ *  refused there is reported here as publishing.
+ *
+ *  Pure, because it decides what a listener hears. It takes rows and returns a
+ *  verdict, so every case that matters can be tested without a database: one
+ *  pundit ready and five short, none ready at all, a repaired variant whose
+ *  second attempt supersedes its first, a pundit appearing twice, two personas
+ *  sharing one audio file. */
+export function decidePublication(input: {
+  variants: readonly VariantRow[];
+  harnesses: readonly HarnessRow[];
+}): {
+  publishable: VariantRow[];
+  withheld: string[];
+  missing: string[];
+  checks: PromiseCheck[];
+} {
+  const latest = latestHarnesses([...input.harnesses]);
   const latestByVariant = new Map<string, Map<string, HarnessRow>>();
   for (const row of latest) {
     const forVariant = latestByVariant.get(row.variant_id) ?? new Map<string, HarnessRow>();
@@ -159,16 +161,15 @@ export async function runDropPromiseChecks(input: {
     return reasons;
   };
 
-  const publishable = variants.filter((variant) => shortfalls(variant).length === 0);
-  const withheld = variants
+  const publishable = input.variants.filter((variant) => shortfalls(variant).length === 0);
+  const withheld = input.variants
     .filter((variant) => shortfalls(variant).length > 0)
     .map((variant) => `${variant.pundit_id}: ${shortfalls(variant).join(", ")}`);
   const missing = PUNDIT_IDS.filter(
-    (pundit) => !variants.some((variant) => variant.pundit_id === pundit),
+    (pundit) => !input.variants.some((variant) => variant.pundit_id === pundit),
   );
 
-  const checks: PromiseCheck[] = [];
-  checks.push(
+  const checks: PromiseCheck[] = [
     check(
       "publishable_variants",
       publishable.length >= 1,
@@ -198,6 +199,33 @@ export async function runDropPromiseChecks(input: {
       new Set(publishable.map((variant) => variant.voice_candidate_id)).size === publishable.length,
       "each published pundit has its own selected voice",
     ),
+  ];
+  return { publishable, withheld, missing, checks };
+}
+
+export async function runDropPromiseChecks(input: {
+  dropId: string;
+  coverageDate: string;
+  fetcher?: typeof fetch;
+}) {
+  const [variants, invalidReceipts] = await Promise.all([
+    serviceRest<VariantRow[]>(
+      `pundit_variants?drop_id=eq.${encodeURIComponent(input.dropId)}&select=id,drop_id,pundit_id,spec_version,thesis,title,description,display_script,performance_plan,audio_url,audio_bytes,audio_duration_sec,share_image_url,transcript,published_at,status,script_identity_verified,audio_quality,pronunciation_rate,voice_candidate_id&order=pundit_id`,
+    ),
+    serviceRest<Array<{ id: string }>>(
+      "prediction_ledger?status=in.(correct,partly_correct,wrong)&receipt=is.null&select=id&limit=1",
+    ),
+  ]);
+  const variantIds = variants.map((variant) => variant.id).join(",");
+  const harnesses = variantIds
+    ? await serviceRest<HarnessRow[]>(
+        `harness_runs?variant_id=in.(${variantIds})&select=variant_id,harness_name,attempt,passed,created_at`,
+      )
+    : [];
+  const decision = decidePublication({ variants, harnesses });
+  const publishable = decision.publishable;
+  const checks: PromiseCheck[] = [
+    ...decision.checks,
     check(
       "prediction_receipts",
       invalidReceipts.length === 0,
@@ -205,7 +233,7 @@ export async function runDropPromiseChecks(input: {
         ? "a settled prediction has no receipt"
         : "settled predictions have receipts",
     ),
-  );
+  ];
 
   const reporter = publishable.find((variant) => variant.pundit_id === "zen");
   if (reporter?.audio_url && reporter.share_image_url) {
