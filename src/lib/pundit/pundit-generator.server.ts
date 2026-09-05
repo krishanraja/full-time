@@ -382,11 +382,22 @@ function freezePassedBeats(
   };
 }
 
+/** The judge has to grade the script against the conditions it was written
+ *  under. The show runs after full time, so unless a prediction was registered
+ *  before kickoff there is no prior claim to settle, and demanding one marks a
+ *  script down for obeying the system. */
+function predictionContext(predictionTiming?: { lockedAt: string; kickoffAt: string }) {
+  return predictionTiming
+    ? "A prediction was registered before kickoff. Hold the script to it: it must be settled honestly against the result."
+    : "No prediction was registered before kickoff, and the pundit was instructed not to invent one. There is no prior claim to settle, so do not mark the script down for the absence of one. Judge instead how honestly it states that absence and how well it registers a specific, falsifiable forward expectation that a listener could check next time.";
+}
+
 async function judgeOne(
   harness: QualitativeHarness,
   candidate: PunditVariantCandidate,
   pack: EvidencePack,
   claims: AnalysisClaim[],
+  predictionTiming?: { lockedAt: string; kickoffAt: string },
 ): Promise<HarnessResult> {
   const output = await anthropicJson({
     model: modelNames().judge,
@@ -398,6 +409,7 @@ async function judgeOne(
       punditSpec: getPunditSpec(candidate.punditId),
       evidencePack: compactEvidence(pack),
       licensedClaims: claims,
+      predictionRegistration: predictionContext(predictionTiming),
       thesis: candidate.thesis,
       script: candidate.displayScript,
       outputContract: {
@@ -523,7 +535,9 @@ export async function generatePunditVariant(input: {
         ),
       ),
       Promise.all(
-        harnessNames.map((harness) => judgeOne(harness, candidate, input.pack, input.claims)),
+        harnessNames.map((harness) =>
+          judgeOne(harness, candidate, input.pack, input.claims, input.predictionTiming),
+        ),
       ),
     ]);
     const qualitative = validateQualitativeScores(
