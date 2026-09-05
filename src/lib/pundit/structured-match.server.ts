@@ -100,9 +100,14 @@ export async function loadStructuredMatch(matchId: string) {
       ? supabaseAdmin
           .from("h2h_cache")
           .select("meetings")
-          .or(
-            `and(team_a_id.eq.${teamIds[0]},team_b_id.eq.${teamIds[1]}),and(team_a_id.eq.${teamIds[1]},team_b_id.eq.${teamIds[0]})`,
-          )
+          // The pairing is stored in whichever order the ingest saw it, and a
+          // row cannot have the same team on both sides, so asking for both
+          // columns to be one of these two teams matches it either way round.
+          // A nested and-inside-or would do the same and would return nothing
+          // at all if a bracket were wrong, which is the shape of failure that
+          // has already cost this project five days of expected goals.
+          .in("team_a_id", teamIds)
+          .in("team_b_id", teamIds)
           .limit(1)
       : Promise.resolve({ data: [] }),
   ]);
