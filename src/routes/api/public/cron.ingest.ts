@@ -14,6 +14,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { currentCoverageDate } from "@/lib/london-date";
 import { hasStat, statLabels, statNumber as statN } from "@/lib/api/provider-stats";
+import type { Database } from "@/integrations/supabase/types";
 
 const AF = "https://v3.football.api-sports.io";
 const PACE_MS = 300; // Pro: 300 req/min. The old 7000 was tuned for the free tier.
@@ -69,6 +70,8 @@ type EventRow = {
   detail: string | null;
   source: string;
 };
+type MatchStatsInsert = Database["public"]["Tables"]["match_stats"]["Insert"];
+
 type ContextRow = {
   match_id: string;
   matchday: number | null;
@@ -359,19 +362,19 @@ async function handleIngest({ request }: { request: Request }) {
     const h = byTeam(f.teams.home.id);
     const a = byTeam(f.teams.away.id);
     if (st.length) {
-      await supabaseAdmin.from("match_stats").upsert(
-        {
-          match_id: mid,
-          ...Object.fromEntries(
-            STAT_FIELDS.flatMap(([column, label]) => [
-              [`home_${column}`, statN(h, label)],
-              [`away_${column}`, statN(a, label)],
-            ]),
-          ),
-          source: "api-football",
-        },
-        { onConflict: "match_id" },
-      );
+      // A field the provider has stopped sending must not erase the value we
+      // already hold. Expected goals arrived for every match to 31 August and
+      // for none after it, so re-ingesting an August fixture today would write
+      // null over a figure the provider itself gave us, and the loss would be
+      // silent and permanent. A statistic the provider omits is left alone.
+      const row: MatchStatsInsert = { match_id: mid, source: "api-football" };
+      for (const [column, label] of STAT_FIELDS) {
+        const home = statN(h, label);
+        const away = statN(a, label);
+        if (home !== null) row[`home_${column}`] = home;
+        if (away !== null) row[`away_${column}`] = away;
+      }
+      await supabaseAdmin.from("match_stats").upsert(row, { onConflict: "match_id" });
 
       // A provider that stops sending a field empties a column in silence.
       // Expected goals arrived for every match up to 31 August 2026 and for
