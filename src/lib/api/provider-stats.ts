@@ -26,3 +26,20 @@ export function statNumber(stats: readonly ProviderStat[] | null, type: string):
   const value = Number(String(found.value).replace("%", ""));
   return Number.isFinite(value) ? value : null;
 }
+
+/** True when the provider sent this statistic at all, whatever its value.
+ *
+ *  Absent and unreadable are different faults with different fixes, and the
+ *  numeric reader cannot tell them apart. */
+export function hasStat(stats: readonly ProviderStat[] | null, type: string): boolean {
+  const wanted = statKey(type);
+  return (stats ?? []).some((stat) => statKey(stat.type) === wanted);
+}
+
+/** The labels the provider actually sent, in its own words.
+ *
+ *  Worth reporting when a wanted statistic is absent: it is the difference
+ *  between a field the provider renamed and a field it stopped sending. */
+export function statLabels(stats: readonly ProviderStat[] | null): string[] {
+  return (stats ?? []).map((stat) => String(stat.type ?? "")).filter(Boolean);
+}

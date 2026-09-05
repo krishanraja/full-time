@@ -13,11 +13,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { currentCoverageDate } from "@/lib/london-date";
-import { statNumber as statN } from "@/lib/api/provider-stats";
+import { hasStat, statLabels, statNumber as statN } from "@/lib/api/provider-stats";
 
 const AF = "https://v3.football.api-sports.io";
 const PACE_MS = 300; // Pro: 300 req/min. The old 7000 was tuned for the free tier.
 const TOP_N = 12;
+
+/** The statistics we keep, as the column suffix and the provider's label for
+ *  it. Pairing them here means a missing field can be named, rather than only
+ *  arriving as a null. */
+const STAT_FIELDS = [
+  ["xg", "expected_goals"],
+  ["possession", "Ball Possession"],
+  ["shots", "Total Shots"],
+  ["sot", "Shots on Goal"],
+  ["corners", "Corner Kicks"],
+  ["blocked", "Blocked Shots"],
+  ["saves", "Goalkeeper Saves"],
+  ["fouls", "Fouls"],
+  ["offsides", "Offsides"],
+] as const;
 
 const LEAGUES = [
   { afId: 39, id: "af_39", name: "Premier League", country: "England", fd: "PL" },
@@ -178,6 +193,7 @@ async function handleIngest({ request }: { request: Request }) {
   };
 
   const warnings: string[] = [];
+  let absentStatsReported = false;
 
   // ---- coverage preflight. RISK 1 and the single highest-probability
   // launch-day failure: if events coverage is off, events come back empty,
@@ -346,28 +362,33 @@ async function handleIngest({ request }: { request: Request }) {
       await supabaseAdmin.from("match_stats").upsert(
         {
           match_id: mid,
-          home_xg: statN(h, "expected_goals"),
-          away_xg: statN(a, "expected_goals"),
-          home_possession: statN(h, "Ball Possession"),
-          away_possession: statN(a, "Ball Possession"),
-          home_shots: statN(h, "Total Shots"),
-          away_shots: statN(a, "Total Shots"),
-          home_sot: statN(h, "Shots on Goal"),
-          away_sot: statN(a, "Shots on Goal"),
-          home_corners: statN(h, "Corner Kicks"),
-          away_corners: statN(a, "Corner Kicks"),
-          home_blocked: statN(h, "Blocked Shots"),
-          away_blocked: statN(a, "Blocked Shots"),
-          home_saves: statN(h, "Goalkeeper Saves"),
-          away_saves: statN(a, "Goalkeeper Saves"),
-          home_fouls: statN(h, "Fouls"),
-          away_fouls: statN(a, "Fouls"),
-          home_offsides: statN(h, "Offsides"),
-          away_offsides: statN(a, "Offsides"),
+          ...Object.fromEntries(
+            STAT_FIELDS.flatMap(([column, label]) => [
+              [`home_${column}`, statN(h, label)],
+              [`away_${column}`, statN(a, label)],
+            ]),
+          ),
           source: "api-football",
         },
         { onConflict: "match_id" },
       );
+
+      // A provider that stops sending a field empties a column in silence.
+      // Expected goals arrived for every match up to 31 August 2026 and for
+      // none after it, while every other statistic kept coming, and nothing
+      // raised for five days. Absence is now reported with the labels the
+      // provider did send, so a rename and a withdrawal are told apart at the
+      // point where the difference is visible. Reported once per run, because
+      // a missing field is missing for every fixture that day.
+      const absent = STAT_FIELDS.filter(
+        ([, label]) => !hasStat(h, label) && !hasStat(a, label),
+      ).map(([, label]) => label);
+      if (absent.length && !absentStatsReported) {
+        absentStatsReported = true;
+        const msg = `Statistics absent from the provider for ${mid}: ${absent.join(", ")}. It sent: ${statLabels(h).join(", ") || "nothing"}.`;
+        console.error("[ingest] " + msg);
+        warnings.push(msg);
+      }
     }
 
     // Starting keepers, for the KEEPER angle, which is only safe when the
