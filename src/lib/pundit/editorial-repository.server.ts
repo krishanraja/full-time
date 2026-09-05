@@ -174,7 +174,13 @@ export async function persistEditorialRehearsal(input: {
       variantId: await persistVariant(dropId, variant),
     })),
   );
-  const approved = input.variants.every((variant) => variant.status === "approved");
+  // A listener plays one pundit, so a drop needs one pundit ready, not six. The
+  // per-variant bar is untouched: a variant reaches narration only by passing
+  // every one of its own harnesses.
+  const approvedPundits = input.variants
+    .filter((variant) => variant.status === "approved")
+    .map((variant) => variant.candidate.punditId);
+  const approved = approvedPundits.length > 0;
   // Each pundit runs as its own step and reports what it spent. Summing here is
   // the only place with all six in hand, and the figure is what an on-demand
   // unlock has to be priced against.
@@ -194,6 +200,7 @@ export async function persistEditorialRehearsal(input: {
     dropId,
     evidencePackId,
     variantIds,
+    approvedPundits,
     status: approved ? "narration_review" : "quarantined",
   } as const;
 }

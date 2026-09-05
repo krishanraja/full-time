@@ -17,7 +17,7 @@ The product is meant to feel brilliant because it is AI, not like a cheaper imit
 | AI Pundits  | All six are free and selectable without an account                                                                                      |
 | Avatars     | Abstract SVG visuals generated from the drop and AI Pundit IDs, so each edition gets a stable fresh look                                |
 | Feed        | `/feed` redirects to Today; the Reporter RSS endpoint remains available                                                                 |
-| Publication | The 04:45 UTC workflow publishes a drop automatically when all six editions pass the automated evidence, harness, and audio checks      |
+| Publication | The 04:45 UTC workflow publishes every edition that passes the automated evidence, harness and audio checks; one that falls short is withheld |
 | Billing     | New checkout is disabled; existing subscribers retain billing management                                                                |
 
 Two secondary surfaces still carry legacy behavior. Teams is the public label for `/following`, but the route has not yet enforced Premier-League-only beta filtering. Today checks settled-only records, but `/receipts` still renders the older searchable prediction ledger. These gaps are recorded in [`docs/product-state.json`](./docs/product-state.json) and must not be marketed as complete.
