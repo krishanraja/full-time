@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { licenseClaims } from "./claim-lab";
 import { anthropicJson } from "./anthropic-json.server";
+import { spentThisStepUsd } from "./model-cost";
 import {
   publicationDecision,
   requestedRepairs,
@@ -175,6 +176,17 @@ function modelNames() {
 export function maxRepairAttempts(): number {
   const configured = Number.parseInt(process.env.PUNDIT_MAX_ATTEMPTS ?? "2", 10);
   return Number.isFinite(configured) ? Math.min(10, Math.max(1, configured)) : 2;
+}
+
+/** Which gates failed, as a stable string. Two attempts producing the same
+ *  signature means the repair round changed the prose without moving the
+ *  verdict, and the next round is unlikely to differ either. */
+export function failureSignature(results: readonly HarnessResult[]): string {
+  return results
+    .filter((result) => !result.passed)
+    .map((result) => result.harness)
+    .sort()
+    .join(",");
 }
 
 function compactEvidence(pack: EvidencePack) {
@@ -533,6 +545,11 @@ async function judgeHardOne(
 export type GeneratedPunditVariant = {
   candidate: PunditVariantCandidate;
   attempts: number;
+  /** What producing this variant cost in model calls. Each pundit runs as its
+   *  own step, so the step meter is this variant's bill. Carried out of the
+   *  generator so a drop's total can be recorded against it: an on-demand
+   *  product has to know the cost of the thing it just sold. */
+  costUsd: number;
   results: HarnessResult[];
   attemptResults: Array<{ attempt: number; results: HarnessResult[] }>;
   status: "approved" | "quarantined";
@@ -548,6 +565,8 @@ export async function generatePunditVariant(input: {
   let prior: PunditVariantCandidate | undefined;
   let failures: ReturnType<typeof requestedRepairs> | undefined;
   let latestResults: HarnessResult[] = [];
+  let previousFailureSignature: string | undefined;
+  let attemptsUsed = 0;
   const attemptResults: GeneratedPunditVariant["attemptResults"] = [];
   // A drop publishes only when all six variants pass at once, so the odds of a
   // whole show turn on how reliably one variant converges. Repairs preserve
@@ -579,8 +598,12 @@ export async function generatePunditVariant(input: {
     if (hardResults.some((item) => !item.passed)) {
       latestResults = hardResults;
       attemptResults.push({ attempt, results: hardResults });
+      attemptsUsed = attempt;
       prior = candidate;
       failures = requestedRepairs(hardResults);
+      const signature = failureSignature(hardResults);
+      if (signature === previousFailureSignature) break;
+      previousFailureSignature = signature;
       continue;
     }
 
@@ -610,19 +633,28 @@ export async function generatePunditVariant(input: {
       return {
         candidate,
         attempts: attempt,
+        costUsd: spentThisStepUsd(),
         results: latestResults,
         attemptResults,
         status: "approved",
       };
     }
+    attemptsUsed = attempt;
     prior = candidate;
     failures = requestedRepairs(latestResults);
+    // A round that changed the prose without moving the verdict is evidence the
+    // next round will not move it either. Stopping here is the difference
+    // between paying for a repair loop and paying for a treadmill.
+    const signature = failureSignature(latestResults);
+    if (signature === previousFailureSignature) break;
+    previousFailureSignature = signature;
   }
 
   if (!prior) throw new Error("Pundit writer did not produce a candidate.");
   return {
     candidate: prior,
-    attempts: maxAttempts,
+    attempts: attemptsUsed,
+    costUsd: spentThisStepUsd(),
     results: latestResults,
     attemptResults,
     status: "quarantined",

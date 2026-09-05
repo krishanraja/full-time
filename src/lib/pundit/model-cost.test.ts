@@ -7,6 +7,7 @@ import {
   resetSpend,
   spentThisStepUsd,
 } from "./model-cost";
+import { failureSignature } from "./pundit-generator.server";
 
 afterEach(() => {
   resetSpend();
@@ -72,5 +73,30 @@ describe("the spend ceiling", () => {
       recordSpend("claude-opus-4-8", { output_tokens: 4_000 }); // $0.10 each
     }
     expect(() => assertWithinBudget()).toThrow(BudgetExceededError);
+  });
+});
+
+describe("stopping a repair loop that is not converging", () => {
+  const result = (harness: string, passed: boolean) => ({ harness, hardGate: true, passed });
+
+  it("summarises which gates failed, order-independently", () => {
+    const a = failureSignature([result("humour", false), result("insight", false)]);
+    const b = failureSignature([result("insight", false), result("humour", false)]);
+    expect(a).toBe(b);
+    expect(a).toBe("humour,insight");
+  });
+
+  it("ignores gates that passed", () => {
+    expect(failureSignature([result("humour", false), result("clarity", true)])).toBe("humour");
+  });
+
+  it("is empty when everything passed", () => {
+    expect(failureSignature([result("humour", true)])).toBe("");
+  });
+
+  it("distinguishes a different set of failures", () => {
+    expect(failureSignature([result("humour", false)])).not.toBe(
+      failureSignature([result("humour", false), result("insight", false)]),
+    );
   });
 });
