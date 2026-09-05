@@ -6,6 +6,9 @@ on:
       date:
         description: "YYYY-MM-DD coverage date (default: yesterday, London time)"
         required: false
+      matchId:
+        description: "Produce this exact match instead of the day's most important one"
+        required: false
 
 jobs:
   drop:
@@ -16,6 +19,9 @@ jobs:
           set -euo pipefail
           QS=""
           if [ -n "${DATE_IN:-}" ]; then QS="?date=${DATE_IN}"; fi
+          if [ -n "${MATCH_IN:-}" ]; then
+            if [ -z "$QS" ]; then QS="?matchId=${MATCH_IN}"; else QS="${QS}&matchId=${MATCH_IN}"; fi
+          fi
           curl --fail --silent --show-error \
             -X POST "${FULL_TIME_URL}/api/internal/daily-rehearsal${QS}" \
             -H "Content-Type: application/json" \
@@ -25,3 +31,4 @@ jobs:
           FULL_TIME_URL: ${{ secrets.FULL_TIME_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           DATE_IN: ${{ inputs.date }}
+          MATCH_IN: ${{ inputs.matchId }}

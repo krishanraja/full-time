@@ -48,7 +48,9 @@ async function handle({ request }: { request: Request }) {
     // A fresh token per dispatch, so re-running a date starts a new durable run
     // rather than replaying the previous one's completed steps.
     const runToken = url.searchParams.get("token") ?? new Date().toISOString();
-    const run = await start(dailyPunditWorkflow, [{ coverageDate, mode, runToken }]);
+    // An explicit match overrides the day's importance ranking.
+    const matchId = url.searchParams.get("matchId") ?? undefined;
+    const run = await start(dailyPunditWorkflow, [{ coverageDate, mode, runToken, matchId }]);
     console.log(
       JSON.stringify({
         level: "info",

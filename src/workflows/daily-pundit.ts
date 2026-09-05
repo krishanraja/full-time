@@ -30,6 +30,13 @@ export type DailyPunditWorkflowInput = {
    *  each deliberate dispatch its own run. Duplicate work is still prevented,
    *  one layer down, by the editorial run claim. */
   runToken?: string;
+  /** Produce this exact match instead of the day's most important one.
+   *
+   *  The daily show covers one featured match, chosen by importance. Selling a
+   *  specific match on demand, or battle-testing one that a listener actually
+   *  cares about, needs the caller to name it. Everything downstream already
+   *  works from a match id, so this only bypasses the selection step. */
+  matchId?: string;
 };
 
 export type DailyRunMode = "full_rehearsal" | "publication";
@@ -48,7 +55,7 @@ export async function dailyPunditWorkflow(input: DailyPunditWorkflowInput) {
   let matchId: string | undefined;
   let dropId: string | undefined;
   try {
-    matchId = await selectFeatureMatchStep(coverageDate);
+    matchId = input.matchId ?? (await selectFeatureMatchStep(coverageDate));
     const prepared = await prepareEditorialStep(matchId, coverageDate);
     const variants = await Promise.all(
       PUNDIT_IDS.map((punditId) =>
