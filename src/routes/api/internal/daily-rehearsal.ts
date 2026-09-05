@@ -45,7 +45,10 @@ async function handle({ request }: { request: Request }) {
       import("workflow/api"),
       import("@/workflows/daily-pundit"),
     ]);
-    const run = await start(dailyPunditWorkflow, [{ coverageDate, mode }]);
+    // A fresh token per dispatch, so re-running a date starts a new durable run
+    // rather than replaying the previous one's completed steps.
+    const runToken = url.searchParams.get("token") ?? new Date().toISOString();
+    const run = await start(dailyPunditWorkflow, [{ coverageDate, mode, runToken }]);
     console.log(
       JSON.stringify({
         level: "info",
