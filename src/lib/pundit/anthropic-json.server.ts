@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { assertWithinBudget, recordSpend, spentThisStepUsd } from "./model-cost";
+import { stubEnabled, stubResponse } from "./model-stub.server";
 
 /** Reads the balanced object that begins at `start`, or undefined when the text
  *  runs out first. */
@@ -113,10 +115,17 @@ export async function anthropicJson<T>(input: {
   /** Names this call in the cache log, so a lost hit rate is traceable. */
   label?: string;
 }): Promise<T> {
+  const cachedContext = input.cachedContext ?? [];
+
+  // Answered locally, before the key is even looked for, so a stub run needs no
+  // credentials and cannot reach the network by accident.
+  if (stubEnabled()) {
+    return input.schema.parse(stubResponse(input.label ?? "unlabelled", cachedContext, input.user));
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
-  const cachedContext = input.cachedContext ?? [];
   if (cachedContext.length > MAX_CACHED_CONTEXT_BLOCKS) {
     throw new Error(
       `A request may cache at most ${MAX_CACHED_CONTEXT_BLOCKS} context blocks; got ${cachedContext.length}.`,
@@ -127,6 +136,9 @@ export async function anthropicJson<T>(input: {
   try {
     let lastError: unknown;
     for (let attempt = 1; attempt <= 3; attempt++) {
+      // Checked before every request, including retries, so a loop that keeps
+      // failing cannot keep spending.
+      assertWithinBudget();
       const response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -161,10 +173,12 @@ export async function anthropicJson<T>(input: {
           stop_reason?: string;
           usage?: {
             input_tokens?: number;
+            output_tokens?: number;
             cache_creation_input_tokens?: number;
             cache_read_input_tokens?: number;
           };
         };
+        const callCost = recordSpend(input.model, body.usage);
         // Caching fails silently: requests still succeed, the bill is just
         // higher. These counters are the only evidence it is working, so they
         // are logged on every call rather than checked once at setup.
@@ -177,6 +191,8 @@ export async function anthropicJson<T>(input: {
             uncachedInputTokens: body.usage?.input_tokens ?? 0,
             cacheWriteTokens: body.usage?.cache_creation_input_tokens ?? 0,
             cacheReadTokens: body.usage?.cache_read_input_tokens ?? 0,
+            callCostUsd: Number(callCost.toFixed(4)),
+            stepSpendUsd: Number(spentThisStepUsd().toFixed(4)),
           }),
         );
         // Truncation is deterministic: the same prompt will truncate again, so
