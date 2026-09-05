@@ -78,6 +78,7 @@ describe("the stub model", () => {
 describe("the stub can never publish", () => {
   afterEach(() => {
     delete process.env.PUNDIT_MODEL_STUB;
+    delete process.env.PRELAUNCH_MODE;
     delete process.env.PUNDIT_PUBLICATION_ENABLED;
   });
 
@@ -87,12 +88,21 @@ describe("the stub can never publish", () => {
 
   it("is on when enabled and publication is off", () => {
     process.env.PUNDIT_MODEL_STUB = "true";
+    process.env.PRELAUNCH_MODE = "false";
     process.env.PUNDIT_PUBLICATION_ENABLED = "false";
     expect(stubEnabled()).toBe(true);
   });
 
-  it("refuses loudly when publication is enabled", () => {
+  it("allows a prelaunch rehearsal, which cannot publish", () => {
     process.env.PUNDIT_MODEL_STUB = "true";
+    process.env.PRELAUNCH_MODE = "true";
+    process.env.PUNDIT_PUBLICATION_ENABLED = "true";
+    expect(stubEnabled()).toBe(true);
+  });
+
+  it("refuses loudly in a publishing environment", () => {
+    process.env.PUNDIT_MODEL_STUB = "true";
+    process.env.PRELAUNCH_MODE = "false";
     process.env.PUNDIT_PUBLICATION_ENABLED = "true";
     expect(() => stubEnabled()).toThrow(/never be published/);
   });
