@@ -67,6 +67,20 @@ const beatNames = [
   "close",
 ] as const;
 
+/** A model asked for an optional field answers either by omitting it or by
+ *  writing an explicit null. Both mean "no value", so both are accepted and
+ *  normalised to undefined rather than failing the whole draft. */
+function optional<T extends z.ZodTypeAny>(schema: T) {
+  return schema
+    .nullish()
+    .transform((value: z.infer<T> | null | undefined) => value ?? undefined);
+}
+
+/** The same, for a list field whose absence means "nothing". */
+function optionalList<T extends z.ZodTypeAny>(schema: T) {
+  return schema.nullish().transform((value: z.infer<T> | null | undefined) => value ?? []);
+}
+
 const beatSchema = z.object({
   name: z.enum(beatNames),
   text: z.string().min(1),
@@ -82,9 +96,9 @@ const beatSchema = z.object({
   ]),
   pace: z.enum(["slow", "measured", "brisk"]),
   energy: z.number().int().min(1).max(5),
-  pauseBeforeMs: z.number().int().min(0).max(1500).optional(),
-  emphasis: z.array(z.string()).optional(),
-  direction: z.string().optional(),
+  pauseBeforeMs: optional(z.number().int().min(0).max(1500)),
+  emphasis: optional(z.array(z.string())),
+  direction: optional(z.string()),
 });
 
 /** Writers sometimes return the ten beats keyed by beat name instead of as an
@@ -116,25 +130,26 @@ const draftSchema = z.object({
     rejectedClaimIds: z.array(z.string()),
     counterpoint: z.string(),
     changeMyMind: z.string(),
-    predictionClaimId: z.string().optional(),
+    predictionClaimId: optional(z.string()),
   }),
   beats: z.preprocess(normaliseBeats, z.array(beatSchema).length(10)),
 });
 
-const judgeSchema = z.object({
+/** Exported so the null tolerance above stays covered by a test. */
+export const judgeSchema = z.object({
   score: z.number().int().min(1).max(5),
-  evidenceSpan: z.string().optional(),
-  failure: z.string().optional(),
-  requestedRepair: z.string().optional(),
-  failedBeats: z.array(z.enum(beatNames)).default([]),
+  evidenceSpan: optional(z.string()),
+  failure: optional(z.string()),
+  requestedRepair: optional(z.string()),
+  failedBeats: optionalList(z.array(z.enum(beatNames))),
 });
 
 const hardJudgeSchema = z.object({
   passed: z.boolean(),
-  evidenceSpan: z.string().optional(),
-  failure: z.string().optional(),
-  requestedRepair: z.string().optional(),
-  failedBeats: z.array(z.enum(beatNames)).default([]),
+  evidenceSpan: optional(z.string()),
+  failure: optional(z.string()),
+  requestedRepair: optional(z.string()),
+  failedBeats: optionalList(z.array(z.enum(beatNames))),
 });
 
 function modelNames() {

@@ -1,5 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { normaliseBeats } from "./pundit-generator.server";
+import { judgeSchema, normaliseBeats } from "./pundit-generator.server";
+
+describe("judge response tolerance", () => {
+  it("accepts explicit nulls for the optional fields", () => {
+    const parsed = judgeSchema.parse({
+      score: 4,
+      evidenceSpan: null,
+      failure: null,
+      requestedRepair: null,
+      failedBeats: null,
+    });
+    expect(parsed.score).toBe(4);
+    expect(parsed.evidenceSpan).toBeUndefined();
+    expect(parsed.failure).toBeUndefined();
+    expect(parsed.failedBeats).toEqual([]);
+  });
+
+  it("still accepts an omitted field and a real value", () => {
+    const parsed = judgeSchema.parse({ score: 2, failure: "Too thin", failedBeats: ["hook"] });
+    expect(parsed.failure).toBe("Too thin");
+    expect(parsed.evidenceSpan).toBeUndefined();
+    expect(parsed.failedBeats).toEqual(["hook"]);
+  });
+
+  it("still rejects a score outside the scale", () => {
+    expect(() => judgeSchema.parse({ score: 9 })).toThrow();
+  });
+});
 
 const beat = (text: string) => ({ text, intent: "setup", pace: "measured", energy: 3 });
 
