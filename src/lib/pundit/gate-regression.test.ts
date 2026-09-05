@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildEvidencePack, type StructuredMatchInput } from "./evidence";
-import { runHardGates } from "./harness";
+import { consequenceSpans, runHardGates } from "./harness";
 import type { AnalysisClaim, BeatName, PunditVariantCandidate } from "./types";
 
 /** A frozen corpus of prose that a real run actually produced, and that the
@@ -162,6 +162,27 @@ function gateFailures(sentence: string, matchInput: StructuredMatchInput): strin
 }
 
 describe("prose the gates once rejected wrongly", () => {
+  // The Numbers pundit, 2026-09-04, one harness from a published show:
+  // "Liverpool didn't survive pressure, they survived optimism." A side
+  // survives a corner and a spell of pressure long before it survives a
+  // season, and the gate read the ordinary verb as a relegation claim.
+  it("lets a team survive a passage of play", () => {
+    expect(
+      consequenceSpans(
+        "If that's the case, Liverpool didn't survive pressure, they survived optimism.",
+      ),
+    ).toEqual([]);
+    expect(consequenceSpans("They survived ten minutes of it and went again.")).toEqual([]);
+  });
+
+  it("still refuses a season survival claim", () => {
+    expect(consequenceSpans("A win that all but survived relegation for them.").length).toBeGreaterThan(0);
+    expect(consequenceSpans("This was survival football, and they know it.").length).toBeGreaterThan(0);
+    expect(
+      consequenceSpans("Survival was the only thing they secured tonight.").length,
+    ).toBeGreaterThan(0);
+  });
+
   it("accepts a compound number written out", () => {
     expect(
       gateFailures("Toulouse had twenty-four shots and ten on target.", toulouseLille),
