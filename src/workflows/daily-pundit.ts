@@ -20,6 +20,16 @@ const PUNDIT_IDS = ["zen", "gaffer", "stats", "romantic", "doomer", "banter"] as
 export type DailyPunditWorkflowInput = {
   coverageDate: string;
   mode: DailyRunMode;
+  /** Distinguishes one dispatch from another.
+   *
+   *  A durable run is identified by its arguments, so two dispatches carrying
+   *  the same coverage date and mode resume the same run and replay every step
+   *  that already completed. That is right for recovering an interrupted run
+   *  and wrong for re-running a date against changed code: the replayed steps
+   *  return their old verdicts and never see the new build. The token makes
+   *  each deliberate dispatch its own run. Duplicate work is still prevented,
+   *  one layer down, by the editorial run claim. */
+  runToken?: string;
 };
 
 export type DailyRunMode = "full_rehearsal" | "publication";
