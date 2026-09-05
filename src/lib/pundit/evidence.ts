@@ -27,6 +27,9 @@ export type StructuredMatchInput = {
     addedTime?: number | null;
     team: string | null;
     player: string | null;
+    /** Provider detail. For a substitution this carries the outgoing player as
+     *  "off:Name", which is the only record of who left the pitch. */
+    detail?: string | null;
     source: string;
   }>;
   stats?: {
@@ -82,22 +85,43 @@ function finite(value: number | null | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-/** An own goal is recorded against the team it counts FOR, while the player
+/** The outgoing player in a substitution, which the provider records as
+ *  "off:Name" in the detail field. */
+export function outgoingPlayer(detail: string | null | undefined): string | null {
+  const match = /^\s*off\s*:\s*(.+)$/i.exec(detail ?? "");
+  return match ? match[1].trim() : null;
+}
+
+/** Writers and judges read the same evidence, so a line either of them can read
+ *  two ways puts them in direct contradiction and no repair round can settle
+ *  it. Both event kinds below were ambiguous exactly that way.
+ *
+ *  An own goal is recorded against the team it counts FOR, while the player
  *  named is the one who put it into his own net, so he plays for the other
- *  side. Written as a bare team and player pair that reads as "Brighton's Joao
- *  Pedro", which is the opposite of what happened. Say it in full instead: the
- *  writers and the judges read the same label, so an ambiguous one puts them in
- *  direct contradiction and no repair can settle it. */
+ *  side. A substitution names only the player arriving, and the provider keeps
+ *  the departing one in a detail field the pack used to discard. */
 function eventLabel(
-  event: { type: string; team: string | null; player: string | null },
+  event: { type: string; team: string | null; player: string | null; detail?: string | null },
   homeTeam: string,
   awayTeam: string,
 ): string {
-  if (!/own[_\s-]?goal/i.test(event.type)) return `${event.type} event`;
-  if (!event.team) return `${event.type} event`;
-  const conceding = event.team === homeTeam ? awayTeam : homeTeam;
-  const player = event.player ? `${event.player} of ${conceding}` : conceding;
-  return `own goal event: counts as a goal for ${event.team}, put through his own net by ${player}`;
+  if (/own[_\s-]?goal/i.test(event.type) && event.team) {
+    const conceding = event.team === homeTeam ? awayTeam : homeTeam;
+    const player = event.player ? `${event.player} of ${conceding}` : conceding;
+    return `own goal event: counts as a goal for ${event.team}, put through his own net by ${player}`;
+  }
+  // A substitution names only the player arriving, so "sub event: Caicedo"
+  // reads identically whether he came on or went off. He did both in this
+  // fixture, at different times.
+  if (/^sub/i.test(event.type)) {
+    const off = outgoingPlayer(event.detail);
+    const team = event.team ?? "the side";
+    if (event.player && off)
+      return `substitution event: ${team} bring on ${event.player} for ${off}`;
+    if (event.player) return `substitution event: ${team} bring on ${event.player}`;
+    if (off) return `substitution event: ${team} take off ${off}`;
+  }
+  return `${event.type} event`;
 }
 
 export function buildEvidencePack(input: StructuredMatchInput, version = 1): EvidencePack {
@@ -128,7 +152,16 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
       fact(
         `event.${event.id}`,
         eventLabel(event, match.homeTeam, match.awayTeam),
-        [event.minute, event.addedTime ?? null, event.team, event.player],
+        // The outgoing player belongs in the value, not only the label: the
+        // entity licence is built from values, so a name that appears only in
+        // prose would be read as invented.
+        [
+          event.minute,
+          event.addedTime ?? null,
+          event.team,
+          event.player,
+          ...(outgoingPlayer(event.detail) ? [outgoingPlayer(event.detail)] : []),
+        ],
         event.source,
         `match_events.id=${event.id}`,
       ),
