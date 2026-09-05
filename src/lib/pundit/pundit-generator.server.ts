@@ -241,6 +241,32 @@ function assembleCandidate(
   };
 }
 
+/** Claim ids are long hashes. Writers transcribe them imperfectly, and a single
+ *  wrong character reads as a fabricated claim at the entailment gate. Short
+ *  references ("c1", "c2") survive the round trip, so the model never handles a
+ *  hash and the real ids are restored here. */
+function claimReferences(claims: readonly AnalysisClaim[]) {
+  const toReal = new Map(claims.map((claim, index) => [`c${index + 1}`, claim.id]));
+  const toRef = new Map(claims.map((claim, index) => [claim.id, `c${index + 1}`]));
+  const resolve = (id: string) => toReal.get(id.trim().toLowerCase()) ?? id;
+  return {
+    listed: claims.map((claim, index) => ({ ...claim, id: `c${index + 1}` })),
+    toRef: (id: string) => toRef.get(id) ?? id,
+    resolve,
+    resolveDraft: (draft: z.infer<typeof draftSchema>): z.infer<typeof draftSchema> => ({
+      ...draft,
+      thesis: {
+        ...draft.thesis,
+        selectedClaimIds: draft.thesis.selectedClaimIds.map(resolve),
+        rejectedClaimIds: draft.thesis.rejectedClaimIds.map(resolve),
+        predictionClaimId: draft.thesis.predictionClaimId
+          ? resolve(draft.thesis.predictionClaimId)
+          : undefined,
+      },
+    }),
+  };
+}
+
 async function writeDraft(input: {
   punditId: PunditId;
   pack: EvidencePack;
@@ -250,18 +276,29 @@ async function writeDraft(input: {
   predictionTiming?: { lockedAt: string; kickoffAt: string };
 }): Promise<z.infer<typeof draftSchema>> {
   const spec = getPunditSpec(input.punditId);
-  return anthropicJson({
+  const claims = claimReferences(input.claims);
+  const priorThesis = input.prior
+    ? {
+        ...input.prior.thesis,
+        selectedClaimIds: input.prior.thesis.selectedClaimIds.map(claims.toRef),
+        rejectedClaimIds: input.prior.thesis.rejectedClaimIds.map(claims.toRef),
+        predictionClaimId: input.prior.thesis.predictionClaimId
+          ? claims.toRef(input.prior.thesis.predictionClaimId)
+          : undefined,
+      }
+    : undefined;
+  const draft = await anthropicJson({
     model: modelNames().writer,
     maxTokens: 6_000,
     schema: draftSchema,
     system:
-      "You are the single Full Time showrunner. Write original English; never imitate a living pundit. The evidence is closed-world: every number you write, in digits or words, must be a value present in the evidence pack (a point, three points for a win, eleven players, forty-five and ninety minutes are the only universal constants), and every proper noun must be a team, player, competition or place named in the evidence pack. Copy claim ids exactly from licensedClaims. Produce 750-1100 spoken words across exactly ten named beats. Every judgment needs a reason. Interpret numbers rather than listing them. Humour must intensify insight and stay within the supplied safety boundaries. When repairing, change only failed beats and preserve every passed beat verbatim.",
+      "You are the single Full Time showrunner. Write original English; never imitate a living pundit. The evidence is closed-world: every number you write, in digits or words, must be a value present in the evidence pack (a point, three points for a win, eleven players, forty-five and ninety minutes are the only universal constants), and every proper noun must be a team, player, competition or place named in the evidence pack. Reference claims only by their short id from licensedClaims, such as c1 or c4. Never state a season-level consequence: relegation, survival, the title, European qualification, promotion and play-offs are all outside this evidence. Length is a hard gate: the ten beats together must run to 750-1100 spoken words, so budget roughly 75 to 110 words per beat and expand your reasoning until you are inside that range. Every judgment needs a reason. Interpret numbers rather than listing them. Humour must intensify insight and stay within the supplied safety boundaries. When repairing, change only failed beats and preserve every passed beat verbatim.",
     user: JSON.stringify({
       punditSpec: spec,
       evidencePack: compactEvidence(input.pack),
-      licensedClaims: input.claims,
+      licensedClaims: claims.listed,
       priorCandidate: input.prior
-        ? { thesis: input.prior.thesis, priorTextByBeatName: input.prior.outline }
+        ? { thesis: priorThesis, priorTextByBeatName: input.prior.outline }
         : undefined,
       targetedRepairs: input.failures,
       predictionRegistration: input.predictionTiming
@@ -271,11 +308,11 @@ async function writeDraft(input: {
         thesis: {
           headline: "string",
           judgment: "string",
-          selectedClaimIds: ["licensed claim id"],
-          rejectedClaimIds: ["licensed claim id"],
+          selectedClaimIds: ["short licensed claim id, such as c1"],
+          rejectedClaimIds: ["short licensed claim id, such as c2"],
           counterpoint: "string",
           changeMyMind: "string",
-          predictionClaimId: "optional licensed prediction claim id",
+          predictionClaimId: "optional short licensed prediction claim id",
         },
         beats:
           "A JSON array of exactly ten beat objects in beatNames order. Never an object keyed by beat name.",
@@ -292,11 +329,13 @@ async function writeDraft(input: {
         },
         beatNames,
         words: [750, 1100],
+        wordsPerBeat: "roughly 75 to 110; a script under 750 words in total is rejected outright",
         requiredHumourBeats: "two to four when earned; no quota joke",
         portableLine: "one original, useful concept a fan can recognise next weekend",
       },
     }),
   });
+  return claims.resolveDraft(draft);
 }
 
 function freezePassedBeats(

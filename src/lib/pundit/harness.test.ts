@@ -1,5 +1,48 @@
 import { describe, expect, it } from "vitest";
-import { properNouns } from "./harness";
+import { consequenceSpans, properNouns, spelledNumberValue } from "./harness";
+
+describe("season consequence detection", () => {
+  it("blocks language that only makes sense at season level", () => {
+    expect(consequenceSpans("That result pushes them towards relegation.")).toHaveLength(1);
+    expect(consequenceSpans("A win like that is how sides stay up.")).toHaveLength(1);
+    expect(consequenceSpans("This was a title performance.")).toHaveLength(1);
+  });
+
+  it("allows ordinary match verbs with no season stake beside them", () => {
+    expect(consequenceSpans("Ueda secured the win with a header.")).toEqual([]);
+    expect(consequenceSpans("The second goal confirmed the result.")).toEqual([]);
+    expect(consequenceSpans("He sealed it late on.")).toEqual([]);
+  });
+
+  it("still blocks those verbs when a season stake sits beside them", () => {
+    expect(consequenceSpans("That win secured their place in Europe.")).not.toEqual([]);
+    expect(consequenceSpans("Survival was confirmed by that result.")).not.toEqual([]);
+  });
+});
+
+describe("spelled number reading for the numeric licence gate", () => {
+  it("reads a compound as one value rather than its parts", () => {
+    expect(spelledNumberValue("twenty-four")).toBe(24);
+    expect(spelledNumberValue("fifty-three")).toBe(53);
+    expect(spelledNumberValue("forty-seven")).toBe(47);
+  });
+
+  it("reads compound ordinals used for minutes", () => {
+    expect(spelledNumberValue("fifty-seventh")).toBe(57);
+    expect(spelledNumberValue("seventy-third")).toBe(73);
+  });
+
+  it("reads plain cardinals, football idioms and nil", () => {
+    expect(spelledNumberValue("ten")).toBe(10);
+    expect(spelledNumberValue("hat-trick")).toBe(3);
+    expect(spelledNumberValue("brace")).toBe(2);
+    expect(spelledNumberValue("nil")).toBe(0);
+  });
+
+  it("returns nothing for words that are not numbers", () => {
+    expect(spelledNumberValue("Toulouse")).toBeUndefined();
+  });
+});
 
 describe("proper noun detection for the entity licence gate", () => {
   it("ignores ordinary capitalised words at the start of a sentence", () => {
@@ -20,6 +63,11 @@ describe("proper noun detection for the entity licence gate", () => {
 
   it("trims connectors and the pronoun I from phrase edges", () => {
     const script = "What I saw was Arsenal pressing. But I doubt Arsenal enjoyed it.";
+    expect(properNouns(script)).toEqual(["Arsenal", "Arsenal"]);
+  });
+
+  it("never treats a contraction of the pronoun I as a name", () => {
+    const script = "In fairness to Arsenal, and I'll say it once, I'm wrong about Arsenal.";
     expect(properNouns(script)).toEqual(["Arsenal", "Arsenal"]);
   });
 });
