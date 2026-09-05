@@ -1,0 +1,38 @@
+name: Full Time - Drop Preflight
+
+# Free. Answers "would a run publish?" before one is paid for. Every fault this
+# pipeline has hit was found by paying for six scripts and six narrations and
+# then reading the wreckage.
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "YYYY-MM-DD coverage date (default: yesterday, London time)"
+        required: false
+      matchId:
+        description: "Check this exact match as well"
+        required: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the drop preconditions
+        run: |
+          set -uo pipefail
+          QS=""
+          if [ -n "${DATE_IN:-}" ]; then QS="?date=${DATE_IN}"; fi
+          if [ -n "${MATCH_IN:-}" ]; then
+            if [ -z "$QS" ]; then QS="?matchId=${MATCH_IN}"; else QS="${QS}&matchId=${MATCH_IN}"; fi
+          fi
+          curl --silent --show-error --max-time 60 \
+            "${FULL_TIME_URL}/api/internal/preflight${QS}" \
+            -H "Authorization: Bearer ${CRON_SECRET}" | tee report.json
+          echo
+          grep -q '"ready":true' report.json
+        env:
+          FULL_TIME_URL: ${{ secrets.FULL_TIME_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          DATE_IN: ${{ inputs.date }}
+          MATCH_IN: ${{ inputs.matchId }}
