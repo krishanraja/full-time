@@ -30,7 +30,9 @@ export async function loadStructuredMatch(matchId: string) {
         .single(),
       supabaseAdmin
         .from("match_events")
-        .select("id, type, minute, added_time, team_id, player_name, source, teams:team_id(name)")
+        .select(
+          "id, type, minute, added_time, team_id, player_name, detail, source, teams:team_id(name)",
+        )
         .eq("match_id", matchId)
         .order("minute"),
       supabaseAdmin.from("match_stats").select("*").eq("match_id", matchId).maybeSingle(),
@@ -61,6 +63,7 @@ export async function loadStructuredMatch(matchId: string) {
       addedTime: event.added_time,
       team: (event.teams as { name?: string } | null)?.name ?? event.team_id,
       player: event.player_name,
+      detail: (event as { detail?: string | null }).detail ?? null,
       source: event.source ?? "database-verified",
     })),
     stats: stat

@@ -196,3 +196,43 @@ describe("own goal labelling", () => {
     expect(pack.facts.find((item) => item.id === "event.goal-1")?.label).toBe("goal event");
   });
 });
+
+describe("substitution labelling", () => {
+  const withSub = {
+    ...input,
+    events: [
+      {
+        id: "sub-1",
+        type: "sub" as const,
+        minute: 68,
+        team: "North FC",
+        player: "In Coming",
+        detail: "off:Out Going",
+        source: "provider-a",
+      },
+    ],
+  };
+
+  it("names who came on and who went off", () => {
+    const pack = buildEvidencePack(withSub);
+    expect(pack.facts.find((item) => item.id === "event.sub-1")?.label).toBe(
+      "substitution event: North FC bring on In Coming for Out Going",
+    );
+  });
+
+  it("licenses the outgoing player by putting him in the value", () => {
+    const pack = buildEvidencePack(withSub);
+    const value = pack.facts.find((item) => item.id === "event.sub-1")?.value;
+    expect(value).toContain("Out Going");
+  });
+
+  it("copes with a substitution that has no recorded detail", () => {
+    const pack = buildEvidencePack({
+      ...withSub,
+      events: [{ ...withSub.events[0], detail: null }],
+    });
+    expect(pack.facts.find((item) => item.id === "event.sub-1")?.label).toBe(
+      "substitution event: North FC bring on In Coming",
+    );
+  });
+});
