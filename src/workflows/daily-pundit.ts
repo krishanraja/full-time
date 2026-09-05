@@ -70,9 +70,12 @@ export async function dailyPunditWorkflow(input: DailyPunditWorkflowInput) {
     const persisted = await persistEditorialStep({ coverageDate, prepared, variants });
     dropId = persisted.dropId;
     if (persisted.status !== "narration_review") {
+      const shared = persisted.sharedFailures.length
+        ? ` Every pundit failed the same harnesses, which points at a shared input rather than at six writers: ${persisted.sharedFailures.join(", ")}.`
+        : "";
       const promise = await quarantineEditorialDropStep(
         persisted.dropId,
-        "No pundit script passed its independent editorial harnesses.",
+        `No pundit script passed its independent editorial harnesses.${shared}`,
       );
       await completeRunStep({
         runId: run.id,
@@ -83,7 +86,7 @@ export async function dailyPunditWorkflow(input: DailyPunditWorkflowInput) {
         dropId,
         successfulVariants: 0,
         promiseChecks: promise,
-        failure: "No variant passed the editorial harnesses.",
+        failure: `No variant passed the editorial harnesses.${shared}`,
       });
       return { dropId, matchId, published: false, promise };
     }

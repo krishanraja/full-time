@@ -1,0 +1,29 @@
+name: Full Time - Publish A Drop
+
+# Publication normally happens at the end of a run. This is the door for a drop
+# that reached the bar but whose run did not carry it over the line. It calls
+# the same fail-closed gate, so a drop that should not publish still cannot.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dropId:
+        description: "daily_drops.id to publish"
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the drop
+        run: |
+          set -uo pipefail
+          curl --silent --show-error --max-time 120 \
+            -X POST "${FULL_TIME_URL}/api/internal/publish-drop?dropId=${DROP_IN}" \
+            -H "Authorization: Bearer ${CRON_SECRET}" | tee result.json
+          echo
+          grep -q '"published":true' result.json
+        env:
+          FULL_TIME_URL: ${{ secrets.FULL_TIME_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          DROP_IN: ${{ inputs.dropId }}
