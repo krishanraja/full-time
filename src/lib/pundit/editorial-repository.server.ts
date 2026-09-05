@@ -158,6 +158,20 @@ async function persistVariant(dropId: string, generated: GeneratedPunditVariant)
   return rows[0].id;
 }
 
+/** The harnesses that failed for every single variant.
+ *
+ *  Six pundits share one evidence pack and one claim set, so a fault in either
+ *  reaches all of them at once and shows up as the same harness failing six
+ *  times. That pattern is worth naming, because the repair loop cannot fix an
+ *  input it is not allowed to question. */
+function failedByEveryVariant(variants: GeneratedPunditVariant[]): string[] {
+  if (!variants.length) return [];
+  const failuresFor = (variant: GeneratedPunditVariant) =>
+    new Set(variant.results.filter((result) => !result.passed).map((result) => result.harness));
+  const [first, ...rest] = variants.map(failuresFor);
+  return [...first].filter((harness) => rest.every((other) => other.has(harness))).sort();
+}
+
 export async function persistEditorialRehearsal(input: {
   coverageDate: string;
   pack: EvidencePack;
@@ -181,6 +195,12 @@ export async function persistEditorialRehearsal(input: {
     .filter((variant) => variant.status === "approved")
     .map((variant) => variant.candidate.punditId);
   const approved = approvedPundits.length > 0;
+  // A harness that fails for every pundit at once is not six writers each
+  // having a bad day: it is one shared input they all read the same way. Both
+  // times a whole show has been lost, the cause was a single claim that
+  // miscounted itself, and both times it was found by reading judge prose
+  // rather than by the run saying so. Now the run says so.
+  const sharedFailures = failedByEveryVariant(input.variants);
   // Each pundit runs as its own step and reports what it spent. Summing here is
   // the only place with all six in hand, and the figure is what an on-demand
   // unlock has to be priced against.
@@ -201,6 +221,7 @@ export async function persistEditorialRehearsal(input: {
     evidencePackId,
     variantIds,
     approvedPundits,
+    sharedFailures,
     status: approved ? "narration_review" : "quarantined",
   } as const;
 }

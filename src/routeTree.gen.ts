@@ -30,6 +30,7 @@ import { Route as ApiInternalForecastTrainRouteImport } from './routes/api/inter
 import { Route as ApiInternalPredictionsRegisterRouteImport } from './routes/api/internal/predictions-register'
 import { Route as ApiInternalPreflightRouteImport } from './routes/api/internal/preflight'
 import { Route as ApiInternalProduceVariantRouteImport } from './routes/api/internal/produce-variant'
+import { Route as ApiInternalPublishDropRouteImport } from './routes/api/internal/publish-drop'
 import { Route as ApiInternalRehearsalRouteImport } from './routes/api/internal/rehearsal'
 import { Route as ApiInternalReleaseReadinessRouteImport } from './routes/api/internal/release-readiness'
 import { Route as ApiProfilePunditRouteImport } from './routes/api/profile/pundit'
@@ -154,6 +155,11 @@ const ApiInternalProduceVariantRoute =
     path: '/api/internal/produce-variant',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiInternalPublishDropRoute = ApiInternalPublishDropRouteImport.update({
+  id: '/api/internal/publish-drop',
+  path: '/api/internal/publish-drop',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiInternalRehearsalRoute = ApiInternalRehearsalRouteImport.update({
   id: '/api/internal/rehearsal',
   path: '/api/internal/rehearsal',
@@ -241,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
   '/api/internal/preflight': typeof ApiInternalPreflightRoute
   '/api/internal/produce-variant': typeof ApiInternalProduceVariantRoute
+  '/api/internal/publish-drop': typeof ApiInternalPublishDropRoute
   '/api/internal/rehearsal': typeof ApiInternalRehearsalRoute
   '/api/internal/release-readiness': typeof ApiInternalReleaseReadinessRoute
   '/api/profile/pundit': typeof ApiProfilePunditRoute
@@ -276,6 +283,7 @@ export interface FileRoutesByTo {
   '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
   '/api/internal/preflight': typeof ApiInternalPreflightRoute
   '/api/internal/produce-variant': typeof ApiInternalProduceVariantRoute
+  '/api/internal/publish-drop': typeof ApiInternalPublishDropRoute
   '/api/internal/rehearsal': typeof ApiInternalRehearsalRoute
   '/api/internal/release-readiness': typeof ApiInternalReleaseReadinessRoute
   '/api/profile/pundit': typeof ApiProfilePunditRoute
@@ -312,6 +320,7 @@ export interface FileRoutesById {
   '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
   '/api/internal/preflight': typeof ApiInternalPreflightRoute
   '/api/internal/produce-variant': typeof ApiInternalProduceVariantRoute
+  '/api/internal/publish-drop': typeof ApiInternalPublishDropRoute
   '/api/internal/rehearsal': typeof ApiInternalRehearsalRoute
   '/api/internal/release-readiness': typeof ApiInternalReleaseReadinessRoute
   '/api/profile/pundit': typeof ApiProfilePunditRoute
@@ -349,6 +358,7 @@ export interface FileRouteTypes {
     | '/api/internal/predictions-register'
     | '/api/internal/preflight'
     | '/api/internal/produce-variant'
+    | '/api/internal/publish-drop'
     | '/api/internal/rehearsal'
     | '/api/internal/release-readiness'
     | '/api/profile/pundit'
@@ -384,6 +394,7 @@ export interface FileRouteTypes {
     | '/api/internal/predictions-register'
     | '/api/internal/preflight'
     | '/api/internal/produce-variant'
+    | '/api/internal/publish-drop'
     | '/api/internal/rehearsal'
     | '/api/internal/release-readiness'
     | '/api/profile/pundit'
@@ -419,6 +430,7 @@ export interface FileRouteTypes {
     | '/api/internal/predictions-register'
     | '/api/internal/preflight'
     | '/api/internal/produce-variant'
+    | '/api/internal/publish-drop'
     | '/api/internal/rehearsal'
     | '/api/internal/release-readiness'
     | '/api/profile/pundit'
@@ -455,6 +467,7 @@ export interface RootRouteChildren {
   ApiInternalPredictionsRegisterRoute: typeof ApiInternalPredictionsRegisterRoute
   ApiInternalPreflightRoute: typeof ApiInternalPreflightRoute
   ApiInternalProduceVariantRoute: typeof ApiInternalProduceVariantRoute
+  ApiInternalPublishDropRoute: typeof ApiInternalPublishDropRoute
   ApiInternalRehearsalRoute: typeof ApiInternalRehearsalRoute
   ApiInternalReleaseReadinessRoute: typeof ApiInternalReleaseReadinessRoute
   ApiProfilePunditRoute: typeof ApiProfilePunditRoute
@@ -616,6 +629,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalProduceVariantRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/publish-drop': {
+      id: '/api/internal/publish-drop'
+      path: '/api/internal/publish-drop'
+      fullPath: '/api/internal/publish-drop'
+      preLoaderRoute: typeof ApiInternalPublishDropRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/internal/rehearsal': {
       id: '/api/internal/rehearsal'
       path: '/api/internal/rehearsal'
@@ -738,6 +758,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalPredictionsRegisterRoute: ApiInternalPredictionsRegisterRoute,
   ApiInternalPreflightRoute: ApiInternalPreflightRoute,
   ApiInternalProduceVariantRoute: ApiInternalProduceVariantRoute,
+  ApiInternalPublishDropRoute: ApiInternalPublishDropRoute,
   ApiInternalRehearsalRoute: ApiInternalRehearsalRoute,
   ApiInternalReleaseReadinessRoute: ApiInternalReleaseReadinessRoute,
   ApiProfilePunditRoute: ApiProfilePunditRoute,
