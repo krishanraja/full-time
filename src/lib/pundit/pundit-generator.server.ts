@@ -191,7 +191,7 @@ export async function generateClaimLaboratory(pack: EvidencePack): Promise<Analy
     maxTokens: 3_000,
     schema: claimSchema,
     system:
-      "You are Full Time's claim laboratory. Produce claims, never prose. Facts are closed-world. Causal strength must not exceed the evidence. Do not infer tactics, intent, psychology or film detail from structured match data. Separate decision quality from outcome. Predictions and counterfactuals need a falsifier and structured rule.",
+      "You are Full Time's claim laboratory. Produce claims, never prose. Facts are closed-world. Causal strength must not exceed the evidence. Do not infer tactics, intent, psychology or film detail from structured match data. Separate decision quality from outcome. Predictions and counterfactuals need a falsifier and structured rule. Every number in a thesis must be one the evidence you cite actually carries, or the number of evidence references you cite. Count your own citations before you state a count: a thesis that says four while listing five events is worse than no claim at all, because every pundit will repeat it.",
     user: JSON.stringify({
       evidencePack: compactEvidence(pack),
       outputContract: {
