@@ -13,6 +13,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { currentCoverageDate } from "@/lib/london-date";
+import { statNumber as statN } from "@/lib/api/provider-stats";
 
 const AF = "https://v3.football.api-sports.io";
 const PACE_MS = 300; // Pro: 300 req/min. The old 7000 was tuned for the free tier.
@@ -90,13 +91,6 @@ const evType = (e: Json): string | null => {
   if (e.type === "subst") return "sub";
   if (e.type === "Var") return "var";
   return null;
-};
-
-const statN = (arr: Json[], type: string): number | null => {
-  const s = (arr || []).find((x) => x.type === type);
-  if (!s || s.value == null) return null;
-  const v = Number(String(s.value).replace("%", ""));
-  return Number.isFinite(v) ? v : null;
 };
 
 // Cross-feed team matching. Conservative by design: an unmatched fixture leaves
