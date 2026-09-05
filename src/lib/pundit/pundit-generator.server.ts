@@ -165,10 +165,16 @@ function modelNames() {
   };
 }
 
-/** How many repair rounds a single variant gets before it is quarantined. */
+/** How many repair rounds a single variant gets before it is quarantined.
+ *
+ *  Cost scales almost linearly with this: a round is one writer call plus
+ *  fourteen judges, for each of six pundits. The default is deliberately low,
+ *  because an over-generous default is spent silently, on every run, by anyone
+ *  who never thinks to look at it. Raise it per environment when a run's
+ *  results show variants converging but running out of rounds. */
 export function maxRepairAttempts(): number {
-  const configured = Number.parseInt(process.env.PUNDIT_MAX_ATTEMPTS ?? "6", 10);
-  return Number.isFinite(configured) ? Math.min(10, Math.max(1, configured)) : 6;
+  const configured = Number.parseInt(process.env.PUNDIT_MAX_ATTEMPTS ?? "2", 10);
+  return Number.isFinite(configured) ? Math.min(10, Math.max(1, configured)) : 2;
 }
 
 function compactEvidence(pack: EvidencePack) {
