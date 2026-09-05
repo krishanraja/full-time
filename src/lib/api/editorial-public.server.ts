@@ -217,7 +217,20 @@ export async function getPublicToday(pundit: PunditId) {
     );
     variant = variants[0] ?? null;
   }
-  const latest = samePunditEditions.find((edition) => edition.variant.drop_id !== drop?.id) ?? null;
+  // A drop now publishes the pundits that passed rather than all six at once,
+  // so a listener's chosen pundit may have nothing while the show itself is
+  // live. On 2026-09-05 exactly that happened: the Romantic published and the
+  // other five did not, and five of six listeners saw an empty home page with
+  // a finished show sitting behind it.
+  //
+  // So the fallback widens. Their own pundit first, and failing that the most
+  // recent edition anyone published. The player names whoever actually made it,
+  // because serving one persona's audio under another's name is the substitution
+  // the promise checks exist to prevent.
+  const anyPunditEditions = samePunditEditions.length
+    ? samePunditEditions
+    : await latestEditions(undefined, 4);
+  const latest = anyPunditEditions.find((edition) => edition.variant.drop_id !== drop?.id) ?? null;
   const active = variant ?? latest?.variant ?? null;
   const details = active
     ? await safeEditionDetails(active)
@@ -238,7 +251,7 @@ export async function getPublicToday(pundit: PunditId) {
     matchId: details.matchId,
     teamIds: details.teamIds,
     proofCards: details.proofCards,
-    recent: samePunditEditions.filter((edition) => edition.variant.id !== active?.id).slice(0, 4),
+    recent: anyPunditEditions.filter((edition) => edition.variant.id !== active?.id).slice(0, 4),
   } as const;
 }
 
