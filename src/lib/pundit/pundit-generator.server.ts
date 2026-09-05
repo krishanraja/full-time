@@ -304,7 +304,7 @@ async function writeDraft(input: {
     : undefined;
   const draft = await anthropicJson({
     model: modelNames().writer,
-    maxTokens: 6_000,
+    maxTokens: 16_000,
     schema: draftSchema,
     system:
       "You are the single Full Time showrunner. Write original English; never imitate a living pundit. The evidence is closed-world: every number you write, in digits or words, must be a value present in the evidence pack (a point, three points for a win, eleven players, forty-five and ninety minutes are the only universal constants), and every proper noun must be a team, player, competition or place named in the evidence pack. Reference claims only by their short id from licensedClaims, such as c1 or c4, and only inside the thesis fields selectedClaimIds, rejectedClaimIds and predictionClaimId. Beat text is read aloud to a listener who cannot see your working: never write a claim id or a phrase such as \"per claim c4\" or \"(c8)\" in beat text, and never mention claims, evidence ids or confidence values as labels. State the substance instead. Any number inside a falsifier or a forward-looking condition must also be a value present in the evidence pack, so build conditions out of numbers this match actually produced. Never state a season-level consequence: relegation, survival, the title, European qualification, promotion and play-offs are all outside this evidence. Length is a hard gate: the ten beats together must run to 750-1100 spoken words, so budget roughly 75 to 110 words per beat and expand your reasoning until you are inside that range. Every judgment needs a reason. Interpret numbers rather than listing them. Humour must intensify insight and stay within the supplied safety boundaries. When repairing, change only failed beats and preserve every passed beat verbatim.",
@@ -401,7 +401,7 @@ async function judgeOne(
 ): Promise<HarnessResult> {
   const output = await anthropicJson({
     model: modelNames().judge,
-    maxTokens: 800,
+    maxTokens: 2_000,
     schema: judgeSchema,
     system: `You are the independent ${harness} judge. Judge only ${harness}; do not reward strengths in any other dimension. Cite the exact script span. Return the smallest repair. A clever line cannot compensate for weak football reasoning.`,
     user: JSON.stringify({
@@ -442,7 +442,7 @@ async function judgeHardOne(
   const factual = harness === "factual_entailment";
   const output = await anthropicJson({
     model: modelNames().judge,
-    maxTokens: 900,
+    maxTokens: 2_000,
     schema: hardJudgeSchema,
     system: factual
       ? "You are a fail-closed factual-entailment judge. Every factual statement, number, entity, score state, attribution and causal strength in the script must be entailed by the closed-world evidence or an explicitly licensed claim. Correlation cannot become intent. Return passed=false for any unsupported assertion and identify every failed beat."
