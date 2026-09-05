@@ -1,6 +1,12 @@
 import { licenseClaim, unsupportedTacticsSpans } from "./claim-lab";
 import { assertPerformanceIdentity } from "./performance";
 import { maxSourceSimilarity } from "./research-originality";
+import {
+  digitNumbersIn,
+  FOOTBALL_CONSTANTS,
+  spelledNumbersIn,
+  spelledNumberValue,
+} from "./numbers";
 import { getPunditSpec } from "./specs";
 import type {
   AnalysisClaim,
@@ -40,118 +46,6 @@ const CONSEQUENCE_NEAR_STAKES = new RegExp(
   "gi",
 );
 
-/** Cardinals that can stand alone as a counted claim. */
-const SPELLED_UNITS: Record<string, number> = {
-  nil: 0,
-  zero: 0,
-  one: 1,
-  two: 2,
-  three: 3,
-  four: 4,
-  five: 5,
-  six: 6,
-  seven: 7,
-  eight: 8,
-  nine: 9,
-  ten: 10,
-  eleven: 11,
-  twelve: 12,
-  thirteen: 13,
-  fourteen: 14,
-  fifteen: 15,
-  sixteen: 16,
-  seventeen: 17,
-  eighteen: 18,
-  nineteen: 19,
-};
-
-/** Ordinals only count inside a compound ("fifty-seventh minute"). Alone they
- *  are ordinary English structure ("the second half", "the third time") rather
- *  than a claim about a quantity, so they are never checked on their own. */
-const SPELLED_ORDINAL_UNITS: Record<string, number> = {
-  first: 1,
-  second: 2,
-  third: 3,
-  fourth: 4,
-  fifth: 5,
-  sixth: 6,
-  seventh: 7,
-  eighth: 8,
-  ninth: 9,
-  tenth: 10,
-  eleventh: 11,
-  twelfth: 12,
-  thirteenth: 13,
-  fourteenth: 14,
-  fifteenth: 15,
-  sixteenth: 16,
-  seventeenth: 17,
-  eighteenth: 18,
-  nineteenth: 19,
-};
-
-const SPELLED_TENS: Record<string, number> = {
-  twenty: 20,
-  twentieth: 20,
-  thirty: 30,
-  thirtieth: 30,
-  forty: 40,
-  fortieth: 40,
-  fifty: 50,
-  fiftieth: 50,
-  sixty: 60,
-  sixtieth: 60,
-  seventy: 70,
-  seventieth: 70,
-  eighty: 80,
-  eightieth: 80,
-  ninety: 90,
-  ninetieth: 90,
-};
-
-/** Football idioms that state a count without spelling it. */
-const COUNT_IDIOMS: Record<string, number> = {
-  twice: 2,
-  double: 2,
-  brace: 2,
-  "hat-trick": 3,
-  hattrick: 3,
-  treble: 3,
-};
-
-/** Compound numbers are matched whole so that "twenty-four" reads as 24 rather
- *  than as an unlicensed "four", and "fifty-seventh" as 57 rather than "seven".
- *  The compound alternative comes first: regex alternation is ordered, so the
- *  longer form wins and its parts are never rescanned. */
-const UNIT_ALT = Object.keys(SPELLED_UNITS).join("|");
-const TENS_ALT = Object.keys(SPELLED_TENS).join("|");
-const ORDINAL_ALT = Object.keys(SPELLED_ORDINAL_UNITS).join("|");
-const WHOLE_ALT = `(?:${TENS_ALT})(?:[-\\s](?:${UNIT_ALT}|${ORDINAL_ALT}))?|(?:${UNIT_ALT})`;
-
-const SPELLED_NUMBER_RE = new RegExp(
-  [
-    // Scripts are spoken, so a decimal is written out: "two point eight three"
-    // is the licensed 2.83, not an eight and a three. It has to be matched
-    // before the parts are.
-    `\\b(?:${WHOLE_ALT})[-\\s]point(?:[-\\s](?:${UNIT_ALT}))+\\b`,
-    `\\b(?:${TENS_ALT})(?:[-\\s](?:${UNIT_ALT}|${ORDINAL_ALT}))?\\b`,
-    `\\b(?:${UNIT_ALT})\\b`,
-    `\\b(?:${Object.keys(COUNT_IDIOMS)
-      .map((word) => word.replace("-", "[- ]?"))
-      .join("|")})\\b`,
-  ].join("|"),
-  "gi",
-);
-
-/** Every spelled number a script states, each as the whole phrase that carries
- *  the value rather than as its parts. */
-export function spelledNumbersIn(script: string): Array<{ span: string; value: number }> {
-  SPELLED_NUMBER_RE.lastIndex = 0;
-  return [...script.matchAll(SPELLED_NUMBER_RE)]
-    .map((match) => ({ span: match[0], value: spelledNumberValue(match[0]) }))
-    .filter((item): item is { span: string; value: number } => item.value !== undefined);
-}
-
 /** Season-level consequence language in a script. Empty when the script only
  *  describes the match in front of it. */
 export function consequenceSpans(script: string): string[] {
@@ -161,32 +55,6 @@ export function consequenceSpans(script: string): string[] {
     ...[...script.matchAll(CONSEQUENCE_ALWAYS)].map((match) => match[0]),
     ...[...script.matchAll(CONSEQUENCE_NEAR_STAKES)].map((match) => match[0]),
   ];
-}
-
-/** The value a matched spelled number states, or undefined when the phrase is
- *  not a number after all. */
-export function spelledNumberValue(phrase: string): number | undefined {
-  const key = phrase.toLowerCase().trim().replace(/\s+/g, "-");
-  if (key in COUNT_IDIOMS) return COUNT_IDIOMS[key];
-  const tokens = key.split("-").filter(Boolean);
-  const pointAt = tokens.indexOf("point");
-  const whole = pointAt === -1 ? tokens : tokens.slice(0, pointAt);
-  const fraction = pointAt === -1 ? [] : tokens.slice(pointAt + 1);
-  if (!whole.length) return undefined;
-  let total = 0;
-  for (const token of whole) {
-    const value = SPELLED_TENS[token] ?? SPELLED_UNITS[token] ?? SPELLED_ORDINAL_UNITS[token];
-    if (value === undefined) return undefined;
-    total += value;
-  }
-  if (!fraction.length) return total;
-  let digits = "";
-  for (const token of fraction) {
-    const value = SPELLED_UNITS[token];
-    if (value === undefined || value > 9) return undefined;
-    digits += String(value);
-  }
-  return Number(`${total}.${digits}`);
 }
 
 const NAME_STOPWORDS = new Set(
@@ -200,11 +68,6 @@ const NUMBER_WORDS = new Set(
     " ",
   ),
 );
-
-/** Football constants every listener already holds: a point, three for a win,
- *  eleven players, forty-five minute halves, ninety minutes. These are not
- *  match facts and never need evidence. */
-const FOOTBALL_CONSTANTS = [1, 3, 11, 45, 90];
 
 const normalize = (value: string) =>
   value.normalize("NFD").replace(/\p{M}/gu, "").replace(/[‘’]/g, "'").toLowerCase().trim();
@@ -384,12 +247,7 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
   );
   const humourSpan = PROHIBITED_HUMOUR.find((pattern) => pattern.test(candidate.displayScript));
   const licensed = licensedScriptValues(pack, candidate);
-  // A digit glued to the end of a word is part of an identifier ("c4", the tail
-  // of a hash), not a quantity the script is asserting. Only the leading side is
-  // guarded so that "45th minute" still reads as 45.
-  const writtenNumbers = [
-    ...candidate.displayScript.matchAll(/(?<![A-Za-z0-9])\d+(?:\.\d+)?/g),
-  ].map((match) => ({ span: match[0], value: Number(match[0]) }));
+  const writtenNumbers = digitNumbersIn(candidate.displayScript);
   const writtenSpelled = spelledNumbersIn(candidate.displayScript);
   const unlicensedNumbers = [...writtenNumbers, ...writtenSpelled]
     .filter((item) => !licensed.numbers.has(item.value))
@@ -601,3 +459,5 @@ export function requestedRepairs(results: readonly HarnessResult[]) {
       failedBeats: item.failedBeats ?? [],
     }));
 }
+
+export { spelledNumberValue, spelledNumbersIn };

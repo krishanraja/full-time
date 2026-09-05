@@ -1,4 +1,5 @@
 import { evidenceById } from "./evidence";
+import { FOOTBALL_CONSTANTS, numbersIn } from "./numbers";
 import type { AnalysisClaim, EvidencePack } from "./types";
 
 const UNSUPPORTED_TACTICS = [
@@ -32,6 +33,48 @@ export function unsupportedTacticsSpans(text: string): string[] {
   return UNSUPPORTED_TACTICS.flatMap((pattern) => text.match(pattern)?.[0] ?? []);
 }
 
+function numericValuesWithin(value: unknown, found: Set<number>): void {
+  if (typeof value === "number" && Number.isFinite(value)) found.add(value);
+  else if (typeof value === "string") {
+    const parsed = Number(value.trim());
+    if (value.trim() !== "" && Number.isFinite(parsed)) found.add(parsed);
+  } else if (Array.isArray(value)) {
+    for (const item of value) numericValuesWithin(item, found);
+  } else if (value && typeof value === "object") {
+    for (const item of Object.values(value as Record<string, unknown>)) {
+      numericValuesWithin(item, found);
+    }
+  }
+}
+
+/** A claim is handed to all six writers as licensed truth, so a claim that
+ *  miscounts its own evidence poisons the whole show at once. Every number a
+ *  claim states must be one the evidence it cites actually carries, the count
+ *  of those citations, or a universal football constant.
+ *
+ *  This is the check that "Chelsea made four substitutions (James, Acheampong,
+ *  Caicedo at 68'; Chavarria at 72'; Barco at 82')" fails: it names five
+ *  players, cites five events, and says four. */
+function numericConsistency(claim: AnalysisClaim, pack: EvidencePack): string[] {
+  const evidence = evidenceById(pack);
+  const cited = claim.evidenceRefs.map((ref) => evidence.get(ref)).filter(Boolean);
+  if (cited.length !== claim.evidenceRefs.length) return [];
+
+  const supported = new Set<number>(FOOTBALL_CONSTANTS);
+  supported.add(claim.evidenceRefs.length);
+  for (const item of cited) numericValuesWithin(item, supported);
+
+  const unsupported = numbersIn(claim.thesis)
+    .filter((item) => !supported.has(item.value))
+    .filter((item, index, all) => all.findIndex((other) => other.value === item.value) === index);
+  if (!unsupported.length) return [];
+  return [
+    `States ${unsupported
+      .map((item) => `"${item.span}"`)
+      .join(", ")}, which the ${claim.evidenceRefs.length} cited evidence items do not carry.`,
+  ];
+}
+
 export function licenseClaim(claim: AnalysisClaim, pack: EvidencePack): ClaimLicenseResult {
   const failures: string[] = [];
   const evidence = evidenceById(pack);
@@ -57,6 +100,7 @@ export function licenseClaim(claim: AnalysisClaim, pack: EvidencePack): ClaimLic
   if ((claim.type === "counterfactual" || claim.type === "prediction") && !claim.evaluationRule) {
     failures.push(`${claim.type} requires a structured evaluation rule.`);
   }
+  failures.push(...numericConsistency(claim, pack));
   if (claim.type === "mechanism" && /because|caused|led to|resulted in/i.test(claim.thesis)) {
     const causalSupport = claim.evidenceRefs.some(
       (ref) => ref.startsWith("event.") || ref.startsWith("derived."),
