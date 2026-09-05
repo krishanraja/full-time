@@ -327,3 +327,75 @@ describe("time a side had to respond to a goal", () => {
     expect(value(packWith([]), "derived.minutes_after_opening_goal")).toBeUndefined();
   });
 });
+
+describe("what each side arrived carrying", () => {
+  const base = {
+    match: {
+      id: "m",
+      homeTeam: "Ipswich",
+      awayTeam: "Liverpool",
+      homeScore: 0,
+      awayScore: 2,
+      kickoffAt: "2026-09-04T19:00:00Z",
+      competition: "Premier League",
+      source: "p",
+    },
+    events: [],
+    stats: { source: "p" },
+  };
+
+  const packOf = (extra: Record<string, unknown>) =>
+    buildEvidencePack({ ...base, ...extra } as never);
+
+  const item = (pack: ReturnType<typeof packOf>, id: string) =>
+    [...pack.facts, ...pack.derivations].find((entry) => entry.id === id);
+
+  const form = {
+    home: [
+      { date: "2026-08-30T14:00:00Z", opponent: "Everton", venue: "away", goalsFor: 1, goalsAgainst: 1 },
+      { date: "2026-08-23T14:00:00Z", opponent: "Brentford", venue: "home", goalsFor: 0, goalsAgainst: 2 },
+    ],
+    away: [
+      { date: "2026-08-31T14:00:00Z", opponent: "Arsenal", venue: "home", goalsFor: 3, goalsAgainst: 0 },
+    ],
+  };
+
+  // Six pundits kept being told their analysis was a truism. With one match and
+  // nothing else in the pack, a truism is the only shape available.
+  it("states a previous result as a fact a pundit can cite", () => {
+    const pack = packOf({ form });
+    expect(item(pack, "form.home_1")?.label).toContain("Ipswich drew 1-1 away to Everton");
+    expect(item(pack, "form.home_2")?.label).toContain("lost 0-2 at home to Brentford");
+    expect(item(pack, "form.away_1")?.label).toContain("Liverpool won 3-0 at home to Arsenal");
+  });
+
+  it("counts the points and goals a run of form produced", () => {
+    const pack = packOf({ form });
+    expect(item(pack, "derived.home_points_from_last_2")?.value).toBe(1);
+    expect(item(pack, "derived.home_goals_scored_in_last_2")?.value).toBe(1);
+    expect(item(pack, "derived.home_goals_conceded_in_last_2")?.value).toBe(3);
+    expect(item(pack, "derived.away_points_from_last_1")?.value).toBe(3);
+  });
+
+  it("states what these two have done to each other before", () => {
+    const pack = packOf({
+      headToHead: [
+        {
+          date: "2025-01-25T15:00:00Z",
+          homeTeam: "Liverpool",
+          awayTeam: "Ipswich",
+          homeGoals: 4,
+          awayGoals: 1,
+        },
+      ],
+    });
+    expect(item(pack, "h2h.meeting_1")?.label).toBe("Previous meeting: Liverpool 4-1 Ipswich");
+  });
+
+  it("says nothing at all when neither is known", () => {
+    const pack = packOf({});
+    expect(item(pack, "form.home_1")).toBeUndefined();
+    expect(item(pack, "h2h.meeting_1")).toBeUndefined();
+    expect(item(pack, "derived.home_points_from_last_5")).toBeUndefined();
+  });
+});
