@@ -76,15 +76,52 @@ async function acquirePermit(): Promise<ReleasePermit> {
   return new Promise((resolve) => permitQueue.push(resolve));
 }
 
+type ContentBlock = {
+  type: "text";
+  text: string;
+  cache_control?: { type: "ephemeral" };
+};
+
+/** Caching is a prefix match over the rendered bytes, in the order system then
+ *  messages, so anything that varies has to come last. `cachedContext` holds the
+ *  stable head of the request, most stable first, and each entry gets its own
+ *  breakpoint; `user` is the varying tail and is never marked.
+ *
+ *  The cap is four breakpoints per request and the system block takes one, so at
+ *  most three context entries. Caches are scoped to one model, so the writer and
+ *  the judges keep separate entries even when they send the same pack. */
+const MAX_CACHED_CONTEXT_BLOCKS = 3;
+
+export function requestContent(cachedContext: readonly unknown[], user: string): ContentBlock[] {
+  const cached: ContentBlock[] = cachedContext.map((segment) => ({
+    type: "text",
+    text: typeof segment === "string" ? segment : JSON.stringify(segment),
+    cache_control: { type: "ephemeral" },
+  }));
+  return [...cached, { type: "text", text: `${user}\n\nReturn only one JSON object.` }];
+}
+
 export async function anthropicJson<T>(input: {
   system: string;
+  /** Stable request prefix, most stable first. Each entry is cached. */
+  cachedContext?: readonly unknown[];
+  /** The part that varies between requests. Never cached. */
   user: string;
   schema: z.ZodType<T, z.ZodTypeDef, unknown>;
   model: string;
   maxTokens: number;
+  /** Names this call in the cache log, so a lost hit rate is traceable. */
+  label?: string;
 }): Promise<T> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
+
+  const cachedContext = input.cachedContext ?? [];
+  if (cachedContext.length > MAX_CACHED_CONTEXT_BLOCKS) {
+    throw new Error(
+      `A request may cache at most ${MAX_CACHED_CONTEXT_BLOCKS} context blocks; got ${cachedContext.length}.`,
+    );
+  }
 
   const release = await acquirePermit();
   try {
@@ -100,13 +137,10 @@ export async function anthropicJson<T>(input: {
         body: JSON.stringify({
           model: input.model,
           max_tokens: input.maxTokens,
-          system: input.system,
-          messages: [
-            {
-              role: "user",
-              content: `${input.user}\n\nReturn only one JSON object.`,
-            },
-          ],
+          // The system prompt is the same bytes on every call of a given kind,
+          // so it is the outermost thing worth caching.
+          system: [{ type: "text", text: input.system, cache_control: { type: "ephemeral" } }],
+          messages: [{ role: "user", content: requestContent(cachedContext, input.user) }],
         }),
         signal: AbortSignal.timeout(120_000),
       });
@@ -125,7 +159,26 @@ export async function anthropicJson<T>(input: {
         const body = (await response.json()) as {
           content?: Array<{ text?: string }>;
           stop_reason?: string;
+          usage?: {
+            input_tokens?: number;
+            cache_creation_input_tokens?: number;
+            cache_read_input_tokens?: number;
+          };
         };
+        // Caching fails silently: requests still succeed, the bill is just
+        // higher. These counters are the only evidence it is working, so they
+        // are logged on every call rather than checked once at setup.
+        console.log(
+          JSON.stringify({
+            level: "info",
+            message: "anthropic_cache_usage",
+            label: input.label ?? "unlabelled",
+            model: input.model,
+            uncachedInputTokens: body.usage?.input_tokens ?? 0,
+            cacheWriteTokens: body.usage?.cache_creation_input_tokens ?? 0,
+            cacheReadTokens: body.usage?.cache_read_input_tokens ?? 0,
+          }),
+        );
         // Truncation is deterministic: the same prompt will truncate again, so
         // say so plainly rather than burning two more identical attempts.
         if (body.stop_reason === "max_tokens") {
