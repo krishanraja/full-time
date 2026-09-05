@@ -28,6 +28,8 @@ const STAT_FIELDS = [
   ["possession", "Ball Possession"],
   ["shots", "Total Shots"],
   ["sot", "Shots on Goal"],
+  ["shots_inside_box", "Shots insidebox"],
+  ["shots_outside_box", "Shots outsidebox"],
   ["corners", "Corner Kicks"],
   ["blocked", "Blocked Shots"],
   ["saves", "Goalkeeper Saves"],

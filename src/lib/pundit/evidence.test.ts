@@ -236,3 +236,46 @@ describe("substitution labelling", () => {
     );
   });
 });
+
+describe("shot location, the chance-quality signal that survived", () => {
+  const withShots = (over: Record<string, number>) =>
+    buildEvidencePack({
+      match: {
+        id: "m",
+        homeTeam: "Ipswich",
+        awayTeam: "Liverpool",
+        homeScore: 0,
+        awayScore: 2,
+        kickoffAt: "2026-09-04T19:00:00Z",
+        competition: "Premier League",
+        source: "p",
+      },
+      events: [],
+      stats: { source: "provider", ...over },
+    } as never);
+
+  const derivation = (pack: ReturnType<typeof withShots>, id: string) =>
+    pack.derivations.find((item) => item.id === id);
+
+  it("states where each side shot from, as a share", () => {
+    const pack = withShots({
+      homeShotsInsideBox: 4,
+      homeShotsOutsideBox: 10,
+      awayShotsInsideBox: 7,
+      awayShotsOutsideBox: 3,
+    });
+    // Fourteen shots each way is the same number and a different match.
+    expect(derivation(pack, "derived.home_inside_box_share")?.value).toBe(0.286);
+    expect(derivation(pack, "derived.away_inside_box_share")?.value).toBe(0.7);
+  });
+
+  it("says nothing when the provider sent no locations", () => {
+    const pack = withShots({ homeShots: 14 });
+    expect(derivation(pack, "derived.home_inside_box_share")).toBeUndefined();
+  });
+
+  it("says nothing rather than dividing by no shots at all", () => {
+    const pack = withShots({ homeShotsInsideBox: 0, homeShotsOutsideBox: 0 });
+    expect(derivation(pack, "derived.home_inside_box_share")).toBeUndefined();
+  });
+});
