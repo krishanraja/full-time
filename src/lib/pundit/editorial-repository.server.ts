@@ -1,4 +1,4 @@
-import type { AnalysisClaim, EvidencePack, HarnessResult } from "./types";
+import type { AnalysisClaim, EvidencePack, HarnessResult, PunditId } from "./types";
 import type { GeneratedPunditVariant } from "./pundit-generator.server";
 import { sha256Hex } from "./hash";
 import { serviceRest } from "./service-rest.server";
@@ -175,7 +175,22 @@ async function persistVariant(dropId: string, generated: GeneratedPunditVariant)
  *  reaches all of them at once and shows up as the same harness failing six
  *  times. That pattern is worth naming, because the repair loop cannot fix an
  *  input it is not allowed to question. */
-function failedByEveryVariant(variants: GeneratedPunditVariant[]): string[] {
+/** The pundits whose scripts passed every one of their own harnesses.
+ *
+ *  A listener plays one pundit, so a drop needs one ready, not six. The
+ *  per-variant bar is untouched: a variant reaches narration only by passing
+ *  all of its own harnesses. This list is what the workflow narrates, and
+ *  narration is where the money after the writing is spent, so a name wrongly
+ *  in it is paid-for audio that can never publish, and a name wrongly missing
+ *  is a show that was ready and never made.
+ */
+export function approvedPunditsOf(variants: GeneratedPunditVariant[]): PunditId[] {
+  return variants
+    .filter((variant) => variant.status === "approved")
+    .map((variant) => variant.candidate.punditId);
+}
+
+export function failedByEveryVariant(variants: GeneratedPunditVariant[]): string[] {
   if (!variants.length) return [];
   const failuresFor = (variant: GeneratedPunditVariant) =>
     new Set(variant.results.filter((result) => !result.passed).map((result) => result.harness));
@@ -199,12 +214,7 @@ export async function persistEditorialRehearsal(input: {
       variantId: await persistVariant(dropId, variant),
     })),
   );
-  // A listener plays one pundit, so a drop needs one pundit ready, not six. The
-  // per-variant bar is untouched: a variant reaches narration only by passing
-  // every one of its own harnesses.
-  const approvedPundits = input.variants
-    .filter((variant) => variant.status === "approved")
-    .map((variant) => variant.candidate.punditId);
+  const approvedPundits = approvedPunditsOf(input.variants);
   const approved = approvedPundits.length > 0;
   // A harness that fails for every pundit at once is not six writers each
   // having a bad day: it is one shared input they all read the same way. Both
