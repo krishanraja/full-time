@@ -152,6 +152,17 @@ async function persistVariant(dropId: string, generated: GeneratedPunditVariant)
     },
   });
   if (!rows[0]) throw new Error(`Variant ${candidate.punditId} was not persisted.`);
+  // A re-run of the same date reuses the drop and its variants, and harness rows
+  // are keyed by attempt number. So a pundit that failed at attempt two last
+  // time and passes at attempt one this time would leave the old failing rows
+  // in place, and they win the "latest attempt" ordering that both the publish
+  // gate and the promise checks read. The verdicts on a variant are the
+  // verdicts of the run that wrote its script, so the previous run's are
+  // cleared with it.
+  await serviceRest<null>(`harness_runs?variant_id=eq.${rows[0].id}`, {
+    method: "DELETE",
+    prefer: "return=minimal",
+  });
   for (const run of generated.attemptResults) {
     await persistHarnesses(rows[0].id, run.results, run.attempt);
   }
