@@ -1,17 +1,13 @@
 import { z } from "zod";
 
-function extractJson(text: string): unknown {
-  const cleaned = text
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-  const start = cleaned.indexOf("{");
-  if (start < 0) throw new Error("Model response contained no JSON object.");
+/** Reads the balanced object that begins at `start`, or undefined when the text
+ *  runs out first. */
+function balancedObjectAt(text: string, start: number): string | undefined {
   let depth = 0;
   let quoted = false;
   let escaped = false;
-  for (let index = start; index < cleaned.length; index++) {
-    const char = cleaned[index];
+  for (let index = start; index < text.length; index++) {
+    const char = text[index];
     if (quoted) {
       if (escaped) escaped = false;
       else if (char === "\\") escaped = true;
@@ -20,9 +16,36 @@ function extractJson(text: string): unknown {
     }
     if (char === '"') quoted = true;
     else if (char === "{") depth++;
-    else if (char === "}" && --depth === 0) return JSON.parse(cleaned.slice(start, index + 1));
+    else if (char === "}" && --depth === 0) return text.slice(start, index + 1);
   }
-  throw new Error("Model response contained unbalanced JSON.");
+  return undefined;
+}
+
+export function extractJson(text: string): unknown {
+  const cleaned = text
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  if (!cleaned.includes("{")) throw new Error("Model response contained no JSON object.");
+  // A model can open its answer with prose that happens to contain a brace, so
+  // the first candidate is not always the object. Try each in turn and keep the
+  // first that is both balanced and valid JSON.
+  let sawBalanced = false;
+  for (let start = cleaned.indexOf("{"); start >= 0; start = cleaned.indexOf("{", start + 1)) {
+    const candidate = balancedObjectAt(cleaned, start);
+    if (!candidate) continue;
+    sawBalanced = true;
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      continue;
+    }
+  }
+  throw new Error(
+    sawBalanced
+      ? "Model response contained no parsable JSON object."
+      : "Model response contained unbalanced JSON, which usually means it was cut off by the token limit.",
+  );
 }
 
 const sleep = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -99,11 +122,22 @@ export async function anthropicJson<T>(input: {
       }
 
       try {
-        const body = (await response.json()) as { content?: Array<{ text?: string }> };
+        const body = (await response.json()) as {
+          content?: Array<{ text?: string }>;
+          stop_reason?: string;
+        };
+        // Truncation is deterministic: the same prompt will truncate again, so
+        // say so plainly rather than burning two more identical attempts.
+        if (body.stop_reason === "max_tokens") {
+          throw new Error(
+            `Model response was cut off at the ${input.maxTokens} token limit before the JSON closed.`,
+          );
+        }
         const parsed = extractJson(body.content?.[0]?.text ?? "");
         return input.schema.parse(parsed);
       } catch (error: unknown) {
         lastError = error;
+        if (error instanceof Error && error.message.includes("cut off at the")) throw error;
         if (attempt < 3) await sleep(300 * attempt);
       }
     }
