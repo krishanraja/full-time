@@ -51,7 +51,34 @@ export type StructuredMatchInput = {
     awaySaves?: number | null;
     source: string;
   };
+  /** What each side did before this match, and what these two have done to
+   *  each other. The pack has always held one match in isolation, which is
+   *  structurally why judges keep calling the analysis a truism: with ninety
+   *  minutes and nothing else, "early goals settle games" is the only shape of
+   *  observation available. Both of these were already in the database and
+   *  reached nobody. */
+  form?: {
+    home: PriorMatch[];
+    away: PriorMatch[];
+  };
+  headToHead?: PriorMeeting[];
   feedsAgree?: boolean | null;
+};
+
+export type PriorMatch = {
+  date: string;
+  opponent: string;
+  venue: "home" | "away";
+  goalsFor: number;
+  goalsAgainst: number;
+};
+
+export type PriorMeeting = {
+  date: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeGoals: number;
+  awayGoals: number;
 };
 
 const unavailableEvidence = [
@@ -195,6 +222,84 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
   }
 
   const derivations: EvidenceItem[] = [];
+
+  // What each side arrived carrying, and what these two have done to each other.
+  //
+  // A result is a fact with a date, a venue and a scoreline, so it licenses the
+  // opponent's name and its own numbers exactly as a match event does. The
+  // pundit that had nothing to be non-obvious about now has somewhere to stand:
+  // a run of form to set this result against, or a history to say it broke.
+  const outcome = (goalsFor: number, goalsAgainst: number) =>
+    goalsFor > goalsAgainst ? "won" : goalsFor < goalsAgainst ? "lost" : "drew";
+
+  for (const [side, team, matches] of [
+    ["home", match.homeTeam, input.form?.home ?? []],
+    ["away", match.awayTeam, input.form?.away ?? []],
+  ] as const) {
+    matches.forEach((prior, index) => {
+      facts.push(
+        fact(
+          `form.${side}_${index + 1}`,
+          `${team} ${outcome(prior.goalsFor, prior.goalsAgainst)} ${prior.goalsFor}-${prior.goalsAgainst} ${prior.venue === "home" ? "at home to" : "away to"} ${prior.opponent}`,
+          [prior.date.slice(0, 10), prior.opponent, prior.venue, prior.goalsFor, prior.goalsAgainst],
+          "database-verified",
+          `matches.kickoff_at<${match.kickoffAt}`,
+        ),
+      );
+    });
+    if (!matches.length) continue;
+    const points = matches.reduce(
+      (total, prior) =>
+        total + (prior.goalsFor > prior.goalsAgainst ? 3 : prior.goalsFor === prior.goalsAgainst ? 1 : 0),
+      0,
+    );
+    derivations.push(
+      derived(
+        `derived.${side}_points_from_last_${matches.length}`,
+        `${team} points from their previous ${matches.length} matches`,
+        points,
+        "database-verified",
+        matches.map((_, index) => `form.${side}_${index + 1}`).join(","),
+        "3 per win, 1 per draw",
+      ),
+      derived(
+        `derived.${side}_goals_scored_in_last_${matches.length}`,
+        `${team} goals scored in their previous ${matches.length} matches`,
+        matches.reduce((total, prior) => total + prior.goalsFor, 0),
+        "database-verified",
+        matches.map((_, index) => `form.${side}_${index + 1}`).join(","),
+        "sum of goals scored",
+      ),
+      derived(
+        `derived.${side}_goals_conceded_in_last_${matches.length}`,
+        `${team} goals conceded in their previous ${matches.length} matches`,
+        matches.reduce((total, prior) => total + prior.goalsAgainst, 0),
+        "database-verified",
+        matches.map((_, index) => `form.${side}_${index + 1}`).join(","),
+        "sum of goals conceded",
+      ),
+    );
+  }
+
+  const meetings = input.headToHead ?? [];
+  meetings.forEach((meeting, index) => {
+    facts.push(
+      fact(
+        `h2h.meeting_${index + 1}`,
+        `Previous meeting: ${meeting.homeTeam} ${meeting.homeGoals}-${meeting.awayGoals} ${meeting.awayTeam}`,
+        [
+          meeting.date.slice(0, 10),
+          meeting.homeTeam,
+          meeting.awayTeam,
+          meeting.homeGoals,
+          meeting.awayGoals,
+        ],
+        "database-verified",
+        "h2h_cache.meetings",
+      ),
+    );
+  });
+
   if (finite(stats?.homeXg) && finite(stats?.awayXg)) {
     derivations.push(
       derived(
@@ -234,14 +339,57 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     if (total <= 0) continue;
     derivations.push(
       derived(
-        `derived.${side}_inside_box_share`,
-        `${label} share of shots taken from inside the box`,
-        Number((inside / total).toFixed(3)),
+        // Stated as whole percent, because that is how a pundit says it out
+        // loud. Given 0.286 the writer reaches for "under thirty percent", and
+        // thirty is a number the evidence does not carry, so the numeric
+        // licence refuses the script. Give it a figure it can speak exactly.
+        `derived.${side}_inside_box_percent`,
+        `${label} percentage of shots taken from inside the box`,
+        Math.round((inside / total) * 100),
         stats.source,
         `stats.${side}_shots_inside_box,stats.${side}_shots_outside_box`,
-        "round(shots_inside_box / (shots_inside_box + shots_outside_box), 3)",
+        "round(100 * shots_inside_box / (shots_inside_box + shots_outside_box))",
       ),
     );
+  }
+
+  // How long a side had to respond to a goal.
+  //
+  // "Ipswich had eighty-one minutes to solve it" is subtraction from two
+  // numbers the evidence carries, the goal's minute and the ninety a match
+  // lasts, but the numeric licence sees only an eighty-one that appears
+  // nowhere and refuses the script. Writers reach for this constantly, because
+  // it is how anyone describes an early goal, so the pack states it.
+  const goalMinutes = input.events
+    .filter((event) => event.type === "goal" || event.type === "own_goal")
+    .map((event) => event.minute)
+    .filter((minute): minute is number => finite(minute) && minute > 0 && minute <= 90)
+    .sort((left, right) => left - right);
+  if (goalMinutes.length) {
+    const first = goalMinutes[0];
+    const last = goalMinutes[goalMinutes.length - 1];
+    derivations.push(
+      derived(
+        "derived.minutes_after_opening_goal",
+        "Minutes of normal time played after the opening goal",
+        90 - first,
+        "derived",
+        "match_events.minute",
+        "90 - opening_goal_minute",
+      ),
+    );
+    if (last !== first) {
+      derivations.push(
+        derived(
+          "derived.minutes_after_last_goal",
+          "Minutes of normal time played after the last goal",
+          90 - last,
+          "derived",
+          "match_events.minute",
+          "90 - last_goal_minute",
+        ),
+      );
+    }
   }
 
   if (finite(stats?.homeShots) && stats.homeShots > 0) {
