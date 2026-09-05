@@ -2,6 +2,17 @@ import { describe, expect, it } from "vitest";
 import { judgeSchema, normaliseBeats } from "./pundit-generator.server";
 
 describe("judge response tolerance", () => {
+  // The run this cost: a judge given a fuller rubric cited several spans and
+  // returned a list where the schema wanted a string. The step threw, the
+  // workflow failed, and six scripts already written were lost. What the judge
+  // means is the same either way.
+  it("accepts several cited spans as well as one", () => {
+    expect(judgeSchema.parse({ score: 2, evidenceSpan: ["first span", "second span"] }).evidenceSpan)
+      .toBe("first span | second span");
+    expect(judgeSchema.parse({ score: 2, evidenceSpan: "one span" }).evidenceSpan).toBe("one span");
+    expect(judgeSchema.parse({ score: 2, evidenceSpan: [] }).evidenceSpan).toBe("");
+  });
+
   it("accepts explicit nulls for the optional fields", () => {
     const parsed = judgeSchema.parse({
       score: 4,

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { DIMENSION_STANDARDS } from "./dimensions";
 import { licenseClaims } from "./claim-lab";
 import { anthropicJson } from "./anthropic-json.server";
-import { spentThisStepUsd } from "./model-cost";
+import { BudgetExceededError, spentThisStepUsd } from "./model-cost";
 import {
   publicationDecision,
   requestedRepairs,
@@ -136,9 +136,24 @@ const draftSchema = z.object({
 });
 
 /** Exported so the null tolerance above stays covered by a test. */
+/** A span the judge cites, however it chooses to send it.
+ *
+ *  A judge given a fuller rubric started citing several spans and returned a
+ *  list where the schema wanted a string. That killed a paid run outright: the
+ *  step throws, the workflow fails, and every variant already written is lost.
+ *  What the judge means is unambiguous either way, so both shapes are accepted
+ *  and a list is joined. */
+function citedSpan() {
+  return optional(
+    z
+      .union([z.string(), z.array(z.string())])
+      .transform((value) => (Array.isArray(value) ? value.filter(Boolean).join(" | ") : value)),
+  );
+}
+
 export const judgeSchema = z.object({
   score: z.number().int().min(1).max(5),
-  evidenceSpan: optional(z.string()),
+  evidenceSpan: citedSpan(),
   failure: optional(z.string()),
   requestedRepair: optional(z.string()),
   failedBeats: optionalList(z.array(z.enum(beatNames))),
@@ -150,7 +165,7 @@ export const judgeSchema = z.object({
 const hardJudgeSchema = z
   .object({
     passed: z.boolean(),
-    evidenceSpan: optional(z.string()),
+    evidenceSpan: citedSpan(),
     failure: optional(z.string()),
     requestedRepair: optional(z.string()),
     failedBeats: optionalList(z.array(z.enum(beatNames))),
@@ -442,40 +457,58 @@ async function judgeOne(
   // The system prompt renders first, so naming the harness there gave each of
   // the twelve judges a different prefix and none of them could share a cached
   // evidence pack. It goes in the varying tail instead.
-  const output = await anthropicJson({
-    model: modelNames().judge,
-    maxTokens: 2_000,
-    schema: judgeSchema,
-    label: `judge:${harness}`,
-    system:
-      "You are an independent Full Time editorial judge. You judge exactly one named dimension, given at the end of this request, and nothing else: never reward a strength that belongs to a different dimension. Cite the exact script span. Return the smallest repair that would fix it. A clever line cannot compensate for weak football reasoning.",
-    cachedContext: [
-      // Fixed for the whole run, across every pundit and attempt.
-      { evidencePack: compactEvidence(pack), licensedClaims: claims },
-      // Fixed for this variant, shared by all twelve of its judges.
-      {
-        punditSpec: getPunditSpec(candidate.punditId),
-        predictionRegistration: predictionContext(predictionTiming),
-        thesis: candidate.thesis,
-        script: candidate.displayScript,
-        outputContract: {
-          score: "integer 1..5",
-          evidenceSpan: "exact script span",
-          failure: "required when below threshold",
-          requestedRepair: "smallest repair",
-          failedBeats: beatNames,
+  let output: z.infer<typeof judgeSchema>;
+  try {
+    output = await anthropicJson({
+      model: modelNames().judge,
+      maxTokens: 2_000,
+      schema: judgeSchema,
+      label: `judge:${harness}`,
+      system:
+        "You are an independent Full Time editorial judge. You judge exactly one named dimension, given at the end of this request, and nothing else: never reward a strength that belongs to a different dimension. Cite the exact script span. Return the smallest repair that would fix it. A clever line cannot compensate for weak football reasoning.",
+      cachedContext: [
+        // Fixed for the whole run, across every pundit and attempt.
+        { evidencePack: compactEvidence(pack), licensedClaims: claims },
+        // Fixed for this variant, shared by all twelve of its judges.
+        {
+          punditSpec: getPunditSpec(candidate.punditId),
+          predictionRegistration: predictionContext(predictionTiming),
+          thesis: candidate.thesis,
+          script: candidate.displayScript,
+          outputContract: {
+            score: "integer 1..5",
+            evidenceSpan: "exact script span",
+            failure: "required when below threshold",
+            requestedRepair: "smallest repair",
+            failedBeats: beatNames,
+          },
         },
-      },
-    ],
-    user: JSON.stringify({
-      rubric: harness,
-      // The standard the writer was given for this dimension. Both sides read
-      // the same words, so a rejection is a real shortfall rather than a
-      // disagreement about what the dimension means.
-      standard: DIMENSION_STANDARDS[harness],
-      instruction: `Judge only ${harness}, against the standard given. Score it 1 to 5.`,
-    }),
-  });
+      ],
+      user: JSON.stringify({
+        rubric: harness,
+        // The standard the writer was given for this dimension. Both sides read
+        // the same words, so a rejection is a real shortfall rather than a
+        // disagreement about what the dimension means.
+        standard: DIMENSION_STANDARDS[harness],
+        instruction: `Judge only ${harness}, against the standard given. Score it 1 to 5.`,
+      }),
+    });
+  } catch (error) {
+    // The spend ceiling is not a judging problem and must still stop the run.
+    if (error instanceof BudgetExceededError) throw error;
+    // One judge that answers in a shape we cannot read must not destroy a run
+    // that has already been paid for. It failed to judge, so the dimension
+    // stays closed and says why, and the other eleven judges and five pundits
+    // keep their work.
+    return {
+      harness,
+      hardGate: false,
+      passed: false,
+      score: 1,
+      failure: `The ${harness} judge could not be read: ${error instanceof Error ? error.message : String(error)}`,
+      requestedRepair: "Repair only the cited beat; preserve all passed beats.",
+    };
+  }
   return {
     harness,
     hardGate: false,
