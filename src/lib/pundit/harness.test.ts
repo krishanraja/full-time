@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { consequenceSpans, properNouns, spelledNumberValue } from "./harness";
 
+describe("digit extraction for the numeric licence gate", () => {
+  const digits = (script: string) =>
+    [...script.matchAll(/(?<![A-Za-z0-9])\d+(?:\.\d+)?/g)].map((match) => match[0]);
+
+  it("ignores digits that are part of an identifier", () => {
+    expect(digits("per claim c4 and (c12), backed by f1782040")).toEqual([]);
+  });
+
+  it("still reads ordinals and plain counts", () => {
+    expect(digits("24 shots by the 45th minute, 1-0 at the end")).toEqual(["24", "45", "1", "0"]);
+  });
+});
+
 describe("season consequence detection", () => {
   it("blocks language that only makes sense at season level", () => {
     expect(consequenceSpans("That result pushes them towards relegation.")).toHaveLength(1);
