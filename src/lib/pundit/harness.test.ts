@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { consequenceSpans, properNouns, spelledNumberValue } from "./harness";
+import { consequenceSpans, properNouns, spelledNumberValue, spelledNumbersIn } from "./harness";
+
+describe("spelled numbers found in a spoken script", () => {
+  it("takes a spoken decimal whole, not as its digits", () => {
+    const found = spelledNumbersIn(
+      "On expected goals it was two point eight three to one point zero eight.",
+    );
+    expect(found.map((item) => item.value)).toEqual([2.83, 1.08]);
+  });
+
+  it("takes a compound whole and leaves ordinary words alone", () => {
+    const found = spelledNumbersIn(
+      "Twenty-four shots, ten on target, in the fifty-seventh minute.",
+    );
+    expect(found.map((item) => item.value)).toEqual([24, 10, 57]);
+  });
+});
 
 describe("digit extraction for the numeric licence gate", () => {
   const digits = (script: string) =>
@@ -52,8 +68,15 @@ describe("spelled number reading for the numeric licence gate", () => {
     expect(spelledNumberValue("nil")).toBe(0);
   });
 
+  it("reads a spoken decimal as one value", () => {
+    expect(spelledNumberValue("two point eight three")).toBe(2.83);
+    expect(spelledNumberValue("one point zero eight")).toBe(1.08);
+    expect(spelledNumberValue("one point seven five")).toBe(1.75);
+  });
+
   it("returns nothing for words that are not numbers", () => {
     expect(spelledNumberValue("Toulouse")).toBeUndefined();
+    expect(spelledNumberValue("point")).toBeUndefined();
   });
 });
 
