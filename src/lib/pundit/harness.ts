@@ -123,19 +123,34 @@ const COUNT_IDIOMS: Record<string, number> = {
  *  than as an unlicensed "four", and "fifty-seventh" as 57 rather than "seven".
  *  The compound alternative comes first: regex alternation is ordered, so the
  *  longer form wins and its parts are never rescanned. */
+const UNIT_ALT = Object.keys(SPELLED_UNITS).join("|");
+const TENS_ALT = Object.keys(SPELLED_TENS).join("|");
+const ORDINAL_ALT = Object.keys(SPELLED_ORDINAL_UNITS).join("|");
+const WHOLE_ALT = `(?:${TENS_ALT})(?:[-\\s](?:${UNIT_ALT}|${ORDINAL_ALT}))?|(?:${UNIT_ALT})`;
+
 const SPELLED_NUMBER_RE = new RegExp(
   [
-    `\\b(?:${Object.keys(SPELLED_TENS).join("|")})(?:[-\\s](?:${[
-      ...Object.keys(SPELLED_UNITS),
-      ...Object.keys(SPELLED_ORDINAL_UNITS),
-    ].join("|")}))?\\b`,
-    `\\b(?:${Object.keys(SPELLED_UNITS).join("|")})\\b`,
+    // Scripts are spoken, so a decimal is written out: "two point eight three"
+    // is the licensed 2.83, not an eight and a three. It has to be matched
+    // before the parts are.
+    `\\b(?:${WHOLE_ALT})[-\\s]point(?:[-\\s](?:${UNIT_ALT}))+\\b`,
+    `\\b(?:${TENS_ALT})(?:[-\\s](?:${UNIT_ALT}|${ORDINAL_ALT}))?\\b`,
+    `\\b(?:${UNIT_ALT})\\b`,
     `\\b(?:${Object.keys(COUNT_IDIOMS)
       .map((word) => word.replace("-", "[- ]?"))
       .join("|")})\\b`,
   ].join("|"),
   "gi",
 );
+
+/** Every spelled number a script states, each as the whole phrase that carries
+ *  the value rather than as its parts. */
+export function spelledNumbersIn(script: string): Array<{ span: string; value: number }> {
+  SPELLED_NUMBER_RE.lastIndex = 0;
+  return [...script.matchAll(SPELLED_NUMBER_RE)]
+    .map((match) => ({ span: match[0], value: spelledNumberValue(match[0]) }))
+    .filter((item): item is { span: string; value: number } => item.value !== undefined);
+}
 
 /** Season-level consequence language in a script. Empty when the script only
  *  describes the match in front of it. */
@@ -153,13 +168,25 @@ export function consequenceSpans(script: string): string[] {
 export function spelledNumberValue(phrase: string): number | undefined {
   const key = phrase.toLowerCase().trim().replace(/\s+/g, "-");
   if (key in COUNT_IDIOMS) return COUNT_IDIOMS[key];
+  const tokens = key.split("-").filter(Boolean);
+  const pointAt = tokens.indexOf("point");
+  const whole = pointAt === -1 ? tokens : tokens.slice(0, pointAt);
+  const fraction = pointAt === -1 ? [] : tokens.slice(pointAt + 1);
+  if (!whole.length) return undefined;
   let total = 0;
-  for (const token of key.split("-")) {
+  for (const token of whole) {
     const value = SPELLED_TENS[token] ?? SPELLED_UNITS[token] ?? SPELLED_ORDINAL_UNITS[token];
     if (value === undefined) return undefined;
     total += value;
   }
-  return total;
+  if (!fraction.length) return total;
+  let digits = "";
+  for (const token of fraction) {
+    const value = SPELLED_UNITS[token];
+    if (value === undefined || value > 9) return undefined;
+    digits += String(value);
+  }
+  return Number(`${total}.${digits}`);
 }
 
 const NAME_STOPWORDS = new Set(
@@ -180,12 +207,7 @@ const NUMBER_WORDS = new Set(
 const FOOTBALL_CONSTANTS = [1, 3, 11, 45, 90];
 
 const normalize = (value: string) =>
-  value
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .replace(/[‘’]/g, "'")
-    .toLowerCase()
-    .trim();
+  value.normalize("NFD").replace(/\p{M}/gu, "").replace(/[‘’]/g, "'").toLowerCase().trim();
 
 /** "I'll" and "he's" are the pronoun plus a contraction, never a name. Strip
  *  the contracted tail so the stopword list recognises the word underneath. */
@@ -287,16 +309,22 @@ export function properNouns(script: string): string[] {
   return [...midSentence, ...sentenceInitial.filter((phrase) => confirmed.has(normalize(phrase)))];
 }
 
+/** "Rayo's" is the licensed Rayo Vallecano in the possessive, not a new name. */
+const withoutPossessive = (value: string) =>
+  normalize(value).replace(/'s\b/g, "").replace(/s'\b/g, "s").trim();
+
 function entityLicensed(entity: string, licensed: ReadonlySet<string>) {
-  const wanted = normalize(entity);
+  const wanted = withoutPossessive(entity);
+  if (!wanted) return true;
+  const wantedTokens = wanted.split(/\s+/).filter(Boolean);
   return [...licensed].some((value) => {
-    const allowed = normalize(value);
-    return (
-      allowed === wanted ||
-      allowed.includes(wanted) ||
-      wanted.includes(allowed) ||
-      allowed.split(" ").at(-1) === wanted.split(" ").at(-1)
-    );
+    const allowed = withoutPossessive(value);
+    if (!allowed) return false;
+    if (allowed === wanted || allowed.includes(wanted) || wanted.includes(allowed)) return true;
+    // A short form licenses against the full name it belongs to: "Rayo" against
+    // "Rayo Vallecano", "Camello" against "Sergio Camello".
+    const allowedTokens = allowed.split(/\s+/).filter(Boolean);
+    return wantedTokens.every((token) => allowedTokens.includes(token));
   });
 }
 
@@ -359,13 +387,10 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
   // A digit glued to the end of a word is part of an identifier ("c4", the tail
   // of a hash), not a quantity the script is asserting. Only the leading side is
   // guarded so that "45th minute" still reads as 45.
-  const writtenNumbers = [...candidate.displayScript.matchAll(/(?<![A-Za-z0-9])\d+(?:\.\d+)?/g)].map(
-    (match) => ({ span: match[0], value: Number(match[0]) }),
-  );
-  SPELLED_NUMBER_RE.lastIndex = 0;
-  const writtenSpelled = [...candidate.displayScript.matchAll(SPELLED_NUMBER_RE)]
-    .map((match) => ({ span: match[0], value: spelledNumberValue(match[0]) }))
-    .filter((item): item is { span: string; value: number } => item.value !== undefined);
+  const writtenNumbers = [
+    ...candidate.displayScript.matchAll(/(?<![A-Za-z0-9])\d+(?:\.\d+)?/g),
+  ].map((match) => ({ span: match[0], value: Number(match[0]) }));
+  const writtenSpelled = spelledNumbersIn(candidate.displayScript);
   const unlicensedNumbers = [...writtenNumbers, ...writtenSpelled]
     .filter((item) => !licensed.numbers.has(item.value))
     .filter(
