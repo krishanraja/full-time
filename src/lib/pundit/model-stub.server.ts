@@ -12,15 +12,25 @@
  *  runs end to end for nothing. It says nothing about whether the writing is any
  *  good; that is what the real models are for. */
 
+/** True when this environment is configured to put a show in front of a
+ *  listener. Prelaunch runs rehearse the whole pipeline without publishing, so
+ *  they are not a publishing posture. */
+function canPublish(): boolean {
+  return (
+    process.env.PRELAUNCH_MODE === "false" && process.env.PUNDIT_PUBLICATION_ENABLED === "true"
+  );
+}
+
 export function stubEnabled(): boolean {
   if (process.env.PUNDIT_MODEL_STUB !== "true") return false;
-  // Placeholder narration must never reach a listener. Publication and the stub
-  // are mutually exclusive, and this fails loudly rather than quietly declining
-  // to stub, so a misconfigured environment stops instead of shipping filler.
-  if (process.env.PUNDIT_PUBLICATION_ENABLED === "true") {
+  // Placeholder narration must never reach a listener, so the stub and a
+  // publishing posture are mutually exclusive. It throws rather than quietly
+  // declining to stub, so a misconfigured environment stops instead of either
+  // shipping filler or silently spending real money.
+  if (canPublish()) {
     throw new Error(
-      "PUNDIT_MODEL_STUB cannot be used while PUNDIT_PUBLICATION_ENABLED is true: " +
-        "the stub writes placeholder narration, which must never be published.",
+      "PUNDIT_MODEL_STUB cannot be used in a publishing environment: the stub writes " +
+        "placeholder narration, which must never be published. Rehearse in prelaunch mode instead.",
     );
   }
   return true;
