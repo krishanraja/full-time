@@ -71,9 +71,7 @@ const beatNames = [
  *  writing an explicit null. Both mean "no value", so both are accepted and
  *  normalised to undefined rather than failing the whole draft. */
 function optional<T extends z.ZodTypeAny>(schema: T) {
-  return schema
-    .nullish()
-    .transform((value: z.infer<T> | null | undefined) => value ?? undefined);
+  return schema.nullish().transform((value: z.infer<T> | null | undefined) => value ?? undefined);
 }
 
 /** The same, for a list field whose absence means "nothing". */
@@ -144,13 +142,21 @@ export const judgeSchema = z.object({
   failedBeats: optionalList(z.array(z.enum(beatNames))),
 });
 
-const hardJudgeSchema = z.object({
-  passed: z.boolean(),
-  evidenceSpan: optional(z.string()),
-  failure: optional(z.string()),
-  requestedRepair: optional(z.string()),
-  failedBeats: optionalList(z.array(z.enum(beatNames))),
-});
+/** A fail-closed gate that rejects a script without saying what is unsupported
+ *  gives the writer nothing to repair, so it fails the same beats on every
+ *  attempt. A rejection must carry its reason. */
+const hardJudgeSchema = z
+  .object({
+    passed: z.boolean(),
+    evidenceSpan: optional(z.string()),
+    failure: optional(z.string()),
+    requestedRepair: optional(z.string()),
+    failedBeats: optionalList(z.array(z.enum(beatNames))),
+  })
+  .refine((value) => value.passed || Boolean(value.failure?.trim()), {
+    message: "A rejection must state what is unsupported and where.",
+    path: ["failure"],
+  });
 
 function modelNames() {
   return {
@@ -307,7 +313,7 @@ async function writeDraft(input: {
     maxTokens: 16_000,
     schema: draftSchema,
     system:
-      "You are the single Full Time showrunner. Write original English; never imitate a living pundit. The evidence is closed-world: every number you write, in digits or words, must be a value present in the evidence pack (a point, three points for a win, eleven players, forty-five and ninety minutes are the only universal constants), and every proper noun must be a team, player, competition or place named in the evidence pack. Reference claims only by their short id from licensedClaims, such as c1 or c4, and only inside the thesis fields selectedClaimIds, rejectedClaimIds and predictionClaimId. Beat text is read aloud to a listener who cannot see your working: never write a claim id or a phrase such as \"per claim c4\" or \"(c8)\" in beat text, and never mention claims, evidence ids or confidence values as labels. State the substance instead. Any number inside a falsifier or a forward-looking condition must also be a value present in the evidence pack, so build conditions out of numbers this match actually produced. Never state a season-level consequence: relegation, survival, the title, European qualification, promotion and play-offs are all outside this evidence. Length is a hard gate: the ten beats together must run to 750-1100 spoken words, so budget roughly 75 to 110 words per beat and expand your reasoning until you are inside that range. Every judgment needs a reason. Interpret numbers rather than listing them. Humour must intensify insight and stay within the supplied safety boundaries. When repairing, change only failed beats and preserve every passed beat verbatim.",
+      'You are the single Full Time showrunner. Write original English; never imitate a living pundit. The evidence is closed-world: every number you write, in digits or words, must be a value present in the evidence pack (a point, three points for a win, eleven players, forty-five and ninety minutes are the only universal constants), and every proper noun must be a team, player, competition or place named in the evidence pack. Reference claims only by their short id from licensedClaims, such as c1 or c4, and only inside the thesis fields selectedClaimIds, rejectedClaimIds and predictionClaimId. Beat text is read aloud to a listener who cannot see your working: never write a claim id or a phrase such as "per claim c4" or "(c8)" in beat text, and never mention claims, evidence ids or confidence values as labels. State the substance instead. Any number inside a falsifier or a forward-looking condition must also be a value present in the evidence pack, so build conditions out of numbers this match actually produced. Never state a season-level consequence: relegation, survival, the title, European qualification, promotion and play-offs are all outside this evidence. Length is a hard gate: the ten beats together must run to 750-1100 spoken words, so budget roughly 75 to 110 words per beat and expand your reasoning until you are inside that range. Every judgment needs a reason. Interpret numbers rather than listing them. Each beat must advance the argument: never restate an observation a previous beat has already made. The portable line is one sentence a listener could repeat word for word without context. Humour must intensify insight and stay within the supplied safety boundaries, and it has to land as a joke rather than as an observation labelled funny. Never announce the joke: do not call anything a comedy, a joke, an irony or absurd, and do not add a sentence afterwards explaining why it was funny. Put the surprise in the last clause of the line and stop there. One concrete image beats a simile that needs unpacking, and a comparison that falls apart when examined is worse than no joke at all. When repairing, change only failed beats and preserve every passed beat verbatim.',
     user: JSON.stringify({
       punditSpec: spec,
       evidencePack: compactEvidence(input.pack),
@@ -440,34 +446,54 @@ async function judgeHardOne(
   claims: AnalysisClaim[],
 ): Promise<HarnessResult> {
   const factual = harness === "factual_entailment";
-  const output = await anthropicJson({
-    model: modelNames().judge,
-    maxTokens: 2_000,
-    schema: hardJudgeSchema,
-    system: factual
-      ? "You are a fail-closed factual-entailment judge. Every factual statement, number, entity, score state, attribution and causal strength in the script must be entailed by the closed-world evidence or an explicitly licensed claim. Correlation cannot become intent. Return passed=false for any unsupported assertion and identify every failed beat."
-      : "You are a fail-closed humour-safety judge. Reject cruelty, personal humiliation, protected-trait humour, injury, grief, private lives, mental health, or recognizable imitation of a living pundit. Teasing must target decisions, contradictions, institutions, match situations, statistics or football culture. Identify every failed beat.",
-    user: JSON.stringify({
-      evidencePack: compactEvidence(pack),
-      licensedClaims: claims,
-      punditSpec: getPunditSpec(candidate.punditId),
-      thesis: candidate.thesis,
-      beats: candidate.outline,
-      outputContract: {
-        passed: "boolean",
-        evidenceSpan: "exact script span when failed",
-        failure: "required when failed",
-        requestedRepair: "smallest repair",
-        failedBeats: beatNames,
-      },
-    }),
-  });
+  const explainRejection =
+    " When you reject the script you must quote the exact offending span and state plainly what is wrong with it: which assertion is unsupported, and what the evidence does or does not say. A rejection with no specific reason is not a usable answer, because the writer cannot repair what you have not named.";
+  let output: z.infer<typeof hardJudgeSchema>;
+  try {
+    output = await anthropicJson({
+      model: modelNames().judge,
+      maxTokens: 2_000,
+      schema: hardJudgeSchema,
+      system:
+        (factual
+          ? "You are a fail-closed factual-entailment judge. Every factual statement, number, entity, score state, attribution and causal strength in the script must be entailed by the closed-world evidence or an explicitly licensed claim. Correlation cannot become intent. Return passed=false for any unsupported assertion and identify every failed beat."
+          : "You are a fail-closed humour-safety judge. Reject cruelty, personal humiliation, protected-trait humour, injury, grief, private lives, mental health, or recognizable imitation of a living pundit. Teasing must target decisions, contradictions, institutions, match situations, statistics or football culture. Identify every failed beat.") +
+        explainRejection,
+      user: JSON.stringify({
+        evidencePack: compactEvidence(pack),
+        licensedClaims: claims,
+        punditSpec: getPunditSpec(candidate.punditId),
+        thesis: candidate.thesis,
+        beats: candidate.outline,
+        outputContract: {
+          passed: "boolean",
+          evidenceSpan: "exact script span when failed",
+          failure: "required when failed, naming the unsupported assertion",
+          requestedRepair: "smallest repair",
+          failedBeats: beatNames,
+        },
+      }),
+    });
+  } catch (error: unknown) {
+    // The gate stays closed when the judge cannot be read, but it says so
+    // rather than failing the whole run.
+    return {
+      harness,
+      hardGate: true,
+      passed: false,
+      failure: `The ${harness} judge did not return a usable judgement: ${
+        error instanceof Error ? error.message : "unknown error"
+      }`,
+      requestedRepair: "Re-run this harness; do not infer its verdict.",
+      failedBeats: [...beatNames],
+    };
+  }
   return {
     harness,
     hardGate: true,
     passed: output.passed,
     evidenceSpan: output.evidenceSpan,
-    failure: output.passed ? undefined : (output.failure ?? `${harness} failed.`),
+    failure: output.passed ? undefined : output.failure,
     requestedRepair: output.passed
       ? undefined
       : (output.requestedRepair ?? "Repair only the identified failed beats."),
