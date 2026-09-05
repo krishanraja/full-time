@@ -82,6 +82,24 @@ function finite(value: number | null | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+/** An own goal is recorded against the team it counts FOR, while the player
+ *  named is the one who put it into his own net, so he plays for the other
+ *  side. Written as a bare team and player pair that reads as "Brighton's Joao
+ *  Pedro", which is the opposite of what happened. Say it in full instead: the
+ *  writers and the judges read the same label, so an ambiguous one puts them in
+ *  direct contradiction and no repair can settle it. */
+function eventLabel(
+  event: { type: string; team: string | null; player: string | null },
+  homeTeam: string,
+  awayTeam: string,
+): string {
+  if (!/own[_\s-]?goal/i.test(event.type)) return `${event.type} event`;
+  if (!event.team) return `${event.type} event`;
+  const conceding = event.team === homeTeam ? awayTeam : homeTeam;
+  const player = event.player ? `${event.player} of ${conceding}` : conceding;
+  return `own goal event: counts as a goal for ${event.team}, put through his own net by ${player}`;
+}
+
 export function buildEvidencePack(input: StructuredMatchInput, version = 1): EvidencePack {
   const { match, stats } = input;
   const facts: EvidenceItem[] = [
@@ -109,7 +127,7 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     facts.push(
       fact(
         `event.${event.id}`,
-        `${event.type} event`,
+        eventLabel(event, match.homeTeam, match.awayTeam),
         [event.minute, event.addedTime ?? null, event.team, event.player],
         event.source,
         `match_events.id=${event.id}`,

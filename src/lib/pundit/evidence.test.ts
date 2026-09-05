@@ -170,3 +170,29 @@ describe("evidence packs and claim licensing", () => {
     expect(results.find((result) => result.harness === "consequence_licence")?.passed).toBe(false);
   });
 });
+
+describe("own goal labelling", () => {
+  it("names the team it counts for and the side the scorer plays for", () => {
+    const pack = buildEvidencePack({
+      ...input,
+      events: [
+        {
+          id: "og-1",
+          type: "own_goal",
+          minute: 63,
+          team: "South FC",
+          player: "A One",
+          source: "provider-a",
+        },
+      ],
+    });
+    const label = pack.facts.find((item) => item.id === "event.og-1")?.label ?? "";
+    expect(label).toContain("counts as a goal for South FC");
+    expect(label).toContain("A One of North FC");
+  });
+
+  it("leaves an ordinary goal label alone", () => {
+    const pack = buildEvidencePack(input);
+    expect(pack.facts.find((item) => item.id === "event.goal-1")?.label).toBe("goal event");
+  });
+});
