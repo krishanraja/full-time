@@ -356,10 +356,12 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
   );
   const humourSpan = PROHIBITED_HUMOUR.find((pattern) => pattern.test(candidate.displayScript));
   const licensed = licensedScriptValues(pack, candidate);
-  const writtenNumbers = [...candidate.displayScript.matchAll(/\d+(?:\.\d+)?/g)].map((match) => ({
-    span: match[0],
-    value: Number(match[0]),
-  }));
+  // A digit glued to the end of a word is part of an identifier ("c4", the tail
+  // of a hash), not a quantity the script is asserting. Only the leading side is
+  // guarded so that "45th minute" still reads as 45.
+  const writtenNumbers = [...candidate.displayScript.matchAll(/(?<![A-Za-z0-9])\d+(?:\.\d+)?/g)].map(
+    (match) => ({ span: match[0], value: Number(match[0]) }),
+  );
   SPELLED_NUMBER_RE.lastIndex = 0;
   const writtenSpelled = [...candidate.displayScript.matchAll(SPELLED_NUMBER_RE)]
     .map((match) => ({ span: match[0], value: spelledNumberValue(match[0]) }))

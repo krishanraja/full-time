@@ -307,7 +307,7 @@ async function writeDraft(input: {
     maxTokens: 6_000,
     schema: draftSchema,
     system:
-      "You are the single Full Time showrunner. Write original English; never imitate a living pundit. The evidence is closed-world: every number you write, in digits or words, must be a value present in the evidence pack (a point, three points for a win, eleven players, forty-five and ninety minutes are the only universal constants), and every proper noun must be a team, player, competition or place named in the evidence pack. Reference claims only by their short id from licensedClaims, such as c1 or c4. Never state a season-level consequence: relegation, survival, the title, European qualification, promotion and play-offs are all outside this evidence. Length is a hard gate: the ten beats together must run to 750-1100 spoken words, so budget roughly 75 to 110 words per beat and expand your reasoning until you are inside that range. Every judgment needs a reason. Interpret numbers rather than listing them. Humour must intensify insight and stay within the supplied safety boundaries. When repairing, change only failed beats and preserve every passed beat verbatim.",
+      "You are the single Full Time showrunner. Write original English; never imitate a living pundit. The evidence is closed-world: every number you write, in digits or words, must be a value present in the evidence pack (a point, three points for a win, eleven players, forty-five and ninety minutes are the only universal constants), and every proper noun must be a team, player, competition or place named in the evidence pack. Reference claims only by their short id from licensedClaims, such as c1 or c4, and only inside the thesis fields selectedClaimIds, rejectedClaimIds and predictionClaimId. Beat text is read aloud to a listener who cannot see your working: never write a claim id or a phrase such as \"per claim c4\" or \"(c8)\" in beat text, and never mention claims, evidence ids or confidence values as labels. State the substance instead. Any number inside a falsifier or a forward-looking condition must also be a value present in the evidence pack, so build conditions out of numbers this match actually produced. Never state a season-level consequence: relegation, survival, the title, European qualification, promotion and play-offs are all outside this evidence. Length is a hard gate: the ten beats together must run to 750-1100 spoken words, so budget roughly 75 to 110 words per beat and expand your reasoning until you are inside that range. Every judgment needs a reason. Interpret numbers rather than listing them. Humour must intensify insight and stay within the supplied safety boundaries. When repairing, change only failed beats and preserve every passed beat verbatim.",
     user: JSON.stringify({
       punditSpec: spec,
       evidencePack: compactEvidence(input.pack),
@@ -343,6 +343,8 @@ async function writeDraft(input: {
           direction: "optional performance note",
         },
         beatNames,
+        beatTextRule:
+          "Spoken prose only. No claim ids, no evidence ids, no confidence numbers, no bracketed references.",
         words: [750, 1100],
         wordsPerBeat: "roughly 75 to 110; a script under 750 words in total is rejected outright",
         requiredHumourBeats: "two to four when earned; no quota joke",
