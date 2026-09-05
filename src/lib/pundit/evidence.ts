@@ -39,6 +39,10 @@ export type StructuredMatchInput = {
     awayShots?: number | null;
     homeShotsOnTarget?: number | null;
     awayShotsOnTarget?: number | null;
+    homeShotsInsideBox?: number | null;
+    awayShotsInsideBox?: number | null;
+    homeShotsOutsideBox?: number | null;
+    awayShotsOutsideBox?: number | null;
     homePossession?: number | null;
     awayPossession?: number | null;
     homeCorners?: number | null;
@@ -173,6 +177,10 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     ["stats.away_xg", "Away xG", stats?.awayXg],
     ["stats.home_shots", "Home shots", stats?.homeShots],
     ["stats.away_shots", "Away shots", stats?.awayShots],
+    ["stats.home_shots_inside_box", "Home shots from inside the box", stats?.homeShotsInsideBox],
+    ["stats.away_shots_inside_box", "Away shots from inside the box", stats?.awayShotsInsideBox],
+    ["stats.home_shots_outside_box", "Home shots from outside the box", stats?.homeShotsOutsideBox],
+    ["stats.away_shots_outside_box", "Away shots from outside the box", stats?.awayShotsOutsideBox],
     ["stats.home_sot", "Home shots on target", stats?.homeShotsOnTarget],
     ["stats.away_sot", "Away shots on target", stats?.awayShotsOnTarget],
     ["stats.home_possession", "Home possession", stats?.homePossession],
@@ -199,6 +207,43 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
       ),
     );
   }
+  // Where a side shot from, as a share of its shots.
+  //
+  // Not expected goals, and it must never be called that. It is the closest
+  // honest measure of chance quality the feed still carries, and chance quality
+  // is exactly what the judges keep rejecting scripts for failing to establish:
+  // fourteen efforts from outside the box and fourteen from inside it are the
+  // same number and a different match.
+  const shotLocation = [
+    {
+      side: "home" as const,
+      label: "Home",
+      inside: stats?.homeShotsInsideBox,
+      outside: stats?.homeShotsOutsideBox,
+    },
+    {
+      side: "away" as const,
+      label: "Away",
+      inside: stats?.awayShotsInsideBox,
+      outside: stats?.awayShotsOutsideBox,
+    },
+  ];
+  for (const { side, label, inside, outside } of shotLocation) {
+    if (!stats || !finite(inside) || !finite(outside)) continue;
+    const total = inside + outside;
+    if (total <= 0) continue;
+    derivations.push(
+      derived(
+        `derived.${side}_inside_box_share`,
+        `${label} share of shots taken from inside the box`,
+        Number((inside / total).toFixed(3)),
+        stats.source,
+        `stats.${side}_shots_inside_box,stats.${side}_shots_outside_box`,
+        "round(shots_inside_box / (shots_inside_box + shots_outside_box), 3)",
+      ),
+    );
+  }
+
   if (finite(stats?.homeShots) && stats.homeShots > 0) {
     derivations.push(
       derived(
