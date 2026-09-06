@@ -344,3 +344,20 @@ describe("names and numbers the pack itself supplies", () => {
     expect(failures.join(" ")).toMatch(/numeric_licence/);
   });
 });
+
+/** The refusal must quote the occurrence it actually refused. A plain indexOf
+ *  finds "sixty" inside "sixty-four", so a script rejected for writing "better
+ *  than sixty percent" was reported against its substitution minute, and the
+ *  2026-09-06 run was misread as a minute-number problem. */
+describe("saying which number was refused", () => {
+  it("quotes the standalone number, not a longer one containing it", () => {
+    const failures = gateFailures(
+      "Isak went off at sixty-four and I put it at better than sixty percent that neither side scores again.",
+      barcelonaRayo,
+    );
+    const numeric = failures.find((line) => line.startsWith("numeric_licence"));
+    expect(numeric).toBeDefined();
+    expect(numeric).toMatch(/sixty percent/);
+    expect(numeric).not.toMatch(/vanished|went off at sixty-four, and I/);
+  });
+});

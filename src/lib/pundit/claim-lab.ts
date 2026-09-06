@@ -99,7 +99,25 @@ function rosterSize(inside: string): number | undefined {
     .map((part) => part.replace(/^(?:and|&)\s+/i, "").trim())
     .filter(Boolean);
   if (!parts.length) return undefined;
-  return parts.every((part) => CAPITALISED.test(part)) ? parts.length : undefined;
+  // Only entries that are actually names count toward the roster. The check
+  // used to accept any capitalised entry, and the laboratory found the gap: on
+  // 2026-09-06 it returned "Liverpool accumulated four yellow cards (Mac
+  // Allister, Jacquet, Kerkez, plus discipline events)", where the padding
+  // phrase made the list four long and the count passed. Three pundits repeated
+  // the four, and the factual judge rejected all three.
+  //
+  // A name is capitalised and short. "plus discipline events" is neither, so it
+  // does not count toward the roster, and a list padded with it is caught by
+  // the same mismatch that catches naming three while claiming four. A
+  // parenthetical holding no names at all, such as "(3-1)" or "(min 41)", is
+  // not a roster and the check declines.
+  const named = parts.filter(
+    (part) =>
+      CAPITALISED.test(part) &&
+      part.split(/\s+/).length <= 4 &&
+      !/^(?:plus|and others|others|etc|among|including)\b/i.test(part),
+  );
+  return named.length ? named.length : undefined;
 }
 
 /** A count that names its members must name as many as it counts.
