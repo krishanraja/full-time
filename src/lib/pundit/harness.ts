@@ -442,8 +442,14 @@ export function validateQualitativeScores(
         harness,
         hardGate: false,
         passed: false,
-        failure: "Independent judge did not return a score.",
-        requestedRepair: "Run the missing independent harness; do not infer or average it.",
+        // A judge that failed for a nameable reason says so. Replacing its
+        // message with the generic one hid an API outage behind "did not
+        // return a score" and cost an hour of reading it as an editorial
+        // verdict.
+        failure: judged?.failure ?? "Independent judge did not return a score.",
+        requestedRepair:
+          judged?.requestedRepair ??
+          "Run the missing independent harness; do not infer or average it.",
       };
     }
     return {

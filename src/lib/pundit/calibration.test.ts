@@ -339,3 +339,67 @@ describe("judging a script that did not come from the pipeline", () => {
     ).toBeTruthy();
   });
 });
+
+/** The Anthropic spend cap rejected all fourteen judges on 2026-09-06. Every
+ *  one returned score 1, and the harness reported "a script this pipeline
+ *  already approved no longer clears its own bar, craft mean 1" about an
+ *  outage. A confident wrong verdict is worse than no verdict, and this is the
+ *  failure mode that has cost this project the most. */
+describe("a run where the judges never answered", () => {
+  const dead = (harness: string): CalibrationScore =>
+    score({
+      harness,
+      score: null,
+      passed: false,
+      failure: `The ${harness} judge could not be read: Anthropic 400: You have reached your specified API usage limits.`,
+    });
+
+  it("calls the run void rather than reading the table", () => {
+    const verdict = calibrationVerdict([
+      summariseSubject({
+        label: "ours",
+        punditId: "romantic",
+        fromPipeline: true,
+        scores: [dead("insight"), dead("restraint"), dead("clarity")],
+      }),
+      summariseSubject({
+        label: "professional recap",
+        punditId: "romantic",
+        fromPipeline: false,
+        scores: [dead("insight"), dead("restraint"), dead("clarity")],
+      }),
+    ]);
+    expect(verdict).toMatch(/^Void:/);
+    expect(verdict).toContain("did not run");
+    expect(verdict).toContain("API usage limits");
+    // The conclusions it must not reach.
+    expect(verdict).not.toContain("no longer clears its own bar");
+    expect(verdict).not.toContain("The bar is real");
+    expect(verdict).not.toContain("Move those specific floors");
+  });
+
+  it("still reads a run where the judges did answer", () => {
+    const verdict = calibrationVerdict([
+      summariseSubject({
+        label: "professional recap",
+        punditId: "romantic",
+        fromPipeline: false,
+        scores: [score({ harness: "insight", score: 5 }), score({ harness: "clarity", score: 4 })],
+      }),
+    ]);
+    expect(verdict).not.toMatch(/^Void:/);
+    expect(verdict).toContain("The bar is real");
+  });
+
+  it("voids the run even when only one judge died", () => {
+    const verdict = calibrationVerdict([
+      summariseSubject({
+        label: "professional recap",
+        punditId: "romantic",
+        fromPipeline: false,
+        scores: [score({ harness: "insight", score: 5 }), dead("restraint")],
+      }),
+    ]);
+    expect(verdict).toMatch(/^Void:/);
+  });
+});
