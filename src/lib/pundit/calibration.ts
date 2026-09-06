@@ -32,12 +32,32 @@ export const CALIBRATION_BEATS: readonly BeatName[] = [
   "close",
 ];
 
-/** Dimensions that grade a script against a pundit spec rather than against
- *  general craft. An outside writer never saw the spec, so a low score here is
- *  a fact about the comparison and not about the writing. They are scored
- *  anyway, and flagged, because hiding them would let the harness quietly
- *  choose which evidence it looks at. */
-export const SPEC_BOUND_DIMENSIONS: readonly QualitativeHarness[] = ["persona", "humour"];
+/** Why a dimension may or may not be comparable across a pipeline script and a
+ *  script from outside it.
+ *
+ *  - `craft`: general writing quality. Any football writer is attempting this,
+ *    so a low score is about the writing and the comparison means something.
+ *  - `spec_bound`: graded against a pundit spec the outside writer never saw.
+ *  - `format_bound`: something Full Time requires that the outside genre does
+ *    not attempt at all. A match report contains no stated likelihood and no
+ *    settleable forward call, so scoring it 1 there is the judge being right,
+ *    not the bar being wrong.
+ *
+ *  Only `craft` dimensions carry the comparison. The other two are still scored
+ *  and still reported, because hiding them would let the harness quietly choose
+ *  which evidence it looks at, but they are kept out of the reading. */
+export type ScoreComparability = "craft" | "spec_bound" | "format_bound";
+
+const COMPARABILITY: Partial<Record<QualitativeHarness, ScoreComparability>> = {
+  persona: "spec_bound",
+  humour: "spec_bound",
+  probability: "format_bound",
+  prediction_accountability: "format_bound",
+};
+
+export function comparabilityOf(harness: string): ScoreComparability {
+  return COMPARABILITY[harness as QualitativeHarness] ?? "craft";
+}
 
 /** Prose from outside the pipeline has no beat outline, and the fail-closed
  *  factual judge reads one. Splitting the paragraphs across the ten beat names
@@ -70,9 +90,9 @@ export type CalibrationScore = {
   score: number | null;
   threshold: number | null;
   passed: boolean;
-  /** True where the dimension grades against a pundit spec the writer of an
-   *  outside script never saw. */
-  specBound: boolean;
+  /** Whether this dimension can carry a comparison across the two kinds of
+   *  script. See ScoreComparability. */
+  comparability: ScoreComparability;
   failure?: string;
   evidenceSpan?: string;
 };
@@ -88,7 +108,9 @@ export type CalibrationSubjectResult = {
   /** Mean of the twelve scored dimensions, ignoring the two hard gates, which
    *  are pass or fail and have no score. */
   meanScore: number | null;
-  /** The same mean over the ten dimensions that do not depend on a spec. */
+  /** The same mean over the dimensions that carry a comparison. This is the
+   *  number to read; meanScore is not, because it mixes in dimensions an
+   *  outside script was never attempting. */
   meanScoreCraftOnly: number | null;
   hardGatesPassed: boolean;
 };
@@ -103,7 +125,7 @@ export function shapeCalibrationScores(
     score: result.score ?? null,
     threshold: result.hardGate ? null : (thresholds[result.harness as QualitativeHarness] ?? null),
     passed: result.passed,
-    specBound: SPEC_BOUND_DIMENSIONS.includes(result.harness as QualitativeHarness),
+    comparability: result.hardGate ? "craft" : comparabilityOf(result.harness),
     failure: result.failure,
     evidenceSpan: result.evidenceSpan,
   }));
@@ -127,7 +149,9 @@ export function summariseSubject(input: {
     totalCount: input.scores.length,
     meanScore: mean(scored.map((item) => item.score as number)),
     meanScoreCraftOnly: mean(
-      scored.filter((item) => !item.specBound).map((item) => item.score as number),
+      scored
+        .filter((item) => item.comparability === "craft")
+        .map((item) => item.score as number),
     ),
     hardGatesPassed: input.scores.filter((item) => item.hardGate).every((item) => item.passed),
   };
@@ -148,13 +172,35 @@ export function calibrationVerdict(subjects: readonly CalibrationSubjectResult[]
     return "No outside script returned a readable score. The judges failed rather than the writing, so this run is void.";
   }
   const belowFloor = best.scores.filter(
-    (item) => !item.hardGate && !item.specBound && item.score !== null && !item.passed,
+    (item) => item.comparability === "craft" && !item.hardGate && item.score !== null && !item.passed,
   );
+  const named = belowFloor.map((item) => item.harness).join(", ") || "none";
+
+  // The pipeline side is what settles it. An outside script can score low for
+  // reasons that are nothing to do with the bar, but a script this pipeline
+  // published and approved is the one case where a low score can only mean the
+  // judges have moved. Read that first.
+  const ours = subjects.filter((subject) => subject.fromPipeline);
+  const failing = ours.filter(
+    (subject) => subject.scores.filter((item) => !item.passed).length > 0,
+  );
+  if (ours.length && failing.length === ours.length) {
+    const worst = failing[0];
+    const missed = worst.scores
+      .filter((item) => !item.passed)
+      .map((item) => `${item.harness} ${item.score ?? "hard gate"}`)
+      .join(", ");
+    return `A script this pipeline already approved no longer clears its own bar: ${worst.label} misses ${worst.scores.filter((item) => !item.passed).length} of ${worst.totalCount} (${missed}), craft mean ${worst.meanScoreCraftOnly}. The judges have moved since it was approved. Find what changed in the rubric before reading anything into the outside scores, and before paying for another run.`;
+  }
+
+  if (craft < 2.5) {
+    return `The best outside script averages ${craft} on the comparable dimensions and misses ${belowFloor.length} of them (${named}), while the pipeline side clears its own bar. Either these two genres are too far apart to compare, or the bar is measuring something other than quality. Read the failure texts before moving a floor: a match report that never states a likelihood is being scored correctly, not harshly.`;
+  }
   if (craft < 3.5) {
-    return `The best outside script averages ${craft} on the ten craft dimensions and misses ${belowFloor.length} of them (${belowFloor.map((item) => item.harness).join(", ") || "none"}). Professional football writing does not clear this bar, so the bar is measuring something other than quality. Move the floors before paying for another run.`;
+    return `The best outside script averages ${craft} on the comparable dimensions and misses ${belowFloor.length} of them (${named}). Professional football writing does not clear this bar, so the floors it misses are measuring something other than quality. Move those specific floors before paying for another run.`;
   }
   if (belowFloor.length > 2) {
-    return `The best outside script averages ${craft} but still misses ${belowFloor.length} dimensions (${belowFloor.map((item) => item.harness).join(", ")}). Those specific floors are the miscalibrated ones; the rest of the bar stands.`;
+    return `The best outside script averages ${craft} but still misses ${belowFloor.length} dimensions (${named}). Those specific floors are the miscalibrated ones; the rest of the bar stands.`;
   }
-  return `The best outside script averages ${craft} and clears all but ${belowFloor.length} of the craft dimensions. The bar is real. The gap is in the writer prompt, not in the judges, so work it against this corpus rather than by firing paid runs.`;
+  return `The best outside script averages ${craft} and clears all but ${belowFloor.length} of the comparable dimensions. The bar is real. The gap is in the writer prompt, not in the judges, so work it against this corpus rather than by firing paid runs.`;
 }

@@ -3,8 +3,8 @@ import {
   beatsFromProse,
   calibrationVerdict,
   CALIBRATION_BEATS,
+  comparabilityOf,
   shapeCalibrationScores,
-  SPEC_BOUND_DIMENSIONS,
   summariseSubject,
   type CalibrationScore,
 } from "./calibration";
@@ -21,7 +21,7 @@ function score(over: Partial<CalibrationScore>): CalibrationScore {
     score: 4,
     threshold: 4,
     passed: true,
-    specBound: false,
+    comparability: "craft",
     ...over,
   };
 }
@@ -72,21 +72,33 @@ describe("shaping a judged result into a calibration reading", () => {
     expect(shaped[2].failure).toBe("flat");
   });
 
-  it("flags the dimensions that grade against a spec an outside writer never saw", () => {
-    const results: HarnessResult[] = [
-      ...SPEC_BOUND_DIMENSIONS.map((harness) => ({
-        harness,
-        hardGate: false,
-        passed: false,
-        score: 1 as const,
-      })),
-      { harness: "insight", hardGate: false, passed: true, score: 5 },
-    ];
-    const shaped = shapeCalibrationScores(results, thresholds);
-    expect(shaped.filter((item) => item.specBound).map((item) => item.harness)).toEqual([
-      ...SPEC_BOUND_DIMENSIONS,
+  /** A dimension is kept out of the comparison for one of two reasons, and the
+   *  two are not the same. Persona grades against a spec the outside writer
+   *  never saw. Probability grades something a match report does not attempt at
+   *  all, so a 1 there is the judge being right rather than the bar being
+   *  wrong. Conflating them would have the harness read its own miss as
+   *  evidence of miscalibration. */
+  it("separates a spec it never saw from a thing the genre never attempts", () => {
+    expect(comparabilityOf("persona")).toBe("spec_bound");
+    expect(comparabilityOf("humour")).toBe("spec_bound");
+    expect(comparabilityOf("probability")).toBe("format_bound");
+    expect(comparabilityOf("prediction_accountability")).toBe("format_bound");
+    expect(comparabilityOf("insight")).toBe("craft");
+    expect(comparabilityOf("restraint")).toBe("craft");
+
+    const shaped = shapeCalibrationScores(
+      [
+        { harness: "persona", hardGate: false, passed: false, score: 1 },
+        { harness: "probability", hardGate: false, passed: false, score: 1 },
+        { harness: "insight", hardGate: false, passed: true, score: 5 },
+      ],
+      thresholds,
+    );
+    expect(shaped.map((item) => item.comparability)).toEqual([
+      "spec_bound",
+      "format_bound",
+      "craft",
     ]);
-    expect(shaped.find((item) => item.harness === "insight")?.specBound).toBe(false);
   });
 
   it("averages the craft dimensions separately from the spec-bound ones", () => {
@@ -98,7 +110,7 @@ describe("shaping a judged result into a calibration reading", () => {
         score({ harness: "factual_entailment", hardGate: true, score: null, threshold: null }),
         score({ harness: "insight", score: 5 }),
         score({ harness: "clarity", score: 5 }),
-        score({ harness: "persona", score: 1, specBound: true, passed: false }),
+        score({ harness: "persona", score: 1, comparability: "spec_bound", passed: false }),
       ],
     });
     // The two fives are the craft reading. Persona drags the overall mean down
@@ -136,7 +148,30 @@ describe("what the reading means", () => {
       ]),
     ]);
     expect(verdict).toContain("does not clear this bar");
-    expect(verdict).toContain("Move the floors");
+    expect(verdict).toContain("Move those specific floors");
+  });
+
+  /** The reading that matters most is the pipeline side. An outside script can
+   *  score low for reasons that say nothing about the bar, but a script this
+   *  pipeline approved and published cannot: if that no longer clears its own
+   *  bar, the judges have moved. This is the case the harness found on its
+   *  first run, so it is the case the verdict names first. */
+  it("puts a pipeline script failing its own bar ahead of everything else", () => {
+    const verdict = calibrationVerdict([
+      summariseSubject({
+        label: "romantic (published, from the pipeline)",
+        punditId: "romantic",
+        fromPipeline: true,
+        scores: [
+          score({ harness: "insight", score: 2, passed: false }),
+          score({ harness: "clarity", score: 4 }),
+        ],
+      }),
+      outside([score({ harness: "insight", score: 5 })]),
+    ]);
+    expect(verdict).toContain("already approved no longer clears its own bar");
+    expect(verdict).toContain("insight 2");
+    expect(verdict).toContain("before paying for another run");
   });
 
   it("names the specific floors when most of the bar stands", () => {
