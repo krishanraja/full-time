@@ -181,3 +181,41 @@ describe("the standards both sides are held to", () => {
     }
   });
 });
+
+/** The 2026-09-06 run put four of six writers in a vice I built: the prompt
+ *  told them to state a likelihood as "a percentage, or odds", they wrote
+ *  "better than sixty percent", and the numeric licence gate refused 60 because
+ *  it is not in the evidence pack. On the repair round they retreated to bare
+ *  words and the probability judge scored them 3 for vagueness. Both sides now
+ *  say the same thing: state the likelihood in words, and attach it to
+ *  something that could actually go either way. */
+describe("the probability instruction and the numeric gate agreeing", () => {
+  it("stops telling the writer to invent a percentage", async () => {
+    const source = await import("node:fs").then((fs) =>
+      fs.readFileSync("src/lib/pundit/pundit-generator.server.ts", "utf8"),
+    );
+    expect(source).toContain("state it in words rather than in figures");
+    expect(source).toContain("Never invent a percentage or a price for it");
+    expect(source).not.toContain("attach an explicit likelihood to a named outcome: a percentage");
+  });
+
+  it("tells the judge that words are the expected form", async () => {
+    const { DIMENSION_STANDARDS } = await import("./dimensions");
+    expect(DIMENSION_STANDARDS.probability).toContain("in words");
+    expect(DIMENSION_STANDARDS.probability).toContain("is not a weakness");
+    expect(DIMENSION_STANDARDS.probability).toContain("genuinely contestable");
+  });
+
+  it("keeps the rules the last two runs were lost to", async () => {
+    const source = await import("node:fs").then((fs) =>
+      fs.readFileSync("src/lib/pundit/pundit-generator.server.ts", "utf8"),
+    );
+    // Never state a distance: two pundits invented "thirty yards" and
+    // "twenty-five yards", which the feed does not record.
+    expect(source).toContain("Never state a distance in yards or metres");
+    // Home and away: one pundit gave Ipswich Liverpool's possession figure.
+    expect(source).toContain("says home or away and name the team that id belongs to");
+    // Restraint: the judges rejected five of six for restating one point.
+    expect(source).toContain("State your central point in full in the judgment beat and nowhere else");
+  });
+});
