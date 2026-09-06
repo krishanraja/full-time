@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DIMENSION_STANDARDS, SCORE_ANCHORS, SCORING_INSTRUCTION } from "./dimensions";
-import { licenseClaims } from "./claim-lab";
+import { dedupeClaims, licenseClaims } from "./claim-lab";
 import { anthropicJson } from "./anthropic-json.server";
 import { BudgetExceededError, spentThisStepUsd } from "./model-cost";
 import {
@@ -226,7 +226,12 @@ export async function generateClaimLaboratory(pack: EvidencePack): Promise<Analy
     label: "claim-lab",
     schema: claimSchema,
     system:
-      "You are Full Time's claim laboratory. Produce claims, never prose. Facts are closed-world. Causal strength must not exceed the evidence. Do not infer tactics, intent, psychology or film detail from structured match data. Separate decision quality from outcome. Predictions and counterfactuals need a falsifier and structured rule. Every number in a thesis must be one the evidence you cite actually carries, or the number of evidence references you cite. Count your own citations before you state a count: a thesis that says four while listing five events is worse than no claim at all, because every pundit will repeat it.",
+      "You are Full Time's claim laboratory. Produce claims, never prose. Facts are closed-world. Causal strength must not exceed the evidence. Do not infer tactics, intent, psychology or film detail from structured match data. Separate decision quality from outcome. Predictions and counterfactuals need a falsifier and structured rule. Every number in a thesis must be one the evidence you cite actually carries, or the number of evidence references you cite. Count your own citations before you state a count: a thesis that says four while listing five events is worse than no claim at all, because every pundit will repeat it. " +
+      // Six pundits share this one claim set. When it holds a single analytical
+      // idea, six writers produce a single script and every judge calls it a
+      // truism, which is what happened on 2026-09-04. Breadth here is what makes
+      // six different shows possible downstream.
+      "Six different pundits will each build a different show from this one set, so the set has to hold enough distinct material for six arguments. Never state the same idea twice: if two claims rest on the same evidence, or would be summarised the same way in a sentence, they are one claim and you must keep only the better one. A claim of type fact only restates the evidence pack the pundits already hold, so produce at most eight of them and only where a fact anchors an argument. Spend the rest on analysis, and make those analyses genuinely different from each other: reach for separate parts of the evidence rather than restating the most obvious pattern in new words. Where the match turned on timing, game state, individual contribution, discipline, goalkeeping, substitutions or what the two sides arrived carrying, those are separate arguments from whatever the shot numbers say. If the evidence genuinely supports only one or two analytical readings, say so by returning only those rather than padding: a short honest set is better than a long repetitive one.",
     user: JSON.stringify({
       evidencePack: compactEvidence(pack),
       outputContract: {
@@ -259,7 +264,10 @@ export async function generateClaimLaboratory(pack: EvidencePack): Promise<Analy
   );
   const licensed = licenseClaims(proposed, pack).filter((item) => item.licensed);
   if (!licensed.length) throw new Error("Claim laboratory produced no licensed claims.");
-  return licensed.map((item) => item.claim);
+  // A claim set that says one thing many times makes six pundits write one
+  // script and then punishes each of them for repeating themselves. See
+  // dedupeClaims.
+  return dedupeClaims(licensed.map((item) => item.claim));
 }
 
 function assembleCandidate(

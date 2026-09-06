@@ -200,3 +200,133 @@ export function licenseClaim(claim: AnalysisClaim, pack: EvidencePack): ClaimLic
 export function licenseClaims(claims: AnalysisClaim[], pack: EvidencePack) {
   return claims.map((claim) => ({ claim, ...licenseClaim(claim, pack) }));
 }
+
+/** Words that carry no distinguishing weight when comparing two theses. */
+const STOP_WORDS = new Set([
+  "a","an","and","as","at","but","by","for","from","in","into","of","on","or","that","the","their",
+  "to","was","were","with","while","which","yet","both","more","less","than","did","not","it","its",
+]);
+
+function thesisTokens(thesis: string): Set<string> {
+  return new Set(
+    thesis
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((word) => word.length > 2 && !STOP_WORDS.has(word)),
+  );
+}
+
+function overlap(left: Set<string>, right: Set<string>): number {
+  if (!left.size || !right.size) return 0;
+  let shared = 0;
+  for (const token of left) if (right.has(token)) shared += 1;
+  return shared / Math.min(left.size, right.size);
+}
+
+/** Facts a pundit is given on top of the evidence pack it already holds.
+ *
+ *  A `fact` claim restates something the pack already carries, so it adds
+ *  nothing a writer could not read directly. A handful are useful as anchors;
+ *  twenty-seven of them crowd out the analysis. */
+const MAX_FACT_CLAIMS = 8;
+
+/** How alike two theses of the same type may be before the second is a copy. */
+const DUPLICATE_OVERLAP = 0.7;
+
+/** Collapses a claim set that says one thing many times.
+ *
+ *  On 2026-09-04 the laboratory returned thirty-five claims for Liverpool at
+ *  Ipswich. Twenty-seven were type `fact`, and they were near-duplicates:
+ *  "Liverpool held the majority of possession at 55% to Ipswich's 45%",
+ *  "Liverpool held 55% possession to Ipswich's 45%", and "Liverpool held
+ *  marginally more possession (55% to 45%)" were three separate claims. Of the
+ *  eight that were not facts, all three mechanisms said the same thing: Ipswich
+ *  shot from distance.
+ *
+ *  So the pack offered six analytical ideas dressed as thirty-five, and all six
+ *  pundits wrote the same script from the one mechanism available. The judges
+ *  called it a truism in five of six, correctly. It also drove the restraint
+ *  failures: a writer that selects three claims which are one claim writes that
+ *  claim three times.
+ *
+ *  Deduplication is deterministic and free, and it runs before the writer sees
+ *  anything. Two claims collapse when they share a type and either cite exactly
+ *  the same evidence or say the same thing in different words. The survivor is
+ *  the most confident, then the best evidenced, then the most concise. */
+export function dedupeClaims(claims: readonly AnalysisClaim[]): AnalysisClaim[] {
+  const ranked = [...claims].sort(
+    (left, right) =>
+      right.confidence - left.confidence ||
+      right.evidenceRefs.length - left.evidenceRefs.length ||
+      left.thesis.length - right.thesis.length,
+  );
+  const kept: Array<{ claim: AnalysisClaim; tokens: Set<string>; refs: string }> = [];
+  const surplusFacts: Array<{ claim: AnalysisClaim; tokens: Set<string>; refs: string }> = [];
+  let facts = 0;
+  for (const claim of ranked) {
+    const tokens = thesisTokens(claim.thesis);
+    const refs = [...claim.evidenceRefs].sort().join("|");
+    const duplicate = [...kept, ...surplusFacts].some(
+      (seen) =>
+        seen.claim.type === claim.type &&
+        ((refs.length > 0 && seen.refs === refs) || overlap(seen.tokens, tokens) >= DUPLICATE_OVERLAP),
+    );
+    if (duplicate) continue;
+    // Analysis is never capped. Facts past the cap are held back rather than
+    // discarded, because which eight to keep is not a question of rank.
+    if (claim.type === "fact" && facts >= MAX_FACT_CLAIMS) {
+      surplusFacts.push({ claim, tokens, refs });
+      continue;
+    }
+    kept.push({ claim, tokens, refs });
+    if (claim.type === "fact") facts += 1;
+  }
+
+  // Which facts survive the cap matters more than how many. Ranking by
+  // confidence puts every fact at 1.0 and lets the tie-break hand all eight
+  // places to the fattest restatements of the scoreline: on 2026-09-04 that
+  // dropped both goalkeepers making five saves, the VAR review, and what each
+  // side arrived carrying, in favour of three more ways of saying Liverpool won
+  // two nil. Six pundits need six angles, so a fact already covered by a kept
+  // claim is worth less than one that opens a part of the match nothing else
+  // touches. Swap greedily on new evidence covered.
+  if (surplusFacts.length) {
+    const covered = new Set(kept.flatMap((entry) => entry.claim.evidenceRefs));
+    const novelty = (claim: AnalysisClaim) =>
+      claim.evidenceRefs.filter((ref) => !covered.has(ref)).length;
+    for (const candidate of [...surplusFacts].sort((a, b) => novelty(b.claim) - novelty(a.claim))) {
+      if (novelty(candidate.claim) === 0) break;
+      // Displace the kept fact that brings the least the others do not already.
+      const replaceable = kept
+        .filter((entry) => entry.claim.type === "fact")
+        .sort((a, b) => {
+          const others = new Set(
+            kept.filter((e) => e !== a).flatMap((e) => e.claim.evidenceRefs),
+          );
+          const othersB = new Set(
+            kept.filter((e) => e !== b).flatMap((e) => e.claim.evidenceRefs),
+          );
+          const uniqueA = a.claim.evidenceRefs.filter((ref) => !others.has(ref)).length;
+          const uniqueB = b.claim.evidenceRefs.filter((ref) => !othersB.has(ref)).length;
+          return uniqueA - uniqueB;
+        })[0];
+      if (!replaceable) break;
+      const othersRefs = new Set(
+        kept.filter((entry) => entry !== replaceable).flatMap((entry) => entry.claim.evidenceRefs),
+      );
+      const lost = replaceable.claim.evidenceRefs.filter((ref) => !othersRefs.has(ref)).length;
+      if (novelty(candidate.claim) <= lost) break;
+      kept.splice(kept.indexOf(replaceable), 1);
+      kept.push(candidate);
+      covered.clear();
+      for (const ref of kept.flatMap((entry) => entry.claim.evidenceRefs)) covered.add(ref);
+    }
+  }
+  // Back to the order the laboratory produced them in, so a claim's short id
+  // stays stable against its position for anyone reading a stored run.
+  const order = new Map(claims.map((claim, index) => [claim.id, index]));
+  return kept
+    .map((entry) => entry.claim)
+    .sort((left, right) => (order.get(left.id) ?? 0) - (order.get(right.id) ?? 0));
+}

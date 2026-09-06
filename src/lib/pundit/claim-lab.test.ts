@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { licenseClaim } from "./claim-lab";
+import { dedupeClaims, licenseClaim } from "./claim-lab";
 import type { AnalysisClaim, EvidencePack } from "./types";
 
 const pack = {
@@ -167,5 +167,101 @@ describe("a count that names its members", () => {
       );
       expect(result.failures.join(" "), thesis).not.toMatch(/but names|Compares/);
     }
+  });
+});
+
+/** Built from the claim set the laboratory actually returned for Liverpool at
+ *  Ipswich on 2026-09-04. Thirty-five claims, twenty-seven of them facts, the
+ *  same five or six ideas restated. Six pundits then wrote one script from the
+ *  one mechanism available and five of six were failed for a truism, and for
+ *  restraint on top, because a writer that selects three claims which are one
+ *  claim writes that claim three times. */
+describe("collapsing a claim set that says one thing many times", () => {
+  const c = (over: Partial<AnalysisClaim>): AnalysisClaim => ({
+    id: over.id ?? "id-" + Math.random(),
+    matchId: "match-1",
+    type: "fact",
+    thesis: "",
+    evidenceRefs: ["stats.home_shots"],
+    confidence: 0.9,
+    ...over,
+  });
+
+  it("keeps one of three claims that state the same possession figure", () => {
+    const kept = dedupeClaims([
+      c({ id: "a", thesis: "Liverpool held the majority of possession at 55% to Ipswich's 45%." }),
+      c({ id: "b", thesis: "Liverpool held 55% possession to Ipswich's 45%.", confidence: 0.8 }),
+      c({ id: "c", thesis: "Liverpool held marginally more possession (55% to 45%).", confidence: 0.7 }),
+    ]);
+    expect(kept).toHaveLength(1);
+  });
+
+  it("collapses two claims that cite exactly the same evidence", () => {
+    const kept = dedupeClaims([
+      c({ id: "a", thesis: "The final score is corroborated by agreeing independent feeds.", evidenceRefs: ["context.feeds"] }),
+      c({ id: "b", thesis: "Independent score feeds agree on the recorded result.", evidenceRefs: ["context.feeds"], confidence: 0.5 }),
+    ]);
+    expect(kept.map((claim) => claim.id)).toEqual(["a"]);
+  });
+
+  it("keeps the most confident, best evidenced version of a duplicate", () => {
+    const kept = dedupeClaims([
+      c({ id: "thin", thesis: "Isak scored both Liverpool goals.", confidence: 0.6, evidenceRefs: ["event.g1"] }),
+      c({
+        id: "rich",
+        thesis: "Isak scored both Liverpool goals in the 6th and 9th minutes.",
+        confidence: 0.95,
+        evidenceRefs: ["event.g1", "event.g2"],
+      }),
+    ]);
+    expect(kept.map((claim) => claim.id)).toEqual(["rich"]);
+  });
+
+  it("caps the facts that only restate the pack, and keeps every analysis", () => {
+    // Twelve facts with nothing in common but the fixture, so the cap is what
+    // trims them rather than the duplicate rule.
+    const facts = [
+      "Isak scored twice inside the opening nine minutes.",
+      "Ipswich registered fourteen efforts across the ninety.",
+      "Both goalkeepers made five saves.",
+      "Liverpool collected four yellow cards.",
+      "Possession finished fifty five to forty five.",
+      "Corners went four to three toward the hosts.",
+      "A video review occurred around the hour mark.",
+      "Szoboszlai was withdrawn late on.",
+      "Independent feeds corroborate the recorded scoreline.",
+      "Kerkez was booked protecting the advantage.",
+      "The visitors travelled having drawn their previous fixture.",
+      "Mac Allister departed with six minutes remaining.",
+    ].map((thesis, index) => c({ id: "f" + index, thesis, evidenceRefs: ["e" + index] }));
+    const analysis: AnalysisClaim[] = [
+      c({ id: "m1", type: "mechanism", thesis: "Ipswich shot from range and it produced nothing.", evidenceRefs: ["m-a"] }),
+      c({ id: "m2", type: "mechanism", thesis: "Liverpool scored twice inside nine minutes and defended a lead.", evidenceRefs: ["m-b"] }),
+      c({ id: "o1", type: "opinion", thesis: "Isak's brace was the decisive feature of the night.", evidenceRefs: ["o-a"] }),
+      c({ id: "d1", type: "decision_quality", thesis: "Ipswich generated enough volume to threaten without quality.", evidenceRefs: ["d-a"] }),
+    ];
+    const kept = dedupeClaims([...facts, ...analysis]);
+    expect(kept.filter((claim) => claim.type === "fact")).toHaveLength(8);
+    // Nothing analytical is ever dropped for being over a cap.
+    for (const id of ["m1", "m2", "o1", "d1"]) {
+      expect(kept.map((claim) => claim.id), id).toContain(id);
+    }
+  });
+
+  it("leaves genuinely different analyses alone", () => {
+    const kept = dedupeClaims([
+      c({ id: "shots", type: "mechanism", thesis: "Ipswich took ten of fourteen shots from outside the box.", evidenceRefs: ["a"] }),
+      c({ id: "timing", type: "mechanism", thesis: "Liverpool led inside nine minutes and spent eighty one defending it.", evidenceRefs: ["b"] }),
+      c({ id: "cards", type: "mechanism", thesis: "Liverpool took four yellow cards protecting the lead.", evidenceRefs: ["c"] }),
+    ]);
+    expect(kept).toHaveLength(3);
+  });
+
+  it("returns claims in the order the laboratory produced them", () => {
+    const kept = dedupeClaims([
+      c({ id: "first", type: "mechanism", thesis: "Alpha bravo charlie delta echo foxtrot.", evidenceRefs: ["a"] }),
+      c({ id: "second", type: "opinion", thesis: "Golf hotel india juliet kilo lima.", evidenceRefs: ["b"], confidence: 0.99 }),
+    ]);
+    expect(kept.map((claim) => claim.id)).toEqual(["first", "second"]);
   });
 });

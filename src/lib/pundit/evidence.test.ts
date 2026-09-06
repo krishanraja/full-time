@@ -372,6 +372,26 @@ describe("what each side arrived carrying", () => {
     expect(item(pack, "form.home_1")?.value).toEqual(["2026-08-30", 1, 1]);
   });
 
+  /** The pack presented Liverpool's 2025-12-06 draw at Leeds beside two August
+   *  2026 results as though the three were a run, because the lookup took the
+   *  three most recent finished matches with no lower bound. The claim
+   *  laboratory licensed "three consecutive draws" from it, all six writers
+   *  built on that, and four of six then failed the factual gate.
+   *
+   *  The lookup is now windowed, so a gap like that cannot reach the pack. This
+   *  pins the other half: the pack states how many results the window actually
+   *  holds and the dates they span, so a writer claiming a longer run than the
+   *  evidence carries has a fact standing against it rather than a silent gap
+   *  to infer across. */
+  it("says how many results the form window holds and when they were", () => {
+    const pack = packOf({ form });
+    expect(item(pack, "form.home_span")?.value).toEqual([2, "2026-08-23", "2026-08-30"]);
+    expect(item(pack, "form.away_span")?.value).toEqual([1, "2026-08-31", "2026-08-31"]);
+    // A side with one result has one result, and the pack says so rather than
+    // leaving three slots a writer can round up to.
+    expect(item(pack, "form.away_2")).toBeUndefined();
+  });
+
   it("counts the points a run of form produced", () => {
     const pack = packOf({ form });
     expect(item(pack, "derived.home_points_from_last_2")?.value).toBe(1);

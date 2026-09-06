@@ -252,6 +252,20 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
       );
     });
     if (!matches.length) continue;
+    // How many results this side actually has inside the form window, stated
+    // rather than left to be counted. A writer that says "three consecutive
+    // draws" when the pack holds two is making a claim the evidence does not
+    // carry, and this is the fact that refuses it. The dates are already on each
+    // form entry; this says what they add up to.
+    facts.push(
+      fact(
+        `form.${side}_span`,
+        `${team} results available as recent form`,
+        [matches.length, matches[matches.length - 1].date.slice(0, 10), matches[0].date.slice(0, 10)],
+        "database-verified",
+        "matches",
+      ),
+    );
     const points = matches.reduce(
       (total, prior) =>
         total + (prior.goalsFor > prior.goalsAgainst ? 3 : prior.goalsFor === prior.goalsAgainst ? 1 : 0),

@@ -278,3 +278,69 @@ describe("prose the gates should still reject", () => {
     expect(failures.join(" ")).toMatch(/unsupported_tactics/);
   });
 });
+
+/** Four of six pundits on 2026-09-04 were refused for naming a team the pack
+ *  had just handed them, and two more for the eighteen-yard box. Both are the
+ *  gate refusing its own evidence rather than catching an invention. */
+describe("names and numbers the pack itself supplies", () => {
+  const withForm: StructuredMatchInput = {
+    ...barcelonaRayo,
+    form: {
+      home: [
+        {
+          date: "2026-08-30T14:00:00Z",
+          opponent: "Manchester United",
+          venue: "away",
+          goalsFor: 2,
+          goalsAgainst: 5,
+        },
+      ],
+      away: [
+        {
+          date: "2026-08-29T14:00:00Z",
+          opponent: "Nottingham Forest",
+          venue: "home",
+          goalsFor: 2,
+          goalsAgainst: 2,
+        },
+        {
+          date: "2026-08-23T14:00:00Z",
+          opponent: "Newcastle",
+          venue: "away",
+          goalsFor: 2,
+          goalsAgainst: 2,
+        },
+      ],
+    },
+  } as StructuredMatchInput;
+
+  it("licenses an opponent the pack names only in a label", () => {
+    // The pack was trimmed so the form label carries the opponent and the value
+    // carries the date and score. Licensing read values alone, so the writer was
+    // shown a name and then failed for using it.
+    const failures = gateFailures(
+      "They arrived having drawn with Nottingham Forest and at Newcastle, while the hosts were beaten at Manchester United.",
+      withForm,
+    );
+    expect(failures.join(" ")).not.toMatch(/entity_licence/);
+  });
+
+  it("still refuses a team the pack never mentions", () => {
+    const failures = gateFailures("This was nothing like their night against Real Madrid.", withForm);
+    expect(failures.join(" ")).toMatch(/entity_licence/);
+  });
+
+  it("allows the eighteen-yard box, which is a place and not a claim", () => {
+    for (const sentence of [
+      "They kept arriving at the edge of the eighteen-yard box without ever shooting.",
+      "The deficit got bodies into the eighteen-yard area and left them there.",
+    ]) {
+      expect(gateFailures(sentence, barcelonaRayo).join(" "), sentence).not.toMatch(/numeric_licence/);
+    }
+  });
+
+  it("still refuses a distance the evidence does not record", () => {
+    const failures = gateFailures("A shot from thirty yards flattered the shot chart.", barcelonaRayo);
+    expect(failures.join(" ")).toMatch(/numeric_licence/);
+  });
+});

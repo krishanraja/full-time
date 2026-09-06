@@ -118,6 +118,16 @@ function licensedScriptValues(pack: EvidencePack, candidate: PunditVariantCandid
   const entities = new Set<string>(["Full Time", getPunditSpec(candidate.punditId).name]);
   for (const item of [...pack.facts, ...pack.derivations]) {
     collectEvidenceValues(item.value, numbers, entities);
+    // Names the pack states in a label are licensed too, because the writer is
+    // shown labels and refusing what we just handed it is a trap rather than a
+    // gate. Form facts are the case that proved it: the pack was trimmed so the
+    // label carries "Liverpool drew away to Newcastle" while the value carries
+    // only the date and the score, and licensing read values alone. Four of six
+    // pundits on 2026-09-04 were then failed for naming Newcastle, Leeds,
+    // Nottingham Forest and Manchester United, every one of which the pack had
+    // given them. Only the entity side is taken from labels: a number in a
+    // label is also in its value, so nothing is loosened numerically.
+    for (const noun of properNouns(item.label)) entities.add(noun);
   }
   const homeScore = pack.facts.find((item) => item.id === "match.home_score")?.value;
   const awayScore = pack.facts.find((item) => item.id === "match.away_score")?.value;
