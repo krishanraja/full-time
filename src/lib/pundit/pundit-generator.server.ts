@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DIMENSION_STANDARDS } from "./dimensions";
+import { DIMENSION_STANDARDS, SCORE_ANCHORS, SCORING_INSTRUCTION } from "./dimensions";
 import { licenseClaims } from "./claim-lab";
 import { anthropicJson } from "./anthropic-json.server";
 import { BudgetExceededError, spentThisStepUsd } from "./model-cost";
@@ -507,7 +507,11 @@ async function judgeOne(
         // the same words, so a rejection is a real shortfall rather than a
         // disagreement about what the dimension means.
         standard: DIMENSION_STANDARDS[harness],
-        instruction: `Judge only ${harness}, against the standard given. Score it 1 to 5.`,
+        // And what the numbers on the scale mean. Without this the judge scores
+        // against its own idea of excellent and the four-out-of-five floor
+        // becomes unreachable: see SCORE_ANCHORS for what that cost.
+        scale: SCORE_ANCHORS,
+        instruction: `Judge only ${harness}, against the standard given. Score it 1 to 5 using the scale. ${SCORING_INSTRUCTION}`,
       }),
     });
   } catch (error) {

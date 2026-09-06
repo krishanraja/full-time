@@ -157,6 +157,23 @@ describe("the standards both sides are held to", () => {
     expect(DIMENSION_STANDARDS.independence).toContain("Building on a licensed claim is expected");
   });
 
+  /** The floors are four out of five and, until 2026-09-06, nothing told a
+   *  judge what a four was. The one show that ever published scored twelve of
+   *  twelve before the standards landed and three of twelve after, on the same
+   *  script against the same evidence, because a judge with no anchor scores
+   *  against its own idea of excellent. The anchor is what makes the floor
+   *  mean something, so it is pinned rather than left to a prompt edit. */
+  it("tells the judge what a four is, in professional terms", async () => {
+    const { SCORE_ANCHORS, SCORING_INSTRUCTION } = await import("./dimensions");
+    expect(SCORE_ANCHORS).toContain("4:");
+    expect(SCORE_ANCHORS).toContain("professional");
+    expect(SCORE_ANCHORS).toContain("do not undermine the dimension belong at 4");
+    expect(SCORING_INSTRUCTION).toContain("not against an ideal script");
+    for (const value of ["1:", "2:", "3:", "4:", "5:"]) {
+      expect(SCORE_ANCHORS, `scale is missing ${value}`).toContain(value);
+    }
+  });
+
   it("keeps a standard for every dimension the publish gate requires", async () => {
     const { DIMENSION_STANDARDS } = await import("./dimensions");
     for (const [dimension, standard] of Object.entries(DIMENSION_STANDARDS)) {

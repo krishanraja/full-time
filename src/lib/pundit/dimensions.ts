@@ -41,6 +41,40 @@ export const DIMENSION_STANDARDS: Record<QualitativeHarness, string> = {
     "The forward-looking call is specific enough to be settled later: a named outcome, a measurable condition, and a window. A prediction nobody could mark is not accountable.",
 };
 
+/** What each score on the one-to-five scale means.
+ *
+ *  This is the missing half of the rubric, and its absence was expensive. The
+ *  standards above say what a dimension is; nothing said what a four was. A
+ *  judge given a dimension, a floor it cannot see, and no anchor scores against
+ *  its own idea of excellent, and four out of five becomes a bar reserved for
+ *  writing with nothing left to criticise.
+ *
+ *  Measured on 2026-09-06, against the one show that has ever published. Judged
+ *  on 5 September without these standards it scored twelve of twelve, mostly
+ *  fours. Re-judged with the standards and no anchor, the same script against
+ *  the same evidence scored three of twelve: insight 2, probability 2,
+ *  independence 2, and 3s across judgment, story, memorability, restraint and
+ *  prediction accountability. Two professional match reports of the same game,
+ *  put through the same judges, averaged 1.7 on the ten craft dimensions.
+ *
+ *  A bar that rejects both the show it published and the professional press is
+ *  not measuring quality, and every paid run since 5 September has been failing
+ *  against it. The floors are not the problem and are unchanged. The scale is
+ *  the problem, so the scale is now stated: four is the standard of a good
+ *  professional match report, not the standard of a flawless one. */
+export const SCORE_ANCHORS = [
+  "5: better than the professional standard on this dimension. Rare, and not required.",
+  "4: the standard of a good professional match report or broadcast pundit segment. It does the job well and a fair critic can still name something they would have done differently. Real shortcomings that do not undermine the dimension belong at 4, not at 3. This is what the script is being asked for.",
+  "3: competent but generic. It gestures at the dimension without doing it, or it does it in a way any writer covering any match could have produced.",
+  "2: attempted and missed. The dimension is visibly aimed at and the attempt does not land.",
+  "1: absent, or actively working against the script.",
+].join("\n");
+
+/** How the judge is told to use the scale. Sits with the anchors, because an
+ *  anchor a judge is free to reinterpret is not an anchor. */
+export const SCORING_INSTRUCTION =
+  "Score against the anchors, not against an ideal script. Grade what is on the page relative to a good professional writer covering this fixture, and reserve 1 and 2 for a dimension that genuinely misses. Naming a real flaw does not by itself put a script below 4: say the flaw and still score it where it sits on the scale. Do not lower a score to seem rigorous.";
+
 /** The dimensions a writer must satisfy, as one block for the writer prompt. */
 export function dimensionBrief(): string {
   return Object.entries(DIMENSION_STANDARDS)
