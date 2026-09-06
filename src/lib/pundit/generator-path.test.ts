@@ -144,3 +144,23 @@ describe("the writing and judging path, end to end and free", () => {
     }
   });
 });
+
+/** The writer prompt is one long single-quoted string, and an apostrophe in an
+ *  addition to it silently ends the string and breaks the build. That happened
+ *  while writing the instruction above this test. The prompt is also the one
+ *  place a rule can be added without any test noticing it went missing, so the
+ *  rules the last runs were lost to are pinned here. */
+describe("the standards both sides are held to", () => {
+  it("tells the writer to test a claim rather than repeat it", async () => {
+    const { DIMENSION_STANDARDS } = await import("./dimensions");
+    expect(DIMENSION_STANDARDS.independence).toContain("does not cite");
+    expect(DIMENSION_STANDARDS.independence).toContain("Building on a licensed claim is expected");
+  });
+
+  it("keeps a standard for every dimension the publish gate requires", async () => {
+    const { DIMENSION_STANDARDS } = await import("./dimensions");
+    for (const [dimension, standard] of Object.entries(DIMENSION_STANDARDS)) {
+      expect(standard.length, dimension).toBeGreaterThan(60);
+    }
+  });
+});
