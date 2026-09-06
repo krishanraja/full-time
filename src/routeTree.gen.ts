@@ -27,6 +27,7 @@ import { Route as ApiInternalDailyRehearsalRouteImport } from './routes/api/inte
 import { Route as ApiInternalEvaluationCorpusRouteImport } from './routes/api/internal/evaluation-corpus'
 import { Route as ApiInternalEvaluationRunRouteImport } from './routes/api/internal/evaluation-run'
 import { Route as ApiInternalForecastTrainRouteImport } from './routes/api/internal/forecast-train'
+import { Route as ApiInternalJudgeCalibrationRouteImport } from './routes/api/internal/judge-calibration'
 import { Route as ApiInternalPredictionsRegisterRouteImport } from './routes/api/internal/predictions-register'
 import { Route as ApiInternalPreflightRouteImport } from './routes/api/internal/preflight'
 import { Route as ApiInternalProduceVariantRouteImport } from './routes/api/internal/produce-variant'
@@ -138,6 +139,12 @@ const ApiInternalForecastTrainRoute =
     path: '/api/internal/forecast-train',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiInternalJudgeCalibrationRoute =
+  ApiInternalJudgeCalibrationRouteImport.update({
+    id: '/api/internal/judge-calibration',
+    path: '/api/internal/judge-calibration',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiInternalPredictionsRegisterRoute =
   ApiInternalPredictionsRegisterRouteImport.update({
     id: '/api/internal/predictions-register',
@@ -244,6 +251,7 @@ export interface FileRoutesByFullPath {
   '/api/internal/evaluation-corpus': typeof ApiInternalEvaluationCorpusRoute
   '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
   '/api/internal/forecast-train': typeof ApiInternalForecastTrainRoute
+  '/api/internal/judge-calibration': typeof ApiInternalJudgeCalibrationRoute
   '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
   '/api/internal/preflight': typeof ApiInternalPreflightRoute
   '/api/internal/produce-variant': typeof ApiInternalProduceVariantRoute
@@ -280,6 +288,7 @@ export interface FileRoutesByTo {
   '/api/internal/evaluation-corpus': typeof ApiInternalEvaluationCorpusRoute
   '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
   '/api/internal/forecast-train': typeof ApiInternalForecastTrainRoute
+  '/api/internal/judge-calibration': typeof ApiInternalJudgeCalibrationRoute
   '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
   '/api/internal/preflight': typeof ApiInternalPreflightRoute
   '/api/internal/produce-variant': typeof ApiInternalProduceVariantRoute
@@ -317,6 +326,7 @@ export interface FileRoutesById {
   '/api/internal/evaluation-corpus': typeof ApiInternalEvaluationCorpusRoute
   '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
   '/api/internal/forecast-train': typeof ApiInternalForecastTrainRoute
+  '/api/internal/judge-calibration': typeof ApiInternalJudgeCalibrationRoute
   '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
   '/api/internal/preflight': typeof ApiInternalPreflightRoute
   '/api/internal/produce-variant': typeof ApiInternalProduceVariantRoute
@@ -355,6 +365,7 @@ export interface FileRouteTypes {
     | '/api/internal/evaluation-corpus'
     | '/api/internal/evaluation-run'
     | '/api/internal/forecast-train'
+    | '/api/internal/judge-calibration'
     | '/api/internal/predictions-register'
     | '/api/internal/preflight'
     | '/api/internal/produce-variant'
@@ -391,6 +402,7 @@ export interface FileRouteTypes {
     | '/api/internal/evaluation-corpus'
     | '/api/internal/evaluation-run'
     | '/api/internal/forecast-train'
+    | '/api/internal/judge-calibration'
     | '/api/internal/predictions-register'
     | '/api/internal/preflight'
     | '/api/internal/produce-variant'
@@ -427,6 +439,7 @@ export interface FileRouteTypes {
     | '/api/internal/evaluation-corpus'
     | '/api/internal/evaluation-run'
     | '/api/internal/forecast-train'
+    | '/api/internal/judge-calibration'
     | '/api/internal/predictions-register'
     | '/api/internal/preflight'
     | '/api/internal/produce-variant'
@@ -464,6 +477,7 @@ export interface RootRouteChildren {
   ApiInternalEvaluationCorpusRoute: typeof ApiInternalEvaluationCorpusRoute
   ApiInternalEvaluationRunRoute: typeof ApiInternalEvaluationRunRoute
   ApiInternalForecastTrainRoute: typeof ApiInternalForecastTrainRoute
+  ApiInternalJudgeCalibrationRoute: typeof ApiInternalJudgeCalibrationRoute
   ApiInternalPredictionsRegisterRoute: typeof ApiInternalPredictionsRegisterRoute
   ApiInternalPreflightRoute: typeof ApiInternalPreflightRoute
   ApiInternalProduceVariantRoute: typeof ApiInternalProduceVariantRoute
@@ -606,6 +620,13 @@ declare module '@tanstack/react-router' {
       path: '/api/internal/forecast-train'
       fullPath: '/api/internal/forecast-train'
       preLoaderRoute: typeof ApiInternalForecastTrainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/judge-calibration': {
+      id: '/api/internal/judge-calibration'
+      path: '/api/internal/judge-calibration'
+      fullPath: '/api/internal/judge-calibration'
+      preLoaderRoute: typeof ApiInternalJudgeCalibrationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/internal/predictions-register': {
@@ -755,6 +776,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalEvaluationCorpusRoute: ApiInternalEvaluationCorpusRoute,
   ApiInternalEvaluationRunRoute: ApiInternalEvaluationRunRoute,
   ApiInternalForecastTrainRoute: ApiInternalForecastTrainRoute,
+  ApiInternalJudgeCalibrationRoute: ApiInternalJudgeCalibrationRoute,
   ApiInternalPredictionsRegisterRoute: ApiInternalPredictionsRegisterRoute,
   ApiInternalPreflightRoute: ApiInternalPreflightRoute,
   ApiInternalProduceVariantRoute: ApiInternalProduceVariantRoute,

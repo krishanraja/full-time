@@ -446,12 +446,29 @@ function predictionContext(predictionTiming?: { lockedAt: string; kickoffAt: str
     : "No prediction was registered before kickoff, and the pundit was instructed not to invent one. There is no prior claim to settle, so do not mark the script down for the absence of one. Judge instead how honestly it states that absence and how well it registers a specific, falsifiable forward expectation that a listener could check next time.";
 }
 
+/** What a judge is told about where the script came from.
+ *
+ *  The pipeline's own scripts arrive with a thesis record behind them: the
+ *  claims the pundit selected, the counterpoint it carried, what would change
+ *  its mind. A script that did not come out of this pipeline has none of that,
+ *  and handing the judge an empty thesis would mark the writing down for a
+ *  record that was never meant to exist. Calibration says so instead, so the
+ *  judge grades the prose on the same standard without a phantom shortfall. */
+const PROSE_ONLY_THESIS =
+  "Not applicable. This script was not written by the Full Time pipeline, so there is no thesis record behind it. Judge the script itself, exactly as written, against the dimension and its standard. Do not mark it down for the absence of a thesis record, for not following Full Time's beat structure, or for not naming claim ids.";
+
+type JudgeSubject = {
+  candidate: PunditVariantCandidate;
+  pack: EvidencePack;
+  claims: AnalysisClaim[];
+  predictionTiming?: { lockedAt: string; kickoffAt: string };
+  /** Set for a script from outside the pipeline. See PROSE_ONLY_THESIS. */
+  proseOnly?: boolean;
+};
+
 async function judgeOne(
   harness: QualitativeHarness,
-  candidate: PunditVariantCandidate,
-  pack: EvidencePack,
-  claims: AnalysisClaim[],
-  predictionTiming?: { lockedAt: string; kickoffAt: string },
+  { candidate, pack, claims, predictionTiming, proseOnly }: JudgeSubject,
 ): Promise<HarnessResult> {
   // The dimension under judgement is deliberately not in the system prompt.
   // The system prompt renders first, so naming the harness there gave each of
@@ -473,7 +490,7 @@ async function judgeOne(
         {
           punditSpec: getPunditSpec(candidate.punditId),
           predictionRegistration: predictionContext(predictionTiming),
-          thesis: candidate.thesis,
+          thesis: proseOnly ? PROSE_ONLY_THESIS : candidate.thesis,
           script: candidate.displayScript,
           outputContract: {
             score: "integer 1..5",
@@ -523,9 +540,7 @@ async function judgeOne(
 
 async function judgeHardOne(
   harness: "factual_entailment" | "humour_safety_semantic",
-  candidate: PunditVariantCandidate,
-  pack: EvidencePack,
-  claims: AnalysisClaim[],
+  { candidate, pack, claims, proseOnly }: JudgeSubject,
 ): Promise<HarnessResult> {
   const factual = harness === "factual_entailment";
   const explainRejection =
@@ -545,7 +560,7 @@ async function judgeHardOne(
       cachedContext: [{ evidencePack: compactEvidence(pack), licensedClaims: claims }],
       user: JSON.stringify({
         punditSpec: getPunditSpec(candidate.punditId),
-        thesis: candidate.thesis,
+        thesis: proseOnly ? PROSE_ONLY_THESIS : candidate.thesis,
         beats: candidate.outline,
         outputContract: {
           passed: "boolean",
@@ -581,6 +596,34 @@ async function judgeHardOne(
       : (output.requestedRepair ?? "Repair only the identified failed beats."),
     failedBeats: output.passed ? undefined : output.failedBeats,
   };
+}
+
+/** One full judging pass over one script: two fail-closed hard judges and the
+ *  twelve scored dimensions, each checked against this pundit's floor.
+ *
+ *  This is exported so the calibration harness can put a script that did not
+ *  come from the pipeline through the identical judges. A separate copy of the
+ *  judging code would drift from the one that decides publication, and a
+ *  calibration reading against a different bar measures nothing. */
+export async function judgeCandidate(subject: JudgeSubject): Promise<HarnessResult[]> {
+  const harnessNames = Object.keys(
+    getPunditSpec(subject.candidate.punditId).requiredThresholds,
+  ) as QualitativeHarness[];
+  const [hardJudges, independent] = await Promise.all([
+    Promise.all(
+      (["factual_entailment", "humour_safety_semantic"] as const).map((harness) =>
+        judgeHardOne(harness, subject),
+      ),
+    ),
+    Promise.all(harnessNames.map((harness) => judgeOne(harness, subject))),
+  ]);
+  return [
+    ...hardJudges,
+    ...validateQualitativeScores(
+      subject.candidate.punditId,
+      Object.fromEntries(independent.map((item) => [item.harness, item])),
+    ),
+  ];
 }
 
 export type GeneratedPunditVariant = {
@@ -648,26 +691,15 @@ export async function generatePunditVariant(input: {
       continue;
     }
 
-    const harnessNames = Object.keys(
-      getPunditSpec(input.punditId).requiredThresholds,
-    ) as QualitativeHarness[];
-    const [hardJudges, independent] = await Promise.all([
-      Promise.all(
-        (["factual_entailment", "humour_safety_semantic"] as const).map((harness) =>
-          judgeHardOne(harness, candidate, input.pack, input.claims),
-        ),
-      ),
-      Promise.all(
-        harnessNames.map((harness) =>
-          judgeOne(harness, candidate, input.pack, input.claims, input.predictionTiming),
-        ),
-      ),
-    ]);
-    const qualitative = validateQualitativeScores(
-      input.punditId,
-      Object.fromEntries(independent.map((item) => [item.harness, item])),
-    );
-    latestResults = [...hardResults, ...hardJudges, ...qualitative];
+    latestResults = [
+      ...hardResults,
+      ...(await judgeCandidate({
+        candidate,
+        pack: input.pack,
+        claims: input.claims,
+        predictionTiming: input.predictionTiming,
+      })),
+    ];
     attemptResults.push({ attempt, results: latestResults });
     const decision = publicationDecision(latestResults);
     if (decision.publishable) {

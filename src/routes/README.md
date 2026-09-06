@@ -79,6 +79,7 @@ Unknown AI Pundit IDs and malformed drop IDs return `400`. Missing published var
 | `/api/public/cron/daily-drop`        | Disabled legacy recovery generator                                                     |
 | `/api/internal/daily-rehearsal`      | Durable six-variant workflow                                                           |
 | `/api/internal/preflight`            | Free check of everything a paid run needs before it starts                             |
+| `/api/internal/judge-calibration`    | Score scripts of known quality against the live judges, to check the publication bar   |
 | `/api/internal/publish-drop`         | Publish a drop that passed but whose run did not carry it over the line                |
 | `/api/internal/rehearsal`            | Rehearsal inspection and control                                                       |
 | `/api/internal/produce-variant`      | Narration, mastering and share card for one AI Pundit edition (called by the workflow) |
