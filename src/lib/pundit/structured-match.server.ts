@@ -54,6 +54,22 @@ function priorMatches(rows: PriorRow[], teamId: string): PriorMatch[] {
  *  a side arrived carrying. */
 const FORM_MATCHES = 3;
 
+/** How far back a result can be and still be form.
+ *
+ *  The lookup used to take the three most recent finished matches with no lower
+ *  bound, which is only the same thing as form when the database holds a
+ *  continuous season. It does not. On 2026-09-04 Liverpool's third most recent
+ *  away result was a draw at Leeds dated 2025-12-06, nine months earlier, and
+ *  the pack presented it beside two August results as though the three were a
+ *  run. The claim laboratory licensed "three consecutive draws" from it, all six
+ *  writers built on that, and the factual judge caught it: "the gap between the
+ *  Leeds draw and the Newcastle draw spans more than eight months".
+ *
+ *  Sixty days covers a normal run of fixtures including an international break,
+ *  and excludes anything on the far side of a summer. A side with fewer results
+ *  inside the window simply has less form, which is the honest answer. */
+const FORM_WINDOW_DAYS = 60;
+
 export async function loadStructuredMatch(matchId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [{ data: match, error: matchError }, { data: events }, { data: stats }, { data: context }] =
@@ -99,6 +115,14 @@ export async function loadStructuredMatch(matchId: string) {
           )
           .eq("status", "finished")
           .lt("kickoff_at", row.kickoff_at)
+          // The lower bound is the fix: without it the query happily returns a
+          // result from the previous calendar year and calls it form.
+          .gte(
+            "kickoff_at",
+            new Date(
+              new Date(row.kickoff_at).getTime() - FORM_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+          )
           .or(teamIds.map((id) => `home_team_id.eq.${id},away_team_id.eq.${id}`).join(","))
           .order("kickoff_at", { ascending: false })
           .limit(FORM_MATCHES * 4)

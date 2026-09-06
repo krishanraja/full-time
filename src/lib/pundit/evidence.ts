@@ -252,6 +252,20 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
       );
     });
     if (!matches.length) continue;
+    // How many results this side actually has inside the form window, stated
+    // rather than left to be counted. A writer that says "three consecutive
+    // draws" when the pack holds two is making a claim the evidence does not
+    // carry, and this is the fact that refuses it. The dates are already on each
+    // form entry; this says what they add up to.
+    facts.push(
+      fact(
+        `form.${side}_span`,
+        `${team} results available as recent form`,
+        [matches.length, matches[matches.length - 1].date.slice(0, 10), matches[0].date.slice(0, 10)],
+        "database-verified",
+        "matches",
+      ),
+    );
     const points = matches.reduce(
       (total, prior) =>
         total + (prior.goalsFor > prior.goalsAgainst ? 3 : prior.goalsFor === prior.goalsAgainst ? 1 : 0),
@@ -287,6 +301,33 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
       ),
     );
   });
+
+  // What the two sides produced between them.
+  //
+  // A pundit reaches for the match total naturally: "twenty-four shots between
+  // these two" says how open the game was in a way neither side's figure does.
+  // On 2026-09-04 that exact sentence was refused, because 24 is not in the pack
+  // even though 14 and 10 both are. Stating the totals is cheaper and more
+  // honest than teaching the licence gate to accept arithmetic, and it gives six
+  // writers another figure to differ over.
+  for (const [key, label, home, away] of [
+    ["shots", "Shots in the match", stats?.homeShots, stats?.awayShots],
+    ["shots_on_target", "Shots on target in the match", stats?.homeShotsOnTarget, stats?.awayShotsOnTarget],
+    ["corners", "Corners in the match", stats?.homeCorners, stats?.awayCorners],
+    ["saves", "Saves in the match", stats?.homeSaves, stats?.awaySaves],
+  ] as const) {
+    if (!finite(home) || !finite(away)) continue;
+    derivations.push(
+      derived(
+        `derived.match_${key}`,
+        label,
+        home + away,
+        stats?.source ?? "provider",
+        `stats.home_${key},stats.away_${key}`,
+        `home_${key} + away_${key}`,
+      ),
+    );
+  }
 
   if (finite(stats?.homeXg) && finite(stats?.awayXg)) {
     derivations.push(

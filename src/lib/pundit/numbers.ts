@@ -89,7 +89,14 @@ const COUNT_IDIOMS: Record<string, number> = {
 /** Football constants every listener already holds: a point, three for a win,
  *  eleven players, forty-five minute halves, ninety minutes. These are not
  *  match facts and never need evidence. */
-export const FOOTBALL_CONSTANTS = [1, 3, 11, 45, 90];
+/** Numbers that are part of the game rather than part of a match.
+ *
+ *  A point, three for a win, eleven players, and the two halves. Eighteen joins
+ *  them because the eighteen-yard box is the name of a piece of the pitch: on
+ *  2026-09-04 two pundits were refused for "the edge of the eighteen-yard line"
+ *  and "bodies into the eighteen-yard box", which name a location and assert
+ *  nothing about the match. Six is the goal area for the same reason. */
+export const FOOTBALL_CONSTANTS = [1, 3, 6, 11, 18, 45, 90];
 
 const UNIT_ALT = Object.keys(SPELLED_UNITS).join("|");
 const TENS_ALT = Object.keys(SPELLED_TENS).join("|");
