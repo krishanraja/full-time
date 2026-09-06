@@ -76,6 +76,18 @@ The harness judges only. No writer, no narration, no repair loop, and nothing is
 | Release blocked             | One or more revision-bound gates missing                              | Complete evidence; never lower thresholds                 |
 | One persona failed          | Six-variant promise broken                                            | Keep the drop unpublished and show the failure internally |
 
+### When every pundit fails the same harness
+
+All six failing together is a fact about the shared input, not about six writers. Read the shared input before touching a prompt. The 2026-09-04 run is the worked example, and each of these was ours rather than the model's:
+
+- **Five of six failed `insight` as a truism.** The claim laboratory had returned thirty-five claims holding about ten ideas, with a single mechanism among them. Six pundits sharing one idea write one script. Check the claim set for near-duplicates and count how many distinct analytical claims it actually holds.
+- **Five of six failed `restraint`.** Same cause: a writer that selects three claims which are one claim writes that claim three times. Restraint failures across the board point at the claim set, not at the writers.
+- **Four of six failed `entity_licence` on a team the pack named.** Licensing read fact values and not labels. If a gate refuses something the pack displays, the gate is wrong.
+- **A nine-month-old result was presented as form.** The lookup had no lower bound. Form is windowed at sixty days; roughly one in five team slots in recent fixtures had its previous match outside that window, so this was systemic rather than a one-off.
+- **The humour-safety judge failed scripts on arithmetic.** It is scoped to safety alone; entailment belongs to the factual judge and a second opinion on it costs a run.
+
+Before diagnosing quality, run the judge calibration above. A bar that rejects the show it published is not measuring the writing.
+
 ## Audio runbook
 
 - Require the selected voice for the exact pundit. When no `voice_candidates` row is selected, the pipeline records one from the configured `ELEVENLABS_VOICE_*` value with a founder attestation; never substitute another pundit's voice.
