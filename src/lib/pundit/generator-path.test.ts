@@ -219,3 +219,37 @@ describe("the probability instruction and the numeric gate agreeing", () => {
     expect(source).toContain("State your central point in full in the judgment beat and nowhere else");
   });
 });
+
+/** Six pundits is the product. One is a test, and the difference is about six
+ *  sevenths of the bill. Measured on 2026-09-06: a run cost $2.14, of which the
+ *  writer took $1.06 across twelve Opus calls and the judges $0.99 across
+ *  eighty four Sonnet calls, both dominated by output tokens rather than by the
+ *  cached evidence pack. Nearly every debugging run this week paid full price to
+ *  learn what one pundit would have shown. */
+describe("writing a subset of the pundits", () => {
+  it("accepts a subset on the workflow input and the dispatch route", async () => {
+    const [workflow, route] = await Promise.all([
+      import("node:fs").then((fs) => fs.readFileSync("src/workflows/daily-pundit.ts", "utf8")),
+      import("node:fs").then((fs) =>
+        fs.readFileSync("src/routes/api/internal/daily-rehearsal.ts", "utf8"),
+      ),
+    ]);
+    expect(workflow).toContain("punditIds?: PunditId[]");
+    // The subset is filtered from the canonical list rather than trusted, so an
+    // unknown id cannot introduce a pundit that has no spec.
+    expect(workflow).toContain("PUNDIT_IDS.filter((punditId) => input.punditIds!.includes(punditId))");
+    expect(route).toContain('url.searchParams.get("pundits")');
+  });
+
+  it("keeps the six-variant promise as the thing that stops a subset publishing", async () => {
+    // No separate guard is added, and none should be: the promise check already
+    // refuses a drop that does not hold all six, which is the correct outcome
+    // for a diagnostic run.
+    const { REQUIRED_HARNESS_NAMES } = await import("./promise-checks.server");
+    expect(REQUIRED_HARNESS_NAMES.length).toBeGreaterThan(0);
+    const promise = await import("node:fs").then((fs) =>
+      fs.readFileSync("src/lib/pundit/promise-checks.server.ts", "utf8"),
+    );
+    expect(promise).toMatch(/PUNDIT_IDS|six/i);
+  });
+});

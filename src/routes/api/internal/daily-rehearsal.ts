@@ -50,7 +50,17 @@ async function handle({ request }: { request: Request }) {
     const runToken = url.searchParams.get("token") ?? new Date().toISOString();
     // An explicit match overrides the day's importance ranking.
     const matchId = url.searchParams.get("matchId") ?? undefined;
-    const run = await start(dailyPunditWorkflow, [{ coverageDate, mode, runToken, matchId }]);
+    // A comma-separated subset writes only those pundits. A diagnostic run of
+    // one costs about a sixth of a full show and proves a fix just as well; it
+    // cannot publish, because a drop holding fewer than six variants fails the
+    // six-variant promise downstream.
+    const punditIds = (url.searchParams.get("pundits") ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean) as Parameters<typeof dailyPunditWorkflow>[0]["punditIds"];
+    const run = await start(dailyPunditWorkflow, [
+      { coverageDate, mode, runToken, matchId, punditIds: punditIds?.length ? punditIds : undefined },
+    ]);
     console.log(
       JSON.stringify({
         level: "info",
