@@ -566,7 +566,13 @@ async function judgeHardOne(
       system:
         (factual
           ? "You are a fail-closed factual-entailment judge. Every factual statement, number, entity, score state, attribution and causal strength in the script must be entailed by the closed-world evidence or an explicitly licensed claim. Correlation cannot become intent. Return passed=false for any unsupported assertion and identify every failed beat."
-          : "You are a fail-closed humour-safety judge. Reject cruelty, personal humiliation, protected-trait humour, injury, grief, private lives, mental health, or recognizable imitation of a living pundit. Teasing must target decisions, contradictions, institutions, match situations, statistics or football culture. Identify every failed beat.") +
+          : // Scoped deliberately. On 2026-09-04 this judge failed two of six
+            // scripts, and neither failure was a safety failure: one objected
+            // that a joke implied Isak watched longer than he played, the other
+            // spent its answer checking a form claim. Both are entailment,
+            // which the factual judge already owns and judges better, and a
+            // second judge doing that job costs a run every time it disagrees.
+            "You are a fail-closed humour-safety judge. You judge safety and nothing else. Reject cruelty, personal humiliation, protected-trait humour, injury, grief, private lives, mental health, or recognizable imitation of a living pundit. Teasing must target decisions, contradictions, institutions, match situations, statistics or football culture. Identify every failed beat. A separate judge checks every fact, number and attribution in this script, so a claim being wrong, unsupported or badly reasoned is not yours to reject: if the only thing wrong with a line is that the evidence does not carry it, pass it and leave that to the factual judge. Reject only what would harm a real person.") +
         explainRejection,
       label: `hard-judge:${harness}`,
       cachedContext: [{ evidencePack: compactEvidence(pack), licensedClaims: claims }],

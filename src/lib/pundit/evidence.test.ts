@@ -427,3 +427,28 @@ describe("what each side arrived carrying", () => {
     expect(item(pack, "derived.home_points_from_last_5")).toBeUndefined();
   });
 });
+
+/** "Twenty-four shots between these two" is a natural thing for a pundit to
+ *  say and was refused on 2026-09-04, because 24 was not in the pack even
+ *  though 14 and 10 both were. Stating the total is cheaper and more honest
+ *  than teaching the licence gate arithmetic. */
+describe("what the two sides produced between them", () => {
+  it("states the match totals for the paired counting stats", () => {
+    const pack = buildEvidencePack(input);
+    const at = (id: string) =>
+      [...pack.facts, ...pack.derivations].find((entry) => entry.id === id);
+    expect(at("derived.match_shots")?.value).toBe(15 + 7);
+    expect(at("derived.match_shots_on_target")?.value).toBe(5 + 3);
+    expect(at("derived.match_shots")?.formula).toBe("home_shots + away_shots");
+  });
+
+  it("states no total when the feed is missing one side", () => {
+    const pack = buildEvidencePack({
+      ...input,
+      stats: { ...input.stats, homeCorners: 6, awayCorners: undefined },
+    } as never);
+    expect(
+      [...pack.facts, ...pack.derivations].find((entry) => entry.id === "derived.match_corners"),
+    ).toBeUndefined();
+  });
+});

@@ -302,6 +302,33 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     );
   });
 
+  // What the two sides produced between them.
+  //
+  // A pundit reaches for the match total naturally: "twenty-four shots between
+  // these two" says how open the game was in a way neither side's figure does.
+  // On 2026-09-04 that exact sentence was refused, because 24 is not in the pack
+  // even though 14 and 10 both are. Stating the totals is cheaper and more
+  // honest than teaching the licence gate to accept arithmetic, and it gives six
+  // writers another figure to differ over.
+  for (const [key, label, home, away] of [
+    ["shots", "Shots in the match", stats?.homeShots, stats?.awayShots],
+    ["shots_on_target", "Shots on target in the match", stats?.homeShotsOnTarget, stats?.awayShotsOnTarget],
+    ["corners", "Corners in the match", stats?.homeCorners, stats?.awayCorners],
+    ["saves", "Saves in the match", stats?.homeSaves, stats?.awaySaves],
+  ] as const) {
+    if (!finite(home) || !finite(away)) continue;
+    derivations.push(
+      derived(
+        `derived.match_${key}`,
+        label,
+        home + away,
+        stats?.source ?? "provider",
+        `stats.home_${key},stats.away_${key}`,
+        `home_${key} + away_${key}`,
+      ),
+    );
+  }
+
   if (finite(stats?.homeXg) && finite(stats?.awayXg)) {
     derivations.push(
       derived(
