@@ -26,7 +26,7 @@ export const DIMENSION_STANDARDS: Record<QualitativeHarness, string> = {
   probability:
     "Attach an explicit likelihood to a named outcome: a percentage, or odds, or a plainly stated more-likely-than-not. Conditional English is not a probability. Where two readings compete, say which is the more probable and why, even tentatively; parking in symmetry is a refusal to judge. Never upgrade an uncertain inference into a confident verdict, and never state as near-fact something a licensed claim holds at low confidence.",
   independence:
-    "Your own weighing of the evidence. Reproducing the pack's own alternative explanation is not independence, and neither is the most conventional reading of the scoreline. Test your verdict against a figure that might overturn it.",
+    "Your own weighing of the evidence. Building on a licensed claim is expected and is not the failure; stopping at it is. Bring at least one figure the claim itself does not cite, use it to test the claim rather than to decorate it, and say what that figure would have to show for your verdict to be wrong. Repeating the pack's own alternative explanation or counterpoint as though it were your own is not independence, and neither is the most conventional reading of the scoreline.",
   story:
     "One arc that holds for ten beats. Consecutive paragraphs of sequential statistics flatten it, and abandoning your own premise halfway to process figures in list form breaks the momentum you built.",
   persona:
