@@ -50,6 +50,27 @@ GitHub workflows are manual recovery only. Every request uses `Authorization: Be
 8. Record the rehearsal result. Do not publish a partial drop.
 9. Return temporary execution flags to false.
 
+## What a run costs, and how to spend less
+
+Measured per call from `anthropic_cache_usage` on 2026-09-06. A six-pundit run of two attempts cost **$2.14**:
+
+| | calls | cost | share |
+| --- | --- | --- | --- |
+| Writer (Opus, ~2,500 output tokens each) | 12 | ~$1.06 | 49% |
+| Judges (Sonnet, ~950 output tokens each) | ~84 | ~$0.99 | 46% |
+| Claim laboratory (Opus, once) | 1 | $0.10 | 4% |
+
+The bill is **output tokens, not input**. A judge reads ~7,200 cached tokens for $0.002 and writes ~950 for $0.014. Prompt caching is working and is not a lever; batching the twelve qualitative judges into fewer calls would save input, which is a fifth of the judge cost.
+
+Levers in order of size:
+
+1. **Write one pundit, not six.** `POST /api/internal/daily-rehearsal?pundits=zen` costs about a sixth of a run and proves a fix just as well. A subset can never publish, because a drop holding fewer than six variants fails the six-variant promise, which is the correct outcome for a diagnostic. Use this for every debugging run.
+2. **`PUNDIT_MAX_ATTEMPTS=1`** for a diagnostic. Halves it again. A one-pundit, one-attempt run is roughly $0.20.
+3. **`PUNDIT_JUDGE_MODEL=claude-haiku-4-5`** takes about 30% off a full run at a third of Sonnet's price for the same output volume. Reversible, no code change; watch judge quality before trusting it in publication mode.
+4. **`PUNDIT_MODEL_STUB=true`** runs the whole path for nothing. It proves the path holds, not that the writing is good, and it refuses to run in a publishing posture.
+
+Do not cheapen the writer. Opus is doing the part that is actually hard.
+
 ## Judge calibration
 
 Before diagnosing a failed run as six bad scripts, establish that the bar is one good writing can clear. Twelve dimensions gate publication at four out of five, and those floors were written from what the judges were already rejecting, so they record the judges' opinion until something independent is measured against them.

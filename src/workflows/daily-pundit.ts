@@ -37,6 +37,21 @@ export type DailyPunditWorkflowInput = {
    *  cares about, needs the caller to name it. Everything downstream already
    *  works from a match id, so this only bypasses the selection step. */
   matchId?: string;
+  /** Write only these pundits instead of all six.
+   *
+   *  Six variants is the product. One variant is a test, and telling the two
+   *  apart is worth roughly six sevenths of the bill. Measured on the run of
+   *  2026-09-06: $2.14, of which the writer took $1.06 across twelve Opus calls
+   *  and the judges took $0.99 across eighty four Sonnet calls, both dominated
+   *  by output tokens rather than by the cached evidence pack. Every one of
+   *  those calls except a seventh of them existed to confirm a fix that one
+   *  pundit would have shown just as clearly, and a week of debugging at full
+   *  price is most of how a month of budget went.
+   *
+   *  A run naming a subset can never publish: the six-variant promise is
+   *  checked downstream and a drop holding one variant fails it, which is the
+   *  correct outcome for a diagnostic and is why this needs no separate guard. */
+  punditIds?: PunditId[];
 };
 
 export type DailyRunMode = "full_rehearsal" | "publication";
@@ -57,8 +72,11 @@ export async function dailyPunditWorkflow(input: DailyPunditWorkflowInput) {
   try {
     matchId = input.matchId ?? (await selectFeatureMatchStep(coverageDate));
     const prepared = await prepareEditorialStep(matchId, coverageDate);
+    const writing = input.punditIds?.length
+      ? PUNDIT_IDS.filter((punditId) => input.punditIds!.includes(punditId))
+      : PUNDIT_IDS;
     const variants = await Promise.all(
-      PUNDIT_IDS.map((punditId) =>
+      writing.map((punditId) =>
         generatePunditStep({
           punditId,
           pack: prepared.pack,
