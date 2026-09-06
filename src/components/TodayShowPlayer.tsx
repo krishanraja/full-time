@@ -237,7 +237,13 @@ export function TodayShowPlayer({
   const playing = active && player.isPlaying;
   const progress = active ? player.progress : 0;
   const elapsed = progress * (episode?.durationSec ?? 0);
-  const meta = PERSONALITIES.find((item) => item.id === activePundit)!;
+  // The pundit who actually made this edition, which is not always the one the
+  // listener picked: when their own pundit has published nothing, they are
+  // shown the most recent show anyone published. Naming it after the selected
+  // pundit would be the persona substitution every gate downstream forbids.
+  const meta =
+    PERSONALITIES.find((item) => item.id === (edition?.variant.pundit_id ?? activePundit)) ??
+    PERSONALITIES.find((item) => item.id === activePundit)!;
   const fallback = response.variant == null && edition != null;
   const playerState = pendingPundit
     ? "LOADING"

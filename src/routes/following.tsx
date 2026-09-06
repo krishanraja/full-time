@@ -12,7 +12,7 @@ export const Route = createFileRoute("/following")({
     pageSeo({
       path: "/following",
       title: "Following • Full Time",
-      description: "Pick the teams and leagues you actually care about.",
+      description: "Save the teams and leagues you care about, for when per-team shows arrive.",
       noindex: true,
     }),
   component: Following,
@@ -37,21 +37,26 @@ function Following() {
       <h1 className="mb-2 mt-2 text-[30px] font-semibold leading-tight tracking-tight">
         Your teams.
       </h1>
+      {/* This page used to promise a personalised feed led by your team's match.
+          It does not do that and nothing here does yet: Full Time publishes one
+          featured match a day, chosen by importance, and a follow changes
+          nothing about which one. Saying otherwise sends a listener looking for
+          a thing that is not there. */}
       <p className="mb-6 text-sm text-muted-foreground">
         {hasFollows
           ? `You follow ${followed.size} ${followed.size === 1 ? "team" : "teams"}.`
-          : "Pick at least 3 teams to personalise your feed."}
+          : "Pick the teams you care about. We keep the list for you."}
       </p>
 
-      {!hasFollows && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 rounded-[var(--radius-lg)] border border-dashed border-[color:color-mix(in_oklab,var(--lime)_55%,transparent)] bg-[color:color-mix(in_oklab,var(--lime)_6%,transparent)] p-4 text-sm"
-        >
-          Tap any team below. Your morning recap will lead with their match.
-        </motion.div>
-      )}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-6 rounded-[var(--radius-lg)] border border-dashed border-[color:color-mix(in_oklab,var(--lime)_55%,transparent)] bg-[color:color-mix(in_oklab,var(--lime)_6%,transparent)] p-4 text-sm"
+      >
+        Today Full Time covers one featured match a day, chosen by importance,
+        and every listener gets the same one. Following is saved for when
+        per-team shows arrive; it does not change today&rsquo;s show yet.
+      </motion.div>
 
       {isLoading && (
         <div className="surface rounded-[var(--radius-lg)] p-4 text-sm text-muted-foreground">

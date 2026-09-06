@@ -18,7 +18,6 @@ import {
   type ArchiveMatch,
 } from "@/lib/api/archive.functions";
 import type { Episode } from "../data/mockEpisodes";
-import { PRELAUNCH_MODE } from "@/lib/launch-config";
 
 export const Route = createFileRoute("/archive")({
   head: () =>
@@ -121,6 +120,11 @@ function ArchiveSignedIn() {
   // The caller's own allowance, not the free constant: a Pro subscriber
   // must never be told "20 of 3 narrations left".
   const dailyLimit = archive.data?.dailyLimit ?? DAILY_GENERATION_LIMIT;
+  // Whether narrating a named game is actually available, which the server
+  // decides. Reading prelaunch mode here meant the button appeared the moment
+  // prelaunch was turned off to publish the first show, and it spends real
+  // money on the superseded episode pipeline.
+  const generationEnabled = archive.data?.generationEnabled ?? false;
 
   const handleGenerate = async (m: ArchiveMatch) => {
     if (generating) return;
@@ -159,7 +163,7 @@ function ArchiveSignedIn() {
         Existing audio is labelled archive/demo. New on-demand narration is paused until every
         pundit passes the editorial and audio gates.
       </p>
-      {!PRELAUNCH_MODE && (
+      {generationEnabled && (
         <p className="text-mono mt-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
           {remaining} of {dailyLimit} narrations left today
         </p>
@@ -199,6 +203,7 @@ function ArchiveSignedIn() {
               match={m}
               generating={generating === m.matchId}
               generateDisabled={!!generating || remaining <= 0}
+              generationEnabled={generationEnabled}
               onGenerate={() => handleGenerate(m)}
             />
           ))}
@@ -237,11 +242,13 @@ function ArchiveRow({
   match,
   generating,
   generateDisabled,
+  generationEnabled,
   onGenerate,
 }: {
   match: ArchiveMatch;
   generating: boolean;
   generateDisabled: boolean;
+  generationEnabled: boolean;
   onGenerate: () => void;
 }) {
   const { episode: current, isPlaying } = usePlayer();
@@ -307,7 +314,7 @@ function ArchiveRow({
             <Play className="h-4 w-4 translate-x-[1px]" fill="currentColor" />
           )}
         </HapticButton>
-      ) : match.generatable && !PRELAUNCH_MODE ? (
+      ) : match.generatable && generationEnabled ? (
         <HapticButton
           hapticPattern="success"
           onClick={onGenerate}
@@ -335,7 +342,7 @@ function ArchiveRow({
         </HapticButton>
       ) : (
         <span className="text-mono shrink-0 text-[9px] uppercase tracking-[0.14em] text-muted-foreground/60">
-          {PRELAUNCH_MODE ? "Pre-launch" : "No data yet"}
+          {match.generatable ? "Not narratable" : "No data yet"}
         </span>
       )}
     </div>

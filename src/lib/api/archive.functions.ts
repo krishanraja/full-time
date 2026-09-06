@@ -46,7 +46,21 @@ export type ArchiveData = {
   /** The caller's own daily allowance, so the UI never quotes the free number
    *  at a Pro subscriber ("20 of 3 left" was the bug waiting to happen). */
   dailyLimit: number;
+  /** Whether on-demand narration is actually available.
+   *
+   *  It used to be inferred from prelaunch mode, which meant turning prelaunch
+   *  off to publish the first show silently opened a button that spends real
+   *  model and narration money on the superseded episode pipeline. The server
+   *  decides and says so, rather than the client guessing from a flag that
+   *  means something else. */
+  generationEnabled: boolean;
 };
+
+/** The legacy episode pipeline is not the six-pundit system and is off by
+ *  default. Prelaunch mode is about publishing, not about this. */
+export function legacyGenerationEnabled(): boolean {
+  return process.env.ENABLE_LEGACY_DAILY_DROP === "true";
+}
 
 type ArchiveRow = {
   id: string;
@@ -166,6 +180,7 @@ export const getArchive = createServerFn({ method: "GET" })
       matches: (data as unknown as ArchiveRow[]).map(shapeArchive),
       remainingToday: await remainingFor(context.userId, dailyLimit),
       dailyLimit,
+      generationEnabled: legacyGenerationEnabled(),
     };
   });
 
@@ -176,9 +191,14 @@ export const requestEpisode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator(z.object({ matchId: z.string().min(1) }))
   .handler(async ({ data, context }): Promise<{ episode: FeedEpisode; remainingToday: number }> => {
-    if (process.env.PRELAUNCH_MODE !== "false") {
+    // Prelaunch mode is about whether shows publish. It was standing in for
+    // this too, so turning it off to publish the first show quietly opened a
+    // button that spends model and narration money on the superseded episode
+    // pipeline. This gate is its own flag, and it is off unless someone says
+    // otherwise.
+    if (!legacyGenerationEnabled()) {
       throw new Error(
-        "On-demand narration is paused until the six-pundit editorial and audio harnesses pass.",
+        "On-demand narration is off. Full Time publishes the daily six-pundit show instead.",
       );
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
