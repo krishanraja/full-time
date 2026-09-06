@@ -45,7 +45,14 @@ function priorMatches(rows: PriorRow[], teamId: string): PriorMatch[] {
   });
 }
 
-const FORM_MATCHES = 5;
+/** Three, not five.
+ *
+ *  Every judge call carries the whole evidence pack, so each extra prior result
+ *  is paid for fourteen times per attempt per pundit. Five apiece plus five
+ *  meetings nearly doubled the pack and took a single pundit's step from 32
+ *  cents to 71, over its ceiling, and the run died. Three is enough to say what
+ *  a side arrived carrying. */
+const FORM_MATCHES = 3;
 
 export async function loadStructuredMatch(matchId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
