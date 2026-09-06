@@ -237,13 +237,17 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     ["away", match.awayTeam, input.form?.away ?? []],
   ] as const) {
     matches.forEach((prior, index) => {
+      // The label carries the meaning and the value carries the licence, so
+      // stating the scoreline in both doubles the pack for nothing. Every judge
+      // call carries the whole pack, and the pack nearly doubling took a single
+      // pundit's step from 32 cents to 71 and over its ceiling.
       facts.push(
         fact(
           `form.${side}_${index + 1}`,
-          `${team} ${outcome(prior.goalsFor, prior.goalsAgainst)} ${prior.goalsFor}-${prior.goalsAgainst} ${prior.venue === "home" ? "at home to" : "away to"} ${prior.opponent}`,
-          [prior.date.slice(0, 10), prior.opponent, prior.venue, prior.goalsFor, prior.goalsAgainst],
+          `${team} ${outcome(prior.goalsFor, prior.goalsAgainst)} ${prior.venue === "home" ? "at home to" : "away to"} ${prior.opponent}`,
+          [prior.date.slice(0, 10), prior.goalsFor, prior.goalsAgainst],
           "database-verified",
-          `matches.kickoff_at<${match.kickoffAt}`,
+          "matches",
         ),
       );
     });
@@ -259,24 +263,8 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
         `${team} points from their previous ${matches.length} matches`,
         points,
         "database-verified",
-        matches.map((_, index) => `form.${side}_${index + 1}`).join(","),
+        `form.${side}`,
         "3 per win, 1 per draw",
-      ),
-      derived(
-        `derived.${side}_goals_scored_in_last_${matches.length}`,
-        `${team} goals scored in their previous ${matches.length} matches`,
-        matches.reduce((total, prior) => total + prior.goalsFor, 0),
-        "database-verified",
-        matches.map((_, index) => `form.${side}_${index + 1}`).join(","),
-        "sum of goals scored",
-      ),
-      derived(
-        `derived.${side}_goals_conceded_in_last_${matches.length}`,
-        `${team} goals conceded in their previous ${matches.length} matches`,
-        matches.reduce((total, prior) => total + prior.goalsAgainst, 0),
-        "database-verified",
-        matches.map((_, index) => `form.${side}_${index + 1}`).join(","),
-        "sum of goals conceded",
       ),
     );
   }
@@ -286,7 +274,7 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     facts.push(
       fact(
         `h2h.meeting_${index + 1}`,
-        `Previous meeting: ${meeting.homeTeam} ${meeting.homeGoals}-${meeting.awayGoals} ${meeting.awayTeam}`,
+        `Previous meeting at ${meeting.homeTeam}`,
         [
           meeting.date.slice(0, 10),
           meeting.homeTeam,
@@ -295,7 +283,7 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
           meeting.awayGoals,
         ],
         "database-verified",
-        "h2h_cache.meetings",
+        "h2h_cache",
       ),
     );
   });

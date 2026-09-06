@@ -364,16 +364,17 @@ describe("what each side arrived carrying", () => {
   // nothing else in the pack, a truism is the only shape available.
   it("states a previous result as a fact a pundit can cite", () => {
     const pack = packOf({ form });
-    expect(item(pack, "form.home_1")?.label).toContain("Ipswich drew 1-1 away to Everton");
-    expect(item(pack, "form.home_2")?.label).toContain("lost 0-2 at home to Brentford");
-    expect(item(pack, "form.away_1")?.label).toContain("Liverpool won 3-0 at home to Arsenal");
+    expect(item(pack, "form.home_1")?.label).toBe("Ipswich drew away to Everton");
+    expect(item(pack, "form.home_2")?.label).toBe("Ipswich lost at home to Brentford");
+    expect(item(pack, "form.away_1")?.label).toBe("Liverpool won at home to Arsenal");
+    // The scoreline lives in the value, which is what licenses the numbers.
+    // Stating it in the label too doubled the pack for nothing.
+    expect(item(pack, "form.home_1")?.value).toEqual(["2026-08-30", 1, 1]);
   });
 
-  it("counts the points and goals a run of form produced", () => {
+  it("counts the points a run of form produced", () => {
     const pack = packOf({ form });
     expect(item(pack, "derived.home_points_from_last_2")?.value).toBe(1);
-    expect(item(pack, "derived.home_goals_scored_in_last_2")?.value).toBe(1);
-    expect(item(pack, "derived.home_goals_conceded_in_last_2")?.value).toBe(3);
     expect(item(pack, "derived.away_points_from_last_1")?.value).toBe(3);
   });
 
@@ -389,7 +390,14 @@ describe("what each side arrived carrying", () => {
         },
       ],
     });
-    expect(item(pack, "h2h.meeting_1")?.label).toBe("Previous meeting: Liverpool 4-1 Ipswich");
+    expect(item(pack, "h2h.meeting_1")?.label).toBe("Previous meeting at Liverpool");
+    expect(item(pack, "h2h.meeting_1")?.value).toEqual([
+      "2025-01-25",
+      "Liverpool",
+      "Ipswich",
+      4,
+      1,
+    ]);
   });
 
   it("says nothing at all when neither is known", () => {
