@@ -58,8 +58,19 @@ async function handle({ request }: { request: Request }) {
       .split(",")
       .map((value) => value.trim())
       .filter(Boolean) as Parameters<typeof dailyPunditWorkflow>[0]["punditIds"];
+    // Fewer repair rounds for a diagnostic. It can only lower the environment's
+    // ceiling, so this cannot quietly cheapen the daily show.
+    const requested = Number.parseInt(url.searchParams.get("attempts") ?? "", 10);
+    const maxAttempts = Number.isFinite(requested) ? requested : undefined;
     const run = await start(dailyPunditWorkflow, [
-      { coverageDate, mode, runToken, matchId, punditIds: punditIds?.length ? punditIds : undefined },
+      {
+        coverageDate,
+        mode,
+        runToken,
+        matchId,
+        punditIds: punditIds?.length ? punditIds : undefined,
+        maxAttempts,
+      },
     ]);
     console.log(
       JSON.stringify({

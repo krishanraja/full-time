@@ -189,9 +189,15 @@ function modelNames() {
  *  because an over-generous default is spent silently, on every run, by anyone
  *  who never thinks to look at it. Raise it per environment when a run's
  *  results show variants converging but running out of rounds. */
-export function maxRepairAttempts(): number {
+export function maxRepairAttempts(override?: number): number {
+  // A caller may ask for fewer rounds than the environment allows, and only
+  // fewer. A diagnostic run wants one attempt without weakening the daily show,
+  // and letting a request raise the ceiling instead would make the env var
+  // decorative.
   const configured = Number.parseInt(process.env.PUNDIT_MAX_ATTEMPTS ?? "2", 10);
-  return Number.isFinite(configured) ? Math.min(10, Math.max(1, configured)) : 2;
+  const ceiling = Number.isFinite(configured) ? Math.min(10, Math.max(1, configured)) : 2;
+  if (override === undefined || !Number.isFinite(override)) return ceiling;
+  return Math.min(ceiling, Math.max(1, Math.floor(override)));
 }
 
 /** Which gates failed, as a stable string. Two attempts producing the same
@@ -502,10 +508,17 @@ async function judgeOne(
           script: candidate.displayScript,
           outputContract: {
             score: "integer 1..5",
-            evidenceSpan: "exact script span",
-            failure: "required when below threshold",
-            requestedRepair: "smallest repair",
+            evidenceSpan: "exact script span, only when the score is 3 or below",
+            failure: "required when the score is 3 or below, omitted otherwise",
+            requestedRepair: "smallest repair, only when the score is 3 or below",
             failedBeats: beatNames,
+            // Measured on 2026-09-06: a judge call reads about 7,200 cached
+            // tokens for a fifth of a cent and writes about 950 for one and a
+            // half. The bill is what the judge writes, and a dimension that
+            // passed has nothing to say: its span, reason and repair note are
+            // written, billed, stored, and read by nobody.
+            brevity:
+              "When the score is 4 or 5 the script has cleared this dimension. Return the score alone and omit evidenceSpan, failure, requestedRepair and failedBeats entirely. Explanations are only ever read for a dimension that fell short, so writing one for a pass is paid for and discarded.",
           },
         },
       ],
@@ -669,6 +682,8 @@ export async function generatePunditVariant(input: {
   claims: AnalysisClaim[];
   originalityCorpus?: string[];
   predictionTiming?: { lockedAt: string; kickoffAt: string };
+  /** Fewer repair rounds than the environment allows, never more. */
+  maxAttempts?: number;
 }): Promise<GeneratedPunditVariant> {
   let prior: PunditVariantCandidate | undefined;
   let failures: ReturnType<typeof requestedRepairs> | undefined;
@@ -679,7 +694,7 @@ export async function generatePunditVariant(input: {
   // A drop publishes only when all six variants pass at once, so the odds of a
   // whole show turn on how reliably one variant converges. Repairs preserve
   // every passed beat, so an extra attempt only ever refines what is left.
-  const maxAttempts = maxRepairAttempts();
+  const maxAttempts = maxRepairAttempts(input.maxAttempts);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const draft = freezePassedBeats(

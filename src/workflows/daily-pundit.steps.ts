@@ -65,6 +65,8 @@ export async function generatePunditStep(input: {
   pack: Awaited<ReturnType<typeof prepareEditorialStep>>["pack"];
   claims: Awaited<ReturnType<typeof prepareEditorialStep>>["claims"];
   originalityCorpus: string[];
+  /** Fewer repair rounds than the environment allows, for a diagnostic run. */
+  maxAttempts?: number;
 }) {
   "use step";
   const { generatePunditVariant } = await import("@/lib/pundit/pundit-generator.server");

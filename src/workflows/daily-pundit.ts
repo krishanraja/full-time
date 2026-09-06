@@ -52,6 +52,9 @@ export type DailyPunditWorkflowInput = {
    *  checked downstream and a drop holding one variant fails it, which is the
    *  correct outcome for a diagnostic and is why this needs no separate guard. */
   punditIds?: PunditId[];
+  /** Cap the repair rounds for this run. Only ever lowers the environment's
+   *  ceiling, so a diagnostic cannot quietly make the daily show cheaper. */
+  maxAttempts?: number;
 };
 
 export type DailyRunMode = "full_rehearsal" | "publication";
@@ -82,6 +85,7 @@ export async function dailyPunditWorkflow(input: DailyPunditWorkflowInput) {
           pack: prepared.pack,
           claims: prepared.claims,
           originalityCorpus: prepared.originalityCorpus,
+          maxAttempts: input.maxAttempts,
         }),
       ),
     );
