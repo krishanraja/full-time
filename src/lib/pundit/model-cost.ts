@@ -53,11 +53,46 @@ export function callCostUsd(model: string, usage: CallUsage | undefined): number
  *  than per run because a step is the largest unit that shares memory, and a
  *  guard that quietly failed to cover the run would be worse than none. */
 function stepCeilingUsd(): number {
+  if (ceilingOverrideUsd !== null) return ceilingOverrideUsd;
   const configured = Number.parseFloat(process.env.PUNDIT_MAX_STEP_COST_USD ?? "1.5");
   return Number.isFinite(configured) && configured > 0 ? configured : 1.5;
 }
 
 let spentUsd = 0;
+let ceilingOverrideUsd: number | null = null;
+
+/** Runs one bounded piece of work on a fresh meter with its own ceiling.
+ *
+ *  The step ceiling is sized for a pundit's repair loop, which is the wrong
+ *  size for anything smaller. A diagnostic that should cost cents would either
+ *  inherit a ceiling a hundred times its own budget, or trip immediately on a
+ *  warm instance whose meter already carries an earlier run: the counter is
+ *  module state and nothing resets it between requests.
+ *
+ *  So the work runs on a zeroed meter under its own ceiling, and what it spent
+ *  is added back to the caller's meter afterwards, because the caller is still
+ *  paying for it. The returned cost is this piece of work alone.
+ *
+ *  This is for a request that does one bounded thing. Two of them interleaving
+ *  inside one warm instance would share a meter and each see the other's spend,
+ *  which lowers the effective ceiling for both. That is the safe direction to
+ *  be wrong in, and it is why this is not a general-purpose primitive. */
+export async function onOwnMeter<T>(
+  ceilingUsd: number,
+  work: () => Promise<T>,
+): Promise<{ result: T; costUsd: number }> {
+  const callerSpent = spentUsd;
+  const callerCeiling = ceilingOverrideUsd;
+  spentUsd = 0;
+  ceilingOverrideUsd = ceilingUsd;
+  try {
+    const result = await work();
+    return { result, costUsd: spentUsd };
+  } finally {
+    spentUsd = callerSpent + spentUsd;
+    ceilingOverrideUsd = callerCeiling;
+  }
+}
 
 export function recordSpend(model: string, usage: CallUsage | undefined): number {
   const cost = callCostUsd(model, usage);
@@ -72,6 +107,7 @@ export function spentThisStepUsd(): number {
 /** Test seam, and a reset point for a long-lived process. */
 export function resetSpend(): void {
   spentUsd = 0;
+  ceilingOverrideUsd = null;
 }
 
 export class BudgetExceededError extends Error {

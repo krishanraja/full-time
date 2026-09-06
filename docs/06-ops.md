@@ -50,6 +50,18 @@ GitHub workflows are manual recovery only. Every request uses `Authorization: Be
 8. Record the rehearsal result. Do not publish a partial drop.
 9. Return temporary execution flags to false.
 
+## Judge calibration
+
+Before diagnosing a failed run as six bad scripts, establish that the bar is one good writing can clear. Twelve dimensions gate publication at four out of five, and those floors were written from what the judges were already rejecting, so they record the judges' opinion until something independent is measured against them.
+
+1. Pick a published variant and a professional match report about the same fixture.
+2. Run the `Full Time - Calibrate The Judges` workflow with that `variantId` and the report pasted into `script`, or `POST /api/internal/judge-calibration` with the cron bearer.
+3. Read `verdict`, then the per-dimension table. `specBound` marks the two dimensions that grade against a pundit spec an outside writer never saw; ignore them when reading the comparison.
+4. A professional report averaging under 3.5 on the ten craft dimensions means the floors are wrong. Move the floors. It does not mean lowering them across the board: move the specific ones the verdict names.
+5. A professional report clearing the bar means the floors are right and the gap is in the writer prompt. Work the prompt against this corpus, not by firing paid runs.
+
+The harness judges only. No writer, no narration, no repair loop, and nothing is written to the database. It runs on its own spend meter with its own ceiling, so it cannot inherit or spend a pipeline step's budget.
+
 ## Failure guide
 
 | Signal                      | Meaning                                                               | Response                                                  |

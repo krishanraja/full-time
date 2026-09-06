@@ -1,0 +1,61 @@
+name: Full Time - Calibrate The Judges
+
+# Is the publication bar real, or is it a bar nothing clears?
+#
+# Twelve dimensions decide whether a script publishes, each at four out of
+# five, and those floors have never been checked against writing anyone already
+# agrees is good. This puts a professional match report through the identical
+# judges, alongside the script the pipeline published for the same game, and
+# prints both readings side by side.
+#
+# It judges only. No writer, no narration, no repair loop, nothing written to
+# the database. A run is cents, so take the reading before paying for another
+# full pipeline run rather than after.
+
+on:
+  workflow_dispatch:
+    inputs:
+      variantId:
+        description: "pundit_variants.id of the published script to compare against"
+        required: true
+      label:
+        description: "How to name the outside script in the report"
+        required: false
+        default: "professional match report"
+      script:
+        description: "The outside script, pasted in full"
+        required: true
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Score both scripts against the live judges
+        run: |
+          set -uo pipefail
+          jq -n \
+            --arg variantId "${VARIANT_IN}" \
+            --arg label "${LABEL_IN}" \
+            --arg script "${SCRIPT_IN}" \
+            '{variantId: $variantId, subjects: [{label: $label, script: $script}]}' \
+            > request.json
+          curl --silent --show-error --max-time 600 \
+            -X POST "${FULL_TIME_URL}/api/internal/judge-calibration" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            --data @request.json | tee report.json
+          echo
+          jq -r '.verdict // .error' report.json
+          jq -e '.verdict' report.json > /dev/null
+        env:
+          FULL_TIME_URL: ${{ secrets.FULL_TIME_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VARIANT_IN: ${{ inputs.variantId }}
+          LABEL_IN: ${{ inputs.label }}
+          SCRIPT_IN: ${{ inputs.script }}
+
+      - name: Keep the reading
+        uses: actions/upload-artifact@v4
+        with:
+          name: judge-calibration
+          path: report.json
