@@ -159,7 +159,26 @@ export function summariseSubject(input: {
 
 /** What the numbers say, in one line, so the reading does not depend on
  *  whoever is looking at the table that day. */
+/** A judge that failed rather than judged. The message is the one judgeOne
+ *  writes when the model call itself did not come back. */
+function judgeFailed(score: CalibrationScore): boolean {
+  return /could not be read|did not return a usable judgement/i.test(score.failure ?? "");
+}
+
 export function calibrationVerdict(subjects: readonly CalibrationSubjectResult[]): string {
+  // Infrastructure first, before any reading of the numbers. When the judges do
+  // not run, every dimension comes back unscored and a table of failures looks
+  // exactly like a damning verdict. On 2026-09-06 the Anthropic spend cap
+  // rejected all fourteen judges and this function confidently reported that
+  // the bar had moved. A run where the judges did not answer says nothing about
+  // anything, and it has to say so first.
+  const allScores = subjects.flatMap((subject) => subject.scores);
+  const errored = allScores.filter(judgeFailed);
+  if (errored.length) {
+    const reason = errored[0].failure?.replace(/^The \w+ judge (?:could not be read|did not return a usable judgement): /, "") ?? "";
+    return `Void: ${errored.length} of ${allScores.length} judges did not run, so nothing here is a verdict on any script. ${reason.slice(0, 240)}`;
+  }
+
   const outside = subjects.filter((subject) => !subject.fromPipeline);
   if (!outside.length) {
     return "No outside script was scored, so this run says nothing about whether the bar is calibrated. Add a professional recap of the same match.";

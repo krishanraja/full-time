@@ -529,11 +529,17 @@ async function judgeOne(
     // that has already been paid for. It failed to judge, so the dimension
     // stays closed and says why, and the other eleven judges and five pundits
     // keep their work.
+    // No score. A judge that never answered has not scored the script one out
+    // of five, it has not scored it at all, and saying one is a lie that reads
+    // exactly like a damning verdict. On 2026-09-06 the Anthropic spend cap
+    // rejected all fourteen judges, every one returned a one, and the
+    // calibration harness reported "a script this pipeline already approved no
+    // longer clears its own bar, craft mean 1" about an outage. The gate still
+    // fails closed, because a dimension with no score cannot pass.
     return {
       harness,
       hardGate: false,
       passed: false,
-      score: 1,
       failure: `The ${harness} judge could not be read: ${error instanceof Error ? error.message : String(error)}`,
       requestedRepair: "Repair only the cited beat; preserve all passed beats.",
     };
