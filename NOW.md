@@ -63,7 +63,6 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 - Waiting on Krish: run the judge calibration against the published script before trusting Haiku 4.5 as the judge in publication mode (`docs/06-ops.md`).
 - Waiting on Krish: `docs/06-ops.md` and `src/workflows/daily-pundit.ts` say a subset diagnostic run "can never publish". The code says otherwise: `publish_daily_drop()` publishes any drop with at least one clean variant and `promise-checks.server.ts` passes with one. A one-pundit diagnostic in the production posture can publish a one-pundit drop. Decide whether that is intended.
 - Waiting on Krish: the commercial docs (`docs/07-marketing.md`, `08-sales.md`, `10-support.md`, `21-go-to-market-agent.md`) still say pre-launch. The steward does not change commercial wording; `docs/product-state.json` `commercialState` is the current position.
-- Waiting on Krish: `CLAUDE_CODE_OAUTH_TOKEN` as an Actions secret so `.github/workflows/docs-steward.yml` can run unattended.
 
 ## Read next
 
