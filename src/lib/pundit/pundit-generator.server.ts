@@ -189,9 +189,15 @@ function modelNames() {
  *  because an over-generous default is spent silently, on every run, by anyone
  *  who never thinks to look at it. Raise it per environment when a run's
  *  results show variants converging but running out of rounds. */
-export function maxRepairAttempts(): number {
+export function maxRepairAttempts(override?: number): number {
+  // A caller may ask for fewer rounds than the environment allows, and only
+  // fewer. A diagnostic run wants one attempt without weakening the daily show,
+  // and letting a request raise the ceiling instead would make the env var
+  // decorative.
   const configured = Number.parseInt(process.env.PUNDIT_MAX_ATTEMPTS ?? "2", 10);
-  return Number.isFinite(configured) ? Math.min(10, Math.max(1, configured)) : 2;
+  const ceiling = Number.isFinite(configured) ? Math.min(10, Math.max(1, configured)) : 2;
+  if (override === undefined || !Number.isFinite(override)) return ceiling;
+  return Math.min(ceiling, Math.max(1, Math.floor(override)));
 }
 
 /** Which gates failed, as a stable string. Two attempts producing the same
@@ -362,7 +368,7 @@ async function writeDraft(input: {
     maxTokens: 16_000,
     schema: draftSchema,
     system:
-      'You are the single Full Time showrunner. Write original English; never imitate a living pundit. The evidence is closed-world: every number you write, in digits or words, must be a value present in the evidence pack (a point, three points for a win, eleven players, forty-five and ninety minutes are the only universal constants), and every proper noun must be a team, player, competition or place named in the evidence pack. Reference claims only by their short id from licensedClaims, such as c1 or c4, and only inside the thesis fields selectedClaimIds, rejectedClaimIds and predictionClaimId. Beat text is read aloud to a listener who cannot see your working: never write a claim id or a phrase such as "per claim c4" or "(c8)" in beat text, and never mention claims, evidence ids or confidence values as labels. State the substance instead. State a figure exactly as the evidence carries it and never round it for the sake of the sentence: if the pack says twenty-nine percent, say twenty-nine percent, because "under thirty percent" states a number the evidence does not carry and the script is refused for it. The same applies to approximations such as "eighty-odd minutes". Any number inside a falsifier or a forward-looking condition must also be a value present in the evidence pack, so build conditions out of numbers this match actually produced. Never state a season-level consequence: relegation, survival, the title, European qualification, promotion and play-offs are all outside this evidence. Length is a hard gate: the ten beats together must run to 750-1100 spoken words, so budget roughly 75 to 110 words per beat and expand your reasoning until you are inside that range. A licensed claim is where an argument starts, not where it finishes: when you build a beat on one, bring a figure from the evidence that the claim itself does not cite, use it to test the claim rather than to decorate it, and say what that figure would have to show for your verdict to be wrong. Never restate the alternative explanation or counterpoint a claim already carries as if it were your own thought. A team figure belongs to the team: shots, shots on target, possession and saves are recorded for a side and never for a player, so never attribute one of them to an individual. Six pundits are writing about this match from this same claim set, and yours has to be the one only you would write. Your persona spec lists preferredClaimTypes: build your argument on claims of those types and lead on the one your lens would reach for first. The most obvious reading of the scoreline is the one every other pundit is already taking, so if the claim you want is the plainest thing the numbers say, take the next one instead and earn it. Every judgment needs a reason. Interpret numbers rather than listing them. Each beat must advance the argument: never restate an observation a previous beat has already made. One argument, made once: state the central point of the script in full exactly once, with the figure that carries it, and let every later beat add something new instead of restating it in fresh words. Making your best point three times is redundancy rather than emphasis, and the same figure must not be cited twice. Somewhere in the script, attach an explicit likelihood to a named outcome: a percentage, or odds, or a plainly stated more likely than not. Conditional English such as should, could or the reasonable expectation is not a likelihood, and where two readings of the result compete you must say which is the more probable and why rather than presenting both and stopping. The forward-looking call has to carry real risk: a threshold the side would clear on an ordinary night is not a prediction, so anchor the condition to the specific pattern this match showed, using a number the evidence pack carries, and pick a level that could plausibly fail. The portable line is one sentence a listener could repeat word for word without context. Humour must intensify insight and stay within the supplied safety boundaries, and it has to land as a joke rather than as an observation labelled funny. Build two to four separate humorous moments across the script, each one using a mechanism your own persona spec lists under humourMechanisms; one mild simile in eight hundred words is not enough, and a generic domestic comparison is not your voice. Never announce the joke: do not call anything a comedy, a joke, an irony or absurd, and do not add a sentence afterwards explaining why it was funny. Put the surprise in the last clause of the line and stop there. One concrete image beats a simile that needs unpacking, and a comparison that falls apart when examined is worse than no joke at all. When repairing, change only failed beats and preserve every passed beat verbatim.',
+      'You are the single Full Time showrunner. Write original English; never imitate a living pundit. The evidence is closed-world: every number you write, in digits or words, must be a value present in the evidence pack (a point, three points for a win, eleven players, forty-five and ninety minutes are the only universal constants), and every proper noun must be a team, player, competition or place named in the evidence pack. Reference claims only by their short id from licensedClaims, such as c1 or c4, and only inside the thesis fields selectedClaimIds, rejectedClaimIds and predictionClaimId. Beat text is read aloud to a listener who cannot see your working: never write a claim id or a phrase such as "per claim c4" or "(c8)" in beat text, and never mention claims, evidence ids or confidence values as labels. State the substance instead. State a figure exactly as the evidence carries it and never round it for the sake of the sentence: if the pack says twenty-nine percent, say twenty-nine percent, because "under thirty percent" states a number the evidence does not carry and the script is refused for it. The same applies to approximations such as "eighty-odd minutes". Any number inside a falsifier or a forward-looking condition must also be a value present in the evidence pack, so build conditions out of numbers this match actually produced. Never state a season-level consequence: relegation, survival, the title, European qualification, promotion and play-offs are all outside this evidence. Length is a hard gate: the ten beats together must run to 750-1100 spoken words, so budget roughly 75 to 110 words per beat and expand your reasoning until you are inside that range. A licensed claim is where an argument starts, not where it finishes: when you build a beat on one, bring a figure from the evidence that the claim itself does not cite, use it to test the claim rather than to decorate it, and say what that figure would have to show for your verdict to be wrong. Never restate the alternative explanation or counterpoint a claim already carries as if it were your own thought. A team figure belongs to the team: shots, shots on target, possession and saves are recorded for a side and never for a player, so never attribute one of them to an individual. It also belongs to the right side: before you write a figure, check the evidence id it came from says home or away and name the team that id belongs to, because giving one side the other side possession figure is a rejection and has happened. Never state a distance in yards or metres: the evidence records how many shots came from inside and outside the box and nothing finer, so a shot from thirty yards, an effort from twenty-five, and the edge of the D are all inventions. Six pundits are writing about this match from this same claim set, and yours has to be the one only you would write. Your persona spec lists preferredClaimTypes: build your argument on claims of those types and lead on the one your lens would reach for first. The most obvious reading of the scoreline is the one every other pundit is already taking, so if the claim you want is the plainest thing the numbers say, take the next one instead and earn it. Every judgment needs a reason. Interpret numbers rather than listing them. Each beat must advance the argument: never restate an observation a previous beat has already made. One argument, made once. State your central point in full in the judgment beat and nowhere else, with the figure that carries it, and cite that figure exactly once in the whole script. The other nine beats each owe the listener something the judgment beat does not give them: the hook opens, the evidence beat supplies material you have not used yet, the counterpoint genuinely argues the other way, the portable line is a new sentence rather than a summary of your case, and the close ends the show without recapping it. If a beat could be deleted and nothing would be lost, it is a restatement and you have to replace it rather than reword it. Saying your best point in five different metaphors is the single most common reason a script is rejected: it reads as padding, not as emphasis. Somewhere in the script, attach an explicit likelihood to a named outcome, and state it in words rather than in figures: more likely than not, roughly a coin toss, comfortably against, I would not back it. Never invent a percentage or a price for it, because a number the evidence pack does not carry is refused whatever it is describing, and a likelihood you have made up is exactly that kind of number. Conditional English such as should, could or the reasonable expectation is not a likelihood at all. What the likelihood attaches to matters more than its wording: it must be something that could genuinely go either way, so putting a confident number on a near-certainty, such as a two-goal burst inside nine minutes not happening again, is not judgement and will be marked as empty. Where two readings of this result compete, that is what to put the likelihood on: say which is the more probable and why, rather than presenting both and stopping. The forward-looking call has to carry real risk: a threshold the side would clear on an ordinary night is not a prediction, so anchor the condition to the specific pattern this match showed, using a number the evidence pack carries, and pick a level that could plausibly fail. The portable line is one sentence a listener could repeat word for word without context. Humour must intensify insight and stay within the supplied safety boundaries, and it has to land as a joke rather than as an observation labelled funny. Build two to four separate humorous moments across the script, each one using a mechanism your own persona spec lists under humourMechanisms; one mild simile in eight hundred words is not enough, and a generic domestic comparison is not your voice. Never announce the joke: do not call anything a comedy, a joke, an irony or absurd, and do not add a sentence afterwards explaining why it was funny. Put the surprise in the last clause of the line and stop there. One concrete image beats a simile that needs unpacking, and a comparison that falls apart when examined is worse than no joke at all. When repairing, change only failed beats and preserve every passed beat verbatim.',
     label: `writer:${input.punditId}`,
     cachedContext: [
       // Fixed for the whole run.
@@ -502,10 +508,17 @@ async function judgeOne(
           script: candidate.displayScript,
           outputContract: {
             score: "integer 1..5",
-            evidenceSpan: "exact script span",
-            failure: "required when below threshold",
-            requestedRepair: "smallest repair",
+            evidenceSpan: "exact script span, only when the score is 3 or below",
+            failure: "required when the score is 3 or below, omitted otherwise",
+            requestedRepair: "smallest repair, only when the score is 3 or below",
             failedBeats: beatNames,
+            // Measured on 2026-09-06: a judge call reads about 7,200 cached
+            // tokens for a fifth of a cent and writes about 950 for one and a
+            // half. The bill is what the judge writes, and a dimension that
+            // passed has nothing to say: its span, reason and repair note are
+            // written, billed, stored, and read by nobody.
+            brevity:
+              "When the score is 4 or 5 the script has cleared this dimension. Return the score alone and omit evidenceSpan, failure, requestedRepair and failedBeats entirely. Explanations are only ever read for a dimension that fell short, so writing one for a pass is paid for and discarded.",
           },
         },
       ],
@@ -529,11 +542,17 @@ async function judgeOne(
     // that has already been paid for. It failed to judge, so the dimension
     // stays closed and says why, and the other eleven judges and five pundits
     // keep their work.
+    // No score. A judge that never answered has not scored the script one out
+    // of five, it has not scored it at all, and saying one is a lie that reads
+    // exactly like a damning verdict. On 2026-09-06 the Anthropic spend cap
+    // rejected all fourteen judges, every one returned a one, and the
+    // calibration harness reported "a script this pipeline already approved no
+    // longer clears its own bar, craft mean 1" about an outage. The gate still
+    // fails closed, because a dimension with no score cannot pass.
     return {
       harness,
       hardGate: false,
       passed: false,
-      score: 1,
       failure: `The ${harness} judge could not be read: ${error instanceof Error ? error.message : String(error)}`,
       requestedRepair: "Repair only the cited beat; preserve all passed beats.",
     };
@@ -663,6 +682,8 @@ export async function generatePunditVariant(input: {
   claims: AnalysisClaim[];
   originalityCorpus?: string[];
   predictionTiming?: { lockedAt: string; kickoffAt: string };
+  /** Fewer repair rounds than the environment allows, never more. */
+  maxAttempts?: number;
 }): Promise<GeneratedPunditVariant> {
   let prior: PunditVariantCandidate | undefined;
   let failures: ReturnType<typeof requestedRepairs> | undefined;
@@ -673,7 +694,7 @@ export async function generatePunditVariant(input: {
   // A drop publishes only when all six variants pass at once, so the odds of a
   // whole show turn on how reliably one variant converges. Repairs preserve
   // every passed beat, so an extra attempt only ever refines what is left.
-  const maxAttempts = maxRepairAttempts();
+  const maxAttempts = maxRepairAttempts(input.maxAttempts);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const draft = freezePassedBeats(

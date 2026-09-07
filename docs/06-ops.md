@@ -50,6 +50,34 @@ GitHub workflows are manual recovery only. Every request uses `Authorization: Be
 8. Record the rehearsal result. Do not publish a partial drop.
 9. Return temporary execution flags to false.
 
+## What a run costs, and how to spend less
+
+Measured per call from `anthropic_cache_usage` on 2026-09-06. A six-pundit run of two attempts cost **$2.14**:
+
+| | calls | cost | share |
+| --- | --- | --- | --- |
+| Writer (Opus, ~2,500 output tokens each) | 12 | ~$1.06 | 49% |
+| Judges (Sonnet, ~950 output tokens each) | ~84 | ~$0.99 | 46% |
+| Claim laboratory (Opus, once) | 1 | $0.10 | 4% |
+
+The bill is **output tokens, not input**. A judge reads ~7,200 cached tokens for $0.002 and writes ~950 for $0.014. Prompt caching is working and is not a lever; batching the twelve qualitative judges into fewer calls would save input, which is a fifth of the judge cost.
+
+Levers in order of size:
+
+1. **Write one pundit, not six.** `POST /api/internal/daily-rehearsal?pundits=zen` costs about a sixth of a run and proves a fix just as well. A subset can never publish, because a drop holding fewer than six variants fails the six-variant promise, which is the correct outcome for a diagnostic. Use this for every debugging run.
+2. **Ask for one repair round.** Add `&attempts=1`. A one-pundit, one-attempt run is roughly $0.20, a tenth of a full run. The parameter can only lower `PUNDIT_MAX_ATTEMPTS`, never raise it, so a diagnostic cannot quietly cheapen the daily show.
+3. **The judge runs on Haiku 4.5** (`PUNDIT_JUDGE_MODEL=claude-haiku-4-5`, set 2026-09-06). A third of Sonnet's price for the same output volume, so roughly 30% off a full run. Judging a written rubric is more mechanical than writing to one, but this is a quality bet and it is unverified: run the judge calibration below against the published Barcelona script before trusting it in publication mode, and set the variable back to `claude-sonnet-4-6` if the scores move.
+4. **A passing judge writes nothing but its score.** Explanations are only ever read for a dimension that fell short, so the output contract asks for the span, reason and repair note only at three or below. The bill is what the judge writes.
+5. **`PUNDIT_MODEL_STUB=true`** runs the whole path for nothing. It proves the path holds, not that the writing is good, and it refuses to run in a publishing posture, so it can never put placeholder narration in front of a listener.
+
+Do not cheapen the writer. Opus is doing the part that is actually hard.
+
+A full diagnostic invocation, for copying:
+
+```
+POST /api/internal/daily-rehearsal?date=2026-09-04&matchId=af_1557393&pundits=zen&attempts=1
+```
+
 ## Judge calibration
 
 Before diagnosing a failed run as six bad scripts, establish that the bar is one good writing can clear. Twelve dimensions gate publication at four out of five, and those floors were written from what the judges were already rejecting, so they record the judges' opinion until something independent is measured against them.

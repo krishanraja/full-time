@@ -94,7 +94,14 @@ function isNumberPhrase(phrase: string) {
 /** A short window of script around a span, so a repair prompt says where the
  *  problem sits rather than only what it is. */
 function contextFor(script: string, span: string) {
-  const index = script.indexOf(span);
+  // On a whole word. A plain indexOf finds "sixty" inside "sixty-four", so a
+  // script refused for writing "better than sixty percent" was reported against
+  // its substitution minute instead, and the run was diagnosed as a
+  // minute-number problem for an hour. Quote the occurrence that was actually
+  // refused, and fall back to the loose search rather than losing the span.
+  const escaped = span.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const bounded = new RegExp(`(?<![\\p{L}\\p{N}-])${escaped}(?![\\p{L}\\p{N}-])`, "u").exec(script);
+  const index = bounded?.index ?? script.indexOf(span);
   if (index < 0) return span;
   const start = Math.max(0, script.lastIndexOf(" ", Math.max(0, index - 30)));
   const end = Math.min(script.length, script.indexOf(" ", index + span.length + 30));
@@ -435,8 +442,14 @@ export function validateQualitativeScores(
         harness,
         hardGate: false,
         passed: false,
-        failure: "Independent judge did not return a score.",
-        requestedRepair: "Run the missing independent harness; do not infer or average it.",
+        // A judge that failed for a nameable reason says so. Replacing its
+        // message with the generic one hid an API outage behind "did not
+        // return a score" and cost an hour of reading it as an editorial
+        // verdict.
+        failure: judged?.failure ?? "Independent judge did not return a score.",
+        requestedRepair:
+          judged?.requestedRepair ??
+          "Run the missing independent harness; do not infer or average it.",
       };
     }
     return {

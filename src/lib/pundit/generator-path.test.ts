@@ -181,3 +181,75 @@ describe("the standards both sides are held to", () => {
     }
   });
 });
+
+/** The 2026-09-06 run put four of six writers in a vice I built: the prompt
+ *  told them to state a likelihood as "a percentage, or odds", they wrote
+ *  "better than sixty percent", and the numeric licence gate refused 60 because
+ *  it is not in the evidence pack. On the repair round they retreated to bare
+ *  words and the probability judge scored them 3 for vagueness. Both sides now
+ *  say the same thing: state the likelihood in words, and attach it to
+ *  something that could actually go either way. */
+describe("the probability instruction and the numeric gate agreeing", () => {
+  it("stops telling the writer to invent a percentage", async () => {
+    const source = await import("node:fs").then((fs) =>
+      fs.readFileSync("src/lib/pundit/pundit-generator.server.ts", "utf8"),
+    );
+    expect(source).toContain("state it in words rather than in figures");
+    expect(source).toContain("Never invent a percentage or a price for it");
+    expect(source).not.toContain("attach an explicit likelihood to a named outcome: a percentage");
+  });
+
+  it("tells the judge that words are the expected form", async () => {
+    const { DIMENSION_STANDARDS } = await import("./dimensions");
+    expect(DIMENSION_STANDARDS.probability).toContain("in words");
+    expect(DIMENSION_STANDARDS.probability).toContain("is not a weakness");
+    expect(DIMENSION_STANDARDS.probability).toContain("genuinely contestable");
+  });
+
+  it("keeps the rules the last two runs were lost to", async () => {
+    const source = await import("node:fs").then((fs) =>
+      fs.readFileSync("src/lib/pundit/pundit-generator.server.ts", "utf8"),
+    );
+    // Never state a distance: two pundits invented "thirty yards" and
+    // "twenty-five yards", which the feed does not record.
+    expect(source).toContain("Never state a distance in yards or metres");
+    // Home and away: one pundit gave Ipswich Liverpool's possession figure.
+    expect(source).toContain("says home or away and name the team that id belongs to");
+    // Restraint: the judges rejected five of six for restating one point.
+    expect(source).toContain("State your central point in full in the judgment beat and nowhere else");
+  });
+});
+
+/** Six pundits is the product. One is a test, and the difference is about six
+ *  sevenths of the bill. Measured on 2026-09-06: a run cost $2.14, of which the
+ *  writer took $1.06 across twelve Opus calls and the judges $0.99 across
+ *  eighty four Sonnet calls, both dominated by output tokens rather than by the
+ *  cached evidence pack. Nearly every debugging run this week paid full price to
+ *  learn what one pundit would have shown. */
+describe("writing a subset of the pundits", () => {
+  it("accepts a subset on the workflow input and the dispatch route", async () => {
+    const [workflow, route] = await Promise.all([
+      import("node:fs").then((fs) => fs.readFileSync("src/workflows/daily-pundit.ts", "utf8")),
+      import("node:fs").then((fs) =>
+        fs.readFileSync("src/routes/api/internal/daily-rehearsal.ts", "utf8"),
+      ),
+    ]);
+    expect(workflow).toContain("punditIds?: PunditId[]");
+    // The subset is filtered from the canonical list rather than trusted, so an
+    // unknown id cannot introduce a pundit that has no spec.
+    expect(workflow).toContain("PUNDIT_IDS.filter((punditId) => input.punditIds!.includes(punditId))");
+    expect(route).toContain('url.searchParams.get("pundits")');
+  });
+
+  it("keeps the six-variant promise as the thing that stops a subset publishing", async () => {
+    // No separate guard is added, and none should be: the promise check already
+    // refuses a drop that does not hold all six, which is the correct outcome
+    // for a diagnostic run.
+    const { REQUIRED_HARNESS_NAMES } = await import("./promise-checks.server");
+    expect(REQUIRED_HARNESS_NAMES.length).toBeGreaterThan(0);
+    const promise = await import("node:fs").then((fs) =>
+      fs.readFileSync("src/lib/pundit/promise-checks.server.ts", "utf8"),
+    );
+    expect(promise).toMatch(/PUNDIT_IDS|six/i);
+  });
+});

@@ -100,3 +100,31 @@ describe("stopping a repair loop that is not converging", () => {
     );
   });
 });
+
+/** A diagnostic run wants one repair round without weakening the daily show,
+ *  so an override may only ever lower the environment's ceiling. Letting a
+ *  request raise it would make the env var decorative. */
+describe("capping repair rounds for one run", () => {
+  const previous = process.env.PUNDIT_MAX_ATTEMPTS;
+  afterEach(() => {
+    if (previous === undefined) delete process.env.PUNDIT_MAX_ATTEMPTS;
+    else process.env.PUNDIT_MAX_ATTEMPTS = previous;
+  });
+
+  it("lowers the ceiling but never raises it", async () => {
+    const { maxRepairAttempts } = await import("./pundit-generator.server");
+    process.env.PUNDIT_MAX_ATTEMPTS = "2";
+    expect(maxRepairAttempts(1)).toBe(1);
+    expect(maxRepairAttempts(5)).toBe(2);
+    expect(maxRepairAttempts()).toBe(2);
+  });
+
+  it("ignores a nonsense override rather than running zero attempts", async () => {
+    const { maxRepairAttempts } = await import("./pundit-generator.server");
+    process.env.PUNDIT_MAX_ATTEMPTS = "3";
+    expect(maxRepairAttempts(0)).toBe(1);
+    expect(maxRepairAttempts(-4)).toBe(1);
+    expect(maxRepairAttempts(Number.NaN)).toBe(3);
+    expect(maxRepairAttempts(1.9)).toBe(1);
+  });
+});

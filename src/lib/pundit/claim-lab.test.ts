@@ -265,3 +265,49 @@ describe("collapsing a claim set that says one thing many times", () => {
     expect(kept.map((claim) => claim.id)).toEqual(["first", "second"]);
   });
 });
+
+/** The laboratory found the gap in the roster check and walked through it. On
+ *  2026-09-06 it returned "Liverpool accumulated four yellow cards (Mac
+ *  Allister, Jacquet, Kerkez, plus discipline events)": the padding phrase made
+ *  the parenthetical four entries long, so a count of four matched a list of
+ *  four and the claim was licensed. Three pundits repeated the four, and the
+ *  factual judge rejected all three against evidence holding three. */
+describe("a roster padded to match its own count", () => {
+  const check = (thesis: string) =>
+    licenseClaim(
+      {
+        id: "c",
+        matchId: "match-1",
+        type: "fact",
+        thesis,
+        evidenceRefs: ["event.y1", "event.y2", "event.y3", "event.y4"],
+        confidence: 1,
+      },
+      cards,
+    ).failures.join(" ");
+
+  it("refuses a count padded with a phrase that is not a person", () => {
+    expect(
+      check("Liverpool accumulated four yellow cards (Mac Allister, Jacquet, Kerkez, plus discipline events)."),
+    ).toMatch(/names 3/);
+  });
+
+  it("refuses the other padding words a writer would reach for", () => {
+    for (const filler of ["and others", "among others", "including two more"]) {
+      expect(
+        check(`Liverpool took four yellow cards (Mac Allister, Jacquet, Kerkez, ${filler}).`),
+        filler,
+      ).toMatch(/names 3/);
+    }
+  });
+
+  it("still accepts a roster that names as many as it counts", () => {
+    expect(check("Liverpool took three yellow cards (Mac Allister, Jacquet, Kerkez).")).not.toMatch(
+      /names/,
+    );
+  });
+
+  it("still leaves a parenthetical that is not a roster alone", () => {
+    expect(check("Liverpool won it late (2-1) after an hour of pressure.")).not.toMatch(/names/);
+  });
+});
