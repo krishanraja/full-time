@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-09-04",
+  "asOf": "2026-09-07",
   "authority": {
     "repository": "https://github.com/krishanraja/full-time",
     "branch": "main",
@@ -49,7 +49,7 @@
       "A switch commits only after the requested edition loads. Failure keeps the previous playable edition and offers retry.",
       "Switching while audio plays restarts the selected edition and keeps playing. Switching while paused loads it at the beginning without autoplay.",
       "The current edition can expose up to three proof cards projected from sealed evidence and licensed claim IDs.",
-      "If today's edition is unavailable, the API can return the latest published edition for the same AI Pundit with its real coverage date.",
+      "If today's edition is unavailable, the API returns the latest published edition for the same AI Pundit with its real coverage date, or failing that the most recent edition any AI Pundit published, and the player names who made it.",
       "Recent published editions appear below the player when they exist.",
       "A quiet How did they do? entry appears only when settled records exist."
     ],
@@ -72,13 +72,14 @@
       "On 2026-09-04 the founder enabled public launch by recording an explicit override gate snapshot (migration 20260904120000_founder_launch_override.sql). The external human, rights, voice-audition, rehearsal, forecast, and sign-off gates were waived and are listed on that snapshot.",
       "The 04:45 UTC daily workflow runs in publication mode and publishes every AI Pundit edition that passes the automated evidence, harness, transcript, audio, and asset checks enforced by publish_daily_drop(). An edition that falls short is withheld; the ones that passed still publish.",
       "Selected voices are the configured ELEVENLABS_VOICE values, attested by the founder on the voice_candidates row. Proper-name pronunciation is measured against the verified transcript, not a human lexicon.",
-      "New checkout, public forecast scores, prediction registration, and evaluation runs remain disabled by flags."
+      "Since 2026-09-05 each AI Pundit runs as its own workflow step under a per-step model spend ceiling, the drop records its model spend, and a free preflight and a judge calibration harness exist for diagnosis. The judge model was moved to Haiku 4.5 in the production environment on 2026-09-06 as an unverified quality bet recorded in docs/06-ops.md.",
+      "New checkout, public forecast scores, prediction registration, evaluation runs, and legacy on-demand narration remain disabled by flags."
     ]
   },
   "currentGaps": [
     {
       "surface": "Teams",
-      "truth": "The navigation label is Teams, but /following still fetches every stored team and league, puts teams before leagues, and shows the old three-team personalization prompt.",
+      "truth": "The navigation label is Teams, but /following still fetches every stored team and league and puts teams before leagues. Since 2026-09-06 the page says a follow does not change today's show and no longer asks for three teams.",
       "promiseBoundary": "Do not claim Premier-League-only beta filtering, disabled coming-later leagues, or club-driven show ordering until the route and server response implement them."
     },
     {
@@ -102,7 +103,7 @@
     "newCheckout": "disabled",
     "existingSubscribers": "Existing subscribers may still manage billing through Settings.",
     "availableNow": [
-      "Invite a person to listen to the live beta on fulltime.fm once the first drop publishes.",
+      "Invite a person to listen to the live beta on fulltime.fm.",
       "Invite a person to join the launch note.",
       "Run a private product demonstration with approved material.",
       "Hold non-binding discovery with data, voice, distribution, club, league, publisher, or sponsor partners."

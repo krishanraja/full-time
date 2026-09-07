@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Founder and product
 - **Purpose:** Define the product, its user promise, evidence boundary, and launch standard.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-07
 
 ## Product in one sentence
 
@@ -103,7 +103,7 @@ The listener's current show is the safe state.
 - The saved preference changes only after the requested media loads.
 - Failure leaves the previous edition playable and offers retry.
 - Full Time never substitutes a different AI Pundit.
-- When today has no edition for that AI Pundit, Full Time may offer the latest approved edition for the same AI Pundit with its real date.
+- When today has no edition for that AI Pundit, Full Time offers that AI Pundit's latest approved edition with its real date, and failing that the most recent edition any AI Pundit published, named as whose it is, with the picker one tap away (`407be64`).
 
 ## Accountability
 
@@ -121,10 +121,11 @@ Saved team preferences exist. They do not yet create a private show or club-buil
 
 ## Current posture
 
-Full Time is in fail-closed pre-launch with no promised public date.
+Full Time is a live beta by founder override since 2026-09-04. Flags still fail closed: a missing flag denies execution.
 
 - All six AI Pundits are free and selectable without an account.
-- Automated public publication, new checkout, paid promotion, and public forecast scores remain disabled.
+- Automated publication runs daily and publishes each AI Pundit edition that passes its checks; an edition that falls short is withheld.
+- New checkout, paid promotion, prediction registration, and public forecast scores remain disabled.
 - Existing subscribers can still manage billing.
 - Archive and demo material stay labelled and never impersonate today's edition.
 - A missing AI Pundit remains a visible failure.
@@ -161,3 +162,5 @@ Launch requires one exact revision to pass:
 - revision-bound rights, legal, privacy, accessibility, monitoring, rollback, feed, and operational sign-offs.
 
 Thresholds do not relax to rescue a date. Safe but dull output stays private.
+
+The founder override of 2026-09-04 launched the live beta before this standard was met. The standard is unchanged; the gates it names are recorded as waived and open in [`19-release-state.md`](./19-release-state.md), and the automated gates hold every published edition to the evidence, harness, and audio checks.

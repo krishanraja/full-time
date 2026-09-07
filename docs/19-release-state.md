@@ -3,7 +3,7 @@
 - **Status:** Current release source of truth
 - **Owner:** Founder and release operator
 - **Purpose:** Record what is live, what is disabled, what remains inconsistent, and what must happen next.
-- **Last verified:** 2026-09-04
+- **Last verified:** 2026-09-07
 
 ## Live readback
 
@@ -39,17 +39,19 @@ Code changes in the same revision:
 | Production branch               | `main`                                                                            |
 | Public navigation               | Today, Teams, Settings                                                            |
 | Today metadata                  | Six AI Pundits, one real match                                                    |
-| Public launch                   | Enabled by founder override once the migration is applied                         |
-| Automated publication           | Enabled once `PRELAUNCH_MODE=false` and `PUNDIT_PUBLICATION_ENABLED=true` are set |
+| Public launch                   | Enabled by founder override; migration applied and read back as live on 2026-09-04 (`product-state.json`) |
+| Automated publication           | Per edition since 2026-09-05 (`publish_daily_drop()`); needs `PRELAUNCH_MODE=false` and `PUNDIT_PUBLICATION_ENABLED=true` in production |
 | New checkout and paid promotion | Disabled                                                                          |
 | AI Pundits                      | Six, free, selectable                                                             |
 | Reporter RSS                    | Retained                                                                          |
 | `/feed` page                    | Redirects to Today                                                                |
 | Supabase project                | `hzadscrqmyilbisexvyz`                                                            |
-| Release migrations              | Applied through 2026-08-09; override migration pending apply                      |
-| First published drop            | None yet; expected after the first passing publication run                        |
+| Release migrations              | Applied through `20260905060000` per commit records `ce44014` and `d4bc163`; `20260905080000` reflected in the regenerated types (`c0e2ed8`) |
+| First published drop            | One edition (The Romantic) published 2026-09-05 per commits `407be64` and `5ed4712`; later drops are a database fact, not a repository one |
 
 Durable docs do not pin a deployment ID or SHA because committing that value immediately creates a newer revision. Deployment metadata and live readback remain authoritative.
+
+The table above was reconciled against the repository record at `adddf64` on 2026-09-07 by the docs steward. The live readback section is still the 2026-09-04 reading; nothing in the repository can confirm the production environment after that.
 
 ## What is complete in code
 
@@ -95,6 +97,8 @@ These gates were waived by the founder override on 2026-09-04 and remain open wo
 No public material may claim any of these were completed. The API-Football Pro plan confirmed on 2026-08-11 is working: the ingest has populated fixtures, events, statistics, lineups, and head-to-head data daily through 2026-09-03.
 
 ## Go-live sequence
+
+The commit record shows steps 1 to 5 completed by 2026-09-05: the override migration applied (`product-state.json`), production running with prelaunch off (`407be64`), and one edition published. Step 6 is not verifiable from the repository. Step 7 is the standing posture.
 
 1. Apply `20260904120000_founder_launch_override.sql` to `hzadscrqmyilbisexvyz` and read back `release_state` (`status = live`, `public_launch_enabled = true`, `verified_revision = founder-override-2026-09-04`).
 2. Deploy this revision to production.

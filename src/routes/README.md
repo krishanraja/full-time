@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Engineering
 - **Purpose:** Explain TanStack Start file routing and identify the exact public, compatibility, crawler, and operator surfaces.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-07
 
 TanStack Start generates routes from files in this directory. Do not create `src/pages`, `app`, or a second root layout. [`__root.tsx`](./__root.tsx) owns the document shell, Today/Teams/Settings navigation, providers, shared player, and error boundaries. Never edit generated `routeTree.gen.ts`.
 
@@ -41,10 +41,10 @@ The route remains `/following` to preserve stored links and compatibility. The u
 | `/feed`          | `feed.tsx`          | Redirects to Today; no standalone Feed page                                                      |
 | `/receipts`      | `receipts.tsx`      | Unlisted legacy searchable prediction ledger; replacement with settled-only track record pending |
 | `/episode/:id`   | `episode.$id.tsx`   | Legacy shareable episode and transcript page                                                     |
-| `/archive`       | `archive.tsx`       | Signed-in labelled archive/demo browser; new generation paused in pre-launch                     |
+| `/archive`       | `archive.tsx`       | Signed-in labelled archive/demo browser; on-demand narration off unless `ENABLE_LEGACY_DAILY_DROP=true`, and the server reports availability |
 | `/auth`          | `auth.tsx`          | Optional magic-link authentication                                                               |
 | `/waitlist`      | `waitlist.tsx`      | Launch-note registration                                                                         |
-| `/pro`           | `pro.tsx`           | Pre-launch state and existing subscriber management; no new checkout                             |
+| `/pro`           | `pro.tsx`           | Existing subscriber management; no new checkout during the live beta                             |
 | `/legal/privacy` | `legal.privacy.tsx` | Public privacy notice                                                                            |
 | `/legal/terms`   | `legal.terms.tsx`   | Public terms notice                                                                              |
 
@@ -93,7 +93,7 @@ Internal and cron handlers use the shared timing-safe bearer validator and a fea
 
 ## Known route gaps
 
-- Teams still fetches all stored leagues and teams and retains the old three-team prompt. It does not yet implement Premier-League-only availability.
+- Teams still fetches all stored leagues and teams. The three-team prompt and the personalised-feed promise were removed in `407be64`; it does not yet implement Premier-League-only availability.
 - `/receipts` still calls the broader predictions endpoint and renders search, filters, open-state logic, and technical score cards. Today itself uses the settled-only endpoint before linking.
 - Several legacy archive, episode, waitlist, and legal copy surfaces predate the final AI Pundit language pass.
 

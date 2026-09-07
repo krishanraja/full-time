@@ -42,3 +42,6 @@ supabase/.temp/
 # Rights-cleared research source files are private local inputs. The repository
 # stores only their schema and operating instructions.
 /_corpus/
+
+# Docs steward working files (control-center checkout and digest)
+.steward/

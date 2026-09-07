@@ -32,7 +32,7 @@ try {
 
 if (state) {
   if (state.schemaVersion !== 1) failures.push(`${statePath}: unsupported schemaVersion`);
-  if (state.asOf !== "2026-09-04")
+  if (state.asOf !== "2026-09-07")
     failures.push(`${statePath}: asOf must match this reconciliation`);
   if (state.product?.lifecycle !== "live-beta") failures.push(`${statePath}: lifecycle drifted`);
   if (
@@ -76,7 +76,7 @@ for (const path of currentDocs) {
   // launch override; only the documents that changed carry that date.
   requireText(
     path,
-    /\*\*Last (?:reviewed|verified):\*\* 2026-0(?:8-11|9-04)/,
+    /\*\*Last (?:reviewed|verified):\*\* 2026-0(?:8-11|9-04|9-07)/,
     "review date is stale",
   );
 }

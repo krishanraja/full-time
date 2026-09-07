@@ -3,7 +3,7 @@
 - **Status:** Current and binding
 - **Owner:** Editorial, product, engineering, and legal
 - **Purpose:** Define what Full Time may claim, how humour works, what blocks publication, and how incidents are handled.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-07
 
 ## Core rule
 
@@ -42,7 +42,7 @@ Structured match data may support recorded events, statistics, game state, varia
 4. A ten-beat outline separates story, evidence, judgment, counterpoint, humour, and prediction.
 5. The writer realizes the approved outline in 750 to 1,100 spoken words.
 6. Hard gates and independent qualitative harnesses review the same candidate.
-7. Only failed beats may change, for at most three rounds.
+7. Only failed beats may change, for a bounded number of rounds (`PUNDIT_MAX_ATTEMPTS`, default two, ceiling ten); the loop stops early when a round changes the prose without changing the verdict.
 8. Persistent safe-but-forgettable output is quarantined.
 
 Independent judges never rewrite the whole script. The showrunner owns repairs so personality does not dissolve through serial rewrites.
@@ -81,6 +81,8 @@ Any failure blocks publication:
 | Prediction/accountability |   4/5 | Registers or grades a falsifiable thesis plainly    |
 
 Scores never average across dimensions. A joke cannot compensate for weak football intelligence.
+
+Since 2026-09-05 the writer and every judge read the same written standard per dimension (`src/lib/pundit/dimensions.ts`), taken from what the judges had actually rejected on real scripts. Since 2026-09-06 the scale is anchored: four is the standard of a good professional match report with real shortcomings, not a flawless one. The judge calibration harness in [`06-ops.md`](./06-ops.md) checks the bar against writing already agreed to be good before a failed run is read as six bad scripts.
 
 ## Humour policy
 

@@ -3,31 +3,33 @@
 - **Status:** Current
 - **Owner:** Founder and product
 - **Purpose:** Show what remains, what is deliberately deferred, and which product decisions govern the work.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-07
 
 ## Current objective
 
-Finish the AI-native player-first beta, then prove that all six AI Pundits are consistently useful, distinct, funny, evidence-grounded, and listenable before public launch.
+Prove, in public, that all six AI Pundits are consistently useful, distinct, funny, evidence-grounded, and listenable. Since the founder launch override of 2026-09-04 ([`19-release-state.md`](./19-release-state.md)) that proof happens on the live beta rather than before a launch.
 
-Today and the three-tab shell are deployed in pre-launch mode. The immediate implementation gaps are Premier-League-only Teams, the quiet settled-only track record, and the Settings language pass. The external critical path remains licensed inputs, forecast proof, founder-approved scripts and voices, blind listener results, seven rehearsals, and revision-bound sign-offs.
+Today and the three-tab shell are live at fulltime.fm, and the 04:45 UTC workflow publishes every AI Pundit edition that passes its automated checks (migration `20260905060000_publish_the_variants_that_passed.sql`). The immediate implementation gaps are Premier-League-only Teams, the quiet settled-only track record, and the Settings language pass. The external critical path, licensed inputs, forecast proof, founder-approved scripts and voices, blind listener results, seven rehearsals, and revision-bound sign-offs, was waived as a launch condition by the override and remains open work.
 
 ## Workstreams
 
 | Workstream                     | Engineering           | Evidence/approval                                          | Current result               |
 | ------------------------------ | --------------------- | ---------------------------------------------------------- | ---------------------------- |
-| Truthful pre-launch            | Complete and deployed | Ongoing regression review                                  | Preview live                 |
-| Player-first Today             | Complete and deployed | Physical-device and live-data regression review            | Preview live                 |
+| Truthful public state          | Complete and deployed | Ongoing regression review                                  | Live beta                    |
+| Player-first Today             | Complete and deployed | Physical-device and live-data regression review            | Live beta                    |
 | Premier League Teams beta      | Incomplete            | Preserve old follows; verify exact availability response   | Do not promise               |
 | Quiet settled track record     | Partial               | Replace legacy `/receipts` search and open-call behavior   | Unlisted compatibility route |
 | Settings language              | Partial               | AI Pundit terminology and simple playful copy              | Needs copy pass              |
-| Evidence and claim licensing   | Complete              | Evaluation corpus must prove it                            | Blocked for launch           |
-| Six persona systems            | Complete              | Blind identity and founder taste thresholds                | Blocked for launch           |
-| Humour and editorial harnesses | Complete              | 360-script and human review                                | Blocked for launch           |
-| Narration and mastering        | Complete              | Licensed casting, quota, pronunciation, full-length panels | Blocked for launch           |
+| Evidence and claim licensing   | Complete              | Evaluation corpus must prove it                            | Gate waived 2026-09-04; open |
+| Six persona systems            | Complete              | Blind identity and founder taste thresholds                | Gate waived 2026-09-04; open |
+| Humour and editorial harnesses | Complete              | 360-script and human review                                | Gate waived 2026-09-04; open |
+| Narration and mastering        | Complete              | Licensed casting, quota, pronunciation, full-length panels | Gate waived 2026-09-04; open |
 | Forecasts and receipts         | Complete              | Two-season backfill and held-out baseline win              | Scores private               |
-| Durable daily operation        | Complete              | Seven consecutive on-time rehearsals                       | Publication disabled         |
-| Legal, privacy, accessibility  | Controls present      | Revision-bound professional sign-off                       | Blocked for launch           |
+| Durable daily operation        | Complete              | Seven consecutive on-time rehearsals                       | Publishing per edition since 2026-09-05 |
+| Legal, privacy, accessibility  | Controls present      | Revision-bound professional sign-off                       | Gate waived 2026-09-04; open |
 | Billing                        | Retained but disabled | Separate product and legal decision                        | Not in launch scope          |
+
+The sequence below was written before the 2026-09-04 override. Steps 2 to 6 remain the order in which the waived gates are worked after launch; the launch decision in step 7 has been taken and is recorded in the decision log.
 
 ## Delivery sequence
 
@@ -106,6 +108,20 @@ Today and the three-tab shell are deployed in pre-launch mode. The immediate imp
 
 Use: **Decision - Context - Tradeoff - Reversible?** Add new entries at the top.
 
+### 2026-09-05 - Publish the pundits that passed
+
+- **Decision:** A daily drop publishes every AI Pundit edition that passed all of its own gates and withholds the ones that did not. A drop with no clean edition still fails.
+- **Context:** Every gate is per edition. Requiring all six to clear every gate at the same moment compounded six independent standards into one, and the last full run before the change had one clean edition and five short and produced nothing (migration `20260905060000_publish_the_variants_that_passed.sql`, commit `d4bc163`).
+- **Tradeoff:** On a day their own AI Pundit was withheld, a listener is offered another AI Pundit's edition, named as such. No gate was loosened.
+- **Reversible?** Yes, by migration. Recorded by the docs steward on 2026-09-07 from the code and commit record.
+
+### 2026-09-04 - Launch by founder override
+
+- **Decision:** Launch the live beta before the external launch gates are met. Migration `20260904120000_founder_launch_override.sql` records the override gate snapshot and the waived gates; [`19-release-state.md`](./19-release-state.md) lists them.
+- **Context:** Live readback on 2026-09-04 showed the ingest healthy and the six-variant workflow never admitted past its flag check (commit `8928687`).
+- **Tradeoff:** Editorial, voice, rights, rehearsal, forecast, legal, and accessibility sign-offs become open work after launch rather than conditions of it. The automated evidence, harness, transcript, audio, and publication checks stay enforced on every edition.
+- **Reversible?** Yes: set release state to `paused` and turn the publication flags off ([`06-ops.md`](./06-ops.md), Rollback). This entry overrides the 2026-08-08 decision "Launch by evidence, not date" below, which is kept as the record of the standard the product is still held to. Recorded by the docs steward on 2026-09-07.
+
 ### 2026-08-10 - One documentation hierarchy
 
 - **Decision:** Product doctrine, implemented system, and release state are the three governing documents. Historical plans cannot override them.
@@ -133,6 +149,7 @@ Use: **Decision - Context - Tradeoff - Reversible?** Add new entries at the top.
 - **Context:** Safe but generic output is not a launchable product.
 - **Tradeoff:** Longer private verification and no schedule-based pressure release.
 - **Reversible?** Only through a new founder decision that accepts the identified risk.
+- **Overridden:** 2026-09-04, by the founder decision recorded above. The standard itself is unchanged and lives in [`00-product.md`](./00-product.md).
 
 ### 2026-08-08 - Free pundit choice and billing off
 

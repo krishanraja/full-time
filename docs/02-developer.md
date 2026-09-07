@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Engineering
 - **Purpose:** Provide a reliable setup path, repository map, invariants, and change checklist.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-07
 
 ## Quick start
 
@@ -43,7 +43,7 @@ Do not weaken a gate, enable a production flag, or copy live secrets into `.env.
 | Narration    | ElevenLabs, transcription checks, FFmpeg mastering        |
 | Durable work | Vercel Workflow SDK                                       |
 | Hosting      | Vercel, configured in `vercel.ts`                         |
-| Payments     | Stripe code retained; new checkout disabled in pre-launch |
+| Payments     | Stripe code retained; new checkout disabled in the live beta |
 | Tests        | Vitest, TypeScript, ESLint, production build              |
 
 ## Repository map
@@ -76,13 +76,13 @@ Use [`src/routes/README.md`](../src/routes/README.md) for the route inventory an
 
 These rules protect the product contract:
 
-1. **Pre-launch fails closed.** A missing flag denies checkout, rehearsals, forecasts, evaluation, snapshots, and publication.
+1. **Flags fail closed.** A missing flag denies checkout, rehearsals, forecasts, evaluation, snapshots, publication, and legacy on-demand narration. Production has run with `PRELAUNCH_MODE=false` and `PUNDIT_PUBLICATION_ENABLED=true` since the 2026-09-04 override; every other execution flag stays false.
 2. **Facts precede prose.** Writers consume an immutable evidence pack and licensed claims.
 3. **Hard gates are binary.** Do not average them with qualitative scores.
-4. **Repair is targeted.** Passed beats stay frozen; failed beats receive at most three rounds.
+4. **Repair is targeted and bounded.** Passed beats stay frozen; failed beats receive at most `PUNDIT_MAX_ATTEMPTS` rounds (default two, ceiling ten), a run may only lower that, and the loop stops early when a round leaves the failed set unchanged.
 5. **Scripts and performance plans are separate.** Code renders only allowlisted delivery directions.
 6. **Audio verification fails closed.** Transcription or pronunciation outages cannot approve a take.
-7. **Publication is atomic.** A drop needs all six variants and every promised asset.
+7. **Publication is per edition.** An AI Pundit edition publishes only when it has passed every gate and carries every promised asset; the drop publishes the editions that passed, withholds the rest, and fails when none passed (`publish_daily_drop()`).
 8. **Predictions are immutable after kickoff.** Settlement uses the original rule.
 9. **Player analytics come from real media events.** Never restore timer-based progress or simulated completion.
 10. **AI Pundit switching is transactional.** Load the requested media before committing UI state or saved preference.
@@ -98,13 +98,16 @@ These rules protect the product contract:
 | Claim licensing        | `src/lib/pundit/claim-lab.ts`, `quality-gates.test.ts`                                   |
 | Persona definitions    | `src/lib/pundit/specs.ts`                                                                |
 | Script generation      | `src/lib/pundit/pundit-generator.server.ts`                                              |
-| Independent judges     | `src/lib/pundit/harness.ts`                                                              |
+| Independent judges     | `src/lib/pundit/harness.ts`, `dimensions.ts`                                             |
 | Performance            | `src/lib/pundit/performance.ts`                                                          |
 | Narration              | `src/lib/api/narration.server.ts`, `pronunciation.server.ts`                             |
 | Mastering and assets   | `audio-mastering.server.ts`, `asset-storage.server.ts`, `share-card.server.ts`           |
 | Forecasts and receipts | `forecast-training.server.ts`, `prediction-orchestrator.server.ts`                       |
 | Orchestration          | `src/workflows/daily-pundit.ts`, `daily-pundit.steps.ts`, `daily-orchestrator.server.ts` |
 | Release gate           | `release-readiness.server.ts`                                                            |
+| Publication decision   | `promise-checks.server.ts`, `supabase/migrations/20260905060000_publish_the_variants_that_passed.sql` |
+| Cost and stub          | `model-cost.ts`, `model-stub.server.ts`                                                  |
+| Preflight and calibration | `preflight.ts`, `preflight.server.ts`, `judge-calibration.server.ts`, `calibration.ts` |
 
 The older `recap-generator.server.ts` and `episode-pipeline.functions.ts` remain for archive and recovery compatibility. `ENABLE_LEGACY_DAILY_DROP` protects that route. New launch work belongs in `src/lib/pundit`.
 

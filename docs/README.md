@@ -5,7 +5,7 @@ This handbook is the operating contract for Full Time. It serves founders, produ
 - **Status:** Current documentation index
 - **Owner:** Founder and product
 - **Purpose:** Route every reader and autonomous agent to the right source of truth.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-07
 - **Production authority:** GitHub `main` plus observed behavior on the current Vercel production deployment
 
 ## Source-of-truth order
@@ -26,9 +26,10 @@ Never convert a roadmap decision into a live claim. Never convert an implemented
 
 | Need                          | Read first                                               | Then                                                                                   |
 | ----------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Know where it is right now    | [`../NOW.md`](../NOW.md)                                 | [`19-release-state.md`](./19-release-state.md), [`product-state.json`](./product-state.json) |
 | Explain the product           | [`product-state.json`](./product-state.json)             | [`00-product.md`](./00-product.md), [`01-brand.md`](./01-brand.md)                     |
 | Change the product            | [`00-product.md`](./00-product.md)                       | [`02-developer.md`](./02-developer.md), owning code and tests                          |
-| Market the preview            | [`21-go-to-market-agent.md`](./21-go-to-market-agent.md) | [`07-marketing.md`](./07-marketing.md), [`01-brand.md`](./01-brand.md)                 |
+| Market the live beta          | [`21-go-to-market-agent.md`](./21-go-to-market-agent.md) | [`07-marketing.md`](./07-marketing.md), [`01-brand.md`](./01-brand.md)                 |
 | Sell or discuss a partnership | [`21-go-to-market-agent.md`](./21-go-to-market-agent.md) | [`08-sales.md`](./08-sales.md), [`11-legal.md`](./11-legal.md)                         |
 | Answer a user                 | [`10-support.md`](./10-support.md)                       | owning product or legal guide                                                          |
 | Operate or release            | [`19-release-state.md`](./19-release-state.md)           | [`06-ops.md`](./06-ops.md)                                                             |
@@ -39,6 +40,7 @@ Never convert a roadmap decision into a live claim. Never convert an implemented
 
 | File                                                                   | Status                           | Owner and use                                                                          |
 | ---------------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------- |
+| [`../NOW.md`](../NOW.md)                                               | Current, steward-maintained      | Router: what Full Time is, where it is at the recorded head, what changed, and where the detail and history live |
 | [`product-state.json`](./product-state.json)                           | Current, machine-readable        | Product facts, shipped behavior, known gaps, offer state, claims, and evidence paths   |
 | [`00-product.md`](./00-product.md)                                     | Current                          | Product promise, user experience, doctrine, scope, and launch standard                 |
 | [`01-brand.md`](./01-brand.md)                                         | Current                          | Playful AI-native voice, visual system, generated avatars, terminology, and copy rules |
@@ -61,6 +63,7 @@ Never convert a roadmap decision into a live claim. Never convert an implemented
 | [`19-release-state.md`](./19-release-state.md)                         | Current                          | Live source, enabled state, gaps, blockers, and next operator sequence                 |
 | [`20-research-intake.md`](./20-research-intake.md)                     | Current                          | Private source intake, rights attestation, and corpus procedure                        |
 | [`21-go-to-market-agent.md`](./21-go-to-market-agent.md)               | Current and binding              | Autonomous marketing and sales briefing, proof map, objections, and action limits      |
+| [`history/LOG.md`](./history/LOG.md)                                   | Append-only log                  | Dated record of reconciliations, moves, and archived documents; never describes current behavior |
 
 Number 17 remains intentionally unused.
 
@@ -77,7 +80,8 @@ Number 17 remains intentionally unused.
 | Hard gate          | A binary rule whose failure blocks publication                                                          |
 | Harness            | An internal independent review of one qualitative dimension; never primary public copy                  |
 | Settled record     | A completed AI Pundit claim showing what was said, what happened, and what was missed                   |
-| Pre-launch         | The preview is visible while automated publication, billing, and public launch remain disabled          |
+| Pre-launch         | The state before 2026-09-04: preview visible while automated publication, billing, and public launch stayed disabled |
+| Live beta          | The state since the 2026-09-04 founder override: public, free, publishing per edition, external launch gates waived and open |
 | Launch-ready       | Every revision-bound editorial, audio, operational, rights, legal, accessibility, and human gate passes |
 
 ## Documentation rules
@@ -100,3 +104,4 @@ The check validates the product-state schema, current-document metadata, navigat
 4. Add a dated record to [`12-roadmap.md`](./12-roadmap.md) when doctrine changes.
 5. Update [`21-go-to-market-agent.md`](./21-go-to-market-agent.md) when an offer, audience, proof, objection, or autonomy boundary changes.
 6. Run documentation and repository checks before merging.
+7. The docs steward maintains [`../NOW.md`](../NOW.md) and [`history/LOG.md`](./history/LOG.md) on every push to `main` and nightly. It never edits source and never deletes a document; superseded documents move to `history/` with a banner.

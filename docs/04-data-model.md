@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Data and engineering
 - **Purpose:** Map the production schema, ownership, immutability, RLS, and migration rules.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-07
 
 ## Authority
 
@@ -62,7 +62,7 @@ The intended Premier-League-only beta is an application-response rule, not a sch
 
 | Table                   | Responsibility                                                 | Key invariant                                    |
 | ----------------------- | -------------------------------------------------------------- | ------------------------------------------------ |
-| `daily_drops`           | Canonical coverage date and publication state                  | One release object per date                      |
+| `daily_drops`           | Coverage date, publication state, promise checks, model spend  | One release object per date                      |
 | `evidence_packs`        | Facts, derivations, provenance, missing evidence               | Sealed packs cannot mutate                       |
 | `analysis_claims`       | Evidence-linked facts, judgments, counterfactuals, predictions | Evidence refs and status required                |
 | `pundit_specs`          | Versioned persona doctrine                                     | Only active public specs are readable            |
@@ -98,7 +98,7 @@ Key functions and triggers:
 - `protect_prediction_registration`: prevents late or retroactive prediction changes;
 - `protect_published_variant`: protects published scripts and assets;
 - `claim_editorial_run`: atomically claims an idempotent run and supports stale recovery;
-- `publish_daily_drop`: performs the all-or-nothing publication transaction;
+- `publish_daily_drop`: publishes every variant that passed its gates in one transaction, quarantines the rest, and fails the drop when none qualifies (per edition since migration `20260905060000`);
 - `enforce_profile_billing_guard`: prevents `anon` and `authenticated` callers from self-granting billing state;
 - `waitlist_guard`: protects join order and operator fields;
 - fixed-search-path migrations harden privileged functions;
@@ -135,7 +135,9 @@ The schema evolves additively:
 3. August enrichment and narration additions;
 4. `20260808194138_pundit_intelligence_system.sql`;
 5. `20260808200000_operational_release_gates.sql`;
-6. search-path and auth-RLS hardening migrations.
+6. search-path and auth-RLS hardening migrations;
+7. `20260904120000_founder_launch_override.sql`;
+8. `20260905010000_widen_harness_attempt_limit.sql`, `20260905020000_record_drop_generation_cost.sql`, `20260905060000_publish_the_variants_that_passed.sql`, and `20260905080000_keep_shot_location_from_the_provider.sql`.
 
 For a new change:
 

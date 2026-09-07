@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Engineering and product
 - **Purpose:** Let a new technical or commercial agent find current truth, act safely, and leave an auditable handoff.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-07
 
 ## Start here
 
@@ -20,19 +20,20 @@ Do not begin from the historical build or access plans.
 
 ## Project in one paragraph
 
-Full Time is an AI-native football audio product in pre-launch. One set of checked match facts can produce six complete AI Pundit editions, each with its own thesis, humour, script, performance, synthetic voice, and generated visual identity. Today puts the player first, offers evidence cards, and switches editions only after the requested media loads. The production pipeline uses sealed evidence, licensed claims, independent gates, audio checks, and an atomic six-variant publication boundary.
+Full Time is an AI-native football audio product in live beta by founder override since 2026-09-04. One set of checked match facts can produce six complete AI Pundit editions, each with its own thesis, humour, script, performance, synthetic voice, and generated visual identity. Today puts the player first, offers evidence cards, and switches editions only after the requested media loads. The production pipeline uses sealed evidence, licensed claims, independent gates, audio checks, and a publication boundary that publishes each AI Pundit edition that passed and withholds the rest.
 
 ## Current truth
 
-- Production preview: [fulltime.fm](https://fulltime.fm)
+- Production: [fulltime.fm](https://fulltime.fm), live beta
 - Public navigation: Today, Teams, Settings
 - AI Pundits: six, free, selectable, and named in `product-state.json`
-- Public mode: pre-launch
-- Automated publication, new checkout, and public forecast scores: disabled
+- Public mode: live beta by founder override, 2026-09-04; the waived gates are listed in [`19-release-state.md`](./19-release-state.md)
+- Automated publication: enabled, per edition, from the 04:45 UTC workflow (`publish_daily_drop()`, migration `20260905060000`)
+- New checkout, prediction registration, and public forecast scores: disabled
 - `/feed`: redirects to Today
 - Reporter RSS: retained
 - Generated avatars: deterministic SVGs seeded by drop and AI Pundit IDs
-- Teams gap: label changed, beta league restriction and ordering not complete
+- Teams gap: label changed and the personalisation promise removed (`407be64`); beta league restriction and ordering not complete
 - Track-record gap: Today uses settled-only availability, direct `/receipts` still uses the legacy ledger UI
 - Production schema target: Supabase project `hzadscrqmyilbisexvyz`
 - Live and external blockers: [`19-release-state.md`](./19-release-state.md)
@@ -66,10 +67,12 @@ Full Time is an AI-native football audio product in pre-launch. One set of check
 | Track record                      | `receipts.tsx`, public predictions and receipts routes                                   |
 | Evidence or claims                | `src/lib/pundit/evidence.ts`, `claim-lab.ts`                                             |
 | AI Pundit behavior                | `src/lib/pundit/specs.ts`                                                                |
-| Scripts or judges                 | `pundit-generator.server.ts`, `harness.ts`                                               |
+| Scripts or judges                 | `pundit-generator.server.ts`, `harness.ts`, `dimensions.ts`                              |
 | Narration or pronunciation        | `performance.ts`, `narration.server.ts`, `pronunciation.server.ts`                       |
 | Rehearsal or publication          | `src/workflows/daily-pundit.ts`, `daily-pundit.steps.ts`, `daily-orchestrator.server.ts` |
 | Release gates                     | `release-readiness.server.ts`                                                            |
+| Publication decision              | `promise-checks.server.ts`, `supabase/migrations/20260905060000_publish_the_variants_that_passed.sql` |
+| Cost, preflight, calibration      | `model-cost.ts`, `model-stub.server.ts`, `preflight.ts`, `judge-calibration.server.ts`  |
 | Marketing or sales                | `21-go-to-market-agent.md`, then `07-marketing.md` or `08-sales.md`                      |
 | Schema or RLS                     | `supabase/migrations`, `04-data-model.md`                                                |
 

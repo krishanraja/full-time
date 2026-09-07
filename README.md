@@ -8,12 +8,12 @@ The product is meant to feel brilliant because it is AI, not like a cheaper imit
 
 ## Current state
 
-| Surface     | Repository and production state on 2026-09-04                                                                                           |
+| Surface     | Repository state at `adddf64` (2026-09-07); production last read back 2026-09-04 in `docs/19-release-state.md`                          |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | Lifecycle   | Live beta by founder override; human review gates waived and listed in `docs/19-release-state.md`                                       |
 | Production  | [fulltime.fm](https://fulltime.fm) serves the three-tab AI Pundit shell                                                                 |
 | Navigation  | Today, Teams, Settings                                                                                                                  |
-| Today       | Player-first show, six-AI-Pundit picker, real-media progress, same-pundit fallback, proof cards, recent shows, settled-only entry point |
+| Today       | Player-first show, six-AI-Pundit picker, real-media progress, same-pundit then any-pundit fallback named as whose it is, proof cards, recent shows, settled-only entry point |
 | AI Pundits  | All six are free and selectable without an account                                                                                      |
 | Avatars     | Abstract SVG visuals generated from the drop and AI Pundit IDs, so each edition gets a stable fresh look                                |
 | Feed        | `/feed` redirects to Today; the Reporter RSS endpoint remains available                                                                 |
@@ -49,7 +49,7 @@ git diff --check
 ## What Today does
 
 1. Loads the selected AI Pundit's approved edition for the London coverage date.
-2. Falls back to that same AI Pundit's latest approved edition when today has none.
+2. Falls back to that same AI Pundit's latest approved edition when today has none, and failing that to the most recent edition any AI Pundit published, naming who made it.
 3. Shows the date, title, hook, AI Pundit, play control, and real audio progress in the first mobile viewport.
 4. Lets the listener switch AI Pundits from a bottom drawer.
 5. Commits a switch and saves the preference only after the requested audio loads.

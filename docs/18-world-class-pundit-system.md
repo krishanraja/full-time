@@ -3,11 +3,11 @@
 - **Status:** Current implementation map
 - **Owner:** Product and engineering
 - **Purpose:** Describe what the repository implements, how Today reaches the production pipeline, and where its safety controls live.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-07
 
 ## Implementation state
 
-The repository implements an AI-native six-pundit production system and a player-first public Today surface. Production at [fulltime.fm](https://fulltime.fm) serves the three-tab shell and AI Pundit metadata. Automated public publication, new billing, and public forecast scores remain disabled.
+The repository implements an AI-native six-pundit production system and a player-first public Today surface. Production at [fulltime.fm](https://fulltime.fm) serves the three-tab shell and AI Pundit metadata as a live beta under the 2026-09-04 founder override. Automated publication runs daily and publishes each edition that passes its checks; new billing and public forecast scores remain disabled.
 
 The current product includes:
 
@@ -23,7 +23,7 @@ The current product includes:
 - deterministic generated SVG avatars seeded by drop ID and AI Pundit ID;
 - three public navigation items: Today, Teams, and Settings;
 - a redirect from `/feed` to Today and a retained Reporter RSS endpoint;
-- immutable evidence packs, licensed claims, independent judges, targeted repairs, audio checks, forecasts, settlement, atomic publication, and release readiness controls.
+- immutable evidence packs, licensed claims, independent judges with written standards, bounded targeted repairs, audio checks, forecasts, settlement, per-edition publication, a per-step spend ceiling, a free preflight, a judge calibration harness, and release readiness controls.
 
 [`product-state.json`](./product-state.json) records the exact shipped behaviors and known product gaps.
 
@@ -66,7 +66,7 @@ Key code:
 - `coverageDate`;
 - `state`: `prelaunch`, `off_day`, `variant_unavailable`, or `published`;
 - the current `drop` and requested `variant` when published;
-- `latest`, the newest other published edition for the same AI Pundit;
+- `latest`, the newest other published edition for the same AI Pundit, or failing that the most recent edition any AI Pundit published, which the player names as whose it is;
 - `matchId` and `teamIds` from the sealed evidence pack;
 - `proofCards`, capped at three;
 - `recent`, up to four additional published editions for that AI Pundit.
@@ -90,7 +90,7 @@ flowchart LR
     S --> H["Hard gates and independent judges"]
     H --> P["Performance plans"]
     P --> A["Narration and asset gates"]
-    A --> X["Atomic six-variant publication"]
+    A --> X["Per-edition publication"]
     X --> W["Today and Reporter RSS"]
     X --> R["Registered claims and settlement"]
 ```
@@ -100,13 +100,15 @@ flowchart LR
 | Types and contracts               | `src/lib/pundit/types.ts`                                                      |
 | Internal AI Pundit specifications | `src/lib/pundit/specs.ts`                                                      |
 | Evidence and claims               | `src/lib/pundit/evidence.ts`, `claim-lab.ts`                                   |
-| Generation and judges             | `pundit-generator.server.ts`, `harness.ts`                                     |
+| Generation and judges             | `pundit-generator.server.ts`, `harness.ts`, `dimensions.ts`                    |
 | Performance and narration         | `performance.ts`, `src/lib/api/narration.server.ts`                            |
 | Audio and assets                  | `audio-mastering.server.ts`, `asset-storage.server.ts`, `share-card.server.ts` |
 | Forecasts and registered claims   | `forecast.ts`, `prediction-orchestrator.server.ts`                             |
 | Daily orchestration               | `daily-orchestrator.server.ts`, `variant-production.server.ts`                 |
 | Release evaluation                | `release-readiness.server.ts`                                                  |
 | Durable workflow                  | `src/workflows/daily-pundit.ts`, `daily-pundit.steps.ts`                       |
+| Publication decision              | `promise-checks.server.ts`, `publish_daily_drop()` in migration `20260905060000` |
+| Cost, stub, preflight, calibration | `model-cost.ts`, `model-stub.server.ts`, `preflight.ts`, `judge-calibration.server.ts` |
 
 ## Safety switches
 
@@ -125,13 +127,13 @@ ENABLE_EVALUATION_RUNS=false
 ENABLE_RELEASE_SNAPSHOT_WRITE=false
 ```
 
-Missing flags deny work. Checkout needs pre-launch explicitly false and both billing flags true. Each production capability has its own server flag.
+Missing flags deny work. Checkout needs pre-launch explicitly false and both billing flags true. Each production capability has its own server flag. The block above is the `.env.example` default; the production baseline since the override is in [`06-ops.md`](./06-ops.md).
 
 ## Current secondary-surface gaps
 
 ### Teams
 
-The shell says Teams and keeps `/following` for compatibility. The current server function still returns all stored teams and leagues. The UI still puts teams first and tells new users to pick at least three. Premier-League-only availability, disabled coming-later leagues, and the removal of that minimum remain unimplemented.
+The shell says Teams and keeps `/following` for compatibility. The current server function still returns all stored teams and leagues. The UI still puts teams first; since `407be64` it says that a follow does not change today's show and no longer asks for three teams. Premier-League-only availability and disabled coming-later leagues remain unimplemented.
 
 ### Track record
 

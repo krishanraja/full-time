@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Engineering and operations
 - **Purpose:** Explain system boundaries, data flow, trust, orchestration, and failure behavior.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-07
 
 ## System view
 
@@ -55,10 +55,10 @@ The rehearsal route returns `202` with a run ID. Acceptance does not mean succes
 2. selects the feature match and builds one evidence pack;
 3. generates and judges six editorial variants in parallel under a provider semaphore;
 4. persists every harness result and repair attempt;
-5. renders and verifies six narrated variants in parallel;
+5. renders and verifies narration, in parallel, only for the variants that passed their harnesses;
 6. uploads content-addressed assets;
 7. runs the complete publication promise set;
-8. records a rehearsal result or publishes all six variants atomically.
+8. records a rehearsal result or, in publication mode, publishes every variant that passed and withholds the rest.
 
 Stale claims can be recovered. Completed steps are idempotent. A retry must not create duplicate public content or mutate an immutable prediction.
 
@@ -100,7 +100,7 @@ flowchart LR
 
 `daily_drops` is the current release object. `pundit_variants` is the per-persona product. A variant may be drafted, judged, quarantined, approved, or published. Published variants are protected from mutation.
 
-The database function `publish_daily_drop` is the atomic boundary. It may publish only after the expected six variants, assets, hard gates, harness floors, predictions, and release snapshot exist. A partial daily drop remains internal.
+The database function `publish_daily_drop` is the publication boundary. Since migration `20260905060000` it publishes, in one transaction, every variant that carries its assets, passed all twenty-five required harnesses, has a selected licensed voice, and has verified audio; it quarantines the variants that did not qualify, refuses the drop when no variant qualifies, when a pundit appears twice, or when two variants share one audio file, and always requires a passing release gate snapshot. A withheld edition stays internal.
 
 Legacy `drops` and `episodes` support archive behavior. They are not the current six-pundit publication contract.
 
@@ -126,7 +126,7 @@ Settlement compares the original structured rule to recorded data. Public receip
 | Unsupported analysis     | Claim rejected before prose                                       |
 | Weak qualitative score   | Failed beats repaired or variant quarantined                      |
 | Provider outage          | Run remains failed/retryable; nothing silently approves           |
-| One persona fails        | Entire drop remains unpublished; failure stays visible internally |
+| One persona fails        | That edition is withheld with its reason recorded; the others publish |
 | Asset promise fails      | Atomic publication denied                                         |
 | Forecast underperforms   | Model stays inactive and public scores remain hidden              |
 | Release evidence missing | Readiness remains blocked                                         |
@@ -135,7 +135,7 @@ Settlement compares the original structured rule to recorded data. Public receip
 ## Deployment
 
 - Production: [fulltime.fm](https://fulltime.fm), Vercel project `full-time`.
-- Current deployment state: ready, truthful pre-launch.
+- Current deployment state: live beta by founder override since 2026-09-04 ([`19-release-state.md`](./19-release-state.md)).
 - Runtime target: Node 24 on Vercel.
 - Schedule configuration: `vercel.ts`.
 - Database: Supabase project `hzadscrqmyilbisexvyz`.

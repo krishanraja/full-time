@@ -3,7 +3,7 @@
 - **Status:** Current runbook
 - **Owner:** Release operator and on-call
 - **Purpose:** Operate rehearsals, publication, incidents, secrets, deployments, and rollback safely.
-- **Last reviewed:** 2026-09-04
+- **Last reviewed:** 2026-09-07
 
 ## Default posture
 
@@ -24,7 +24,7 @@ ENABLE_EVALUATION_RUNS=false
 ENABLE_RELEASE_SNAPSHOT_WRITE=false
 ```
 
-Publication is automatic: the 04:45 UTC workflow runs in `publication` mode and `publish_daily_drop()` publishes only a drop whose six editions passed every automated check. Keep new checkout, legacy generation, prediction registration, and public forecast scores disabled.
+Publication is automatic: the 04:45 UTC workflow runs in `publication` mode and `publish_daily_drop()` publishes every edition that passed every automated check, withholds the ones that did not, and refuses the drop when none passed (migration `20260905060000`). Keep new checkout, legacy generation, prediction registration, and public forecast scores disabled.
 
 ## Schedules
 
@@ -47,7 +47,7 @@ GitHub workflows are manual recovery only. Every request uses `Authorization: Be
 5. Record the `runId` returned with HTTP `202`. Accepted is not passed.
 6. Follow the authenticated status or Workflow observability to a terminal state.
 7. Inspect the editorial run, six variants, harness evidence, audio results, assets, predictions, and promise checks.
-8. Record the rehearsal result. Do not publish a partial drop.
+8. Record the rehearsal result. In publication mode the editions that passed publish and the withheld ones are named, with reasons, in `daily_drops.promise_checks`.
 9. Return temporary execution flags to false.
 
 ## What a run costs, and how to spend less
@@ -64,7 +64,7 @@ The bill is **output tokens, not input**. A judge reads ~7,200 cached tokens for
 
 Levers in order of size:
 
-1. **Write one pundit, not six.** `POST /api/internal/daily-rehearsal?pundits=zen` costs about a sixth of a run and proves a fix just as well. A subset can never publish, because a drop holding fewer than six variants fails the six-variant promise, which is the correct outcome for a diagnostic. Use this for every debugging run.
+1. **Write one pundit, not six.** `POST /api/internal/daily-rehearsal?pundits=zen` costs about a sixth of a run and proves a fix just as well. Note that the code does not stop a subset publishing: `publish_daily_drop()` and `promise-checks.server.ts` accept a drop with one clean variant, so a one-pundit run in the production posture publishes a one-pundit drop if it passes every gate (checked against the code 2026-09-07 by the docs steward; whether that is wanted is an open decision in `NOW.md`). Until it is decided, treat a subset run in production as one that can publish, and use `PUNDIT_MODEL_STUB=true` when publishing is not the intent. Use the subset for every debugging run.
 2. **Ask for one repair round.** Add `&attempts=1`. A one-pundit, one-attempt run is roughly $0.20, a tenth of a full run. The parameter can only lower `PUNDIT_MAX_ATTEMPTS`, never raise it, so a diagnostic cannot quietly cheapen the daily show.
 3. **The judge runs on Haiku 4.5** (`PUNDIT_JUDGE_MODEL=claude-haiku-4-5`, set 2026-09-06). A third of Sonnet's price for the same output volume, so roughly 30% off a full run. Judging a written rubric is more mechanical than writing to one, but this is a quality bet and it is unverified: run the judge calibration below against the published Barcelona script before trusting it in publication mode, and set the variable back to `claude-sonnet-4-6` if the scores move.
 4. **A passing judge writes nothing but its score.** Explanations are only ever read for a dimension that fell short, so the output contract asks for the span, reason and repair note only at three or below. The bill is what the judge writes.
@@ -102,7 +102,7 @@ The harness judges only. No writer, no narration, no repair loop, and nothing is
 | Asset quarantine            | Required audio, transcript, artwork, or storage promise missing       | Repair and rerun idempotently                             |
 | Forecast rejected           | Held-out result did not beat baseline                                 | Keep inactive and scores private                          |
 | Release blocked             | One or more revision-bound gates missing                              | Complete evidence; never lower thresholds                 |
-| One persona failed          | Six-variant promise broken                                            | Keep the drop unpublished and show the failure internally |
+| One persona failed          | That edition is withheld; the rest publish                            | Read its reason in `promise_checks`; repair that edition only |
 
 ### When every pundit fails the same harness
 
