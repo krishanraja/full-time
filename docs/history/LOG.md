@@ -4,6 +4,12 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-09-09
+
+- reconciled at `e8bd2dd`: head moved from `adddf64`. The five commits since were `a8d4e24`, `733afe1`, `b662cd3`, `22d396d` and `e8bd2dd`; four of them render or sync the shared canon block inside AGENTS.md, which the steward never edits, and the fifth (`b662cd3`) corrected AGENTS.md's own claim that NOW.md is reconciled on every push, not only validated.
+- reconciled at `e8bd2dd`: `docs/README.md`. "Maintaining the handbook" step 7 carried the same wrong freshness claim `b662cd3` had just fixed in AGENTS.md, that the steward maintains NOW.md "on every push to main and nightly". Corrected to validated on push, reconciled nightly. Review date bumped to 2026-09-09 because the body was checked.
+- rolled from NOW.md: 2026-08-08 six-persona launch system (`ed5b1fb`): evidence-licensed claims, independent gates, prediction receipts, six narration pipelines, durable workflows, fail-closed release controls.
+
 ## 2026-09-07
 
 - decision: docs steward adopted for this repo, Krish 2026-09-07. `NOW.md` and this log are the two files it owns; `docs/history/` is the archive directory from today. Caller workflow at `.github/workflows/docs-steward.yml`, nightly at 20:25 UTC.

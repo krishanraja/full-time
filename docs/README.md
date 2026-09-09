@@ -5,7 +5,7 @@ This handbook is the operating contract for Full Time. It serves founders, produ
 - **Status:** Current documentation index
 - **Owner:** Founder and product
 - **Purpose:** Route every reader and autonomous agent to the right source of truth.
-- **Last reviewed:** 2026-09-07
+- **Last reviewed:** 2026-09-09
 - **Production authority:** GitHub `main` plus observed behavior on the current Vercel production deployment
 
 ## Source-of-truth order
@@ -104,4 +104,4 @@ The check validates the product-state schema, current-document metadata, navigat
 4. Add a dated record to [`12-roadmap.md`](./12-roadmap.md) when doctrine changes.
 5. Update [`21-go-to-market-agent.md`](./21-go-to-market-agent.md) when an offer, audience, proof, objection, or autonomy boundary changes.
 6. Run documentation and repository checks before merging.
-7. The docs steward maintains [`../NOW.md`](../NOW.md) and [`history/LOG.md`](./history/LOG.md) on every push to `main` and nightly. It never edits source and never deletes a document; superseded documents move to `history/` with a banner.
+7. The docs steward validates [`../NOW.md`](../NOW.md) on every push to `main` and reconciles it and [`history/LOG.md`](./history/LOG.md) against the code nightly. It never edits source and never deletes a document; superseded documents move to `history/` with a banner.

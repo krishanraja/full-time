@@ -1,8 +1,8 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-09-07
-head: adddf64
+as_of: 2026-09-09
+head: e8bd2dd
 lifecycle: beta
 production_url: https://fulltime.fm
 state_doc: docs/19-release-state.md
@@ -29,7 +29,7 @@ Full Time is not a Mindmake product and is not sold. It is proof. The room_face 
 
 Objection it answers: "AI-generated editorial cannot be held to a standard." Here is one held to twenty-five of them, daily, with the ledger open.
 
-## Where it is right now (as of 2026-09-07)
+## Where it is right now (as of 2026-09-09)
 
 - **Lifecycle: live beta by founder override, 2026-09-04.** Migration `supabase/migrations/20260904120000_founder_launch_override.sql` recorded an explicit override gate snapshot and set `release_state` to live; the waived human, rights, voice, rehearsal and forecast gates are listed in `docs/19-release-state.md`. `docs/product-state.json` records the migration applied and read back as live on 2026-09-04.
 - **Live at fulltime.fm**: the three-tab shell (Today, Teams, Settings), all six AI Pundits free without an account, Reporter RSS retained, `/feed` redirects to Today. Last live readback in `docs/19-release-state.md` is 2026-09-04 20:50 UTC; nothing in this repo can confirm the production environment flags after that.
@@ -42,6 +42,8 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 
 ## What changed recently
 
+- 2026-09-08 **Full Time now reads off the shared canon** (`a8d4e24`, `733afe1`, `22d396d`, `e8bd2dd`, #67, #68, #70, #71). AGENTS.md gained a marker-delimited block rendered from `krishanraja/ai-harness`: "the canon was well governed and had never reached a product repository" before this, so "this repo referenced it zero times." Synced three times since, to releases v2026.08.29.3, v2026.09.08.1 and v2026.09.08.2. This repository's own rules keep precedence on structure, naming, voice, stamps and archive location; the canon governs approval, verification, secrets and destructive actions. The docs steward never edits the text between the markers; a change there is a proposal against the canon, not a repository fact.
+- 2026-09-08 **The steward's own freshness claim was wrong, in two places** (`b662cd3`, this reconciliation). AGENTS.md said NOW.md is "reconciled against the code on every push to main and nightly." The push half was never true: `claude-code-action` refuses the push event, so "the steward has failed on every push since it shipped," with a red check on every merge as the only symptom. `b662cd3` fixed AGENTS.md; `docs/README.md`'s "Maintaining the handbook" step 7 carried the identical claim and is corrected in this reconciliation. Say "validated on every push, reconciled nightly."
 - 2026-09-07 **A diagnostic run at a tenth of the price** (`adddf64`, #66). The 2026-09-06 run "failed 0/6 and I caused two of the three reasons": a writer rule demanding a percentage the number gate then refused. Per-call logs priced the run at 2.14 US dollars and killed the assumed optimisation: batching judges saves input, and "input is a fifth of the judge bill". Levers now: `?pundits=` writes a subset, `&attempts=` lowers repair rounds, a passing judge writes only its score, and the calibration harness no longer reports an API outage as an editorial verdict ("A confident wrong conclusion is the most expensive thing this project produces").
 - 2026-09-06 **Six faults from the Liverpool run, all ours, all found for free** (`6dc3dd4`, #65). The claim laboratory "returned thirty five claims holding about ten ideas", so six pundits wrote one script and five failed as a truism; claims are now deduplicated (thirty-five collapse to sixteen). Form had no lower bound and presented a nine-month-old draw as a run; it is windowed at sixty days. Entity licensing refused four pundits for naming teams the pack had handed them: "Showing a writer a name and then refusing it is a trap rather than a gate." `preferredClaimTypes` had been in every spec since they were written and "read by nothing".
 - 2026-09-06 **The judges were told what a four is** (`20d5672`, `5ed4712`, `80306a8`, #62 to #64). A calibration harness judges a published script and a professional match report against the same sealed evidence. First run: the one published show, judged 12/12 before the written standards merged, scored 3/12 after; two professional reports averaged 1.7 on ten craft dimensions. Fix: four is "the standard of a good professional match report, not a flawless one". With anchors the published script went from five of fourteen back to eleven, craft mean 2.8 to 3.7.
@@ -55,7 +57,6 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 - 2026-09-05 **Gates misreading correct scripts** (`298f244` to `000826d`, #24 to #48). "four" matched inside "twenty-four"; "two point eight three" read as an eight and a three; "per claim c4" read as an unlicensed 4; a claim that "names five players and cites five events" said four substitutions; an own goal read as the wrong team's player. Every misread is frozen in a regression corpus (`38e759f`) so the next gate change is checked for nothing.
 - 2026-09-04 **Founder launch override** (`8928687`). Readback showed the 04:45 cron returning 409 on the rehearsal flag, no voice or lexicon rows, and `release_state` never enabled, "so publish_daily_drop() could not publish". The override migration, self-seeded voices with a founder attestation, and pronunciation measured against the verified transcript made automatic publication possible.
 - 2026-08-11 **Pundit-first daily show and the handbook** (`729c8e5`, `c782d1c`, `f52eb45`): the player-first Today, six selectable AI Pundits, `product-state.json` and the go-to-market agent manual.
-- 2026-08-08 **Six-persona launch system** (`ed5b1fb`): evidence-licensed claims, independent gates, prediction receipts, six narration pipelines, durable workflows, fail-closed release controls.
 
 ## What is next and what is waiting on Krish
 
