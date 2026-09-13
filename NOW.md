@@ -1,7 +1,7 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-09-09
+as_of: 2026-09-13
 head: e8bd2dd
 lifecycle: beta
 production_url: https://fulltime.fm
@@ -29,7 +29,7 @@ Full Time is not a Mindmake product and is not sold. It is proof. The room_face 
 
 Objection it answers: "AI-generated editorial cannot be held to a standard." Here is one held to twenty-five of them, daily, with the ledger open.
 
-## Where it is right now (as of 2026-09-09)
+## Where it is right now (as of 2026-09-13)
 
 - **Lifecycle: live beta by founder override, 2026-09-04.** Migration `supabase/migrations/20260904120000_founder_launch_override.sql` recorded an explicit override gate snapshot and set `release_state` to live; the waived human, rights, voice, rehearsal and forecast gates are listed in `docs/19-release-state.md`. `docs/product-state.json` records the migration applied and read back as live on 2026-09-04.
 - **Live at fulltime.fm**: the three-tab shell (Today, Teams, Settings), all six AI Pundits free without an account, Reporter RSS retained, `/feed` redirects to Today. Last live readback in `docs/19-release-state.md` is 2026-09-04 20:50 UTC; nothing in this repo can confirm the production environment flags after that.
@@ -56,7 +56,6 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 - 2026-09-05 **Structural faults that cost paid runs** (`51a5c25`, `ce44014`, `f3e2f79`, `8847453`, `ae564f9`, #33 to #53). A durable run replayed stale steps, so "several runs I read as clean tests were mixtures of old and new code". `harness_runs` capped attempt at three after the generator allowed six. One unreadable judge ended a whole run. A stub-driven test now walks all six pundits through the writing path in under a second. Verify CI had been red for weeks on a dependency advisory: "CI that is always red reports nothing."
 - 2026-09-05 **Gates misreading correct scripts** (`298f244` to `000826d`, #24 to #48). "four" matched inside "twenty-four"; "two point eight three" read as an eight and a three; "per claim c4" read as an unlicensed 4; a claim that "names five players and cites five events" said four substitutions; an own goal read as the wrong team's player. Every misread is frozen in a regression corpus (`38e759f`) so the next gate change is checked for nothing.
 - 2026-09-04 **Founder launch override** (`8928687`). Readback showed the 04:45 cron returning 409 on the rehearsal flag, no voice or lexicon rows, and `release_state` never enabled, "so publish_daily_drop() could not publish". The override migration, self-seeded voices with a founder attestation, and pronunciation measured against the verified transcript made automatic publication possible.
-- 2026-08-11 **Pundit-first daily show and the handbook** (`729c8e5`, `c782d1c`, `f52eb45`): the player-first Today, six selectable AI Pundits, `product-state.json` and the go-to-market agent manual.
 
 ## What is next and what is waiting on Krish
 

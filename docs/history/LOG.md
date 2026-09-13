@@ -4,6 +4,11 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-09-13
+
+- rolled from NOW.md: 2026-08-11 Pundit-first daily show and the handbook (`729c8e5`, `c782d1c`, `f52eb45`): the player-first Today, six selectable AI Pundits, `product-state.json` and the go-to-market agent manual.
+- reconciled at `e8bd2dd`: no non-steward commits since the last run. The only change was the calendar carrying the 2026-08-11 bullet past thirty days; as_of advanced to 2026-09-13, head unchanged.
+
 ## 2026-09-09
 
 - reconciled at `e8bd2dd`: head moved from `adddf64`. The five commits since were `a8d4e24`, `733afe1`, `b662cd3`, `22d396d` and `e8bd2dd`; four of them render or sync the shared canon block inside AGENTS.md, which the steward never edits, and the fifth (`b662cd3`) corrected AGENTS.md's own claim that NOW.md is reconciled on every push, not only validated.
