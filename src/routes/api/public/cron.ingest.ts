@@ -13,7 +13,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { currentCoverageDate } from "@/lib/london-date";
-import { hasStat, statLabels, statNumber as statN } from "@/lib/api/provider-stats";
+import {
+  hasStat,
+  statLabels,
+  statNumber as statN,
+  statPresenceDelta,
+  type PresenceAlarm,
+} from "@/lib/api/provider-stats";
 import type { Database } from "@/integrations/supabase/types";
 
 const AF = "https://v3.football.api-sports.io";
@@ -177,6 +183,7 @@ async function handleIngest({ request }: { request: Request }) {
   const DATE = url.searchParams.get("date") ?? yesterdayUK();
   const skipCoverage = url.searchParams.get("skipCoverage") === "1";
 
+  const warnings: string[] = [];
   let calls = 0;
   const af = async (path: string, retries = 2): Promise<Json[]> => {
     await sleep(PACE_MS);
@@ -191,14 +198,28 @@ async function handleIngest({ request }: { request: Request }) {
       return af(path, retries - 1);
     }
     if (d.errors && Object.keys(d.errors).length) {
+      // Returning [] keeps one bad endpoint from killing the day, which is the
+      // right call. What was wrong is that it did so silently: an endpoint
+      // erroring and a day with no fixtures produced the same empty response
+      // body, so neither a reader nor the run ledger could tell them apart.
+      const msg = `Provider error on ${path}: ${JSON.stringify(d.errors)}`;
       console.error("[ingest] AF error", path, JSON.stringify(d.errors));
+      warnings.push(msg);
       return [];
     }
     return d.response ?? [];
   };
 
-  const warnings: string[] = [];
   let absentStatsReported = false;
+
+  // One row per statistic, accumulated across every fixture that carried
+  // statistics at all. This is what turns "expected goals is missing today"
+  // into "expected goals was here yesterday and is not here now", which is the
+  // sentence nobody got to read for five days.
+  const presence = new Map(
+    STAT_FIELDS.map(([column]) => [column, { fixturesSeen: 0, fixturesPresent: 0 }]),
+  );
+  const labelsSeen = new Set<string>();
 
   // ---- coverage preflight. RISK 1 and the single highest-probability
   // launch-day failure: if events coverage is off, events come back empty,
@@ -385,6 +406,14 @@ async function handleIngest({ request }: { request: Request }) {
       // provider did send, so a rename and a withdrawal are told apart at the
       // point where the difference is visible. Reported once per run, because
       // a missing field is missing for every fixture that day.
+      for (const [column, label] of STAT_FIELDS) {
+        const tally = presence.get(column);
+        if (!tally) continue;
+        tally.fixturesSeen += 1;
+        if (hasStat(h, label) || hasStat(a, label)) tally.fixturesPresent += 1;
+      }
+      for (const label of [...statLabels(h), ...statLabels(a)]) labelsSeen.add(label);
+
       const absent = STAT_FIELDS.filter(
         ([, label]) => !hasStat(h, label) && !hasStat(a, label),
       ).map(([, label]) => label);
@@ -528,6 +557,76 @@ async function handleIngest({ request }: { request: Request }) {
     );
   }
 
+  // ---- provider drift ledger.
+  //
+  // Observability, not product: the editorial pipeline never reads either
+  // table, and a failure to write them must never fail an ingest. That is also
+  // why it is safe for this code to ship before or after its migration.
+  let drift: PresenceAlarm[] = [];
+  try {
+    const { serviceRest } = await import("@/lib/pundit/service-rest.server");
+    const today = STAT_FIELDS.map(([column, label]) => ({
+      coverage_date: DATE,
+      stat_key: column,
+      provider_label: label,
+      fixtures_seen: presence.get(column)?.fixturesSeen ?? 0,
+      fixtures_present: presence.get(column)?.fixturesPresent ?? 0,
+      provider_labels: [...labelsSeen],
+    }));
+
+    type PresenceRow = (typeof today)[number];
+    const earlier = await serviceRest<PresenceRow[]>(
+      `provider_stat_presence?coverage_date=lt.${DATE}` +
+        `&order=coverage_date.desc&limit=${STAT_FIELDS.length}`,
+    );
+    // The query can straddle two days when an earlier run recorded fewer
+    // statistics, and the older row would then win the comparison. Keep only
+    // the most recent date it returned.
+    const lastDate = earlier[0]?.coverage_date;
+    const previous = earlier.filter((row) => row.coverage_date === lastDate);
+
+    const asPresence = (row: PresenceRow) => ({
+      statKey: row.stat_key,
+      providerLabel: row.provider_label,
+      fixturesSeen: row.fixtures_seen,
+      fixturesPresent: row.fixtures_present,
+    });
+    drift = statPresenceDelta(
+      previous.map(asPresence),
+      today.map(asPresence),
+      [...labelsSeen],
+    );
+    for (const alarm of drift) {
+      const msg = `Provider drift (${alarm.kind}) on ${alarm.statKey}: ${alarm.detail}`;
+      console.error("[ingest] " + msg);
+      warnings.push(msg);
+    }
+
+    await serviceRest<null>("provider_stat_presence", {
+      method: "POST",
+      body: today,
+      prefer: "resolution=merge-duplicates,return=minimal",
+    });
+    await serviceRest<null>("ingest_runs", {
+      method: "POST",
+      body: [
+        {
+          coverage_date: DATE,
+          started_at: new Date(started).toISOString(),
+          finished: all.length,
+          enriched: ranked.length,
+          calls,
+          warnings,
+        },
+      ],
+      prefer: "return=minimal",
+    });
+  } catch (error: unknown) {
+    warnings.push(
+      `Provider drift ledger unavailable: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
   const response = {
     ok: true,
     date: DATE,
@@ -535,6 +634,7 @@ async function handleIngest({ request }: { request: Request }) {
     finished: all.length,
     enriched: ranked.length,
     crosscheck: { agreed, disagreed, unmatched },
+    drift,
     predictionSettlement,
     calls,
     warnings,

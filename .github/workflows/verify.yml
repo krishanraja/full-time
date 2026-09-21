@@ -60,7 +60,15 @@ jobs:
       #   GET /v1/projects/{ref}/types/typescript?included_schemas=public
       - name: Supabase types are not stale
         run: |
-          for t in generation_requests waitlist synthesis_insights voice_corpus; do
+          # standings_snapshots joined this list on 2026-09-21. It has been in
+          # types.ts since August and protected by nothing, and the evidence
+          # pack is about to start reading it.
+          #
+          # ingest_runs and provider_stat_presence are deliberately NOT here
+          # yet: their migration has not been applied, so types.ts cannot carry
+          # them and adding them now would fail this job on every push. Add
+          # them in the same commit that regenerates the types.
+          for t in generation_requests waitlist synthesis_insights voice_corpus standings_snapshots; do
             if ! grep -q "$t" src/integrations/supabase/types.ts; then
               echo "::error file=src/integrations/supabase/types.ts::'$t' missing from the generated Supabase types. They have been stripped or are stale. Regenerate from the live schema."
               exit 1
