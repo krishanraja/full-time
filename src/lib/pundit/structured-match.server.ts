@@ -96,7 +96,7 @@ export async function loadStructuredMatch(matchId: string) {
       supabaseAdmin.from("match_stats").select("*").eq("match_id", matchId).maybeSingle(),
       supabaseAdmin
         .from("match_context")
-        .select("feeds_agree")
+        .select("feeds_agree, home_gk_name, away_gk_name, home_gk_subbed, away_gk_subbed")
         .eq("match_id", matchId)
         .maybeSingle(),
     ]);
@@ -223,9 +223,21 @@ export async function loadStructuredMatch(matchId: string) {
           awayCorners: nullableNumber(stat.away_corners),
           homeSaves: nullableNumber(stat.home_saves),
           awaySaves: nullableNumber(stat.away_saves),
+          homeBlocked: nullableNumber(stat.home_blocked),
+          awayBlocked: nullableNumber(stat.away_blocked),
           source: String(stat.source ?? "database-verified"),
         }
       : undefined,
+    goalkeepers: {
+      home: {
+        name: context?.home_gk_name ?? null,
+        subbed: context?.home_gk_subbed ?? null,
+      },
+      away: {
+        name: context?.away_gk_name ?? null,
+        subbed: context?.away_gk_subbed ?? null,
+      },
+    },
     form: {
       home: priorMatches(
         prior.filter(

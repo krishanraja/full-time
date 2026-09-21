@@ -58,7 +58,19 @@ export type StructuredMatchInput = {
     awayCorners?: number | null;
     homeSaves?: number | null;
     awaySaves?: number | null;
+    homeBlocked?: number | null;
+    awayBlocked?: number | null;
     source: string;
+  };
+  /** Who kept goal, and whether he was still there at the end.
+   *
+   *  Ingested since August for an angle on the legacy path, and never read by
+   *  the live one. It matters because saves are recorded for a side and not for
+   *  a player, so a pundit cannot attribute one without the pack saying who was
+   *  in goal for all ninety minutes. */
+  goalkeepers?: {
+    home?: { name: string | null; subbed: boolean | null };
+    away?: { name: string | null; subbed: boolean | null };
   };
   /** What each side did before this match, and what these two have done to
    *  each other. The pack has always held one match in isolation, which is
@@ -242,6 +254,12 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     ["stats.away_corners", "Away corners", stats?.awayCorners],
     ["stats.home_saves", "Home saves", stats?.homeSaves],
     ["stats.away_saves", "Away saves", stats?.awaySaves],
+    // Blocked shots are the nearest thing to a chance-quality signal that the
+    // provider still sends. A shot blocked by a defender never reached the
+    // keeper, so shots minus blocked is closer to what a side actually made
+    // than the shot count the scoreline gets argued with.
+    ["stats.home_blocked", "Home shots blocked by the defence", stats?.homeBlocked],
+    ["stats.away_blocked", "Away shots blocked by the defence", stats?.awayBlocked],
   ];
   for (const [id, label, value] of statEntries) {
     if (finite(value)) facts.push(fact(id, label, value, stats?.source ?? "unknown", id));
@@ -351,6 +369,7 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     ],
     ["corners", "Corners in the match", stats?.homeCorners, stats?.awayCorners],
     ["saves", "Saves in the match", stats?.homeSaves, stats?.awaySaves],
+    ["blocked", "Shots blocked in the match", stats?.homeBlocked, stats?.awayBlocked],
   ] as const) {
     if (!finite(home) || !finite(away)) continue;
     derivations.push(
@@ -455,6 +474,37 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
         ),
       );
     }
+  }
+
+  // Saves are recorded for a side and never for a player. The writer is told
+  // that in the system prompt and no gate enforces it, so putting a keeper's
+  // name in the pack beside a saves figure would invite exactly the
+  // attribution the prompt forbids and nothing would catch it.
+  //
+  // So the attribution is a licensed derivation rather than a bare name. It
+  // exists only when the same man kept goal for the whole match, and its
+  // formula says plainly what has been done. A keeper who was substituted, or
+  // whose substitution is unrecorded, produces nothing at all: unknown is
+  // treated as subbed, because half a match of saves attributed to one of two
+  // keepers is the error this is here to prevent.
+  //
+  // The name sits in the label, not the value. The entity licence reads both,
+  // and a number is what the value is for.
+  for (const [side, keeper, saves] of [
+    ["home", input.goalkeepers?.home, stats?.homeSaves],
+    ["away", input.goalkeepers?.away, stats?.awaySaves],
+  ] as const) {
+    if (!keeper?.name || keeper.subbed !== false || !finite(saves)) continue;
+    derivations.push(
+      derived(
+        `derived.${side}_gk_saves`,
+        `Saves by ${keeper.name}`,
+        saves,
+        stats?.source ?? "provider",
+        `stats.${side}_saves,match_context.${side}_gk_name`,
+        `stats.${side}_saves, attributed to the goalkeeper who played the whole match`,
+      ),
+    );
   }
 
   if (finite(stats?.homeShots) && stats.homeShots > 0) {

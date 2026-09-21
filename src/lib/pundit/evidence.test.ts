@@ -354,6 +354,84 @@ describe("shot location, the chance-quality signal that survived", () => {
   });
 });
 
+/** The last chance-quality signal the provider still sends. A shot blocked by a
+ *  defender never reached the keeper, so it separates what a side made from
+ *  what it merely attempted - which is the distinction xG used to carry. */
+describe("shots the defence blocked", () => {
+  const blocked = {
+    ...input,
+    stats: { ...input.stats!, homeBlocked: 7, awayBlocked: 2 },
+  };
+
+  it("states each side's blocked shots and the match total", () => {
+    const pack = buildEvidencePack(blocked);
+    expect(pack.facts.find((item) => item.id === "stats.home_blocked")?.value).toBe(7);
+    expect(pack.facts.find((item) => item.id === "stats.away_blocked")?.value).toBe(2);
+    expect(pack.derivations.find((item) => item.id === "derived.match_blocked")?.value).toBe(9);
+  });
+
+  it("states nothing when the provider sent nothing", () => {
+    const pack = buildEvidencePack(input);
+    expect(pack.facts.find((item) => item.id === "stats.home_blocked")).toBeUndefined();
+    expect(pack.derivations.find((item) => item.id === "derived.match_blocked")).toBeUndefined();
+  });
+});
+
+/** Saves are recorded for a side and never for a player. The writer is told so
+ *  in the system prompt and no gate enforces it, so the pack has to make the
+ *  attribution itself or not at all. */
+describe("attributing saves to the keeper who made them", () => {
+  const wholeMatch = {
+    ...input,
+    stats: { ...input.stats!, homeSaves: 6, awaySaves: 3 },
+    goalkeepers: {
+      home: { name: "Steady Hands", subbed: false },
+      away: { name: "Other Keeper", subbed: false },
+    },
+  };
+
+  it("names the keeper in the label and keeps the number in the value", () => {
+    const item = buildEvidencePack(wholeMatch).derivations.find(
+      (entry) => entry.id === "derived.home_gk_saves",
+    );
+    expect(item?.label).toBe("Saves by Steady Hands");
+    expect(item?.value).toBe(6);
+    expect(item?.formula).toContain("played the whole match");
+  });
+
+  it("attributes nothing when the keeper was substituted", () => {
+    const pack = buildEvidencePack({
+      ...wholeMatch,
+      goalkeepers: { ...wholeMatch.goalkeepers, home: { name: "Steady Hands", subbed: true } },
+    });
+    expect(pack.derivations.find((item) => item.id === "derived.home_gk_saves")).toBeUndefined();
+  });
+
+  /** Unknown is treated as substituted. Half a match of saves attributed to one
+   *  of two keepers is the error this exists to prevent, and an unrecorded
+   *  substitution is exactly the case where it would happen. */
+  it("attributes nothing when the substitution is unrecorded", () => {
+    const pack = buildEvidencePack({
+      ...wholeMatch,
+      goalkeepers: { ...wholeMatch.goalkeepers, home: { name: "Steady Hands", subbed: null } },
+    });
+    expect(pack.derivations.find((item) => item.id === "derived.home_gk_saves")).toBeUndefined();
+  });
+
+  it("attributes nothing when the provider sent no saves", () => {
+    const pack = buildEvidencePack({ ...wholeMatch, stats: input.stats });
+    expect(pack.derivations.find((item) => item.id === "derived.home_gk_saves")).toBeUndefined();
+  });
+
+  it("attributes nothing when the keeper is not named", () => {
+    const pack = buildEvidencePack({
+      ...wholeMatch,
+      goalkeepers: { ...wholeMatch.goalkeepers, home: { name: null, subbed: false } },
+    });
+    expect(pack.derivations.find((item) => item.id === "derived.home_gk_saves")).toBeUndefined();
+  });
+});
+
 describe("time a side had to respond to a goal", () => {
   const packWith = (minutes: number[]) =>
     buildEvidencePack({

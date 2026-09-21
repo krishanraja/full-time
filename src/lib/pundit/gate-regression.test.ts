@@ -281,6 +281,38 @@ describe("naming the man who made the goal", () => {
   });
 });
 
+/** The system prompt tells the writer that saves belong to a side and never to
+ *  a player. Nothing enforces it. So the pack either makes the attribution
+ *  itself, as a derivation whose formula says what it did, or the sentence
+ *  stays unsayable. */
+describe("attributing saves to a named keeper", () => {
+  const withKeeper: StructuredMatchInput = {
+    ...toulouseLille,
+    stats: { ...toulouseLille.stats!, homeSaves: 4, awaySaves: 8 },
+    goalkeepers: {
+      home: { name: "Guillaume Restes", subbed: false },
+      away: { name: "Berke Ozer", subbed: false },
+    },
+  };
+
+  it("licenses the keeper and his figure once the pack attributes them", () => {
+    expect(gateFailures("Berke Ozer made eight saves.", withKeeper)).toEqual([]);
+  });
+
+  it("still refuses the same sentence when the keeper was substituted", () => {
+    const substituted: StructuredMatchInput = {
+      ...withKeeper,
+      goalkeepers: {
+        ...withKeeper.goalkeepers!,
+        away: { name: "Berke Ozer", subbed: true },
+      },
+    };
+    expect(gateFailures("Berke Ozer made eight saves.", substituted).join(" ")).toContain(
+      "entity_licence",
+    );
+  });
+});
+
 describe("prose the gates should still reject", () => {
   it("rejects a number the evidence does not carry", () => {
     const failures = gateFailures("Toulouse had thirty-one shots.", toulouseLille);
