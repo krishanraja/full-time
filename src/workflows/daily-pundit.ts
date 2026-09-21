@@ -85,6 +85,12 @@ export async function dailyPunditWorkflow(input: DailyPunditWorkflowInput) {
           pack: prepared.pack,
           claims: prepared.claims,
           originalityCorpus: prepared.originalityCorpus,
+          // Narrowed to this pundit inside the step, not here. The comment at
+          // the top of this file is the reason: pulling a module out of the
+          // shared app graph into the workflow bundle makes Vite reuse the
+          // router chunk and leaks Node-only helpers past step isolation.
+          recentLines: prepared.recentLines,
+          coverageDate,
           maxAttempts: input.maxAttempts,
         }),
       ),

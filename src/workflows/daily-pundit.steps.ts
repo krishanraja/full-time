@@ -33,11 +33,13 @@ export async function prepareEditorialStep(matchId: string, requestedCoverageDat
     { buildEvidencePack },
     { generateClaimLaboratory },
     { loadRightsClearedOriginalityCorpus },
+    { loadRecentlyPublishedLines },
   ] = await Promise.all([
     import("@/lib/pundit/structured-match.server"),
     import("@/lib/pundit/evidence"),
     import("@/lib/pundit/pundit-generator.server"),
     import("@/lib/pundit/research-originality.server"),
+    import("@/lib/pundit/self-originality.server"),
   ]);
   const structured = await loadStructuredMatch(matchId);
   if (structured.coverageDate !== requestedCoverageDate) {
@@ -46,9 +48,13 @@ export async function prepareEditorialStep(matchId: string, requestedCoverageDat
     );
   }
   const pack = buildEvidencePack(structured.input);
-  const [claims, originalityCorpus] = await Promise.all([
+  const [claims, originalityCorpus, recentLines] = await Promise.all([
     generateClaimLaboratory(pack),
     loadRightsClearedOriginalityCorpus(),
+    // What this product published in the last fortnight. The corpus above asks
+    // whether a script is too close to someone else's writing; this asks
+    // whether it is too close to ours, which nothing has ever asked.
+    loadRecentlyPublishedLines(structured.coverageDate),
   ]);
   return {
     coverageDate: structured.coverageDate,
@@ -56,6 +62,7 @@ export async function prepareEditorialStep(matchId: string, requestedCoverageDat
     pack,
     claims,
     originalityCorpus,
+    recentLines,
   };
 }
 prepareEditorialStep.maxRetries = 0;
@@ -65,12 +72,26 @@ export async function generatePunditStep(input: {
   pack: Awaited<ReturnType<typeof prepareEditorialStep>>["pack"];
   claims: Awaited<ReturnType<typeof prepareEditorialStep>>["claims"];
   originalityCorpus: string[];
+  /** Everything the product published in the last fortnight, for every
+   *  pundit. Narrowed to this one inside the step. */
+  recentLines?: Awaited<ReturnType<typeof prepareEditorialStep>>["recentLines"];
+  coverageDate?: string;
   /** Fewer repair rounds than the environment allows, for a diagnostic run. */
   maxAttempts?: number;
 }) {
   "use step";
-  const { generatePunditVariant } = await import("@/lib/pundit/pundit-generator.server");
-  return generatePunditVariant(input);
+  const [{ generatePunditVariant }, { linesToAvoid }] = await Promise.all([
+    import("@/lib/pundit/pundit-generator.server"),
+    import("@/lib/pundit/self-originality"),
+  ]);
+  // Only this pundit's own lines. A persona is supposed to sound like itself,
+  // so holding one pundit to another's phrasing would punish it for having a
+  // voice.
+  const recentlyUsedLines =
+    input.recentLines?.length && input.coverageDate
+      ? linesToAvoid(input.punditId, input.recentLines, input.coverageDate)
+      : undefined;
+  return generatePunditVariant({ ...input, recentlyUsedLines });
 }
 generatePunditStep.maxRetries = 0;
 
@@ -80,7 +101,39 @@ export async function persistEditorialStep(input: {
   variants: GeneratedPunditVariant[];
 }) {
   "use step";
-  const { persistEditorialRehearsal } = await import("@/lib/pundit/editorial-repository.server");
+  const [{ persistEditorialRehearsal }, { convergentVariants }] = await Promise.all([
+    import("@/lib/pundit/editorial-repository.server"),
+    import("@/lib/pundit/self-originality"),
+  ]);
+
+  // Six pundits share one evidence pack and one claim set and have never been
+  // compared to each other. On 2026-09-04 the claim laboratory returned
+  // thirty-five claims holding about ten ideas, all six built the same
+  // argument and five were failed for a truism - and the only record of it was
+  // five separate insight failures that each looked like one writer's problem.
+  //
+  // Reported, never failed. Convergence is a fact about the shared input, so
+  // the fix is upstream in the claim laboratory and refusing the writers would
+  // be blaming them for what they were given.
+  const echoes = convergentVariants(
+    input.variants.map((variant) => ({
+      punditId: variant.candidate.punditId,
+      text: variant.candidate.thesis.judgment,
+    })),
+  );
+  if (echoes.length) {
+    console.error(
+      JSON.stringify({
+        level: "error",
+        message: "pundits_converged",
+        coverageDate: input.coverageDate,
+        pairs: echoes.map((echo) => `${echo.left}/${echo.right}`),
+        worst: echoes[0].similarity,
+        hint: "Read the claim set before touching a prompt.",
+      }),
+    );
+  }
+
   return persistEditorialRehearsal({
     coverageDate: input.coverageDate,
     pack: input.prepared.pack,
