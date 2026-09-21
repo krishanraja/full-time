@@ -1,15 +1,11 @@
 import { createHash } from "node:crypto";
-import {
-  adjustedTeamRating,
-  forecastMatch,
-  initialTeamRating,
-  type TeamRating,
-} from "./forecast";
+import { adjustedTeamRating, forecastMatch, initialTeamRating, type TeamRating } from "./forecast";
 import { loadActiveForecastModel } from "./forecast-training.server";
 import { registerPrediction, type PredictionDraft } from "./prediction-registration.server";
 import { applyPersonaRiskTilt } from "./predictions";
 import { serviceRest } from "./service-rest.server";
 import { PUNDIT_IDS, type AnalysisClaim, type EvidencePack, type PunditId } from "./types";
+import { apiFootballClient } from "@/lib/api/api-football.server";
 
 const LEAGUES = [
   { providerId: 39, id: "af_39", name: "Premier League", country: "England" },
@@ -48,8 +44,6 @@ const PERSPECTIVES: Record<PunditId, string> = {
   banter: "Reputation can make noise; the registered probability is the part that has to pay rent.",
 };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 function shortName(name: string) {
   return (
     name
@@ -64,23 +58,14 @@ function dateOnly(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+/** "throw", not "empty": here an empty fixture list is indistinguishable from
+ *  a correct answer and would be acted on as "no matches to register". Nobody
+ *  finds out until a receipt is missing, and by then kickoff has passed and the
+ *  prediction can no longer be registered honestly. */
+const provider = apiFootballClient({ onError: "throw", timeoutMs: 20_000 });
+
 async function apiFootball(path: string) {
-  const key = process.env.API_FOOTBALL_KEY;
-  if (!key) throw new Error("API_FOOTBALL_KEY is missing.");
-  await sleep(300);
-  const response = await fetch(`https://v3.football.api-sports.io${path}`, {
-    headers: { "x-apisports-key": key },
-    signal: AbortSignal.timeout(20_000),
-  });
-  if (!response.ok) throw new Error(`Upcoming fixture provider returned ${response.status}.`);
-  const payload = (await response.json()) as {
-    errors?: Record<string, unknown>;
-    response?: ProviderFixture[];
-  };
-  if (payload.errors && Object.keys(payload.errors).length) {
-    throw new Error(`Upcoming fixture provider error: ${JSON.stringify(payload.errors)}`);
-  }
-  return payload.response ?? [];
+  return provider.get<ProviderFixture>(path);
 }
 
 export async function syncUpcomingFixtures(now = new Date()) {

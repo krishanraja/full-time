@@ -11,6 +11,7 @@
 // pipeline.
 
 import { createFileRoute } from "@tanstack/react-router";
+import { apiFootballClient } from "@/lib/api/api-football.server";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { currentCoverageDate } from "@/lib/london-date";
 import {
@@ -22,8 +23,6 @@ import {
 } from "@/lib/api/provider-stats";
 import type { Database } from "@/integrations/supabase/types";
 
-const AF = "https://v3.football.api-sports.io";
-const PACE_MS = 300; // Pro: 300 req/min. The old 7000 was tuned for the free tier.
 const TOP_N = 12;
 
 /** The statistics we keep, as the column suffix and the provider's label for
@@ -92,8 +91,6 @@ type ContextRow = {
   source: string;
   updated_at: string;
 };
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Yesterday in UK time: the drop recaps the day that just finished. */
 function yesterdayUK(): string {
@@ -184,31 +181,20 @@ async function handleIngest({ request }: { request: Request }) {
   const skipCoverage = url.searchParams.get("skipCoverage") === "1";
 
   const warnings: string[] = [];
-  let calls = 0;
-  const af = async (path: string, retries = 2): Promise<Json[]> => {
-    await sleep(PACE_MS);
-    calls++;
-    const r = await fetch(AF + path, {
-      headers: { "x-apisports-key": AF_KEY },
-      signal: AbortSignal.timeout(30_000),
-    });
-    const d = (await r.json()) as Json;
-    if (d.errors?.rateLimit && retries > 0) {
-      await sleep(25_000);
-      return af(path, retries - 1);
-    }
-    if (d.errors && Object.keys(d.errors).length) {
-      // Returning [] keeps one bad endpoint from killing the day, which is the
-      // right call. What was wrong is that it did so silently: an endpoint
-      // erroring and a day with no fixtures produced the same empty response
-      // body, so neither a reader nor the run ledger could tell them apart.
-      const msg = `Provider error on ${path}: ${JSON.stringify(d.errors)}`;
-      console.error("[ingest] AF error", path, JSON.stringify(d.errors));
-      warnings.push(msg);
-      return [];
-    }
-    return d.response ?? [];
-  };
+  // "empty" because one bad endpoint must cost one statistic, not a day of
+  // fixtures. It is only safe because the warning is recorded: an endpoint
+  // erroring and a day with no fixtures used to produce the same empty
+  // response body, and neither a reader nor the run ledger could tell them
+  // apart.
+  const provider = apiFootballClient({
+    onError: "empty",
+    timeoutMs: 30_000,
+    onWarning: (message) => {
+      console.error("[ingest] " + message);
+      warnings.push(message);
+    },
+  });
+  const af = (path: string): Promise<Json[]> => provider.get<Json>(path);
 
   let absentStatsReported = false;
 
@@ -263,7 +249,7 @@ async function handleIngest({ request }: { request: Request }) {
       date: DATE,
       season: SEASON,
       finished: 0,
-      calls,
+      calls: provider.calls(),
       warnings,
     });
   }
@@ -591,11 +577,7 @@ async function handleIngest({ request }: { request: Request }) {
       fixturesSeen: row.fixtures_seen,
       fixturesPresent: row.fixtures_present,
     });
-    drift = statPresenceDelta(
-      previous.map(asPresence),
-      today.map(asPresence),
-      [...labelsSeen],
-    );
+    drift = statPresenceDelta(previous.map(asPresence), today.map(asPresence), [...labelsSeen]);
     for (const alarm of drift) {
       const msg = `Provider drift (${alarm.kind}) on ${alarm.statKey}: ${alarm.detail}`;
       console.error("[ingest] " + msg);
@@ -615,7 +597,7 @@ async function handleIngest({ request }: { request: Request }) {
           started_at: new Date(started).toISOString(),
           finished: all.length,
           enriched: ranked.length,
-          calls,
+          calls: provider.calls(),
           warnings,
         },
       ],
@@ -636,7 +618,7 @@ async function handleIngest({ request }: { request: Request }) {
     crosscheck: { agreed, disagreed, unmatched },
     drift,
     predictionSettlement,
-    calls,
+    calls: provider.calls(),
     warnings,
   };
   console.log(
@@ -647,7 +629,7 @@ async function handleIngest({ request }: { request: Request }) {
       date: DATE,
       finished: all.length,
       enriched: ranked.length,
-      calls,
+      calls: provider.calls(),
       warnings: warnings.length,
       durationMs: Date.now() - started,
     }),

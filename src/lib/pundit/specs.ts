@@ -53,7 +53,13 @@ export const PUNDIT_SPECS: Record<PunditId, PunditSpec> = {
     name: "The Reporter",
     lens: "Balanced evidence and news judgment: identify what matters most.",
     preferredClaimTypes: ["fact", "opinion", "probability", "prediction"],
-    evidencePreferences: ["score progression", "game state", "shot location", "shots", "material events"],
+    evidencePreferences: [
+      "score progression",
+      "game state",
+      "shot location",
+      "shots",
+      "material events",
+    ],
     pointOfViewRules: [
       "Lead with significance, not chronology",
       "Make one defensible editorial judgment",
@@ -132,7 +138,13 @@ export const PUNDIT_SPECS: Record<PunditId, PunditSpec> = {
       "prediction",
       "opinion",
     ],
-    evidencePreferences: ["shot location", "shot quality proxies", "sample size", "conversion", "calibration"],
+    evidencePreferences: [
+      "shot location",
+      "shot quality proxies",
+      "sample size",
+      "conversion",
+      "calibration",
+    ],
     pointOfViewRules: [
       "Interpret every number",
       "Use data to locate the question, not declare truth",

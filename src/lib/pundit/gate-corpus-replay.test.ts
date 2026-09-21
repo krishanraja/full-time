@@ -45,7 +45,13 @@ const matchInput: StructuredMatchInput = {
       source: "provider-a",
     },
   ],
-  stats: { homeShots: 14, awayShots: 9, homeShotsOnTarget: 6, awayShotsOnTarget: 3, source: "provider-a" },
+  stats: {
+    homeShots: 14,
+    awayShots: 9,
+    homeShotsOnTarget: 6,
+    awayShotsOnTarget: 3,
+    source: "provider-a",
+  },
 };
 
 const claim: AnalysisClaim = {

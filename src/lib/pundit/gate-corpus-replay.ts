@@ -216,7 +216,10 @@ export function replayGateCorpus(corpus: GateCorpus): ReplayReport {
       continue;
     }
     if (!variant.thesis || !variant.beat_outline) {
-      skipped.push({ variantId: variant.id, reason: "exported before thesis and outline were kept" });
+      skipped.push({
+        variantId: variant.id,
+        reason: "exported before thesis and outline were kept",
+      });
       continue;
     }
 
