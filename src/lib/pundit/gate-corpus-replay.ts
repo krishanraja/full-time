@@ -186,10 +186,37 @@ function finalAttemptVerdicts(verdicts: readonly CorpusVerdict[]): Map<string, C
 }
 
 export function replayGateCorpus(corpus: GateCorpus): ReplayReport {
+  // A drop can hold more than one evidence pack. The first export found two
+  // for match af_1557393, and joining a variant to its pack through drop_id
+  // silently picked the wrong one: the claims the variant cites belong to the
+  // other pack, so every claim read as missing and every number the writer
+  // took from the real pack read as unlicensed.
+  //
+  // That is not a subtle failure mode, it is the failure mode - a replay that
+  // reports a gate changing its mind when nothing changed is worse than no
+  // replay, because it would send someone looking for a regression that does
+  // not exist. The claim is the authority: it names its own pack.
+  const packsById = new Map<string, CorpusPack>();
+  for (const pack of corpus.packs ?? []) packsById.set(pack.id, pack);
+
+  const claimsById = new Map<string, CorpusClaim>();
+  for (const claim of corpus.claims ?? []) claimsById.set(claim.id, claim);
+
+  // Only for a variant whose thesis cites nothing, which a real run does not
+  // produce but a truncated export can.
   const packsByDrop = new Map<string, CorpusPack>();
   for (const pack of corpus.packs ?? []) {
     if (pack.drop_id) packsByDrop.set(pack.drop_id, pack);
   }
+
+  const packFor = (variant: CorpusVariant): CorpusPack | undefined => {
+    for (const claimId of variant.thesis?.selectedClaimIds ?? []) {
+      const packId = claimsById.get(claimId)?.evidence_pack_id;
+      const pack = packId ? packsById.get(packId) : undefined;
+      if (pack) return pack;
+    }
+    return packsByDrop.get(variant.drop_id);
+  };
 
   const verdictsByVariant = new Map<string, CorpusVerdict[]>();
   for (const verdict of corpus.verdicts ?? []) {
@@ -205,9 +232,9 @@ export function replayGateCorpus(corpus: GateCorpus): ReplayReport {
   let comparedVerdicts = 0;
 
   for (const variant of corpus.variants ?? []) {
-    const pack = packsByDrop.get(variant.drop_id);
+    const pack = packFor(variant);
     if (!pack) {
-      skipped.push({ variantId: variant.id, reason: "no evidence pack exported for its drop" });
+      skipped.push({ variantId: variant.id, reason: "no evidence pack exported for its claims" });
       continue;
     }
     const recorded = verdictsByVariant.get(variant.id);

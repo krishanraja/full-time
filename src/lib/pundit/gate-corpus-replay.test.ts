@@ -222,7 +222,7 @@ describe("replaying stored gate verdicts", () => {
     const report = replayGateCorpus(corpus);
     expect(report.replayedVariants).toBe(0);
     expect(report.skipped).toEqual([
-      { variantId: "variant-1", reason: "no evidence pack exported for its drop" },
+      { variantId: "variant-1", reason: "no evidence pack exported for its claims" },
     ]);
   });
 });
@@ -234,10 +234,43 @@ describe("replaying stored gate verdicts", () => {
 const corpusPath = resolve(process.cwd(), "src/lib/pundit/__fixtures__/gate-corpus.json");
 
 describe.skipIf(!existsSync(corpusPath))("the exported corpus of real scripts", () => {
-  it("still gets the same verdict from every gate it can replay", () => {
+  /** Zero mismatches is the wrong bar, and the first real export proved it:
+   *  fourteen of a hundred and ninety-two, every one a gate that refuses today
+   *  what it allowed on 4-6 September. That is not drift, it is the tightening
+   *  those weeks were spent on - `000826d` alone added the check that refuses a
+   *  claim whose own list contradicts its count. A corpus of history will
+   *  always carry verdicts from before the fix that followed them.
+   *
+   *  So the assertion is the direction. A gate that got STRICTER is expected
+   *  and is left for a human to read. A gate that got LOOSER is an alarm with
+   *  no innocent reading: something that was caught once is not caught now, and
+   *  nothing in this repository has ever deliberately made a hard gate
+   *  permissive. */
+  it("has no hard gate that stopped catching something it used to catch", () => {
     const corpus = JSON.parse(readFileSync(corpusPath, "utf8")) as GateCorpus;
     const report = replayGateCorpus(corpus);
     expect(report.comparedVerdicts).toBeGreaterThan(0);
-    expect(report.mismatches).toEqual([]);
+
+    const wentLooser = report.mismatches.filter((m) => !m.recorded && m.replayed);
+    expect(wentLooser).toEqual([]);
+  });
+
+  /** Not an assertion, a report. The stricter mismatches are the interesting
+   *  ones and they are worth a human eye, but they cannot fail a build without
+   *  making every historical corpus permanently red. */
+  it("reports how far the gates have moved since the corpus was written", () => {
+    const corpus = JSON.parse(readFileSync(corpusPath, "utf8")) as GateCorpus;
+    const report = replayGateCorpus(corpus);
+    const stricter = report.mismatches.filter((m) => m.recorded && !m.replayed);
+    const byHarness = stricter.reduce<Record<string, number>>((acc, m) => {
+      acc[m.harness] = (acc[m.harness] ?? 0) + 1;
+      return acc;
+    }, {});
+    console.log(
+      `[gate replay] ${report.comparedVerdicts} verdicts across ${report.replayedVariants} variants, ` +
+        `${report.skipped.length} skipped, ${stricter.length} now refused that once passed:`,
+      byHarness,
+    );
+    expect(report.skipped).toEqual([]);
   });
 });
