@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { extractJson, providerFor, readOpenAi, requestContent } from "./model-json.server";
+import {
+  extractJson,
+  providerFor,
+  readGoogle,
+  readOpenAi,
+  requestContent,
+} from "./model-json.server";
 import { callCostUsd } from "./model-cost";
 
 describe("reading one JSON object out of a model response", () => {
@@ -133,6 +139,76 @@ describe("the fallback models are priced", () => {
     const usage = { input_tokens: 1_000_000, output_tokens: 0 };
     for (const model of ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]) {
       expect(callCostUsd(model, usage)).toBeLessThan(callCostUsd("definitely-not-a-model", usage));
+    }
+  });
+});
+
+describe("Google is routed and read correctly", () => {
+  it("routes gemini and gemma ids to Google", () => {
+    for (const model of ["gemini-3.8-flash", "gemini-3-8-flash", "gemma-4-31b"]) {
+      expect(providerFor(model)).toBe("google");
+    }
+    expect(providerFor("gpt-5.6-sol")).toBe("openai");
+    expect(providerFor("claude-opus-4-8")).toBe("anthropic");
+  });
+
+  const body = (over: Record<string, unknown> = {}) => ({
+    candidates: [{ content: { parts: [{ text: '{"ok":true}' }] }, finishReason: "STOP" }],
+    usageMetadata: {
+      promptTokenCount: 5_000,
+      candidatesTokenCount: 800,
+      cachedContentTokenCount: 3_000,
+      thoughtsTokenCount: 400,
+      ...over,
+    },
+  });
+
+  /** thoughtsTokenCount is reasoning, billed as output and reported SEPARATELY
+   *  from candidatesTokenCount rather than inside it. Counting only the
+   *  candidates under-bills every call and lets a run walk past the step
+   *  ceiling it exists to stop at. */
+  it("bills reasoning tokens as output alongside the candidates", () => {
+    expect(readGoogle(body()).usage).toEqual({
+      input_tokens: 2_000,
+      output_tokens: 1_200,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 3_000,
+    });
+  });
+
+  it("subtracts the cached portion from promptTokenCount", () => {
+    expect(readGoogle(body({ cachedContentTokenCount: 0 })).usage.input_tokens).toBe(5_000);
+  });
+
+  it("joins several parts rather than keeping only the first", () => {
+    expect(
+      readGoogle({
+        candidates: [{ content: { parts: [{ text: '{"a":1,' }, { text: '"b":2}' }] } }],
+      }).text,
+    ).toBe('{"a":1,"b":2}');
+  });
+
+  it("reads truncation from MAX_TOKENS", () => {
+    expect(readGoogle(body()).truncated).toBe(false);
+    expect(
+      readGoogle({ candidates: [{ content: { parts: [] }, finishReason: "MAX_TOKENS" }] }).truncated,
+    ).toBe(true);
+  });
+
+  it("copes with a response carrying nothing", () => {
+    expect(readGoogle({}).text).toBe("");
+    expect(readGoogle({}).usage.output_tokens).toBe(0);
+  });
+
+  it("prices the flash judges well below the OpenAI bench", () => {
+    const usage = { input_tokens: 100_000, output_tokens: 20_000 };
+    expect(callCostUsd("gemini-3.8-flash", usage)).toBeLessThan(
+      callCostUsd("gpt-5.6-terra", usage),
+    );
+    for (const spelling of ["gemini-3.8-flash", "gemini-3-8-flash"]) {
+      expect(callCostUsd(spelling, usage)).toBeLessThan(
+        callCostUsd("definitely-not-a-model", usage),
+      );
     }
   });
 });

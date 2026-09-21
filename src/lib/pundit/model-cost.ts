@@ -33,6 +33,27 @@ const MODEL_PRICES: Record<string, { input: number; output: number }> = {
   "gpt-5.4-mini": { input: 0.75, output: 4.5 },
   "gpt-5-mini": { input: 0.25, output: 2 },
   "gpt-5-nano": { input: 0.05, output: 0.4 },
+
+  // Google, priced for the same reason and on the same day. The judges are the
+  // volume in this pipeline - fourteen of them per pundit per attempt against
+  // one writer call - so this is where the per-run cost is decided.
+  //
+  // Both spellings are listed deliberately. Artificial Analysis writes the
+  // slug with dashes (gemini-3-8-flash) and the API answers with dots
+  // (gemini-3.8-flash), and whichever ends up in PUNDIT_JUDGE_MODEL must not
+  // fall through to UNKNOWN_MODEL_PRICE. Guessing high stops a run early,
+  // which is the right way round for a guess and the wrong way round for a
+  // model we know the price of.
+  "gemini-3.8-flash": { input: 0.75, output: 3.75 },
+  "gemini-3-8-flash": { input: 0.75, output: 3.75 },
+  "gemini-3.7-flash": { input: 0.75, output: 3.75 },
+  "gemini-3-7-flash": { input: 0.75, output: 3.75 },
+  "gemini-3.5-flash": { input: 1.5, output: 9 },
+  "gemini-3-5-flash": { input: 1.5, output: 9 },
+  "gemini-3.5-flash-lite": { input: 0.3, output: 2.5 },
+  "gemini-3-5-flash-lite": { input: 0.3, output: 2.5 },
+  "gemini-3-pro": { input: 2, output: 12 },
+  "gemini-3.1-pro": { input: 2, output: 12 },
 };
 
 /** An unrecognised model is priced at the dearest rate we know. Guessing high

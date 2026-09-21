@@ -127,8 +127,12 @@ type ProviderResult = {
  *  already exist, already reach every call site, and setting one to a gpt- id
  *  moves that role to OpenAI and back again with nothing else touched. A
  *  second switch could disagree with the model name; this cannot. */
-export function providerFor(model: string): "openai" | "anthropic" {
-  return /^(?:gpt|o\d)/i.test(model) ? "openai" : "anthropic";
+export type Provider = "openai" | "anthropic" | "google";
+
+export function providerFor(model: string): Provider {
+  if (/^(?:gpt|o\d)/i.test(model)) return "openai";
+  if (/^(?:gemini|gemma)/i.test(model)) return "google";
+  return "anthropic";
 }
 
 /** How long one request may take before it is abandoned.
@@ -147,8 +151,15 @@ export function providerFor(model: string): "openai" | "anthropic" {
  *
  *  Anthropic keeps the value it is known to work with; there is no evidence
  *  for changing it and a longer one only delays a genuine hang. */
-const REQUEST_TIMEOUT_MS: Record<"openai" | "anthropic", number> = {
+const PROVIDER_LABEL: Record<Provider, string> = {
+  openai: "OpenAI",
+  google: "Google",
+  anthropic: "Anthropic",
+};
+
+const REQUEST_TIMEOUT_MS: Record<Provider, number> = {
   openai: 300_000,
+  google: 300_000,
   anthropic: 120_000,
 };
 
@@ -208,6 +219,72 @@ async function callOpenAi(
     }),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS.openai),
   });
+}
+
+async function callGoogle(
+  input: { system: string; user: string; model: string; maxTokens: number },
+  cachedContext: readonly unknown[],
+): Promise<Response> {
+  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  if (!apiKey) throw new Error("GOOGLE_AI_API_KEY missing");
+  // Flattened in the same stable-head-first order as the OpenAI path, for the
+  // same reason: Gemini caches on the request prefix too.
+  const text = requestContent(cachedContext, input.user)
+    .map((block) => block.text)
+    .join("\n\n");
+  // The key goes in a header, not the ?key= query parameter the quickstart
+  // uses. A credential in a URL ends up in proxy logs and error messages, and
+  // this pipeline already logs every call.
+  return fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(input.model)}:generateContent`,
+    {
+      method: "POST",
+      headers: { "x-goog-api-key": apiKey, "content-type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: input.system }] },
+        contents: [{ role: "user", parts: [{ text }] }],
+        generationConfig: {
+          maxOutputTokens: input.maxTokens,
+          responseMimeType: "application/json",
+        },
+      }),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS.google),
+    },
+  );
+}
+
+export function readGoogle(body: {
+  candidates?: Array<{ content?: { parts?: Array<{ text?: string }> }; finishReason?: string }>;
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    cachedContentTokenCount?: number;
+    thoughtsTokenCount?: number;
+  };
+}): ProviderResult {
+  const usage = body.usageMetadata ?? {};
+  const cached = usage.cachedContentTokenCount ?? 0;
+  return {
+    // Several parts are possible; joining them is the same call citedSpan
+    // makes about a judge's list, and losing all but the first would silently
+    // truncate a long verdict.
+    text: (body.candidates?.[0]?.content?.parts ?? [])
+      .map((part) => part.text ?? "")
+      .join(""),
+    truncated: body.candidates?.[0]?.finishReason === "MAX_TOKENS",
+    usage: {
+      // promptTokenCount includes the cached portion, exactly as OpenAI's
+      // prompt_tokens does and unlike Anthropic's input_tokens.
+      input_tokens: Math.max(0, (usage.promptTokenCount ?? 0) - cached),
+      // thoughtsTokenCount is reasoning, billed as output and reported
+      // SEPARATELY from candidatesTokenCount rather than inside it. Counting
+      // only the candidates would under-bill every call and let a run walk
+      // past the step ceiling it is supposed to stop at.
+      output_tokens: (usage.candidatesTokenCount ?? 0) + (usage.thoughtsTokenCount ?? 0),
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: cached,
+    },
+  };
 }
 
 function readAnthropic(body: {
@@ -288,12 +365,14 @@ export async function modelJson<T>(input: {
       const response =
         provider === "openai"
           ? await callOpenAi(input, cachedContext)
-          : await callAnthropic(input, cachedContext);
+          : provider === "google"
+            ? await callGoogle(input, cachedContext)
+            : await callAnthropic(input, cachedContext);
 
       if (!response.ok) {
         const body = await response.text();
         lastError = new Error(
-          `${provider === "openai" ? "OpenAI" : "Anthropic"} ${response.status}: ${body.slice(0, 180)}`,
+          `${PROVIDER_LABEL[provider]} ${response.status}: ${body.slice(0, 180)}`,
         );
         if ([429, 500, 502, 503, 529].includes(response.status) && attempt < 3) {
           await sleep(attempt * 2_000);
@@ -304,7 +383,12 @@ export async function modelJson<T>(input: {
 
       try {
         const raw = (await response.json()) as Record<string, unknown>;
-        const result = provider === "openai" ? readOpenAi(raw) : readAnthropic(raw);
+        const result =
+          provider === "openai"
+            ? readOpenAi(raw)
+            : provider === "google"
+              ? readGoogle(raw)
+              : readAnthropic(raw);
         const callCost = recordSpend(input.model, result.usage);
         // Caching fails silently: requests still succeed, the bill is just
         // higher. These counters are the only evidence it is working, so they
