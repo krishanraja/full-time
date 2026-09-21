@@ -228,7 +228,19 @@ async function deterministicClaimId(matchId: string, index: number, thesis: stri
 export async function generateClaimLaboratory(pack: EvidencePack): Promise<AnalysisClaim[]> {
   const output = await anthropicJson({
     model: modelNames().writer,
-    maxTokens: 3_000,
+    // A cap is a ceiling, not an allocation: nothing is charged for headroom
+    // the model does not use, so a tight one buys nothing and costs a whole
+    // run when it is wrong. 3,000 was wrong on 2026-09-21. The pack grew 17%
+    // when it started stating the score after each goal, the laboratory found
+    // correspondingly more to say, and the JSON stopped mid-object - which
+    // anthropic-json reports as a truncation and prepareEditorialStep turns
+    // into a fatal, so the drop died before any pundit wrote a word.
+    //
+    // The contract asks for up to eight fact claims plus the analysis claims
+    // that make six different shows possible, each carrying a thesis,
+    // references, a falsifier and an evaluation rule. That is comfortably more
+    // than 3,000 tokens of JSON whenever the match is interesting.
+    maxTokens: 8_000,
     label: "claim-lab",
     schema: claimSchema,
     system:
@@ -503,7 +515,14 @@ async function judgeOne(
   try {
     output = await anthropicJson({
       model: modelNames().judge,
-      maxTokens: 2_000,
+      // See the claim laboratory's cap for why this is generous. A judge that
+      // truncates does not fail softly: runHardGates records "did not return a
+      // usable judgement", which is a failure, so a cap set too low quarantines
+      // a script for a reason that has nothing to do with the script. That
+      // happened to factual_entailment at 2,000 tokens on the 2026-09-20 drop,
+      // and this judge is asked for a quoted span and a repair, which is the
+      // long kind of answer.
+      maxTokens: 4_000,
       schema: judgeSchema,
       label: `judge:${harness}`,
       system:
@@ -591,7 +610,10 @@ async function judgeHardOne(
   try {
     output = await anthropicJson({
       model: modelNames().judge,
-      maxTokens: 2_000,
+      // The fail-closed judges, which are asked to name EVERY unsupported
+      // assertion and every failed beat rather than the first one. Same
+      // reasoning as above, and more output to produce.
+      maxTokens: 4_000,
       schema: hardJudgeSchema,
       system:
         (factual
