@@ -20,3 +20,10 @@ overrides:
   "@workflow/world-vercel@4.6.2>undici": 7.29.0
   "minimatch@10.2.5>brace-expansion": 5.0.9
   qs: ">=6.16.0"
+  # Pinned exactly, not ">=". A range floats to the next major: devalue went to
+  # 6.0.0 and js-yaml to 5.4.2, which is far more change than the advisories
+  # ask for. devalue is what @workflow/core serialises durable workflow state
+  # with, so a format change there would break runs that are already in flight
+  # and would do it quietly.
+  devalue: 5.9.1
+  js-yaml: 4.3.2
