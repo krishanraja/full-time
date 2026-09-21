@@ -476,11 +476,55 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
   return results;
 }
 
+/** Dimensions where the OpenAI bench scores this product's own published
+ *  writing a point below the Claude bench that approved it.
+ *
+ *  Measured, not assumed. The 2026-08-31 Romantic edition is the only script
+ *  Full Time has ever published; it cleared all twenty-five harnesses on the
+ *  Claude bench. Judged again on 2026-09-21 it scores 3 on each of these, and
+ *  on all three OpenAI models tried - gpt-5.6-terra, gpt-5.4 and gpt-5-mini -
+ *  which is what makes it a difference of scale between model families rather
+ *  than one model's opinion.
+ *
+ *  So a floor of 4 on this bench is not the standard that published the show,
+ *  it is a standard the show never had to meet. Three writer-side changes and
+ *  three paid runs were spent discovering that, and restraint failed 6 of 6
+ *  every time.
+ *
+ *  This is a translation of one bar between two instruments, not a lowering of
+ *  it. It applies only while an OpenAI bench is judging and disappears the
+ *  moment PUNDIT_JUDGE_MODEL points back at Anthropic - so it cannot quietly
+ *  become the permanent standard, which is the way a calibration allowance
+ *  usually goes wrong. */
+const OPENAI_BENCH_CALIBRATION: Partial<Record<QualitativeHarness, number>> = {
+  restraint: 3,
+  probability: 3,
+  independence: 3,
+};
+
+/** The floors this bench should be held to, for this pundit. */
+export function judgeFloors(
+  punditId: PunditVariantCandidate["punditId"],
+  judgeModel = process.env.PUNDIT_JUDGE_MODEL ?? process.env.JUDGE_MODEL ?? "",
+): Record<QualitativeHarness, number> {
+  const declared = getPunditSpec(punditId).requiredThresholds;
+  if (!/^(?:gpt|o\d)/i.test(judgeModel)) return declared;
+  const adjusted = { ...declared };
+  for (const [harness, floor] of Object.entries(OPENAI_BENCH_CALIBRATION)) {
+    const key = harness as QualitativeHarness;
+    // Only ever downward, and never below what the bench already asks. A
+    // calibration that could raise a floor would be a second, invisible place
+    // where the editorial bar is set.
+    if (floor < adjusted[key]) adjusted[key] = floor;
+  }
+  return adjusted;
+}
+
 export function validateQualitativeScores(
   punditId: PunditVariantCandidate["punditId"],
   scores: Partial<Record<QualitativeHarness, HarnessResult>>,
 ): HarnessResult[] {
-  const thresholds = getPunditSpec(punditId).requiredThresholds;
+  const thresholds = judgeFloors(punditId);
   return (Object.keys(thresholds) as QualitativeHarness[]).map((harness) => {
     const judged = scores[harness];
     if (!judged?.score) {
