@@ -88,6 +88,22 @@ export type StructuredMatchInput = {
    *  nothing positional on its own. "Seven games in" is a fact about the
    *  calendar; "seventh in the table" is a fact about the table. */
   matchday?: number | null;
+  /** Numbers from models other than the licensed feed's own.
+   *
+   *  Every one enters the pack as an estimate with its model named, whatever
+   *  the source's rights posture: who may use a number and what the number is
+   *  are separate questions, and a scraped expected-goals figure would still
+   *  be a model's output with a signed licence behind it.
+   *
+   *  More than one is the point rather than redundancy. Two models disagreeing
+   *  about whether a chance was good is a better line than either number
+   *  alone, and it is the one thing a single feed can never produce. */
+  estimates?: Array<{
+    sourceId: string;
+    model: string;
+    homeXg?: number | null;
+    awayXg?: number | null;
+  }>;
   table?: {
     capturedAt: string;
     home?: { rank: number | null; points: number | null; played: number | null };
@@ -152,6 +168,35 @@ function derived(
   formula: string,
 ): EvidenceItem {
   return { id, kind: "derived", label, value, source, provenance, formula };
+}
+
+/** A number a model produced, not a number anyone counted.
+ *
+ *  docs/05-content-safety.md requires the product to distinguish a model
+ *  estimate from an observed fact, and until this kind existed the pack had no
+ *  way to express the difference. Expected goals is why it matters: carried as
+ *  a plain fact it is indistinguishable from a shot count, which is how a
+ *  pundit ends up saying a side "should have scored two" as though someone had
+ *  counted them.
+ *
+ *  The model is named in the item and repeated in the label, because the label
+ *  is what the writer reads. */
+function estimate(
+  id: string,
+  label: string,
+  value: EvidenceItem["value"],
+  model: string,
+  provenance: string,
+): EvidenceItem {
+  return {
+    id,
+    kind: "estimate",
+    label: `${label} (estimated by ${model}, not counted)`,
+    value,
+    source: model,
+    provenance,
+    model,
+  };
 }
 
 function finite(value: number | null | undefined): value is number {
@@ -507,6 +552,67 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
         ),
       );
     }
+  }
+
+  // Second and third opinions on the same ninety minutes.
+  //
+  // These sit in the derivations array rather than the facts array, and the
+  // reason is not tidiness: facts is where counted things live, and a claim
+  // that cites one of these is citing a model. The kind carries the meaning;
+  // the array is only storage, and evidence ids are a stored contract so a
+  // third array would be a migration and a rename of nothing.
+  for (const source of input.estimates ?? []) {
+    for (const [side, team, value] of [
+      ["home", match.homeTeam, source.homeXg],
+      ["away", match.awayTeam, source.awayXg],
+    ] as const) {
+      if (!finite(value)) continue;
+      derivations.push(
+        estimate(
+          `estimate.${source.sourceId}_${side}_xg`,
+          `${team} expected goals`,
+          value,
+          source.model,
+          `${source.sourceId}:${match.homeTeam} v ${match.awayTeam}`,
+        ),
+      );
+    }
+  }
+
+  // Where the models disagree.
+  //
+  // The pipeline already trusts this shape: two independent feeds are compared
+  // on the scoreline and a disagreement blocks generation. Nothing that
+  // careful was ever done with the numbers, which are the part where models
+  // actually differ. A scoreline disagreement means somebody is wrong; an
+  // expected-goals disagreement means the chance was genuinely arguable, and
+  // that is a better thing for a pundit to have than either figure on its own.
+  const xgBySide = (side: "home" | "away") =>
+    (input.estimates ?? [])
+      .map((source) => ({
+        model: source.model,
+        value: side === "home" ? source.homeXg : source.awayXg,
+      }))
+      .filter((entry): entry is { model: string; value: number } => finite(entry.value));
+  for (const [side, team] of [
+    ["home", match.homeTeam],
+    ["away", match.awayTeam],
+  ] as const) {
+    const values = xgBySide(side);
+    if (values.length < 2) continue;
+    const numbers = values.map((entry) => entry.value);
+    const spread = Number((Math.max(...numbers) - Math.min(...numbers)).toFixed(2));
+    if (spread < 0.3) continue;
+    derivations.push(
+      derived(
+        `derived.${side}_xg_disagreement`,
+        `How far the models are apart on ${team} expected goals`,
+        spread,
+        values.map((entry) => entry.model).join(", "),
+        values.map((entry) => `estimate.${side}_xg`).join(","),
+        "highest model estimate minus lowest",
+      ),
+    );
   }
 
   // The league table, for these two clubs alone.

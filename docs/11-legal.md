@@ -3,7 +3,7 @@
 - **Status:** Current operating posture; final launch requires qualified counsel
 - **Owner:** Founder and legal
 - **Purpose:** Record data, rights, disclosure, billing, processor, and incident requirements.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-21
 
 > This document is an internal operating record, not legal advice.
 
@@ -51,6 +51,19 @@ Do not collect card data, contacts, microphone, camera, precise location, or cro
 ## Rights posture
 
 Full Time may use only data, research, voices, and assets covered by a recorded permission, license, or counsel-approved legal basis.
+
+### Free-to-access sources, from 2026-09-21
+
+Ruling (Krish, 2026-09-21): ingest the free-to-access analytics tier for production evidence, accepting the rights exposure. The recommendation was against it and is recorded here rather than relitigated.
+
+What that means in plain terms. These sources are free to read and were never licensed for reuse. No permission was sought or granted for automated collection or commercial use, and at least one of them states that its data is for private individuals and not for commercial or AI products using automated collection. The founder override of 2026-09-04 waived the data-rights sign-off; it did not close it, and this keeps it open by choice rather than by backlog.
+
+The record stays honest about that. Every such source carries `basis: "unlicensed"` with its restriction written out in full, and no `research_sources` row will claim a permission nobody granted. A fabricated audit record would cost more than the data is worth, because the audit trail is the whole basis of this product's editorial claim.
+
+Two consequences follow in the code rather than only here:
+
+- a number from one of these sources enters the evidence pack as an estimate with its model named, never as a counted fact, because who may use a number and what the number is are separate questions;
+- every such source is fail-soft, so nothing a listener hears depends on one being reachable, and every line derived from one is individually identifiable for removal if the posture changes.
 
 The product:
 
@@ -103,6 +116,7 @@ Current or retained integrations include:
 | ElevenLabs | TTS and transcription services                           | Approved script and pronunciation context; no account PII by design               |
 | Stripe     | Existing billing management and future reviewed checkout | Email, customer, subscription, and provider-held payment data                     |
 | PostHog    | Product analytics                                        | Pseudonymous usage events and request metadata                                    |
+| FotMob     | Second expected-goals model, read-only, unlicensed       | No data sent; match identifiers requested. See the free-to-access note above      |
 
 The CSS font stack names Geist but the current repository does not request Google Fonts or another web-font provider. Do not list a font processor unless a deployed build makes that request.
 

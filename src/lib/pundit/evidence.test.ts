@@ -493,6 +493,80 @@ describe("where these two stood in the table", () => {
   });
 });
 
+/** A number a model produced is not a number anyone counted, and until the
+ *  estimate kind existed the pack had no way to say so. Expected goals is why
+ *  it matters: carried as a plain fact it is indistinguishable from a shot
+ *  count, which is how a pundit ends up saying a side should have scored two
+ *  as though someone had counted them. */
+describe("numbers a model produced", () => {
+  const withEstimates = {
+    ...input,
+    estimates: [
+      { sourceId: "fotmob", model: "FotMob expected goals", homeXg: 0.79, awayXg: 1.65 },
+      { sourceId: "other", model: "Another model", homeXg: 1.4, awayXg: 1.6 },
+    ],
+  };
+
+  it("marks an estimate as an estimate and names the model", () => {
+    const item = buildEvidencePack(withEstimates).derivations.find(
+      (entry) => entry.id === "estimate.fotmob_home_xg",
+    );
+    expect(item?.kind).toBe("estimate");
+    expect(item?.model).toBe("FotMob expected goals");
+    expect(item?.value).toBe(0.79);
+  });
+
+  /** The label is what the writer reads, so the label has to carry it too. */
+  it("says in the label that it was not counted", () => {
+    const item = buildEvidencePack(withEstimates).derivations.find(
+      (entry) => entry.id === "estimate.fotmob_home_xg",
+    );
+    expect(item?.label).toContain("estimated by FotMob expected goals");
+    expect(item?.label).toContain("not counted");
+  });
+
+  it("carries every model's number rather than picking one", () => {
+    const ids = buildEvidencePack(withEstimates).derivations.map((entry) => entry.id);
+    expect(ids).toContain("estimate.fotmob_home_xg");
+    expect(ids).toContain("estimate.other_home_xg");
+  });
+
+  /** The payoff for multi-sourcing, and the one thing a single feed can never
+   *  produce. Two models disagreeing about whether a chance was good is a
+   *  better line than either number alone. */
+  it("states how far the models are apart when they disagree", () => {
+    const item = buildEvidencePack(withEstimates).derivations.find(
+      (entry) => entry.id === "derived.home_xg_disagreement",
+    );
+    expect(item?.value).toBe(0.61);
+    expect(item?.source).toContain("FotMob");
+  });
+
+  it("says nothing when the models agree closely enough not to be worth a line", () => {
+    const pack = buildEvidencePack(withEstimates);
+    // The away figures are 1.65 and 1.60.
+    expect(
+      pack.derivations.find((item) => item.id === "derived.away_xg_disagreement"),
+    ).toBeUndefined();
+  });
+
+  it("says nothing about disagreement when only one model answered", () => {
+    const pack = buildEvidencePack({
+      ...input,
+      estimates: [withEstimates.estimates[0]],
+    });
+    expect(
+      pack.derivations.find((item) => item.id === "derived.home_xg_disagreement"),
+    ).toBeUndefined();
+    expect(pack.derivations.find((item) => item.id === "estimate.fotmob_home_xg")).toBeDefined();
+  });
+
+  it("carries nothing at all when no source answered", () => {
+    const pack = buildEvidencePack(input);
+    expect(pack.derivations.some((item) => item.kind === "estimate")).toBe(false);
+  });
+});
+
 describe("time a side had to respond to a goal", () => {
   const packWith = (minutes: number[]) =>
     buildEvidencePack({
