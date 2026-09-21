@@ -749,12 +749,52 @@ export async function judgeCandidate(subject: JudgeSubject): Promise<HarnessResu
     Promise.all(harnessNames.map((harness) => judgeOne(harness, subject))),
   ]);
   return [
-    ...hardJudges,
+    ...hardJudges.map((result) => advisoryOnThisBench(result, subject.judgeModelOverride)),
     ...validateQualitativeScores(
       subject.candidate.punditId,
       Object.fromEntries(independent.map((item) => [item.harness, item])),
     ),
   ];
+}
+
+/** factual_entailment, recorded rather than enforced, while an OpenAI bench is
+ *  judging.
+ *
+ *  Ruling (Krish, 2026-09-21): publish for a listening test, with this gate
+ *  advisory on this bench.
+ *
+ *  What it was blocking, 6 of 6 on every run: readings rather than
+ *  fabrications - "Manchester City had control", "an old attacking silence has
+ *  ended" - where the pack holds counts and timed goals but no timeline of
+ *  dominance. It fails the 2026-08-31 published show on the same basis, so it
+ *  is not a bar this product has ever cleared on this bench, and three
+ *  writer-side attempts moved it not at all.
+ *
+ *  What is NOT relaxed, and is the promise the homepage actually makes -
+ *  "built from checked match facts": the thirteen deterministic gates. Every
+ *  number and every name still has to resolve to a cited evidence item, the
+ *  consequence licence still refuses season-level claims, spoken still has to
+ *  equal display. Those are code, they do not have opinions, and they are
+ *  untouched.
+ *
+ *  humour_safety_semantic is deliberately excluded. It is a safety gate, not
+ *  an accuracy one, and the reading that mattered - ridicule aimed at a named
+ *  player rather than at the match - is exactly the judgement worth keeping
+ *  fail-closed.
+ *
+ *  The verdict is kept in full and prefixed, so the critique is in front of
+ *  whoever reads the variant rather than silently discarded. It expires with
+ *  the bench: point PUNDIT_JUDGE_MODEL back at Anthropic and this stops
+ *  applying, which is the only reason it is safe to ship at all. */
+export function advisoryOnThisBench(result: HarnessResult, judgeModel?: string): HarnessResult {
+  const bench = judgeModel?.trim() || process.env.PUNDIT_JUDGE_MODEL || process.env.JUDGE_MODEL || "";
+  if (result.harness !== "factual_entailment") return result;
+  if (result.passed || !/^(?:gpt|o\d)/i.test(bench)) return result;
+  return {
+    ...result,
+    passed: true,
+    failure: `ADVISORY on this bench, not blocking: ${result.failure ?? "no reason given"}`,
+  };
 }
 
 export type GeneratedPunditVariant = {

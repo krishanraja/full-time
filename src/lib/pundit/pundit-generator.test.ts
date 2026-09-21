@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { hardJudgeSchema, judgeSchema, normaliseBeats } from "./pundit-generator.server";
+import {
+  advisoryOnThisBench,
+  hardJudgeSchema,
+  judgeSchema,
+  normaliseBeats,
+} from "./pundit-generator.server";
 
 describe("judge response tolerance", () => {
   // The run this cost: a judge given a fuller rubric cited several spans and
@@ -147,5 +152,41 @@ describe("a judge's reasoning survives arriving as a list", () => {
   // it is still refused rather than passed off as a reason.
   it("still refuses a rejection whose list is empty", () => {
     expect(() => hardJudgeSchema.parse({ passed: false, failure: [] })).toThrow();
+  });
+});
+
+/** Ruling (Krish, 2026-09-21): factual_entailment is advisory while an OpenAI
+ *  bench judges, so a listening test can happen at all. Everything about that
+ *  is narrow on purpose, and each boundary is worth a test because the ones
+ *  that matter are the ones it must NOT relax. */
+describe("the advisory entailment gate is narrow and expires", () => {
+  const failed = (harness: string) =>
+    ({ harness, hardGate: true, passed: false, failure: "City had control" }) as never;
+
+  it("stops blocking on an OpenAI bench and keeps the critique", () => {
+    const out = advisoryOnThisBench(failed("factual_entailment"), "gpt-5.6-terra");
+    expect(out.passed).toBe(true);
+    expect(out.failure).toContain("ADVISORY");
+    expect(out.failure).toContain("City had control");
+  });
+
+  it("still blocks on an Anthropic bench, so it expires with the swap", () => {
+    expect(advisoryOnThisBench(failed("factual_entailment"), "claude-haiku-4-5").passed).toBe(false);
+  });
+
+  it("does not apply to a Gemini bench, which was never measured", () => {
+    expect(advisoryOnThisBench(failed("factual_entailment"), "gemini-3.8-flash").passed).toBe(false);
+  });
+
+  // The safety gate is not an accuracy gate and stays fail-closed.
+  it("never touches humour_safety_semantic", () => {
+    expect(advisoryOnThisBench(failed("humour_safety_semantic"), "gpt-5.6-terra").passed).toBe(
+      false,
+    );
+  });
+
+  it("leaves a passing verdict exactly as it found it", () => {
+    const pass = { harness: "factual_entailment", hardGate: true, passed: true } as never;
+    expect(advisoryOnThisBench(pass, "gpt-5.6-terra")).toBe(pass);
   });
 });
