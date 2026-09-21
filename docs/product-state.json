@@ -122,8 +122,8 @@
     },
     {
       "surface": "Pipeline",
-      "truth": "Two migrations shipped on 2026-09-21 and have not been applied to hzadscrqmyilbisexvyz: 20260921120000_ingest_run_ledger.sql and 20260921140000_source_match_estimates.sql. src/integrations/supabase/types.ts has not been regenerated for them, and the CI type canary therefore does not yet guard ingest_runs, provider_stat_presence or source_match_estimates. Until the migrations are applied the league table, the provider drift ledger and the second expected-goals model are dormant: every write is wrapped and fails soft, the evidence pack carries no table, the season-consequence gate stays exactly as closed as it has always been, and match ranking stays on goals alone. scripts/export-gate-corpus.mjs has still never been run, so the gate replay added on 2026-09-21 has real scripts to replay only once it is.",
-      "promiseBoundary": "Do not claim that Full Time reads a league table, carries a second expected-goals model, or detects provider drift, until the migrations are applied and read back. No published script can make a season-level or league-position claim while the table is absent, because the gate refuses one without a cited table fact."
+      "truth": "Both 2026-09-21 migrations are applied to hzadscrqmyilbisexvyz and read back: ingest_runs, provider_stat_presence and source_match_estimates exist with row level security on and no public policy, standings_snapshots carries captured_on and source with the corrected daily unique constraint, and both versions are recorded. src/integrations/supabase/types.ts is regenerated from the live schema, 45 tables to 48 with none lost, and the CI type canary guards all eight named tables. What has NOT happened is a run: no ingest has executed since the tables appeared, so the league table, the drift ledger and the second expected-goals model are wired and empty rather than proven. The first evidence is the 00:15 UTC ingest. The licence basis for the provider's standings endpoint is still not recorded in release_signoffs, and release_signoffs.gate is a nine-value check constraint with no slot for a data-rights basis, so recording it needs either a gate='legal' row whose notes carry it or a migration widening the enum.",
+      "promiseBoundary": "Do not claim Full Time reads a league table, carries a second expected-goals model, or detects provider drift until a run has produced rows in those tables and they have been read back. Schema existing is not the same as the pipeline working. No published script can make a season-level or league-position claim until the evidence pack actually carries a table, because the gate refuses one without a cited table fact."
     }
   ],
   "commercialState": {
@@ -150,16 +150,22 @@
     "passed": [
       "Documentation contract and relative-link check",
       "TypeScript typecheck",
-      "366 tests across 39 test files, with 1 skipped",
+      "368 tests across 39 test files",
       "ESLint with zero errors and six existing fast-refresh warnings",
       "Git diff whitespace check",
       "Linux production build with the Workflow manifest verified (1 workflow, 10 application steps)",
-      "The FotMob adapter run against its live endpoints on 2026-09-21, returning expected goals for a real fixture and nothing for an unmatched one"
+      "pnpm audit --prod --audit-level moderate, which had been failing main before 2026-09-21",
+      "Both 2026-09-21 migrations applied to hzadscrqmyilbisexvyz and read back against information_schema and pg_class",
+      "Supabase types regenerated from the live schema: 45 tables to 48, none lost",
+      "The CI type canary loop run locally over all eight guarded tables",
+      "Every column the ingest writes to provider_stat_presence confirmed present in the live schema",
+      "The gate corpus exported and replayed: 192 verdicts across 24 variants, none skipped"
     ],
     "localLimitations": [
       "The Windows production build emits the application bundles but the Workflow plugin registers zero steps and zero workflows under both Node 25.5.0 and the required Node 24.19.0. The manifest gate fails as designed. GitHub Actions run 31533126034 passed the production build on Ubuntu and Node 24 for merge 0933a63, so Linux CI or a matching Vercel build is the current build authority.",
-      "The 2026-09-21 session could not reach hzadscrqmyilbisexvyz. The Supabase access token supplied returned 401 from the Management API and the session's Supabase connection was authenticated to a different account. Nothing in that change was verified against the production database: the two migrations are unapplied, the generated types are not regenerated, the gate corpus was not exported, and the /standings licence basis is not recorded in release_signoffs.",
-      "The skipped test is the exported gate-corpus replay. It skips because src/lib/pundit/__fixtures__/gate-corpus.json does not exist, which is honest rather than green: the suite reports that it has nothing real to replay instead of passing silently."
+      "The skipped test is the exported gate-corpus replay. It skips because src/lib/pundit/__fixtures__/gate-corpus.json does not exist, which is honest rather than green: the suite reports that it has nothing real to replay instead of passing silently.",
+      "The gate replay reports fourteen verdicts that passed when written on 4-6 September and are refused by the gates today. None is a regression from this work, which never touches claim-lab.ts or numbers.ts; they are the tightening those weeks were spent on. Eleven are one pre-existing pattern worth fixing: the numeric check reads the components of a date in a claim thesis as unlicensed numbers, so a claim mentioning 31 August 2026 is refused for stating 2026, 08 and 31.",
+      "Whether the provider's standings endpoint is inside the paid plan was not verified: no API_FOOTBALL_KEY was available to the session that applied the migrations. No licence basis was recorded on that assumption."
     ]
   },
   "claims": {
