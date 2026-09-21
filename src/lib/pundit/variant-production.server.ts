@@ -1,4 +1,8 @@
-import { evaluateAudioQuality, type AudioQualityMetrics } from "./audio-quality";
+import {
+  evaluateAudioQuality,
+  MIN_DYNAMIC_RANGE_DB,
+  type AudioQualityMetrics,
+} from "./audio-quality";
 import { masterNarrationAudio } from "./audio-mastering.server";
 import { storeVariantAssets } from "./asset-storage.server";
 import { countVerifiedProperNames, loadPronunciationPlan } from "./pronunciation.server";
@@ -134,7 +138,11 @@ export async function producePunditVariant(input: {
         candidate.displayScript,
       ),
       misplacedEmphasis: !pronunciation.performanceChecks.emphasis,
-      monotone: mastered.metrics.dynamicRangeDb < 3,
+      // The same threshold as the gate, and it has to stay the same one.
+      // Two independent copies of "< 3" is why the 2026-09-20 refusal read
+      // as two separate sentences - "range is too narrow" and "delivery is
+      // systematically monotone" - for one measurement failing one test.
+      monotone: mastered.metrics.dynamicRangeDb < MIN_DYNAMIC_RANGE_DB,
       overactedPunchlines: !pronunciation.performanceChecks.punchlineTiming,
       synthesisArtifacts:
         narration.fidelity.wer > 0.05 || !pronunciation.performanceChecks.synthesisArtifacts,

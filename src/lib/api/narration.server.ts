@@ -264,14 +264,47 @@ function applyEmphasis(text: string, emphasis: readonly string[] | undefined) {
   return rendered;
 }
 
-function taggedBeatIndexes(plan: readonly PerformanceBeat[]) {
+/** Roughly forty-five seconds of speech, in characters.
+ *
+ *  The measured rate on the 2026-09-20 narration was 139.9 words per minute,
+ *  and English prose runs about 5.7 characters to the word with its space, so
+ *  a minute is near 800 characters. */
+const CHARACTERS_BETWEEN_TAGS = 600;
+
+/** Which beats carry a delivery tag.
+ *
+ *  This used to be a fixed four - first beat, last beat, first evidence beat,
+ *  first verdict beat - whatever the script's length. That was calibrated on
+ *  the 55-second episode this module was written for, where four tags land
+ *  about every fourteen seconds.
+ *
+ *  The format is now six minutes. On 2026-09-20 those same four tags were
+ *  spread across 382 seconds of audio, one delivery change every ninety-five
+ *  seconds, and the narration measured 2.1 LU against a gate wanting 3. The
+ *  file header records untagged delivery at 1.9 LU, so four tags over six
+ *  minutes is barely distinguishable from none: the tags did not get worse,
+ *  the script got six times longer and nothing scaled with it.
+ *
+ *  So a tag is placed where the delivery genuinely changes, and again whenever
+ *  the read has gone too long without one. The first rule keeps the tags
+ *  meaningful and never repeats the same direction back to back; the second is
+ *  what makes the placement scale with length instead of with beat count. A
+ *  55-second script still gets about four, because it never trips the second
+ *  rule. */
+function taggedBeatIndexes(punditId: PunditId, plan: readonly PerformanceBeat[]) {
   const indexes = new Set<number>([0, plan.length - 1]);
-  for (const intents of [
-    ["evidence", "explanation"],
-    ["punchline", "verdict", "prediction", "receipt"],
-  ] as const) {
-    const index = plan.findIndex((beat) => intents.some((intent) => intent === beat.intent));
-    if (index >= 0) indexes.add(index);
+  let lastTag = tagForBeat(punditId, plan[0], 0, plan.length);
+  let sinceTag = plan[0].text.length;
+
+  for (let index = 1; index < plan.length; index++) {
+    const beat = plan[index];
+    const tag = tagForBeat(punditId, beat, index, plan.length);
+    if (tag !== lastTag || sinceTag >= CHARACTERS_BETWEEN_TAGS) {
+      indexes.add(index);
+      lastTag = tag;
+      sinceTag = 0;
+    }
+    sinceTag += beat.text.length;
   }
   return indexes;
 }
@@ -293,7 +326,7 @@ export function applyPerformanceCadence(
 
   const identity = assertPerformanceIdentity(plan, displayScript);
   if (!identity.passed) throw new Error(identity.failure);
-  const tagged = taggedBeatIndexes(plan);
+  const tagged = taggedBeatIndexes(punditId, plan);
   return plan
     .map((beat, index) => {
       const tag = tagForBeat(punditId, beat, index, plan.length);
@@ -352,7 +385,19 @@ export function tagsAllowlisted(spoken: string): boolean {
   return tags.every((t) => TAG_ALLOWLIST.has(t));
 }
 
-export const tagBudgetOk = (spoken: string) => (spoken.match(/\[/g) || []).length <= 4;
+/** A rail against a runaway tagged script, not a style rule.
+ *
+ *  Tags are text the writer never approved, so their number is bounded as well
+ *  as their vocabulary. The bound was a flat four - the same 55-second
+ *  calibration that fixed the placement at four - and narrate() THROWS on it,
+ *  so scaling the placement without scaling this would have stopped every
+ *  narration outright rather than merely producing a flat one.
+ *
+ *  One per 500 characters is about one every thirty-five seconds of speech at
+ *  the measured rate, which is a rail rather than a target. The floor of four
+ *  leaves a short script exactly where it was. */
+export const tagBudgetOk = (spoken: string) =>
+  (spoken.match(/\[/g) || []).length <= Math.max(4, Math.ceil(spoken.length / 500));
 
 // ------------------------------------------------------------- fidelity
 
