@@ -32,7 +32,11 @@ try {
 
 if (state) {
   if (state.schemaVersion !== 1) failures.push(`${statePath}: unsupported schemaVersion`);
-  if (state.asOf !== "2026-09-07")
+  // 2026-09-21 is the league-table evidence tier, the provider drift ledger and
+  // the second expected-goals model. The date is pinned rather than free so that
+  // a stale product-state cannot pass by accident; it moves when the state is
+  // genuinely reconciled, in the same commit.
+  if (state.asOf !== "2026-09-21")
     failures.push(`${statePath}: asOf must match this reconciliation`);
   if (state.product?.lifecycle !== "live-beta") failures.push(`${statePath}: lifecycle drifted`);
   if (

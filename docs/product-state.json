@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-09-07",
+  "asOf": "2026-09-21",
   "authority": {
     "repository": "https://github.com/krishanraja/full-time",
     "branch": "main",
@@ -16,14 +16,31 @@
     "primaryAudience": "Football fans who want a playful, useful take on a match without sitting through the usual pundit noise.",
     "primaryAction": "Choose an AI Pundit and play a checked show.",
     "publicNavigation": [
-      { "label": "Today", "route": "/" },
-      { "label": "Teams", "route": "/following" },
-      { "label": "Settings", "route": "/settings" }
+      {
+        "label": "Today",
+        "route": "/"
+      },
+      {
+        "label": "Teams",
+        "route": "/following"
+      },
+      {
+        "label": "Settings",
+        "route": "/settings"
+      }
     ]
   },
   "aiPundits": [
-    { "id": "zen", "name": "The Reporter", "promise": "Calm, clear, and first with the facts." },
-    { "id": "gaffer", "name": "The Gaffer", "promise": "Spots the choices that changed the game." },
+    {
+      "id": "zen",
+      "name": "The Reporter",
+      "promise": "Calm, clear, and first with the facts."
+    },
+    {
+      "id": "gaffer",
+      "name": "The Gaffer",
+      "promise": "Spots the choices that changed the game."
+    },
     {
       "id": "stats",
       "name": "The Numbers Guy",
@@ -34,7 +51,11 @@
       "name": "The Romantic",
       "promise": "Finds the bit that made football feel magic."
     },
-    { "id": "doomer", "name": "The Doomer", "promise": "Sees the wobble before anyone else." },
+    {
+      "id": "doomer",
+      "name": "The Doomer",
+      "promise": "Sees the wobble before anyone else."
+    },
     {
       "id": "banter",
       "name": "The Wind-Up",
@@ -73,7 +94,9 @@
       "The 04:45 UTC daily workflow runs in publication mode and publishes every AI Pundit edition that passes the automated evidence, harness, transcript, audio, and asset checks enforced by publish_daily_drop(). An edition that falls short is withheld; the ones that passed still publish.",
       "Selected voices are the configured ELEVENLABS_VOICE values, attested by the founder on the voice_candidates row. Proper-name pronunciation is measured against the verified transcript, not a human lexicon.",
       "Since 2026-09-05 each AI Pundit runs as its own workflow step under a per-step model spend ceiling, the drop records its model spend, and a free preflight and a judge calibration harness exist for diagnosis. The judge model was moved to Haiku 4.5 in the production environment on 2026-09-06 as an unverified quality bet recorded in docs/06-ops.md.",
-      "New checkout, public forecast scores, prediction registration, evaluation runs, and legacy on-demand narration remain disabled by flags."
+      "New checkout, public forecast scores, prediction registration, evaluation runs, and legacy on-demand narration remain disabled by flags.",
+      "Since 2026-09-21 the ingest records one row per run and one row per tracked statistic per day, and reports whether a statistic that arrived yesterday is a withdrawal or a provider rename. Both readings are reported because the fixes are opposite. The two API-Football clients were replaced by one whose failure policy is an argument: the ingest fails soft so a single bad endpoint cannot cost a day of fixtures, prediction registration fails hard because an empty fixture list there would be acted on as no matches to register.",
+      "Since 2026-09-21 a script is compared against what this product has already published: its own pundit's portable lines and hooks from the previous fortnight, and the other five editions of the same day. Neither check fails a variant. The recent lines are shown to the writer before it writes, and same-day convergence is reported because it is a fact about the shared claim set rather than about six writers."
     ]
   },
   "currentGaps": [
@@ -96,6 +119,11 @@
       "surface": "Personalized shows",
       "truth": "Team follows exist, but the current six-edition daily-drop API does not generate a private club-built playlist for each listener.",
       "promiseBoundary": "Say preferences are saved. Do not say Full Time generates a personal show or playlist."
+    },
+    {
+      "surface": "Pipeline",
+      "truth": "Two migrations shipped on 2026-09-21 and have not been applied to hzadscrqmyilbisexvyz: 20260921120000_ingest_run_ledger.sql and 20260921140000_source_match_estimates.sql. src/integrations/supabase/types.ts has not been regenerated for them, and the CI type canary therefore does not yet guard ingest_runs, provider_stat_presence or source_match_estimates. Until the migrations are applied the league table, the provider drift ledger and the second expected-goals model are dormant: every write is wrapped and fails soft, the evidence pack carries no table, the season-consequence gate stays exactly as closed as it has always been, and match ranking stays on goals alone. scripts/export-gate-corpus.mjs has still never been run, so the gate replay added on 2026-09-21 has real scripts to replay only once it is.",
+      "promiseBoundary": "Do not claim that Full Time reads a league table, carries a second expected-goals model, or detects provider drift, until the migrations are applied and read back. No published script can make a season-level or league-position claim while the table is absent, because the gate refuses one without a cited table fact."
     }
   ],
   "commercialState": {
@@ -118,18 +146,20 @@
     ]
   },
   "verification": {
-    "checkedAt": "2026-09-04",
+    "checkedAt": "2026-09-21",
     "passed": [
       "Documentation contract and relative-link check",
       "TypeScript typecheck",
-      "61 tests across 20 test files",
+      "366 tests across 39 test files, with 1 skipped",
       "ESLint with zero errors and six existing fast-refresh warnings",
       "Git diff whitespace check",
       "Linux production build with the Workflow manifest verified (1 workflow, 10 application steps)",
-      "Founder override migration applied to hzadscrqmyilbisexvyz on 2026-09-04 and read back as live"
+      "The FotMob adapter run against its live endpoints on 2026-09-21, returning expected goals for a real fixture and nothing for an unmatched one"
     ],
     "localLimitations": [
-      "The Windows production build emits the application bundles but the Workflow plugin registers zero steps and zero workflows under both Node 25.5.0 and the required Node 24.19.0. The manifest gate fails as designed. GitHub Actions run 31533126034 passed the production build on Ubuntu and Node 24 for merge 0933a63, so Linux CI or a matching Vercel build is the current build authority."
+      "The Windows production build emits the application bundles but the Workflow plugin registers zero steps and zero workflows under both Node 25.5.0 and the required Node 24.19.0. The manifest gate fails as designed. GitHub Actions run 31533126034 passed the production build on Ubuntu and Node 24 for merge 0933a63, so Linux CI or a matching Vercel build is the current build authority.",
+      "The 2026-09-21 session could not reach hzadscrqmyilbisexvyz. The Supabase access token supplied returned 401 from the Management API and the session's Supabase connection was authenticated to a different account. Nothing in that change was verified against the production database: the two migrations are unapplied, the generated types are not regenerated, the gate corpus was not exported, and the /standings licence basis is not recorded in release_signoffs.",
+      "The skipped test is the exported gate-corpus replay. It skips because src/lib/pundit/__fixtures__/gate-corpus.json does not exist, which is honest rather than green: the suite reports that it has nothing real to replay instead of passing silently."
     ]
   },
   "claims": {
@@ -166,12 +196,30 @@
       "src/components/TodayShowPlayer.tsx",
       "src/lib/player-store.ts"
     ],
-    "publicApi": ["src/lib/api/editorial-public.server.ts", "src/routes/api/public"],
-    "aiPundits": ["src/components/PersonalitySelector.tsx", "src/lib/pundit/specs.ts"],
-    "avatars": ["src/components/PunditAvatar.tsx", "src/lib/pundit/avatar-model.ts"],
-    "teams": ["src/routes/following.tsx", "src/lib/api/feed.functions.ts"],
-    "trackRecord": ["src/routes/receipts.tsx", "src/routes/api/public/pundits.$id.receipts.ts"],
-    "navigation": ["src/components/BottomNav.tsx", "src/components/AppHeader.tsx"],
+    "publicApi": [
+      "src/lib/api/editorial-public.server.ts",
+      "src/routes/api/public"
+    ],
+    "aiPundits": [
+      "src/components/PersonalitySelector.tsx",
+      "src/lib/pundit/specs.ts"
+    ],
+    "avatars": [
+      "src/components/PunditAvatar.tsx",
+      "src/lib/pundit/avatar-model.ts"
+    ],
+    "teams": [
+      "src/routes/following.tsx",
+      "src/lib/api/feed.functions.ts"
+    ],
+    "trackRecord": [
+      "src/routes/receipts.tsx",
+      "src/routes/api/public/pundits.$id.receipts.ts"
+    ],
+    "navigation": [
+      "src/components/BottomNav.tsx",
+      "src/components/AppHeader.tsx"
+    ],
     "release": [
       "src/lib/launch-config.ts",
       "src/lib/pundit/release-readiness.server.ts",
