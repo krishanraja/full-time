@@ -11,6 +11,31 @@ is never more than a day behind the tree. Chronology lives in `docs/history/LOG.
 This repository's own rules and deeper state: `docs/19-release-state.md`. They outrank the
 canon below on anything specific to this repository.
 
+## Quote the model spend, every time
+
+**Ruling (Krish, 2026-09-21): state what a task costs in API credits, before running it
+and after, in every session.**
+
+This repository spends real money per run and the spend is invisible unless someone says
+it out loud. A full six-pundit drop is roughly six model-heavy steps: one writer call plus
+fourteen judges per pundit, per repair round. On the night this rule was made, eleven
+pipeline runs and a handful of diagnostics came to about $39 without publishing a single
+show, and nobody was tracking it until it was asked for.
+
+So, whenever you are about to spend:
+
+- **Quote the estimate before running**, with the arithmetic, not just a number. A reader
+  who can see "168 judge calls at roughly 1,700 output tokens on a $12/M model" can tell
+  you the estimate is wrong; a reader given "about $4" cannot.
+- **Report the actual afterwards**, from `model_cache_usage` log lines (`callCostUsd` and
+  `stepSpendUsd`), not from the estimate you already gave.
+- **Prefer the cheap instrument.** `judge-calibration.yml` answers questions about the
+  judges for cents. Three paid runs were spent on a question it answered for $0.32, and
+  reaching for it first is the whole lesson of that night.
+- **Say when you do not know.** Run cost is not persisted anywhere in the database, so a
+  total assembled from logs is a reading of what was still in the log window, not an
+  invoice. Say so rather than presenting it as exact.
+
 <!-- krish-canon:start release=v2026.09.08.2 sha=9536acd927ff rendered=2026-09-08 -->
 ## Krish canon
 
