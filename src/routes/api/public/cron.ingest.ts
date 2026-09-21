@@ -604,6 +604,15 @@ async function handleIngest({ request }: { request: Request }) {
       import("@/lib/sources/fotmob.server"),
       import("@/lib/pundit/service-rest.server"),
     ]);
+    // Ask the destination whether it exists before asking anyone else for
+    // anything. Without this, a run with the migration unapplied spends a
+    // request per enriched fixture and then throws every answer away when the
+    // write fails, which is both pointless and the behaviour most likely to
+    // get an unlicensed source to stop answering before it is ever used.
+    //
+    // One request, and it doubles as the guard for the table being dropped.
+    await serviceRest<unknown>("source_match_estimates?select=match_id&limit=1");
+
     const sources = [fotmobAdapter()];
     const rows: Array<Record<string, unknown>> = [];
     for (const { f } of ranked) {
