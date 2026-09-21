@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { DIMENSION_STANDARDS, SCORE_ANCHORS, SCORING_INSTRUCTION } from "./dimensions";
 import { dedupeClaims, licenseClaims } from "./claim-lab";
-import { anthropicJson } from "./anthropic-json.server";
+import { modelJson } from "./model-json.server";
 import { BudgetExceededError, spentThisStepUsd } from "./model-cost";
 import {
   publicationDecision,
@@ -151,6 +151,22 @@ function citedSpan() {
   );
 }
 
+/** The same tolerance, for the fields that carry a judge's reasoning.
+ *
+ *  `failure` and `requestedRepair` were strict strings while `evidenceSpan`
+ *  had already been widened, and the reason for widening it applies verbatim:
+ *  a judge asked to name EVERY unsupported assertion has a list, and whether
+ *  it sends one string or an array of them is a formatting preference, not a
+ *  difference of meaning.
+ *
+ *  Probed against gpt-5.6-terra on 2026-09-21 before it ever served a paid
+ *  run, it answered `"failure": ["...", "..."]`. Under the strict schema every
+ *  rejection would have failed to parse and been recorded against the variant
+ *  as "did not return a usable judgement" - quarantining scripts for the
+ *  judge's punctuation, which is the fault this file spent the evening
+ *  removing. */
+const citedText = citedSpan;
+
 /** Beat names the judge offers, with anything unrecognised dropped rather than
  *  taken as grounds to throw the whole judgement away.
  *
@@ -173,8 +189,8 @@ const advisoryBeats = optionalList(
 export const judgeSchema = z.object({
   score: z.number().int().min(1).max(5),
   evidenceSpan: citedSpan(),
-  failure: optional(z.string()),
-  requestedRepair: optional(z.string()),
+  failure: citedText(),
+  requestedRepair: citedText(),
   failedBeats: advisoryBeats,
 });
 
@@ -185,8 +201,8 @@ export const hardJudgeSchema = z
   .object({
     passed: z.boolean(),
     evidenceSpan: citedSpan(),
-    failure: optional(z.string()),
-    requestedRepair: optional(z.string()),
+    failure: citedText(),
+    requestedRepair: citedText(),
     failedBeats: advisoryBeats,
   })
   // A rejection still has to say what is unsupported and where - a repair round
@@ -259,14 +275,14 @@ async function deterministicClaimId(matchId: string, index: number, thesis: stri
 }
 
 export async function generateClaimLaboratory(pack: EvidencePack): Promise<AnalysisClaim[]> {
-  const output = await anthropicJson({
+  const output = await modelJson({
     model: modelNames().writer,
     // A cap is a ceiling, not an allocation: nothing is charged for headroom
     // the model does not use, so a tight one buys nothing and costs a whole
     // run when it is wrong. 3,000 was wrong on 2026-09-21. The pack grew 17%
     // when it started stating the score after each goal, the laboratory found
     // correspondingly more to say, and the JSON stopped mid-object - which
-    // anthropic-json reports as a truncation and prepareEditorialStep turns
+    // model-json reports as a truncation and prepareEditorialStep turns
     // into a fatal, so the drop died before any pundit wrote a word.
     //
     // The contract asks for up to eight fact claims plus the analysis claims
@@ -414,7 +430,7 @@ async function writeDraft(input: {
           : undefined,
       }
     : undefined;
-  const draft = await anthropicJson({
+  const draft = await modelJson({
     model: modelNames().writer,
     maxTokens: 16_000,
     schema: draftSchema,
@@ -550,7 +566,7 @@ async function judgeOne(
   // evidence pack. It goes in the varying tail instead.
   let output: z.infer<typeof judgeSchema>;
   try {
-    output = await anthropicJson({
+    output = await modelJson({
       model: modelNames().judge,
       // See the claim laboratory's cap for why this is generous. A judge that
       // truncates does not fail softly: runHardGates records "did not return a
@@ -645,7 +661,7 @@ async function judgeHardOne(
     " When you reject the script you must quote the exact offending span and state plainly what is wrong with it: which assertion is unsupported, and what the evidence does or does not say. A rejection with no specific reason is not a usable answer, because the writer cannot repair what you have not named.";
   let output: z.infer<typeof hardJudgeSchema>;
   try {
-    output = await anthropicJson({
+    output = await modelJson({
       model: modelNames().judge,
       // The fail-closed judges, which are asked to name EVERY unsupported
       // assertion and every failed beat rather than the first one. Same

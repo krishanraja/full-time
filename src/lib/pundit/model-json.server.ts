@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { assertWithinBudget, recordSpend, spentThisStepUsd } from "./model-cost";
+import {
+  assertWithinBudget,
+  recordSpend,
+  spentThisStepUsd,
+  type CallUsage,
+} from "./model-cost";
 import { stubEnabled, stubResponse } from "./model-stub.server";
 
 /** Reads the balanced object that begins at `start`, or undefined when the text
@@ -103,7 +108,127 @@ export function requestContent(cachedContext: readonly unknown[], user: string):
   return [...cached, { type: "text", text: `${user}\n\nReturn only one JSON object.` }];
 }
 
-export async function anthropicJson<T>(input: {
+/** What one provider call returned, in the one shape the caller cares about.
+ *
+ *  `usage` is normalised to the Anthropic field names because `model-cost.ts`
+ *  and every log line already speak them. The translation lives in the OpenAI
+ *  transport, where the difference is visible, rather than being spread
+ *  through the accounting. */
+type ProviderResult = {
+  text: string;
+  truncated: boolean;
+  usage: CallUsage;
+};
+
+/** Which provider serves a model id.
+ *
+ *  Dispatching on the id rather than on a separate setting is what makes the
+ *  fallback a one-variable change: PUNDIT_WRITER_MODEL and PUNDIT_JUDGE_MODEL
+ *  already exist, already reach every call site, and setting one to a gpt- id
+ *  moves that role to OpenAI and back again with nothing else touched. A
+ *  second switch could disagree with the model name; this cannot. */
+export function providerFor(model: string): "openai" | "anthropic" {
+  return /^(?:gpt|o\d)/i.test(model) ? "openai" : "anthropic";
+}
+
+async function callAnthropic(
+  input: { system: string; user: string; model: string; maxTokens: number },
+  cachedContext: readonly unknown[],
+): Promise<Response> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
+  return fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: input.model,
+      max_tokens: input.maxTokens,
+      // The system prompt is the same bytes on every call of a given kind,
+      // so it is the outermost thing worth caching.
+      system: [{ type: "text", text: input.system, cache_control: { type: "ephemeral" } }],
+      messages: [{ role: "user", content: requestContent(cachedContext, input.user) }],
+    }),
+    signal: AbortSignal.timeout(120_000),
+  });
+}
+
+async function callOpenAi(
+  input: { system: string; user: string; model: string; maxTokens: number },
+  cachedContext: readonly unknown[],
+): Promise<Response> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY missing");
+  // OpenAI caches automatically on the request prefix, with no per-block
+  // markers, so the cached context is flattened in the same order it would
+  // have carried breakpoints. Stable head first, varying tail last: that
+  // ordering is what earns the discount on either provider, and it is the
+  // reason requestContent's shape is worth preserving here.
+  const content = requestContent(cachedContext, input.user)
+    .map((block) => block.text)
+    .join("\n\n");
+  return fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      model: input.model,
+      // Not `max_tokens`, which these models reject.
+      max_completion_tokens: input.maxTokens,
+      // Belt as well as braces: every caller already asks for one JSON object
+      // in the prompt, and this refuses to emit anything else.
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: input.system },
+        { role: "user", content },
+      ],
+    }),
+    signal: AbortSignal.timeout(120_000),
+  });
+}
+
+function readAnthropic(body: {
+  content?: Array<{ text?: string }>;
+  stop_reason?: string;
+  usage?: CallUsage;
+}): ProviderResult {
+  return {
+    text: body.content?.[0]?.text ?? "",
+    truncated: body.stop_reason === "max_tokens",
+    usage: body.usage ?? {},
+  };
+}
+
+export function readOpenAi(body: {
+  choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    prompt_tokens_details?: { cached_tokens?: number };
+  };
+}): ProviderResult {
+  const cached = body.usage?.prompt_tokens_details?.cached_tokens ?? 0;
+  return {
+    text: body.choices?.[0]?.message?.content ?? "",
+    truncated: body.choices?.[0]?.finish_reason === "length",
+    usage: {
+      // OpenAI's prompt_tokens INCLUDES the cached ones and Anthropic's
+      // input_tokens excludes them. Passing the raw number through would bill
+      // every cached token at the full rate inside the spend ceiling, which
+      // would stop runs that are well within budget.
+      input_tokens: Math.max(0, (body.usage?.prompt_tokens ?? 0) - cached),
+      output_tokens: body.usage?.completion_tokens ?? 0,
+      // There is no write premium to account for: OpenAI populates its cache
+      // as a side effect of an ordinary request and charges nothing extra.
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: cached,
+    },
+  };
+}
+
+export async function modelJson<T>(input: {
   system: string;
   /** Stable request prefix, most stable first. Each entry is cached. */
   cachedContext?: readonly unknown[];
@@ -123,8 +248,7 @@ export async function anthropicJson<T>(input: {
     return input.schema.parse(stubResponse(input.label ?? "unlabelled", cachedContext, input.user));
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
+  const provider = providerFor(input.model);
 
   if (cachedContext.length > MAX_CACHED_CONTEXT_BLOCKS) {
     throw new Error(
@@ -139,27 +263,16 @@ export async function anthropicJson<T>(input: {
       // Checked before every request, including retries, so a loop that keeps
       // failing cannot keep spending.
       assertWithinBudget();
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model: input.model,
-          max_tokens: input.maxTokens,
-          // The system prompt is the same bytes on every call of a given kind,
-          // so it is the outermost thing worth caching.
-          system: [{ type: "text", text: input.system, cache_control: { type: "ephemeral" } }],
-          messages: [{ role: "user", content: requestContent(cachedContext, input.user) }],
-        }),
-        signal: AbortSignal.timeout(120_000),
-      });
+      const response =
+        provider === "openai"
+          ? await callOpenAi(input, cachedContext)
+          : await callAnthropic(input, cachedContext);
 
       if (!response.ok) {
         const body = await response.text();
-        lastError = new Error(`Anthropic ${response.status}: ${body.slice(0, 180)}`);
+        lastError = new Error(
+          `${provider === "openai" ? "OpenAI" : "Anthropic"} ${response.status}: ${body.slice(0, 180)}`,
+        );
         if ([429, 500, 502, 503, 529].includes(response.status) && attempt < 3) {
           await sleep(attempt * 2_000);
           continue;
@@ -168,41 +281,34 @@ export async function anthropicJson<T>(input: {
       }
 
       try {
-        const body = (await response.json()) as {
-          content?: Array<{ text?: string }>;
-          stop_reason?: string;
-          usage?: {
-            input_tokens?: number;
-            output_tokens?: number;
-            cache_creation_input_tokens?: number;
-            cache_read_input_tokens?: number;
-          };
-        };
-        const callCost = recordSpend(input.model, body.usage);
+        const raw = (await response.json()) as Record<string, unknown>;
+        const result = provider === "openai" ? readOpenAi(raw) : readAnthropic(raw);
+        const callCost = recordSpend(input.model, result.usage);
         // Caching fails silently: requests still succeed, the bill is just
         // higher. These counters are the only evidence it is working, so they
         // are logged on every call rather than checked once at setup.
         console.log(
           JSON.stringify({
             level: "info",
-            message: "anthropic_cache_usage",
+            message: "model_cache_usage",
+            provider,
             label: input.label ?? "unlabelled",
             model: input.model,
-            uncachedInputTokens: body.usage?.input_tokens ?? 0,
-            cacheWriteTokens: body.usage?.cache_creation_input_tokens ?? 0,
-            cacheReadTokens: body.usage?.cache_read_input_tokens ?? 0,
+            uncachedInputTokens: result.usage.input_tokens ?? 0,
+            cacheWriteTokens: result.usage.cache_creation_input_tokens ?? 0,
+            cacheReadTokens: result.usage.cache_read_input_tokens ?? 0,
             callCostUsd: Number(callCost.toFixed(4)),
             stepSpendUsd: Number(spentThisStepUsd().toFixed(4)),
           }),
         );
         // Truncation is deterministic: the same prompt will truncate again, so
         // say so plainly rather than burning two more identical attempts.
-        if (body.stop_reason === "max_tokens") {
+        if (result.truncated) {
           throw new Error(
             `Model response was cut off at the ${input.maxTokens} token limit before the JSON closed.`,
           );
         }
-        const parsed = extractJson(body.content?.[0]?.text ?? "");
+        const parsed = extractJson(result.text);
         return input.schema.parse(parsed);
       } catch (error: unknown) {
         lastError = error;
@@ -210,7 +316,7 @@ export async function anthropicJson<T>(input: {
         if (attempt < 3) await sleep(300 * attempt);
       }
     }
-    throw lastError instanceof Error ? lastError : new Error("Anthropic JSON generation failed.");
+    throw lastError instanceof Error ? lastError : new Error("Model JSON generation failed.");
   } finally {
     release();
   }

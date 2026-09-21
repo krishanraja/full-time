@@ -118,3 +118,34 @@ describe("a judge's verdict survives the shape it arrives in", () => {
     expect(hardJudgeSchema.parse({ passed: true }).failure).toBeUndefined();
   });
 });
+
+/** The provider swap re-opened a fault this file had just closed, in a field
+ *  nobody had widened. Probed against gpt-5.6-terra before it served a paid
+ *  run: it answers `"failure": ["...", "..."]` when asked to name every
+ *  unsupported assertion. */
+describe("a judge's reasoning survives arriving as a list", () => {
+  it("joins a failure sent as an array", () => {
+    const parsed = hardJudgeSchema.parse({
+      passed: false,
+      failure: ["The xG attribution is reversed.", "The prediction is unsupported."],
+    });
+    expect(parsed.failure).toBe("The xG attribution is reversed. | The prediction is unsupported.");
+  });
+
+  it("joins a requested repair sent as an array", () => {
+    expect(
+      hardJudgeSchema.parse({ passed: false, failure: "x", requestedRepair: ["Cut it.", "Or fix."] })
+        .requestedRepair,
+    ).toBe("Cut it. | Or fix.");
+  });
+
+  it("does the same on the qualitative judge", () => {
+    expect(judgeSchema.parse({ score: 2, failure: ["a", "b"] }).failure).toBe("a | b");
+  });
+
+  // A rejection whose reason arrives as an EMPTY array still names nothing, so
+  // it is still refused rather than passed off as a reason.
+  it("still refuses a rejection whose list is empty", () => {
+    expect(() => hardJudgeSchema.parse({ passed: false, failure: [] })).toThrow();
+  });
+});
