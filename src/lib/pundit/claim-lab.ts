@@ -197,6 +197,21 @@ export function licenseClaim(claim: AnalysisClaim, pack: EvidencePack): ClaimLic
   if (OUTCOME_AS_JUSTIFICATION.some((pattern) => pattern.test(claim.thesis))) {
     failures.push("Confuses a successful outcome with decision quality.");
   }
+  // A prediction at exactly even odds licenses no direction, so there is no
+  // honest sentence a pundit can build on it. On the 2026-09-20 drop the
+  // laboratory produced one - Sunderland to score in their next fixture, at
+  // 0.5 - and all six writers rendered it "more likely than not", which means
+  // strictly greater than a half. Every judge caught it and every variant was
+  // quarantined for the same line. Six pundits, one coin flip.
+  //
+  // Refusing it here rather than in the prose is the only place it stays
+  // fixed: a rule in the writer's prompt has to be obeyed six times, and a
+  // rule in the judge's is caught six times after the money is spent.
+  if (claim.type === "prediction" && claim.confidence === 0.5) {
+    failures.push(
+      "prediction at 0.5 states no direction; give it a confidence that commits, or drop it.",
+    );
+  }
   if ((claim.type === "counterfactual" || claim.type === "prediction") && !claim.falsifier) {
     failures.push(`${claim.type} requires a falsifier.`);
   }

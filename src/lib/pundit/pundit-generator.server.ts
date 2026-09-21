@@ -151,24 +151,57 @@ function citedSpan() {
   );
 }
 
+/** Beat names the judge offers, with anything unrecognised dropped rather than
+ *  taken as grounds to throw the whole judgement away.
+ *
+ *  `failedBeats` steers a repair round at a beat. It is advisory: losing it
+ *  costs the writer a hint, while losing the judgement costs the script. A
+ *  strict z.enum() spent the second to save the first - on 2026-09-21 a judge
+ *  answered "changeMyMind", which is a real field on the thesis and not a beat,
+ *  and its entire verdict was discarded and recorded against the variant as
+ *  "did not return a usable judgement". */
+const advisoryBeats = optionalList(
+  z
+    .array(z.string())
+    .transform((values) =>
+      values.filter((value): value is (typeof beatNames)[number] =>
+        (beatNames as readonly string[]).includes(value),
+      ),
+    ),
+);
+
 export const judgeSchema = z.object({
   score: z.number().int().min(1).max(5),
   evidenceSpan: citedSpan(),
   failure: optional(z.string()),
   requestedRepair: optional(z.string()),
-  failedBeats: optionalList(z.array(z.enum(beatNames))),
+  failedBeats: advisoryBeats,
 });
 
 /** A fail-closed gate that rejects a script without saying what is unsupported
  *  gives the writer nothing to repair, so it fails the same beats on every
  *  attempt. A rejection must carry its reason. */
-const hardJudgeSchema = z
+export const hardJudgeSchema = z
   .object({
     passed: z.boolean(),
     evidenceSpan: citedSpan(),
     failure: optional(z.string()),
     requestedRepair: optional(z.string()),
-    failedBeats: optionalList(z.array(z.enum(beatNames))),
+    failedBeats: advisoryBeats,
+  })
+  // A rejection still has to say what is unsupported and where - a repair round
+  // cannot fix what nobody named. But the reason does not have to arrive in the
+  // field we happened to ask for. Four of six judges on the 2026-09-20 drop put
+  // it in the repair or the cited span and left `failure` empty, and all four
+  // verdicts were thrown away for it, which failed six scripts on a schema
+  // detail rather than on their prose.
+  //
+  // So take the reason wherever the judge put it, and keep refusing only when
+  // there is genuinely nothing to hand the writer.
+  .transform((value) => {
+    if (value.passed || value.failure?.trim()) return value;
+    const salvaged = value.requestedRepair?.trim() || value.evidenceSpan?.trim();
+    return salvaged ? { ...value, failure: salvaged } : value;
   })
   .refine((value) => value.passed || Boolean(value.failure?.trim()), {
     message: "A rejection must state what is unsupported and where.",
@@ -244,7 +277,11 @@ export async function generateClaimLaboratory(pack: EvidencePack): Promise<Analy
     label: "claim-lab",
     schema: claimSchema,
     system:
-      "You are Full Time's claim laboratory. Produce claims, never prose. Facts are closed-world. Causal strength must not exceed the evidence. Do not infer tactics, intent, psychology or film detail from structured match data. Separate decision quality from outcome. Predictions and counterfactuals need a falsifier and structured rule. Every number in a thesis must be one the evidence you cite actually carries, or the number of evidence references you cite. Count your own citations before you state a count: a thesis that says four while listing five events is worse than no claim at all, because every pundit will repeat it. " +
+      "You are Full Time's claim laboratory. Produce claims, never prose. Facts are closed-world. Causal strength must not exceed the evidence. Do not infer tactics, intent, psychology or film detail from structured match data. Separate decision quality from outcome. Predictions and counterfactuals need a falsifier and structured rule. " +
+      // A prediction at 0.5 is a coin flip, and a pundit cannot say it out loud
+      // without overclaiming in one direction or the other. One of these
+      // quarantined every variant of the 2026-09-20 drop.
+      "Never give a prediction a confidence of exactly 0.5: it states no direction, so there is no honest sentence anyone can build on it. Commit to a number that means something, or leave the prediction out. Every number in a thesis must be one the evidence you cite actually carries, or the number of evidence references you cite. Count your own citations before you state a count: a thesis that says four while listing five events is worse than no claim at all, because every pundit will repeat it. " +
       // Six pundits share this one claim set. When it holds a single analytical
       // idea, six writers produce a single script and every judge calls it a
       // truism, which is what happened on 2026-09-04. Breadth here is what makes

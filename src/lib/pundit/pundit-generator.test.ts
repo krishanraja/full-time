@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { judgeSchema, normaliseBeats } from "./pundit-generator.server";
+import { hardJudgeSchema, judgeSchema, normaliseBeats } from "./pundit-generator.server";
 
 describe("judge response tolerance", () => {
   // The run this cost: a judge given a fuller rubric cited several spans and
@@ -66,5 +66,55 @@ describe("writer beat container normalisation", () => {
   it("leaves scalars alone for the schema to reject", () => {
     expect(normaliseBeats("nope")).toBe("nope");
     expect(normaliseBeats(null)).toBe(null);
+  });
+});
+
+/** A judge whose answer is thrown away is recorded as a failure of the script,
+ *  so every schema detail that can reject a well-meant verdict quarantines
+ *  prose for a reason that has nothing to do with the prose. Both of these
+ *  happened on the 2026-09-20 drop and between them discarded five of six
+ *  factual_entailment verdicts. */
+describe("a judge's verdict survives the shape it arrives in", () => {
+  it("drops a beat name it does not recognise instead of voiding the judgement", () => {
+    // "changeMyMind" is a real field on the thesis and not a beat, which is
+    // exactly why a judge reached for it.
+    const parsed = hardJudgeSchema.parse({
+      passed: false,
+      failure: "The prediction is unsupported.",
+      failedBeats: ["prediction_or_receipt", "changeMyMind"],
+    });
+    expect(parsed.failedBeats).toEqual(["prediction_or_receipt"]);
+    expect(parsed.failure).toBe("The prediction is unsupported.");
+  });
+
+  it("does the same for a qualitative judge", () => {
+    expect(
+      judgeSchema.parse({ score: 2, failedBeats: ["hook", "changeMyMind"] }).failedBeats,
+    ).toEqual(["hook"]);
+  });
+
+  it("takes the reason from the repair when the judge left `failure` empty", () => {
+    const parsed = hardJudgeSchema.parse({
+      passed: false,
+      failure: "   ",
+      requestedRepair: "Cut the claim that Sunderland dominated.",
+    });
+    expect(parsed.failure).toBe("Cut the claim that Sunderland dominated.");
+  });
+
+  it("falls back to the cited span when that is all there is", () => {
+    expect(
+      hardJudgeSchema.parse({ passed: false, evidenceSpan: "they were the better side" }).failure,
+    ).toBe("they were the better side");
+  });
+
+  // Still fail-closed. A rejection carrying nothing at all gives the writer
+  // nothing to repair, and pretending otherwise would be worse than refusing.
+  it("still refuses a rejection that names nothing", () => {
+    expect(() => hardJudgeSchema.parse({ passed: false })).toThrow();
+  });
+
+  it("asks nothing of a verdict that passed", () => {
+    expect(hardJudgeSchema.parse({ passed: true }).failure).toBeUndefined();
   });
 });
