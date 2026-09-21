@@ -432,6 +432,67 @@ describe("attributing saves to the keeper who made them", () => {
   });
 });
 
+/** standings_snapshots existed for six weeks with nothing writing to it, and
+ *  the cost of that empty table was the gate in harness.ts that refuses every
+ *  sentence about the season. */
+describe("where these two stood in the table", () => {
+  const withTable = {
+    ...input,
+    matchday: 5,
+    table: {
+      capturedAt: "2026-09-05T00:15:00Z",
+      home: { rank: 3, points: 10, played: 5 },
+      away: { rank: 12, points: 5, played: 5 },
+    },
+  };
+
+  it("states each side's position, points and matches played", () => {
+    const pack = buildEvidencePack(withTable);
+    expect(pack.facts.find((item) => item.id === "table.home_rank")?.value).toBe(3);
+    expect(pack.facts.find((item) => item.id === "table.away_points")?.value).toBe(5);
+    expect(pack.facts.find((item) => item.id === "table.home_played")?.value).toBe(5);
+  });
+
+  it("states the gap, which is the figure a pundit actually reaches for", () => {
+    const item = buildEvidencePack(withTable).derivations.find(
+      (entry) => entry.id === "derived.table_points_gap",
+    );
+    expect(item?.value).toBe(5);
+    expect(item?.formula).toContain("difference");
+  });
+
+  /** The provenance is the audit trail for a season-level sentence: which
+   *  snapshot licensed it, and when that snapshot was taken. */
+  it("records which snapshot licensed it", () => {
+    const item = buildEvidencePack(withTable).facts.find((entry) => entry.id === "table.home_rank");
+    expect(item?.provenance).toContain("2026-09-05T00:15:00Z");
+  });
+
+  it("states nothing at all when there is no snapshot", () => {
+    const pack = buildEvidencePack(input);
+    expect(pack.facts.some((item) => item.id.startsWith("table."))).toBe(false);
+    expect(pack.derivations.some((item) => item.id.startsWith("table."))).toBe(false);
+  });
+
+  it("states one side when the snapshot only knows one of them", () => {
+    const pack = buildEvidencePack({
+      ...withTable,
+      table: { ...withTable.table, away: undefined },
+    });
+    expect(pack.facts.find((item) => item.id === "table.home_rank")?.value).toBe(3);
+    expect(pack.facts.find((item) => item.id === "table.away_rank")).toBeUndefined();
+    expect(pack.derivations.find((item) => item.id === "derived.table_points_gap")).toBeUndefined();
+  });
+
+  /** The round is a fact about the calendar, not about the table, and it must
+   *  not license a positional sentence on its own. */
+  it("keeps the league round out of the table namespace", () => {
+    const pack = buildEvidencePack({ ...input, matchday: 5 });
+    expect(pack.facts.find((item) => item.id === "match.matchday")?.value).toBe(5);
+    expect(pack.facts.some((item) => item.id.startsWith("table."))).toBe(false);
+  });
+});
+
 describe("time a side had to respond to a goal", () => {
   const packWith = (minutes: number[]) =>
     buildEvidencePack({

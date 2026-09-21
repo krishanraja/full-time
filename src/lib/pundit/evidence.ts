@@ -72,6 +72,27 @@ export type StructuredMatchInput = {
     home?: { name: string | null; subbed: boolean | null };
     away?: { name: string | null; subbed: boolean | null };
   };
+  /** Where these two stood in the league once this result was in the table.
+   *
+   *  Two clubs, not twenty: a full table is about three thousand characters
+   *  per league and a step reads the pack roughly a hundred and seventy times.
+   *
+   *  Its presence is what licenses a positional statement at all. The reader
+   *  only supplies it from a snapshot captured at or after kickoff, so a table
+   *  from before the match never reaches here, and an absent table leaves the
+   *  consequence gate exactly as shut as it has always been. */
+  /** Which round of the league this was.
+   *
+   *  It belongs with the season facts rather than the table ones, because it
+   *  is true whether or not a standings snapshot exists and it licenses
+   *  nothing positional on its own. "Seven games in" is a fact about the
+   *  calendar; "seventh in the table" is a fact about the table. */
+  matchday?: number | null;
+  table?: {
+    capturedAt: string;
+    home?: { rank: number | null; points: number | null; played: number | null };
+    away?: { rank: number | null; points: number | null; played: number | null };
+  };
   /** What each side did before this match, and what these two have done to
    *  each other. The pack has always held one match in isolation, which is
    *  structurally why judges keep calling the analysis a truism: with ninety
@@ -198,6 +219,18 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     fact("match.kickoff", "Kickoff", match.kickoffAt, match.source, "matches.kickoff_at"),
     fact("match.competition", "Competition", match.competition, match.source, "matches.league_id"),
   ];
+
+  if (finite(input.matchday)) {
+    facts.push(
+      fact(
+        "match.matchday",
+        "League round",
+        input.matchday,
+        match.source,
+        "match_context.matchday",
+      ),
+    );
+  }
 
   if (input.feedsAgree != null) {
     facts.push(
@@ -474,6 +507,62 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
         ),
       );
     }
+  }
+
+  // The league table, for these two clubs alone.
+  //
+  // This is the first thing the pack has ever carried that can support a
+  // sentence about the season. Everything it carries is a figure the snapshot
+  // states: a rank, a points total, a number of matches played, and the gap
+  // between the two. It says nothing about what any of that means, because
+  // what it means depends on matches remaining, other clubs' fixtures and
+  // qualification rules, and the snapshot carries none of those.
+  const table = input.table;
+  for (const [side, team, standing] of [
+    ["home", match.homeTeam, table?.home],
+    ["away", match.awayTeam, table?.away],
+  ] as const) {
+    if (!standing) continue;
+    const provenance = `standings_snapshots.captured_at=${table?.capturedAt ?? "unknown"}`;
+    if (finite(standing.rank)) {
+      facts.push(
+        fact(
+          `table.${side}_rank`,
+          `${team} position in the table`,
+          standing.rank,
+          "api-football",
+          provenance,
+        ),
+      );
+    }
+    if (finite(standing.points)) {
+      facts.push(
+        fact(`table.${side}_points`, `${team} points`, standing.points, "api-football", provenance),
+      );
+    }
+    if (finite(standing.played)) {
+      facts.push(
+        fact(
+          `table.${side}_played`,
+          `${team} matches played`,
+          standing.played,
+          "api-football",
+          provenance,
+        ),
+      );
+    }
+  }
+  if (finite(table?.home?.points) && finite(table?.away?.points)) {
+    derivations.push(
+      derived(
+        "derived.table_points_gap",
+        "Points between these two in the table",
+        Math.abs(table.home.points - table.away.points),
+        "api-football",
+        "table.home_points,table.away_points",
+        "absolute difference of the two points totals",
+      ),
+    );
   }
 
   // Saves are recorded for a side and never for a player. The writer is told

@@ -77,7 +77,7 @@ export async function loadStructuredMatch(matchId: string) {
       supabaseAdmin
         .from("matches")
         .select(
-          "id, kickoff_at, home_team_id, away_team_id, home_score, away_score, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name)",
+          "id, kickoff_at, home_team_id, away_team_id, home_score, away_score, league_id, season, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name)",
         )
         .eq("id", matchId)
         .single(),
@@ -96,7 +96,7 @@ export async function loadStructuredMatch(matchId: string) {
       supabaseAdmin.from("match_stats").select("*").eq("match_id", matchId).maybeSingle(),
       supabaseAdmin
         .from("match_context")
-        .select("feeds_agree, home_gk_name, away_gk_name, home_gk_subbed, away_gk_subbed")
+        .select("feeds_agree, matchday, home_gk_name, away_gk_name, home_gk_subbed, away_gk_subbed")
         .eq("match_id", matchId)
         .maybeSingle(),
     ]);
@@ -109,9 +109,11 @@ export async function loadStructuredMatch(matchId: string) {
   const rowWithTeams = match as unknown as MatchRow & {
     home_team_id: string;
     away_team_id: string;
+    league_id: string | null;
+    season: number | null;
   };
   const teamIds = [rowWithTeams.home_team_id, rowWithTeams.away_team_id].filter(Boolean);
-  const [{ data: priorRows }, { data: h2hRows }] = await Promise.all([
+  const [{ data: priorRows }, { data: h2hRows }, { data: standingsRows }] = await Promise.all([
     teamIds.length
       ? supabaseAdmin
           .from("matches")
@@ -146,12 +148,51 @@ export async function loadStructuredMatch(matchId: string) {
           .in("team_b_id", teamIds)
           .limit(1)
       : Promise.resolve({ data: [] }),
+    // The league table as it stood after this match was played.
+    //
+    // At or after kickoff, ascending, one row: the first snapshot taken once
+    // this result was in it. A table captured before the match cannot license
+    // a statement about the position after it, and the most recent snapshot
+    // would fold in later rounds when a backfill reaches an old fixture.
+    rowWithTeams.league_id && rowWithTeams.season != null
+      ? supabaseAdmin
+          .from("standings_snapshots")
+          .select("rows, captured_at")
+          .eq("league_id", rowWithTeams.league_id)
+          .eq("season", rowWithTeams.season)
+          .gte("captured_at", row.kickoff_at)
+          .order("captured_at", { ascending: true })
+          .limit(1)
+      : Promise.resolve({ data: [] }),
   ]);
   const prior = (priorRows ?? []) as unknown as PriorRow[];
   const teamName = new Map([
     [rowWithTeams.home_team_id, row.home?.name],
     [rowWithTeams.away_team_id, row.away?.name],
   ]);
+
+  // Two clubs, not twenty. A full table is about three thousand characters per
+  // league, and a step reads the pack roughly a hundred and seventy times.
+  const snapshot = (standingsRows ?? [])[0] as { rows: unknown; captured_at: string } | undefined;
+  const standingFor = (teamId: string) => {
+    const rows = Array.isArray(snapshot?.rows)
+      ? (snapshot.rows as Array<Record<string, unknown>>)
+      : [];
+    const entry = rows.find((candidate) => candidate.team_id === teamId);
+    if (!entry) return undefined;
+    return {
+      rank: nullableNumber(entry.rank as number | null),
+      points: nullableNumber(entry.points as number | null),
+      played: nullableNumber(entry.played as number | null),
+    };
+  };
+  const table = snapshot
+    ? {
+        capturedAt: snapshot.captured_at,
+        home: standingFor(rowWithTeams.home_team_id),
+        away: standingFor(rowWithTeams.away_team_id),
+      }
+    : undefined;
   const meetings = (
     ((h2hRows ?? [])[0]?.meetings ?? []) as Array<{
       date?: string;
@@ -258,6 +299,8 @@ export async function loadStructuredMatch(matchId: string) {
     },
     headToHead: meetings,
     feedsAgree: context?.feeds_agree ?? null,
+    matchday: context?.matchday ?? null,
+    table,
   };
   const entities = [
     row.home?.name,

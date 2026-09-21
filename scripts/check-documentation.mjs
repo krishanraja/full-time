@@ -73,10 +73,11 @@ for (const path of currentDocs) {
   requireText(path, /\*\*Owner:\*\*/, "missing Owner field");
   requireText(path, /\*\*Purpose:\*\*/, "missing Purpose field");
   // 2026-08-11 was the full handbook reconciliation. 2026-09-04 is the founder
-  // launch override; only the documents that changed carry that date.
+  // launch override; only the documents that changed carry that date. 2026-09-21
+  // is the league-table evidence tier and the consequence licence.
   requireText(
     path,
-    /\*\*Last (?:reviewed|verified):\*\* 2026-0(?:8-11|9-04|9-07)/,
+    /\*\*Last (?:reviewed|verified):\*\* 2026-0(?:8-11|9-04|9-07|9-21)/,
     "review date is stale",
   );
 }

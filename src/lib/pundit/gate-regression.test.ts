@@ -313,6 +313,69 @@ describe("attributing saves to a named keeper", () => {
   });
 });
 
+/** The table changes what can be said about the season, and the whole question
+ *  is how much. Krish's ruling on 2026-09-21: licence it, do not open it. */
+describe("a position in the table, once the pack carries one", () => {
+  const withTable: StructuredMatchInput = {
+    ...toulouseLille,
+    table: {
+      capturedAt: "2026-09-04T00:15:00Z",
+      home: { rank: 14, points: 4, played: 4 },
+      away: { rank: 4, points: 9, played: 4 },
+    },
+  };
+
+  /** Not a relaxation. The score-derived number licence puts every integer up
+   *  to the match total into the pack, so in a higher-scoring game this
+   *  sentence was already sayable with no table anywhere in the evidence. */
+  it("refuses a position when the pack carries no table", () => {
+    expect(gateFailures("Lille are fourth in the table.", toulouseLille).join(" ")).toContain(
+      "consequence_licence",
+    );
+  });
+
+  it("licenses the same sentence once the table is in the pack", () => {
+    expect(gateFailures("Lille are fourth in the table.", withTable)).toEqual([]);
+  });
+
+  it("licenses the gap between the two", () => {
+    expect(gateFailures("Five points separate these two.", withTable)).toEqual([]);
+  });
+
+  /** The one that matters. A table says a side is fourth. It does not say that
+   *  fourth is a European place this season, and no snapshot ever will,
+   *  because that depends on matches remaining, other clubs' fixtures and a
+   *  competition's qualification rules. */
+  it("still refuses what the table cannot say, with the table in the pack", () => {
+    for (const sentence of [
+      "This all but confirms Champions League football.",
+      "Toulouse are drifting towards relegation.",
+      "That is a title performance.",
+      "A win like that is how sides stay up.",
+    ]) {
+      expect(gateFailures(sentence, withTable).join(" ")).toContain("consequence_licence");
+    }
+  });
+
+  /** An ordinal is an ordinary football word long before it is a league
+   *  position, and three points for a win is a constant in the licence itself.
+   *  A positional gate that trips on either would refuse correct writing,
+   *  which is the fault this whole regression file exists for. */
+  it("leaves ordinary ordinals and ordinary points alone", () => {
+    expect(gateFailures("It was his fourth goal of the season.", toulouseLille)).toEqual([]);
+    expect(gateFailures("Three points for a win is the whole game.", toulouseLille)).toEqual([]);
+  });
+
+  it("says which of the two reasons applied", () => {
+    expect(gateFailures("Lille are fourth in the table.", toulouseLille).join(" ")).toContain(
+      "carries no league table",
+    );
+    expect(gateFailures("That is a title performance.", withTable).join(" ")).toContain(
+      "not what that position wins",
+    );
+  });
+});
+
 describe("prose the gates should still reject", () => {
   it("rejects a number the evidence does not carry", () => {
     const failures = gateFailures("Toulouse had thirty-one shots.", toulouseLille);

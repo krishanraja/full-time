@@ -12,6 +12,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { apiFootballClient } from "@/lib/api/api-football.server";
+import { matchImportance } from "@/lib/api/match-importance";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { currentCoverageDate } from "@/lib/london-date";
 import {
@@ -254,11 +255,52 @@ async function handleIngest({ request }: { request: Request }) {
     });
   }
 
-  const importanceOf = (f: Json) => {
-    const total = (f.goals.home ?? 0) + (f.goals.away ?? 0);
-    const margin = Math.abs((f.goals.home ?? 0) - (f.goals.away ?? 0));
-    return total + (margin <= 1 ? 2 : 0) + (total >= 4 ? 2 : 0);
-  };
+  // The table the two clubs went into the match carrying.
+  //
+  // The standings written later in this run are the table after it, which is
+  // the right thing for the evidence pack and the wrong thing here: whether a
+  // fixture mattered is a question about what was at stake beforehand. The
+  // most recent snapshot before kickoff is exactly that.
+  //
+  // A standings outage leaves the ranking as goals alone, which is what it has
+  // always been. That matters more than it looks: this ranking also decides
+  // which twelve fixtures get events, statistics and lineups at all, so it
+  // must never move because a table failed to arrive.
+  const tableByTeam = new Map<string, { rank: number | null; points: number | null }>();
+  const clubsByLeague = new Map<string, number>();
+  try {
+    const { serviceRest } = await import("@/lib/pundit/service-rest.server");
+    for (const lg of live) {
+      const snapshots = await serviceRest<Array<{ rows: unknown }>>(
+        `standings_snapshots?league_id=eq.${lg.id}&season=eq.${SEASON}` +
+          `&select=rows&order=captured_at.desc&limit=1`,
+      );
+      const rows = Array.isArray(snapshots[0]?.rows)
+        ? (snapshots[0].rows as Array<Record<string, unknown>>)
+        : [];
+      clubsByLeague.set(lg.id, rows.length);
+      for (const entry of rows) {
+        if (typeof entry.team_id !== "string") continue;
+        tableByTeam.set(entry.team_id, {
+          rank: typeof entry.rank === "number" ? entry.rank : null,
+          points: typeof entry.points === "number" ? entry.points : null,
+        });
+      }
+    }
+  } catch (error: unknown) {
+    warnings.push(
+      `Standings unavailable for match ranking, using goals alone: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
+  const importanceOf = (f: Json, leagueId?: string) =>
+    matchImportance({
+      homeGoals: f.goals.home ?? 0,
+      awayGoals: f.goals.away ?? 0,
+      home: tableByTeam.get(`af_${f.teams?.home?.id}`),
+      away: tableByTeam.get(`af_${f.teams?.away?.id}`),
+      clubsInLeague: leagueId ? (clubsByLeague.get(leagueId) ?? 0) : 0,
+    });
   const short = (n: string) =>
     n
       .replace(/[^A-Za-z ]/g, "")
@@ -297,7 +339,7 @@ async function handleIngest({ request }: { request: Request }) {
       away_score: f.goals.away,
       kickoff_at: f.fixture.date,
       status: "finished",
-      importance_score: importanceOf(f),
+      importance_score: importanceOf(f, lg.id),
     })),
     { onConflict: "id" },
   );
@@ -312,7 +354,9 @@ async function handleIngest({ request }: { request: Request }) {
   }
 
   // ---- rich fetch for the top N by importance
-  const ranked = [...all].sort((a, b) => importanceOf(b.f) - importanceOf(a.f)).slice(0, TOP_N);
+  const ranked = [...all]
+    .sort((a, b) => importanceOf(b.f, b.lg.id) - importanceOf(a.f, a.lg.id))
+    .slice(0, TOP_N);
   const contexts: ContextRow[] = [];
 
   for (const { lg, f } of ranked) {
@@ -543,6 +587,59 @@ async function handleIngest({ request }: { request: Request }) {
     );
   }
 
+  // ---- league tables.
+  //
+  // standings_snapshots has existed since 6 August and nothing has ever
+  // written to it. The cost of that empty table is not a missing feature: it
+  // is CONSEQUENCE_ALWAYS in harness.ts, which permanently refuses every
+  // title, Europe, relegation and top-four word in every script, because with
+  // no table in the pack there is no honest way to license one.
+  //
+  // One call per league per day, which is what the provider recommends when no
+  // fixture is in progress. The client's "empty" policy means a standings
+  // failure costs the table and nothing else, and the pack treats an absent
+  // snapshot as a closed gate rather than an open one.
+  let standings = 0;
+  try {
+    const { serviceRest } = await import("@/lib/pundit/service-rest.server");
+    for (const lg of live) {
+      const payload = await af(`/standings?league=${lg.afId}&season=${SEASON}`);
+      // The provider nests groups one level deeper than a single league needs.
+      const groups: Json[][] = payload[0]?.league?.standings ?? [];
+      const rows = groups.flat().flatMap((entry: Json) => {
+        const teamId = entry?.team?.id;
+        if (!teamId) return [];
+        return [
+          {
+            team_id: `af_${teamId}`,
+            rank: entry.rank ?? null,
+            points: entry.points ?? null,
+            goalsDiff: entry.goalsDiff ?? null,
+            played: entry.all?.played ?? null,
+            win: entry.all?.win ?? null,
+            draw: entry.all?.draw ?? null,
+            lose: entry.all?.lose ?? null,
+            description: entry.description ?? null,
+          },
+        ];
+      });
+      if (!rows.length) {
+        warnings.push(`No standings rows for ${lg.name} in season ${SEASON}.`);
+        continue;
+      }
+      await serviceRest<null>("standings_snapshots?on_conflict=league_id,season,captured_on", {
+        method: "POST",
+        body: [{ league_id: lg.id, season: SEASON, rows, source: "api-football" }],
+        prefer: "resolution=merge-duplicates,return=minimal",
+      });
+      standings += 1;
+    }
+  } catch (error: unknown) {
+    warnings.push(
+      `Standings unavailable: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
   // ---- provider drift ledger.
   //
   // Observability, not product: the editorial pipeline never reads either
@@ -616,6 +713,7 @@ async function handleIngest({ request }: { request: Request }) {
     finished: all.length,
     enriched: ranked.length,
     crosscheck: { agreed, disagreed, unmatched },
+    standings,
     drift,
     predictionSettlement,
     calls: provider.calls(),
