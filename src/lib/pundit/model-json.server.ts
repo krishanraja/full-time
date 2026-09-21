@@ -131,6 +131,27 @@ export function providerFor(model: string): "openai" | "anthropic" {
   return /^(?:gpt|o\d)/i.test(model) ? "openai" : "anthropic";
 }
 
+/** How long one request may take before it is abandoned.
+ *
+ *  120 seconds was set for Anthropic and held for a year. The first OpenAI run
+ *  died on it: generatePunditStep aborted the writer call, which on a
+ *  reasoning model spends wall-clock thinking before it emits a token, and at
+ *  16,000 tokens that is minutes rather than seconds.
+ *
+ *  The platform has the room - the workflow step functions are maxDuration
+ *  "max" and the server is 800 seconds - so the choice is between paying in
+ *  time and paying in quality, because the lever that buys speed is reasoning
+ *  effort. Dropping gpt-5.6-sol from its default to medium effort takes it
+ *  from 47.0 to 39.2 on the intelligence index, below the claude-opus-4-8 it
+ *  replaced. Time is the cheaper currency here.
+ *
+ *  Anthropic keeps the value it is known to work with; there is no evidence
+ *  for changing it and a longer one only delays a genuine hang. */
+const REQUEST_TIMEOUT_MS: Record<"openai" | "anthropic", number> = {
+  openai: 300_000,
+  anthropic: 120_000,
+};
+
 async function callAnthropic(
   input: { system: string; user: string; model: string; maxTokens: number },
   cachedContext: readonly unknown[],
@@ -152,7 +173,7 @@ async function callAnthropic(
       system: [{ type: "text", text: input.system, cache_control: { type: "ephemeral" } }],
       messages: [{ role: "user", content: requestContent(cachedContext, input.user) }],
     }),
-    signal: AbortSignal.timeout(120_000),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS.anthropic),
   });
 }
 
@@ -185,7 +206,7 @@ async function callOpenAi(
         { role: "user", content },
       ],
     }),
-    signal: AbortSignal.timeout(120_000),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS.openai),
   });
 }
 
@@ -263,6 +284,7 @@ export async function modelJson<T>(input: {
       // Checked before every request, including retries, so a loop that keeps
       // failing cannot keep spending.
       assertWithinBudget();
+      const startedAt = Date.now();
       const response =
         provider === "openai"
           ? await callOpenAi(input, cachedContext)
@@ -292,6 +314,9 @@ export async function modelJson<T>(input: {
             level: "info",
             message: "model_cache_usage",
             provider,
+            // Latency was never logged, so the first timeout was a surprise
+            // rather than a trend anyone could have seen coming.
+            elapsedMs: Date.now() - startedAt,
             label: input.label ?? "unlabelled",
             model: input.model,
             uncachedInputTokens: result.usage.input_tokens ?? 0,
