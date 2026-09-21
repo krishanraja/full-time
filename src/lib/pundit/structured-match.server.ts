@@ -83,8 +83,13 @@ export async function loadStructuredMatch(matchId: string) {
         .single(),
       supabaseAdmin
         .from("match_events")
+        // The assist is embedded by constraint name, not by column:
+        // match_events has two foreign keys into players, so the column form is
+        // ambiguous. The whole select has to stay one string literal, because
+        // supabase-js parses it at compile time to type the row and a
+        // concatenated expression types every column as an error.
         .select(
-          "id, type, minute, added_time, team_id, player_name, detail, source, teams:team_id(name)",
+          "id, type, minute, added_time, team_id, player_name, detail, source, teams:team_id(name), assist:players!match_events_assist_player_id_fkey(name)",
         )
         .eq("match_id", matchId)
         .order("minute"),
@@ -157,15 +162,13 @@ export async function loadStructuredMatch(matchId: string) {
     }>
   )
     .filter((meeting) => meeting.date && meeting.home_id && meeting.away_id)
-    .map(
-      (meeting): PriorMeeting => ({
-        date: meeting.date!,
-        homeTeam: teamName.get(meeting.home_id!) ?? meeting.home_id!,
-        awayTeam: teamName.get(meeting.away_id!) ?? meeting.away_id!,
-        homeGoals: meeting.home_goals ?? 0,
-        awayGoals: meeting.away_goals ?? 0,
-      }),
-    )
+    .map((meeting): PriorMeeting => ({
+      date: meeting.date!,
+      homeTeam: teamName.get(meeting.home_id!) ?? meeting.home_id!,
+      awayTeam: teamName.get(meeting.away_id!) ?? meeting.away_id!,
+      homeGoals: meeting.home_goals ?? 0,
+      awayGoals: meeting.away_goals ?? 0,
+    }))
     .sort((left, right) => right.date.localeCompare(left.date))
     .slice(0, FORM_MATCHES);
   const stat = stats as Record<string, number | string | null> | null;
@@ -188,6 +191,18 @@ export async function loadStructuredMatch(matchId: string) {
       team: (event.teams as { name?: string } | null)?.name ?? event.team_id,
       player: event.player_name,
       detail: (event as { detail?: string | null }).detail ?? null,
+      // Goals only. The provider keeps the incoming player of a substitution in
+      // the same column, which the ingest de-inverts into player_name with the
+      // outgoing man in detail. Reading it for a substitution would present the
+      // player who went off as the assister, and no gate could catch that: he
+      // is a real player who really was on the pitch, so the entity licence
+      // would pass him and a judge would have no reason to doubt it.
+      //
+      // Penalties are excluded for a different reason. Whatever the provider
+      // records there, it is not an assist in the sense a pundit means, and
+      // this product does not make a claim stronger than its evidence.
+      assist:
+        event.type === "goal" ? ((event.assist as { name?: string } | null)?.name ?? null) : null,
       source: event.source ?? "database-verified",
     })),
     stats: stat

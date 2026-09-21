@@ -27,6 +27,15 @@ export type StructuredMatchInput = {
     addedTime?: number | null;
     team: string | null;
     player: string | null;
+    /** Who assisted the goal. Only ever set for a plain goal.
+     *
+     *  The provider stores this in the same column it uses for the incoming
+     *  player on a substitution, which the ingest de-inverts. Reading it for a
+     *  substitution would name the man who went off as the assister, and no
+     *  gate could catch it, because he is a real player who really was on the
+     *  pitch. A penalty is excluded too: whatever the provider puts there, it
+     *  is not an assist in the sense a pundit means it. */
+    assist?: string | null;
     /** Provider detail. For a substitution this carries the outgoing player as
      *  "off:Name", which is the only record of who left the pitch. */
     detail?: string | null;
@@ -132,7 +141,13 @@ export function outgoingPlayer(detail: string | null | undefined): string | null
  *  side. A substitution names only the player arriving, and the provider keeps
  *  the departing one in a detail field the pack used to discard. */
 function eventLabel(
-  event: { type: string; team: string | null; player: string | null; detail?: string | null },
+  event: {
+    type: string;
+    team: string | null;
+    player: string | null;
+    detail?: string | null;
+    assist?: string | null;
+  },
   homeTeam: string,
   awayTeam: string,
 ): string {
@@ -151,6 +166,12 @@ function eventLabel(
       return `substitution event: ${team} bring on ${event.player} for ${off}`;
     if (event.player) return `substitution event: ${team} bring on ${event.player}`;
     if (off) return `substitution event: ${team} take off ${off}`;
+  }
+  // Who made the goal is the second most interesting fact about it, and the
+  // pack has been throwing it away since it was first ingested.
+  if (event.type === "goal" && event.player && event.assist) {
+    const team = event.team ?? "the side";
+    return `goal event: ${event.player} of ${team}, assisted by ${event.assist}`;
   }
   return `${event.type} event`;
 }
@@ -179,10 +200,14 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
   }
 
   for (const event of input.events) {
+    // The rule about which events can carry an assister lives here as well as
+    // in the reader, because the pack is what a claim cites. A caller that
+    // passes one on a substitution gets it ignored rather than licensed.
+    const assist = event.type === "goal" ? (event.assist ?? null) : null;
     facts.push(
       fact(
         `event.${event.id}`,
-        eventLabel(event, match.homeTeam, match.awayTeam),
+        eventLabel({ ...event, assist }, match.homeTeam, match.awayTeam),
         // The outgoing player belongs in the value, not only the label: the
         // entity licence is built from values, so a name that appears only in
         // prose would be read as invented.
@@ -192,6 +217,7 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
           event.team,
           event.player,
           ...(outgoingPlayer(event.detail) ? [outgoingPlayer(event.detail)] : []),
+          ...(assist ? [assist] : []),
         ],
         event.source,
         `match_events.id=${event.id}`,
@@ -261,14 +287,19 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
       fact(
         `form.${side}_span`,
         `${team} results available as recent form`,
-        [matches.length, matches[matches.length - 1].date.slice(0, 10), matches[0].date.slice(0, 10)],
+        [
+          matches.length,
+          matches[matches.length - 1].date.slice(0, 10),
+          matches[0].date.slice(0, 10),
+        ],
         "database-verified",
         "matches",
       ),
     );
     const points = matches.reduce(
       (total, prior) =>
-        total + (prior.goalsFor > prior.goalsAgainst ? 3 : prior.goalsFor === prior.goalsAgainst ? 1 : 0),
+        total +
+        (prior.goalsFor > prior.goalsAgainst ? 3 : prior.goalsFor === prior.goalsAgainst ? 1 : 0),
       0,
     );
     derivations.push(
@@ -312,7 +343,12 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
   // writers another figure to differ over.
   for (const [key, label, home, away] of [
     ["shots", "Shots in the match", stats?.homeShots, stats?.awayShots],
-    ["shots_on_target", "Shots on target in the match", stats?.homeShotsOnTarget, stats?.awayShotsOnTarget],
+    [
+      "shots_on_target",
+      "Shots on target in the match",
+      stats?.homeShotsOnTarget,
+      stats?.awayShotsOnTarget,
+    ],
     ["corners", "Corners in the match", stats?.homeCorners, stats?.awayCorners],
     ["saves", "Saves in the match", stats?.homeSaves, stats?.awaySaves],
   ] as const) {

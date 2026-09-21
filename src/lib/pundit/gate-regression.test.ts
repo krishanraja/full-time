@@ -176,8 +176,12 @@ describe("prose the gates once rejected wrongly", () => {
   });
 
   it("still refuses a season survival claim", () => {
-    expect(consequenceSpans("A win that all but survived relegation for them.").length).toBeGreaterThan(0);
-    expect(consequenceSpans("This was survival football, and they know it.").length).toBeGreaterThan(0);
+    expect(
+      consequenceSpans("A win that all but survived relegation for them.").length,
+    ).toBeGreaterThan(0);
+    expect(
+      consequenceSpans("This was survival football, and they know it.").length,
+    ).toBeGreaterThan(0);
     expect(
       consequenceSpans("Survival was the only thing they secured tonight.").length,
     ).toBeGreaterThan(0);
@@ -254,6 +258,29 @@ describe("prose the gates once rejected wrongly", () => {
   });
 });
 
+/** Adding a name to the pack is only half the job. The entity licence is built
+ *  from evidence values, so a name the pack knows but does not carry in a value
+ *  is refused as an invention - which is how four pundits were once failed for
+ *  naming teams the pack had handed them. */
+describe("naming the man who made the goal", () => {
+  const assisted: StructuredMatchInput = {
+    ...toulouseLille,
+    events: toulouseLille.events.map((event) =>
+      event.id === "goal-ueda" ? { ...event, assist: "Edon Zhegrova" } : event,
+    ),
+  };
+
+  it("licenses the assister once the pack carries him", () => {
+    expect(gateFailures("Edon Zhegrova made the goal that settled it.", assisted)).toEqual([]);
+  });
+
+  it("still refuses an assister the pack does not carry", () => {
+    expect(
+      gateFailures("Edon Zhegrova made the goal that settled it.", toulouseLille).join(" "),
+    ).toContain("entity_licence");
+  });
+});
+
 describe("prose the gates should still reject", () => {
   it("rejects a number the evidence does not carry", () => {
     const failures = gateFailures("Toulouse had thirty-one shots.", toulouseLille);
@@ -326,7 +353,10 @@ describe("names and numbers the pack itself supplies", () => {
   });
 
   it("still refuses a team the pack never mentions", () => {
-    const failures = gateFailures("This was nothing like their night against Real Madrid.", withForm);
+    const failures = gateFailures(
+      "This was nothing like their night against Real Madrid.",
+      withForm,
+    );
     expect(failures.join(" ")).toMatch(/entity_licence/);
   });
 
@@ -335,12 +365,17 @@ describe("names and numbers the pack itself supplies", () => {
       "They kept arriving at the edge of the eighteen-yard box without ever shooting.",
       "The deficit got bodies into the eighteen-yard area and left them there.",
     ]) {
-      expect(gateFailures(sentence, barcelonaRayo).join(" "), sentence).not.toMatch(/numeric_licence/);
+      expect(gateFailures(sentence, barcelonaRayo).join(" "), sentence).not.toMatch(
+        /numeric_licence/,
+      );
     }
   });
 
   it("still refuses a distance the evidence does not record", () => {
-    const failures = gateFailures("A shot from thirty yards flattered the shot chart.", barcelonaRayo);
+    const failures = gateFailures(
+      "A shot from thirty yards flattered the shot chart.",
+      barcelonaRayo,
+    );
     expect(failures.join(" ")).toMatch(/numeric_licence/);
   });
 });

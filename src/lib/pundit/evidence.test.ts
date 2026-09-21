@@ -237,6 +237,78 @@ describe("substitution labelling", () => {
   });
 });
 
+/** Who made the goal is the second most interesting fact about it, and the pack
+ *  threw it away from the day it was first ingested. */
+describe("who assisted the goal", () => {
+  const assisted = {
+    ...input,
+    events: [
+      {
+        id: "goal-1",
+        type: "goal" as const,
+        minute: 23,
+        team: "North FC",
+        player: "Scorer Name",
+        assist: "Passer Name",
+        source: "provider-a",
+      },
+    ],
+  };
+
+  it("names the assister in the label", () => {
+    const pack = buildEvidencePack(assisted);
+    expect(pack.facts.find((item) => item.id === "event.goal-1")?.label).toBe(
+      "goal event: Scorer Name of North FC, assisted by Passer Name",
+    );
+  });
+
+  it("licenses the assister by putting him in the value", () => {
+    const pack = buildEvidencePack(assisted);
+    expect(pack.facts.find((item) => item.id === "event.goal-1")?.value).toContain("Passer Name");
+  });
+
+  it("says nothing about an assist on an unassisted goal", () => {
+    const pack = buildEvidencePack({
+      ...assisted,
+      events: [{ ...assisted.events[0], assist: null }],
+    });
+    const item = pack.facts.find((entry) => entry.id === "event.goal-1");
+    expect(item?.label).toBe("goal event");
+    expect(item?.value).not.toContain("Passer Name");
+  });
+
+  /** The provider keeps the incoming player of a substitution in the same
+   *  column as the assister, which the ingest de-inverts. If the pack ever
+   *  reads it for a substitution it will present the man who went off as
+   *  having assisted, and no gate can catch that: he is a real player who
+   *  really was on the pitch, so the entity licence passes him and a judge has
+   *  no reason to doubt it. */
+  it("never calls a substituted player an assister", () => {
+    const pack = buildEvidencePack({
+      ...input,
+      events: [
+        {
+          id: "sub-1",
+          type: "sub" as const,
+          minute: 68,
+          team: "North FC",
+          player: "In Coming",
+          detail: "off:Out Going",
+          assist: "Out Going",
+          source: "provider-a",
+        },
+      ],
+    });
+    const item = pack.facts.find((entry) => entry.id === "event.sub-1");
+    expect(item?.label).toBe("substitution event: North FC bring on In Coming for Out Going");
+    expect(item?.label).not.toContain("assisted");
+    // Once, not twice: the outgoing player is already licensed by the detail
+    // field, and the pack should not gain a second copy of him from a column
+    // that does not mean what its name says for this event type.
+    expect((item?.value as unknown[]).filter((entry) => entry === "Out Going")).toHaveLength(1);
+  });
+});
+
 describe("shot location, the chance-quality signal that survived", () => {
   const withShots = (over: Record<string, number>) =>
     buildEvidencePack({
@@ -352,11 +424,29 @@ describe("what each side arrived carrying", () => {
 
   const form = {
     home: [
-      { date: "2026-08-30T14:00:00Z", opponent: "Everton", venue: "away", goalsFor: 1, goalsAgainst: 1 },
-      { date: "2026-08-23T14:00:00Z", opponent: "Brentford", venue: "home", goalsFor: 0, goalsAgainst: 2 },
+      {
+        date: "2026-08-30T14:00:00Z",
+        opponent: "Everton",
+        venue: "away",
+        goalsFor: 1,
+        goalsAgainst: 1,
+      },
+      {
+        date: "2026-08-23T14:00:00Z",
+        opponent: "Brentford",
+        venue: "home",
+        goalsFor: 0,
+        goalsAgainst: 2,
+      },
     ],
     away: [
-      { date: "2026-08-31T14:00:00Z", opponent: "Arsenal", venue: "home", goalsFor: 3, goalsAgainst: 0 },
+      {
+        date: "2026-08-31T14:00:00Z",
+        opponent: "Arsenal",
+        venue: "home",
+        goalsFor: 3,
+        goalsAgainst: 0,
+      },
     ],
   };
 
