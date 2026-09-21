@@ -11,6 +11,7 @@ async function handle({ request }: { request: Request }) {
     dropId?: string;
     variantId?: string;
     includeStoredVariant?: boolean;
+    judgeModel?: string;
     subjects?: Array<{ label: string; punditId?: string; script: string }>;
   };
   try {
@@ -24,6 +25,7 @@ async function handle({ request }: { request: Request }) {
       dropId: input.dropId,
       variantId: input.variantId,
       includeStoredVariant: input.includeStoredVariant,
+      judgeModel: input.judgeModel,
       subjects: (input.subjects ?? []).map((subject) => ({
         label: subject.label,
         punditId: subject.punditId as Parameters<

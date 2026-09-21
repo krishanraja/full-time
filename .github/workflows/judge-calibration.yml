@@ -1,61 +1,77 @@
-name: Full Time - Calibrate The Judges
+# Score writing of known quality against a named judge bench.
+#
+# Why this exists as a workflow: the calibration endpoint needs CRON_SECRET,
+# and the benches need provider keys. Those live in GitHub and Vercel and are
+# not readable by anyone working on the repository, which is correct and also
+# meant that comparing two benches required a redeploy per candidate. This
+# runs the comparison where the secrets already are.
+#
+# On 2026-09-21 it answered the question that three paid pipeline runs had
+# failed to: the 31 August published script - the only script this product has
+# ever shipped - fails five of fourteen harnesses on the OpenAI bench,
+# including restraint at 3 against a floor of 4. The writers were never the
+# problem. A calibration reading costs cents; a pipeline run costs dollars.
 
-# Is the publication bar real, or is it a bar nothing clears?
-#
-# Twelve dimensions decide whether a script publishes, each at four out of
-# five, and those floors have never been checked against writing anyone already
-# agrees is good. This puts a professional match report through the identical
-# judges, alongside the script the pipeline published for the same game, and
-# prints both readings side by side.
-#
-# It judges only. No writer, no narration, no repair loop, nothing written to
-# the database. A run is cents, so take the reading before paying for another
-# full pipeline run rather than after.
+name: Full Time - Judge Calibration
 
 on:
   workflow_dispatch:
     inputs:
       variantId:
-        description: "pundit_variants.id of the published script to compare against"
-        required: true
-      label:
-        description: "How to name the outside script in the report"
+        description: "Variant whose stored script and sealed evidence pack to judge"
         required: false
-        default: "professional match report"
-      script:
-        description: "The outside script, pasted in full"
-        required: true
+        default: "b954702e-9448-4668-86fc-1e9f77a04f46"
+      judgeModel:
+        description: "Judge with this model instead of the environment's (e.g. gemini-3.8-flash). Blank uses PUNDIT_JUDGE_MODEL"
+        required: false
 
 jobs:
   calibrate:
     runs-on: ubuntu-latest
     steps:
-      - name: Score both scripts against the live judges
+      - name: Run calibration
         run: |
-          set -uo pipefail
-          jq -n \
-            --arg variantId "${VARIANT_IN}" \
-            --arg label "${LABEL_IN}" \
-            --arg script "${SCRIPT_IN}" \
-            '{variantId: $variantId, subjects: [{label: $label, script: $script}]}' \
-            > request.json
-          curl --silent --show-error --max-time 600 \
+          set -euo pipefail
+          BODY=$(VARIANT="$VARIANT_IN" MODEL="$MODEL_IN" python3 -c '
+          import json, os
+          body = {"variantId": os.environ["VARIANT"], "includeStoredVariant": True, "subjects": []}
+          if os.environ.get("MODEL"):
+              body["judgeModel"] = os.environ["MODEL"]
+          print(json.dumps(body))
+          ')
+          curl --fail --silent --show-error \
             -X POST "${FULL_TIME_URL}/api/internal/judge-calibration" \
-            -H "Authorization: Bearer ${CRON_SECRET}" \
             -H "Content-Type: application/json" \
-            --data @request.json | tee report.json
-          echo
-          jq -r '.verdict // .error' report.json
-          jq -e '.verdict' report.json > /dev/null
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -d "$BODY" > report.json
+          # The report is the point, so print the part a person reads rather
+          # than making them download an artifact to learn one number.
+          python3 - <<'PY'
+          import json
+          r = json.load(open("report.json"))
+          print(f"judge model : {r.get('judgeModel')}")
+          print(f"match       : {r.get('matchId')}  claims={r.get('claimCount')}")
+          print(f"cost        : ${r.get('costUsd', 0):.2f}")
+          for s in r.get("subjects", []):
+              print()
+              print(s.get("label"))
+              for x in s.get("scores", []):
+                  score = x["score"] if x["score"] is not None else "gate"
+                  floor = x["threshold"] if x["threshold"] is not None else "-"
+                  print(f"  {x['harness']:28} {str(score):>4}/{str(floor):<2} {'PASS' if x['passed'] else 'FAIL'}")
+              failed = [x["harness"] for x in s.get("scores", []) if not x["passed"]]
+              print(f"  -> {len(failed)} failing: {', '.join(failed) or 'none'}")
+          PY
         env:
           FULL_TIME_URL: ${{ secrets.FULL_TIME_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           VARIANT_IN: ${{ inputs.variantId }}
-          LABEL_IN: ${{ inputs.label }}
-          SCRIPT_IN: ${{ inputs.script }}
+          MODEL_IN: ${{ inputs.judgeModel }}
 
-      - name: Keep the reading
+      - name: Keep the full report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: judge-calibration
+          name: calibration-report
           path: report.json
+          if-no-files-found: ignore

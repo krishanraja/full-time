@@ -554,11 +554,19 @@ type JudgeSubject = {
   predictionTiming?: { lockedAt: string; kickoffAt: string };
   /** Set for a script from outside the pipeline. See PROSE_ONLY_THESIS. */
   proseOnly?: boolean;
+  /** Judge with this model instead of the environment's.
+   *
+   *  Only calibration passes it, and only so a bench can be compared against
+   *  writing of known quality without a redeploy between candidates. Threaded
+   *  rather than set on process.env, because a serverless instance serves
+   *  concurrent requests and one of them changing the judge model under
+   *  another is the kind of fault that would be blamed on the judges. */
+  judgeModelOverride?: string;
 };
 
 async function judgeOne(
   harness: QualitativeHarness,
-  { candidate, pack, claims, predictionTiming, proseOnly }: JudgeSubject,
+  { candidate, pack, claims, predictionTiming, proseOnly, judgeModelOverride }: JudgeSubject,
 ): Promise<HarnessResult> {
   // The dimension under judgement is deliberately not in the system prompt.
   // The system prompt renders first, so naming the harness there gave each of
@@ -567,7 +575,7 @@ async function judgeOne(
   let output: z.infer<typeof judgeSchema>;
   try {
     output = await modelJson({
-      model: modelNames().judge,
+      model: judgeModelOverride?.trim() || modelNames().judge,
       // See the claim laboratory's cap for why this is generous. A judge that
       // truncates does not fail softly: runHardGates records "did not return a
       // usable judgement", which is a failure, so a cap set too low quarantines
@@ -654,7 +662,7 @@ async function judgeOne(
 
 async function judgeHardOne(
   harness: "factual_entailment" | "humour_safety_semantic",
-  { candidate, pack, claims, proseOnly }: JudgeSubject,
+  { candidate, pack, claims, proseOnly, judgeModelOverride }: JudgeSubject,
 ): Promise<HarnessResult> {
   const factual = harness === "factual_entailment";
   const explainRejection =
@@ -662,7 +670,7 @@ async function judgeHardOne(
   let output: z.infer<typeof hardJudgeSchema>;
   try {
     output = await modelJson({
-      model: modelNames().judge,
+      model: judgeModelOverride?.trim() || modelNames().judge,
       // The fail-closed judges, which are asked to name EVERY unsupported
       // assertion and every failed beat rather than the first one. Same
       // reasoning as above, and more output to produce.
