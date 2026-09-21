@@ -268,8 +268,16 @@ function applyEmphasis(text: string, emphasis: readonly string[] | undefined) {
  *
  *  The measured rate on the 2026-09-20 narration was 139.9 words per minute,
  *  and English prose runs about 5.7 characters to the word with its space, so
- *  a minute is near 800 characters. */
-const CHARACTERS_BETWEEN_TAGS = 600;
+ *  a minute is near 800 characters.
+ *
+ *  600 was not enough once the reads got longer. On 2026-09-19 the Romantic
+ *  ran 363 seconds and measured 2.8 LU, which published; the Doomer ran 403
+ *  and measured 2.1, the Reporter 402 and measured 2.0, and both were refused.
+ *  Same rule, forty more seconds, and the delivery flattens - which is the
+ *  same failure as the fixed four tags, one scale down. At 350 every beat of a
+ *  six-minute script carries its direction instead of most of them inheriting
+ *  the last one. */
+const CHARACTERS_BETWEEN_TAGS = 350;
 
 /** Which beats carry a delivery tag.
  *
