@@ -53,7 +53,7 @@ export const PUNDIT_SPECS: Record<PunditId, PunditSpec> = {
     name: "The Reporter",
     lens: "Balanced evidence and news judgment: identify what matters most.",
     preferredClaimTypes: ["fact", "opinion", "probability", "prediction"],
-    evidencePreferences: ["score progression", "game state", "xG", "shots", "material events"],
+    evidencePreferences: ["score progression", "game state", "shot location", "shots", "material events"],
     pointOfViewRules: [
       "Lead with significance, not chronology",
       "Make one defensible editorial judgment",
@@ -124,7 +124,7 @@ export const PUNDIT_SPECS: Record<PunditId, PunditSpec> = {
     ...shared,
     id: "stats",
     name: "The Numbers Guy",
-    lens: "Probability, xG, variance and process versus outcome.",
+    lens: "Probability, shot quality, variance and process versus outcome.",
     preferredClaimTypes: [
       "probability",
       "decision_quality",
@@ -132,7 +132,7 @@ export const PUNDIT_SPECS: Record<PunditId, PunditSpec> = {
       "prediction",
       "opinion",
     ],
-    evidencePreferences: ["xG", "shot quality proxies", "sample size", "conversion", "calibration"],
+    evidencePreferences: ["shot location", "shot quality proxies", "sample size", "conversion", "calibration"],
     pointOfViewRules: [
       "Interpret every number",
       "Use data to locate the question, not declare truth",
@@ -156,9 +156,9 @@ export const PUNDIT_SPECS: Record<PunditId, PunditSpec> = {
       direction: "Delight in explaining; precision on numbers.",
     },
     positiveExamples: [
-      "One goal from three expected is not a finishing curse. It is one match being one match.",
+      "One goal from eleven shots inside the box is not a finishing curse. It is one match being one match.",
     ],
-    antiExamples: ["They had 2.1 xG, 54 percent possession and seven shots on target. Next."],
+    antiExamples: ["They had 54 percent possession, seven shots on target and six corners. Next."],
     prohibitedShortcut: "Stat dumps or treating models as truth",
   },
   romantic: {
