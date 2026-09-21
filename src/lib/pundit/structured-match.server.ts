@@ -17,6 +17,13 @@ function nullableNumber(value: number | string | null | undefined): number | nul
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+type EstimateRow = {
+  source_id: string;
+  model: string;
+  home_xg: number | string | null;
+  away_xg: number | string | null;
+};
+
 type PriorRow = {
   kickoff_at: string;
   home_team_id: string;
@@ -113,58 +120,81 @@ export async function loadStructuredMatch(matchId: string) {
     season: number | null;
   };
   const teamIds = [rowWithTeams.home_team_id, rowWithTeams.away_team_id].filter(Boolean);
-  const [{ data: priorRows }, { data: h2hRows }, { data: standingsRows }] = await Promise.all([
-    teamIds.length
-      ? supabaseAdmin
-          .from("matches")
-          .select(
-            "kickoff_at, home_team_id, away_team_id, home_score, away_score, home:home_team_id(name), away:away_team_id(name)",
-          )
-          .eq("status", "finished")
-          .lt("kickoff_at", row.kickoff_at)
-          // The lower bound is the fix: without it the query happily returns a
-          // result from the previous calendar year and calls it form.
-          .gte(
-            "kickoff_at",
-            new Date(
-              new Date(row.kickoff_at).getTime() - FORM_WINDOW_DAYS * 24 * 60 * 60 * 1000,
-            ).toISOString(),
-          )
-          .or(teamIds.map((id) => `home_team_id.eq.${id},away_team_id.eq.${id}`).join(","))
-          .order("kickoff_at", { ascending: false })
-          .limit(FORM_MATCHES * 4)
-      : Promise.resolve({ data: [] }),
-    teamIds.length === 2
-      ? supabaseAdmin
-          .from("h2h_cache")
-          .select("meetings")
-          // The pairing is stored in whichever order the ingest saw it, and a
-          // row cannot have the same team on both sides, so asking for both
-          // columns to be one of these two teams matches it either way round.
-          // A nested and-inside-or would do the same and would return nothing
-          // at all if a bracket were wrong, which is the shape of failure that
-          // has already cost this project five days of expected goals.
-          .in("team_a_id", teamIds)
-          .in("team_b_id", teamIds)
-          .limit(1)
-      : Promise.resolve({ data: [] }),
-    // The league table as it stood after this match was played.
-    //
-    // At or after kickoff, ascending, one row: the first snapshot taken once
-    // this result was in it. A table captured before the match cannot license
-    // a statement about the position after it, and the most recent snapshot
-    // would fold in later rounds when a backfill reaches an old fixture.
-    rowWithTeams.league_id && rowWithTeams.season != null
-      ? supabaseAdmin
-          .from("standings_snapshots")
-          .select("rows, captured_at")
-          .eq("league_id", rowWithTeams.league_id)
-          .eq("season", rowWithTeams.season)
-          .gte("captured_at", row.kickoff_at)
-          .order("captured_at", { ascending: true })
-          .limit(1)
-      : Promise.resolve({ data: [] }),
-  ]);
+  const [{ data: priorRows }, { data: h2hRows }, { data: standingsRows }, { data: estimateRows }] =
+    await Promise.all([
+      teamIds.length
+        ? supabaseAdmin
+            .from("matches")
+            .select(
+              "kickoff_at, home_team_id, away_team_id, home_score, away_score, home:home_team_id(name), away:away_team_id(name)",
+            )
+            .eq("status", "finished")
+            .lt("kickoff_at", row.kickoff_at)
+            // The lower bound is the fix: without it the query happily returns a
+            // result from the previous calendar year and calls it form.
+            .gte(
+              "kickoff_at",
+              new Date(
+                new Date(row.kickoff_at).getTime() - FORM_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+              ).toISOString(),
+            )
+            .or(teamIds.map((id) => `home_team_id.eq.${id},away_team_id.eq.${id}`).join(","))
+            .order("kickoff_at", { ascending: false })
+            .limit(FORM_MATCHES * 4)
+        : Promise.resolve({ data: [] }),
+      teamIds.length === 2
+        ? supabaseAdmin
+            .from("h2h_cache")
+            .select("meetings")
+            // The pairing is stored in whichever order the ingest saw it, and a
+            // row cannot have the same team on both sides, so asking for both
+            // columns to be one of these two teams matches it either way round.
+            // A nested and-inside-or would do the same and would return nothing
+            // at all if a bracket were wrong, which is the shape of failure that
+            // has already cost this project five days of expected goals.
+            .in("team_a_id", teamIds)
+            .in("team_b_id", teamIds)
+            .limit(1)
+        : Promise.resolve({ data: [] }),
+      // The league table as it stood after this match was played.
+      //
+      // At or after kickoff, ascending, one row: the first snapshot taken once
+      // this result was in it. A table captured before the match cannot license
+      // a statement about the position after it, and the most recent snapshot
+      // would fold in later rounds when a backfill reaches an old fixture.
+      rowWithTeams.league_id && rowWithTeams.season != null
+        ? supabaseAdmin
+            .from("standings_snapshots")
+            .select("rows, captured_at")
+            .eq("league_id", rowWithTeams.league_id)
+            .eq("season", rowWithTeams.season)
+            .gte("captured_at", row.kickoff_at)
+            .order("captured_at", { ascending: true })
+            .limit(1)
+        : Promise.resolve({ data: [] }),
+      // Second opinions on the numbers, from whatever answered when this match
+      // was ingested. Read from the database like everything else, so the pack
+      // stays closed-world and a run is reproducible.
+      //
+      // Through the untyped reader because the generated Supabase types cannot
+      // carry a table whose migration has not been applied, and those types are
+      // regenerated from the live schema rather than hand-edited. An absent
+      // table reads as no estimates, which is what no source answering looks
+      // like anyway.
+      (async () => {
+        try {
+          const { serviceRest } = await import("./service-rest.server");
+          return {
+            data: await serviceRest<EstimateRow[]>(
+              `source_match_estimates?match_id=eq.${encodeURIComponent(matchId)}` +
+                "&select=source_id,model,home_xg,away_xg",
+            ),
+          };
+        } catch {
+          return { data: [] as EstimateRow[] };
+        }
+      })(),
+    ]);
   const prior = (priorRows ?? []) as unknown as PriorRow[];
   const teamName = new Map([
     [rowWithTeams.home_team_id, row.home?.name],
@@ -301,6 +331,12 @@ export async function loadStructuredMatch(matchId: string) {
     feedsAgree: context?.feeds_agree ?? null,
     matchday: context?.matchday ?? null,
     table,
+    estimates: (estimateRows ?? []).map((estimate) => ({
+      sourceId: estimate.source_id,
+      model: estimate.model,
+      homeXg: nullableNumber(estimate.home_xg),
+      awayXg: nullableNumber(estimate.away_xg),
+    })),
   };
   const entities = [
     row.home?.name,

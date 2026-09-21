@@ -180,16 +180,30 @@ async function readJson(url: string, fetchImpl: typeof fetch): Promise<unknown |
   }
 }
 
+type DayPayload = { leagues?: Array<{ matches?: DayFixture[] }> };
+
 export function fotmobAdapter(fetchImpl: typeof fetch = fetch): SourceAdapter {
+  // A day's fixture list is the same for every match on that date, and the
+  // ingest asks about twelve of them. Without this the run spends twelve
+  // requests re-reading one list, on a source that has every reason to start
+  // refusing a caller that does that.
+  const days = new Map<string, Promise<DayPayload | null>>();
+
   return {
     id: "fotmob",
     rights: FOTMOB_RIGHTS,
     async fetchMatchStats({ homeTeam, awayTeam, date }) {
       try {
         const day = date.slice(0, 10).replace(/-/g, "");
-        const fixtures = (await readJson(`${BASE}/matches?date=${day}`, fetchImpl)) as {
-          leagues?: Array<{ matches?: DayFixture[] }>;
-        } | null;
+        let pending = days.get(day);
+        if (!pending) {
+          pending = readJson(
+            `${BASE}/matches?date=${day}`,
+            fetchImpl,
+          ) as Promise<DayPayload | null>;
+          days.set(day, pending);
+        }
+        const fixtures = await pending;
         if (!fixtures) return null;
         const id = findFixtureId(fixtures, homeTeam, awayTeam);
         if (id == null) return null;

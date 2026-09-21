@@ -587,6 +587,59 @@ async function handleIngest({ request }: { request: Request }) {
     );
   }
 
+  // ---- second opinions on the numbers.
+  //
+  // Ruling (Krish, 2026-09-21): ingest the free-to-access analytics tier for
+  // production evidence, accepting the rights exposure. See docs/11-legal.md,
+  // which records the posture in full rather than implying a permission
+  // nobody granted.
+  //
+  // Written to the database rather than fetched at generation time, because
+  // the evidence pack is built from stored rows so that a run is reproducible
+  // and closed-world. Only the enriched fixtures: these are the ones that can
+  // become a show.
+  let estimates = 0;
+  try {
+    const [{ fotmobAdapter }, { serviceRest }] = await Promise.all([
+      import("@/lib/sources/fotmob.server"),
+      import("@/lib/pundit/service-rest.server"),
+    ]);
+    const sources = [fotmobAdapter()];
+    const rows: Array<Record<string, unknown>> = [];
+    for (const { f } of ranked) {
+      for (const source of sources) {
+        const stats = await source.fetchMatchStats({
+          homeTeam: f.teams.home.name,
+          awayTeam: f.teams.away.name,
+          date: String(f.fixture.date ?? DATE),
+        });
+        if (!stats) continue;
+        rows.push({
+          match_id: `af_${f.fixture.id}`,
+          source_id: source.id,
+          model: stats.model,
+          rights_basis: source.rights.basis,
+          home_xg: stats.homeXg ?? null,
+          away_xg: stats.awayXg ?? null,
+        });
+      }
+    }
+    if (rows.length) {
+      await serviceRest<null>("source_match_estimates?on_conflict=match_id,source_id", {
+        method: "POST",
+        body: rows,
+        prefer: "resolution=merge-duplicates,return=minimal",
+      });
+      estimates = rows.length;
+    }
+  } catch (error: unknown) {
+    // A second opinion is a second opinion. Nothing a listener hears depends
+    // on one arriving.
+    warnings.push(
+      `Source estimates unavailable: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
   // ---- league tables.
   //
   // standings_snapshots has existed since 6 August and nothing has ever
@@ -714,6 +767,7 @@ async function handleIngest({ request }: { request: Request }) {
     enriched: ranked.length,
     crosscheck: { agreed, disagreed, unmatched },
     standings,
+    estimates,
     drift,
     predictionSettlement,
     calls: provider.calls(),

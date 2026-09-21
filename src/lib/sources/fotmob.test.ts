@@ -210,6 +210,50 @@ describe("a source that must never throw", () => {
   });
 });
 
+/** Twelve matches a day share one fixture list. Re-reading it twelve times
+ *  is the behaviour that gets a caller refused by a source with every reason
+ *  to refuse. */
+describe("asking for a day only once", () => {
+  it("reuses the fixture list across matches on the same date", async () => {
+    const calls: string[] = [];
+    const impl = (async (url: RequestInfo | URL) => {
+      calls.push(String(url));
+      const body = String(url).includes("matchDetails")
+        ? details
+        : {
+            leagues: [
+              {
+                matches: [
+                  {
+                    id: 5795455,
+                    home: { longName: "AFC Bournemouth" },
+                    away: { longName: "Liverpool" },
+                  },
+                  { id: 99, home: { longName: "Everton" }, away: { longName: "Fulham" } },
+                ],
+              },
+            ],
+          };
+      return new Response(JSON.stringify(body), { status: 200 });
+    }) as unknown as typeof fetch;
+
+    const adapter = fotmobAdapter(impl);
+    await adapter.fetchMatchStats({
+      homeTeam: "Bournemouth",
+      awayTeam: "Liverpool",
+      date: "2026-09-20",
+    });
+    await adapter.fetchMatchStats({
+      homeTeam: "Everton",
+      awayTeam: "Fulham",
+      date: "2026-09-20",
+    });
+
+    expect(calls.filter((url) => url.includes("matches?date=")).length).toBe(1);
+    expect(calls.filter((url) => url.includes("matchDetails")).length).toBe(2);
+  });
+});
+
 describe("the rights posture this source ships with", () => {
   /** docs/11-legal.md requires a recorded basis, and a row claiming permission
    *  nobody granted would be a fabricated audit record. The audit trail is the
