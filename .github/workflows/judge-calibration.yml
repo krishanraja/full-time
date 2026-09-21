@@ -24,6 +24,9 @@ on:
       judgeModel:
         description: "Judge with this model instead of the environment's (e.g. gemini-3.8-flash). Blank uses PUNDIT_JUDGE_MODEL"
         required: false
+      concurrency:
+        description: "Simultaneous model calls. Lower it for a provider that rate-limits; blank uses PUNDIT_MODEL_CONCURRENCY"
+        required: false
 
 jobs:
   calibrate:
@@ -37,6 +40,8 @@ jobs:
           body = {"variantId": os.environ["VARIANT"], "includeStoredVariant": True, "subjects": []}
           if os.environ.get("MODEL"):
               body["judgeModel"] = os.environ["MODEL"]
+          if os.environ.get("CONCURRENCY"):
+              body["concurrency"] = int(os.environ["CONCURRENCY"])
           print(json.dumps(body))
           ')
           curl --fail --silent --show-error \
@@ -61,12 +66,22 @@ jobs:
                   print(f"  {x['harness']:28} {str(score):>4}/{str(floor):<2} {'PASS' if x['passed'] else 'FAIL'}")
               failed = [x["harness"] for x in s.get("scores", []) if not x["passed"]]
               print(f"  -> {len(failed)} failing: {', '.join(failed) or 'none'}")
+              # A judge that never answered has not scored the script badly, it
+              # has not scored it at all, and the two read identically in a
+              # score table. Printing why keeps an outage from being mistaken
+              # for a verdict - which is exactly what happened on 2026-09-06.
+              print()
+              for x in s.get("scores", []):
+                  if x["passed"] or not x.get("failure"):
+                      continue
+                  print(f"  {x['harness']}: {str(x['failure'])[:260]}")
           PY
         env:
           FULL_TIME_URL: ${{ secrets.FULL_TIME_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           VARIANT_IN: ${{ inputs.variantId }}
           MODEL_IN: ${{ inputs.judgeModel }}
+          CONCURRENCY_IN: ${{ inputs.concurrency }}
 
       - name: Keep the full report
         if: always()

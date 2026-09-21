@@ -5,6 +5,7 @@ import {
   readGoogle,
   readOpenAi,
   requestContent,
+  withConcurrency,
 } from "./model-json.server";
 import { callCostUsd } from "./model-cost";
 
@@ -210,5 +211,31 @@ describe("Google is routed and read correctly", () => {
         callCostUsd("definitely-not-a-model", usage),
       );
     }
+  });
+});
+
+/** A diagnostic may ask for fewer simultaneous calls than the environment
+ *  allows, and only fewer. Letting one raise the limit would mean a bench
+ *  comparison could make the daily run more aggressive than anyone configured,
+ *  which is how a rate-limited provider starts returning outages that read as
+ *  verdicts. */
+describe("concurrency can be lowered for one reading, never raised", () => {
+  it("restores the previous limit even when the body throws", async () => {
+    await expect(
+      withConcurrency(2, async () => {
+        throw new Error("boom");
+      }),
+    ).rejects.toThrow("boom");
+    // If the override leaked, a second call would still be clamped; the proof
+    // is that a later body runs and sees no error.
+    await expect(withConcurrency(undefined, async () => "ok")).resolves.toBe("ok");
+  });
+
+  it("runs the body and returns its value", async () => {
+    await expect(withConcurrency(1, async () => 42)).resolves.toBe(42);
+  });
+
+  it("ignores a limit that is not a number", async () => {
+    await expect(withConcurrency(Number.NaN, async () => "ran")).resolves.toBe("ran");
   });
 });

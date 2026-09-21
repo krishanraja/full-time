@@ -62,7 +62,31 @@ type ReleasePermit = () => void;
 let activeRequests = 0;
 const permitQueue: Array<(release: ReleasePermit) => void> = [];
 
+let concurrencyOverride: number | null = null;
+
+/** Run `body` with a lower simultaneous-call limit than the environment's.
+ *
+ *  Providers rate-limit differently and a ceiling that suits one starves
+ *  another. On 2026-09-21 a Gemini calibration at the default six returned
+ *  three judgements and eleven failures in nineteen seconds - not a verdict on
+ *  the script, an outage wearing one, which is the exact confusion the catch
+ *  block in the generator was written about.
+ *
+ *  It may only LOWER the limit, never raise it, so a diagnostic cannot quietly
+ *  make the daily run more aggressive than it was configured to be. */
+export async function withConcurrency<T>(limit: number | undefined, body: () => Promise<T>) {
+  if (!limit || !Number.isFinite(limit)) return body();
+  const previous = concurrencyOverride;
+  concurrencyOverride = Math.max(1, Math.min(modelConcurrency(), Math.floor(limit)));
+  try {
+    return await body();
+  } finally {
+    concurrencyOverride = previous;
+  }
+}
+
 function modelConcurrency(): number {
+  if (concurrencyOverride !== null) return concurrencyOverride;
   const configured = Number.parseInt(process.env.PUNDIT_MODEL_CONCURRENCY ?? "6", 10);
   return Number.isFinite(configured) ? Math.min(12, Math.max(1, configured)) : 6;
 }
