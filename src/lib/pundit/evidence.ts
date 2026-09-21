@@ -247,11 +247,105 @@ function eventLabel(
   }
   // Who made the goal is the second most interesting fact about it, and the
   // pack has been throwing it away since it was first ingested.
-  if (event.type === "goal" && event.player && event.assist) {
-    const team = event.team ?? "the side";
-    return `goal event: ${event.player} of ${team}, assisted by ${event.assist}`;
+  //
+  // The first version of this required an assist as well as a scorer, so an
+  // UNASSISTED goal fell through to the bare fallback below and reached the
+  // writer as the four characters "goal event" - no scorer, no side. That is
+  // what quarantined the 2026-09-20 drop: Manchester City 5-3 Sunderland had
+  // two unassisted goals, so two of its eight arrived nameless and sideless,
+  // every one of the six pundits reconstructed the scoreline by hand, and two
+  // judges reading the same pack reconstructed two different ones (3-3 and 4-3
+  // at minute 59, where it was in fact 4-3). All six variants failed
+  // factual_entailment, which is why the run's own diagnostic read "every
+  // pundit failed the same harnesses, which points at a shared input".
+  //
+  // So the rule is now the general one rather than the goal-shaped one: an
+  // event names its player and its side whenever it knows them, whatever its
+  // type. The bare fallback is for an event that genuinely carries neither,
+  // and a label that says only "yellow event" or "var event" is a prompt to
+  // speculate rather than a fact to cite.
+  const team = event.team ?? "the side";
+  if (event.type === "goal" && event.player) {
+    const scorer = `goal event: ${event.player} of ${team}`;
+    return event.assist ? `${scorer}, assisted by ${event.assist}` : scorer;
   }
+  if (event.player) return `${event.type} event: ${event.player} of ${team}`;
+  if (event.team) return `${event.type} event: ${team}`;
   return `${event.type} event`;
+}
+
+/** The score after each goal, so nobody has to reconstruct it.
+ *
+ *  `match.home_score` and `match.away_score` are the FINAL score and the pack
+ *  carried nothing else, so a writer describing the state of the game at the
+ *  hour mark had to count goal events itself and hope the judge counted the
+ *  same way. It did not: see the note in `eventLabel`. The Reporter's spec
+ *  lists "score progression" as its first evidence preference and the pack has
+ *  never supplied it.
+ *
+ *  This is arithmetic over events the pack already states, so it is `derived`
+ *  rather than `fact`, and it carries the running totals as values so the
+ *  numeric licence covers a writer who says "four-three" about the 59th
+ *  minute. Own goals count for the team the provider records them against,
+ *  which is the team they benefit - the same convention `eventLabel` uses. */
+function scoreProgression(
+  events: ReadonlyArray<{
+    id: string;
+    type: string;
+    team: string | null;
+    minute: number | null;
+    source: string;
+  }>,
+  homeTeam: string,
+  awayTeam: string,
+  finalHome: number | null | undefined,
+  finalAway: number | null | undefined,
+): EvidenceItem[] {
+  // "penalty_miss" is not a goal and must not match on the substring, so the
+  // test is against the whole type rather than against /goal/.
+  const scoring = new Set(["goal", "penalty_goal", "own_goal"]);
+  const goals = events.filter((event) => scoring.has(event.type) && event.team);
+
+  // Two ways this would state a scoreline nobody can stand behind, and both
+  // end the same way: say nothing. A progression is only worth having if it is
+  // right every time, because a writer cites it instead of counting and a
+  // judge checks prose against it.
+  //
+  // An unordered goal cannot be placed, and guessing its position would invent
+  // a state of the game that never existed.
+  if (goals.some((goal) => goal.minute === null)) return [];
+
+  // And if the running total does not land on the score the match row states,
+  // the event list is incomplete - which is exactly the condition under which
+  // a confident progression does the most damage.
+  const homeGoals = goals.filter((goal) => goal.team === homeTeam).length;
+  const awayGoals = goals.length - homeGoals;
+  if (
+    typeof finalHome !== "number" ||
+    typeof finalAway !== "number" ||
+    homeGoals !== finalHome ||
+    awayGoals !== finalAway
+  ) {
+    return [];
+  }
+
+  let home = 0;
+  let away = 0;
+  return goals
+    .slice()
+    .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))
+    .map((goal) => {
+      if (goal.team === homeTeam) home += 1;
+      else away += 1;
+      return derived(
+        `derived.score_after_${goal.minute}`,
+        `Score after the goal on ${goal.minute} minutes: ${homeTeam} ${home}-${away} ${awayTeam}`,
+        [home, away],
+        goal.source,
+        `match_events.id=${goal.id}`,
+        "goals for each side among events up to and including this minute",
+      );
+    });
 }
 
 export function buildEvidencePack(input: StructuredMatchInput, version = 1): EvidencePack {
@@ -343,7 +437,15 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     if (finite(value)) facts.push(fact(id, label, value, stats?.source ?? "unknown", id));
   }
 
-  const derivations: EvidenceItem[] = [];
+  const derivations: EvidenceItem[] = [
+    ...scoreProgression(
+      input.events,
+      match.homeTeam,
+      match.awayTeam,
+      match.homeScore,
+      match.awayScore,
+    ),
+  ];
 
   // What each side arrived carrying, and what these two have done to each other.
   //

@@ -191,9 +191,11 @@ describe("own goal labelling", () => {
     expect(label).toContain("A One of North FC");
   });
 
-  it("leaves an ordinary goal label alone", () => {
+  it("names the scorer and the side on a goal with no assist", () => {
     const pack = buildEvidencePack(input);
-    expect(pack.facts.find((item) => item.id === "event.goal-1")?.label).toBe("goal event");
+    expect(pack.facts.find((item) => item.id === "event.goal-1")?.label).toBe(
+      "goal event: A One of North FC",
+    );
   });
 });
 
@@ -267,13 +269,21 @@ describe("who assisted the goal", () => {
     expect(pack.facts.find((item) => item.id === "event.goal-1")?.value).toContain("Passer Name");
   });
 
-  it("says nothing about an assist on an unassisted goal", () => {
+  /** The first version of this test asserted the bug. It checked that an
+   *  unassisted goal said nothing about an assist, which was right, by
+   *  requiring the whole label to be the bare string "goal event", which threw
+   *  away the scorer and the side as well. That is what reached the writer on
+   *  2026-09-20 and quarantined the drop, and the test held it in place. Both
+   *  halves are asserted separately now: the assist is absent, the scorer is
+   *  not. */
+  it("names the scorer but no assist on an unassisted goal", () => {
     const pack = buildEvidencePack({
       ...assisted,
       events: [{ ...assisted.events[0], assist: null }],
     });
     const item = pack.facts.find((entry) => entry.id === "event.goal-1");
-    expect(item?.label).toBe("goal event");
+    expect(item?.label).toBe("goal event: Scorer Name of North FC");
+    expect(item?.label).not.toContain("assisted by");
     expect(item?.value).not.toContain("Passer Name");
   });
 
@@ -753,5 +763,99 @@ describe("what the two sides produced between them", () => {
     expect(
       [...pack.facts, ...pack.derivations].find((entry) => entry.id === "derived.match_corners"),
     ).toBeUndefined();
+  });
+});
+
+/** The state of the game, which the pack has never carried.
+ *
+ *  `match.home_score` and `match.away_score` are the FINAL score and were the
+ *  only scoreline in the pack, so a writer describing the hour mark counted
+ *  goal events by hand. On the 2026-09-20 drop two judges reading the same
+ *  pack counted differently - one put minute 59 at 3-3, the other at 4-3, and
+ *  the truth was 4-3 - and all six variants failed factual_entailment. */
+describe("score progression", () => {
+  const timeline: StructuredMatchInput = {
+    ...input,
+    match: { ...input.match, homeScore: 2, awayScore: 1 },
+    events: [
+      { id: "g1", type: "goal", minute: 12, team: "North FC", player: "A One", source: "p" },
+      { id: "g3", type: "goal", minute: 70, team: "North FC", player: "C Three", source: "p" },
+      { id: "g2", type: "goal", minute: 34, team: "South FC", player: "B Two", source: "p" },
+      { id: "s1", type: "sub", minute: 60, team: "North FC", player: "D Four", source: "p" },
+    ],
+  };
+  const progression = (pack: ReturnType<typeof buildEvidencePack>) =>
+    pack.derivations.filter((item) => item.id.startsWith("derived.score_after_"));
+
+  it("states the score after each goal, in minute order", () => {
+    expect(progression(buildEvidencePack(timeline)).map((item) => item.label)).toEqual([
+      "Score after the goal on 12 minutes: North FC 1-0 South FC",
+      "Score after the goal on 34 minutes: North FC 1-1 South FC",
+      "Score after the goal on 70 minutes: North FC 2-1 South FC",
+    ]);
+  });
+
+  it("licenses the running totals as numbers, so a writer may state them", () => {
+    expect(progression(buildEvidencePack(timeline)).map((item) => item.value)).toEqual([
+      [1, 0],
+      [1, 1],
+      [2, 1],
+    ]);
+  });
+
+  it("counts an own goal for the side the provider records it against", () => {
+    const pack = buildEvidencePack({
+      ...timeline,
+      match: { ...timeline.match, homeScore: 1, awayScore: 1 },
+      events: [
+        { id: "g1", type: "goal", minute: 12, team: "North FC", player: "A One", source: "p" },
+        { id: "og", type: "own_goal", minute: 50, team: "South FC", player: "A One", source: "p" },
+      ],
+    });
+    expect(progression(pack).map((item) => item.label)).toEqual([
+      "Score after the goal on 12 minutes: North FC 1-0 South FC",
+      "Score after the goal on 50 minutes: North FC 1-1 South FC",
+    ]);
+  });
+
+  it("does not count a missed penalty as a goal", () => {
+    const pack = buildEvidencePack({
+      ...timeline,
+      match: { ...timeline.match, homeScore: 1, awayScore: 0 },
+      events: [
+        { id: "g1", type: "goal", minute: 12, team: "North FC", player: "A One", source: "p" },
+        {
+          id: "pm",
+          type: "penalty_miss",
+          minute: 40,
+          team: "North FC",
+          player: "A One",
+          source: "p",
+        },
+      ],
+    });
+    expect(progression(pack)).toHaveLength(1);
+  });
+
+  // Both of these would state a scoreline nobody can stand behind. A writer
+  // cites the progression INSTEAD of counting, so a wrong one is worse than
+  // none at all.
+  it("says nothing when a goal has no minute to place it at", () => {
+    expect(
+      progression(
+        buildEvidencePack({
+          ...timeline,
+          events: [...timeline.events, { ...timeline.events[0], id: "g4", minute: null }],
+        }),
+      ),
+    ).toHaveLength(0);
+  });
+
+  it("says nothing when the goals do not add up to the stated final score", () => {
+    expect(
+      progression(
+        buildEvidencePack({ ...timeline, match: { ...timeline.match, homeScore: 4 } }),
+      ),
+    ).toHaveLength(0);
   });
 });
