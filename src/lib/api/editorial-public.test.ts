@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidDropId, projectProofCards } from "./editorial-public.server";
+import { isValidDropId, projectProofCards, fixtureFromPack } from "./editorial-public.server";
 
 describe("public editorial identifiers", () => {
   it("accepts database UUIDs", () => {
@@ -70,5 +70,56 @@ describe("proof card projection", () => {
     expect(
       projectProofCards([claim("1"), claim("2"), claim("3"), claim("4")], evidence),
     ).toHaveLength(3);
+  });
+});
+
+/** The surface carried teamIds - af_50, af_746 - which name nothing to a
+ *  listener, and no score at all. Both sit in the sealed pack that is already
+ *  loaded to build the proof cards. */
+describe("the fixture is read from the pack that is already loaded", () => {
+  const fact = (id: string, value: unknown) =>
+    ({ id, kind: "fact", label: id, value }) as never;
+  const full = [
+    fact("match.home_team", "Manchester City"),
+    fact("match.away_team", "Sunderland"),
+    fact("match.home_score", 5),
+    fact("match.away_score", 3),
+    fact("match.competition", "Premier League"),
+  ];
+
+  it("names both sides and the score", () => {
+    expect(fixtureFromPack(full)).toEqual({
+      homeTeam: "Manchester City",
+      awayTeam: "Sunderland",
+      homeScore: 5,
+      awayScore: 3,
+      competition: "Premier League",
+    });
+  });
+
+  it("still returns the sides when the competition is absent", () => {
+    expect(fixtureFromPack(full.slice(0, 4))?.competition).toBeNull();
+  });
+
+  it("keeps a nil-nil, which is a real score and not a missing one", () => {
+    const drawn = [
+      fact("match.home_team", "A"),
+      fact("match.away_team", "B"),
+      fact("match.home_score", 0),
+      fact("match.away_score", 0),
+    ];
+    expect(fixtureFromPack(drawn)).toMatchObject({ homeScore: 0, awayScore: 0 });
+  });
+
+  // A scoreboard naming one team is worse than none: the reader cannot tell
+  // whether the other side is missing or the layout broke.
+  it("returns nothing rather than half a fixture", () => {
+    expect(fixtureFromPack([fact("match.home_team", "Manchester City")])).toBeNull();
+    expect(fixtureFromPack([])).toBeNull();
+  });
+
+  it("refuses a team name that is not a non-empty string", () => {
+    expect(fixtureFromPack([fact("match.home_team", "  "), fact("match.away_team", "B")])).toBeNull();
+    expect(fixtureFromPack([fact("match.home_team", 50), fact("match.away_team", "B")])).toBeNull();
   });
 });

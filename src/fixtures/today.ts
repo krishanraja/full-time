@@ -47,6 +47,13 @@ export function todayFixture(pundit: PunditId): TodayEditorialResponse {
     latest: null,
     matchId: "fixture-match",
     teamIds: ["fixture-home", "fixture-away"],
+    fixture: {
+      homeTeam: "Manchester City",
+      awayTeam: "Sunderland",
+      homeScore: 5,
+      awayScore: 3,
+      competition: "Premier League",
+    },
     proofCards: [
       {
         id: "77777777-7777-4777-8777-777777777777",

@@ -64,6 +64,25 @@ export type PublicProofCard = {
   boundary?: string;
 };
 
+/** Who was playing, and what it finished.
+ *
+ *  The surface carried neither. editionDetails returned teamIds - af_50,
+ *  af_746 - which name nothing to a listener, and the score was nowhere at
+ *  all, so a show about Manchester City beating Sunderland five-three opened
+ *  with a headline and no fixture.
+ *
+ *  It costs no query. The sealed evidence pack is already loaded to build the
+ *  proof cards and it holds both sides and both scores as first-class facts,
+ *  because the writer is refused for naming a team the pack does not carry.
+ *  The same guarantee that keeps the script honest makes this safe to show. */
+export type PublicFixture = {
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  competition: string | null;
+};
+
 export type PublicEdition = {
   coverageDate: string;
   variant: PublicVariant;
@@ -148,7 +167,13 @@ async function editionDetails(variant: PublicVariant) {
     `evidence_packs?drop_id=eq.${encodeURIComponent(variant.drop_id)}&sealed_at=not.is.null&select=id,match_id,facts,derivations,unavailable_evidence,sealed_at&limit=1`,
   );
   const pack = packs[0] ?? null;
-  if (!pack) return { matchId: null, teamIds: [], proofCards: [] as PublicProofCard[] };
+  if (!pack)
+    return {
+      matchId: null,
+      teamIds: [],
+      fixture: null as PublicFixture | null,
+      proofCards: [] as PublicProofCard[],
+    };
 
   const ids = selectedClaimIds(variant);
   const [matches, claims] = await Promise.all([
@@ -170,7 +195,35 @@ async function editionDetails(variant: PublicVariant) {
   return {
     matchId: pack.match_id,
     teamIds: match ? [match.home_team_id, match.away_team_id] : [],
+    fixture: fixtureFromPack(pack.facts),
     proofCards: projectProofCards(orderedClaims, [...pack.facts, ...pack.derivations]),
+  };
+}
+
+/** The fixture, read from the facts the pack already states.
+ *
+ *  Returns null rather than a half-filled card when either side is missing: a
+ *  scoreboard that names one team is worse than no scoreboard, because the
+ *  reader cannot tell whether the other side is absent or the layout broke. */
+export function fixtureFromPack(facts: readonly EvidenceItem[]): PublicFixture | null {
+  const value = (id: string) => facts.find((item) => item.id === id)?.value;
+  const text = (id: string) => {
+    const found = value(id);
+    return typeof found === "string" && found.trim() ? found.trim() : null;
+  };
+  const number = (id: string) => {
+    const found = value(id);
+    return typeof found === "number" && Number.isFinite(found) ? found : null;
+  };
+  const homeTeam = text("match.home_team");
+  const awayTeam = text("match.away_team");
+  if (!homeTeam || !awayTeam) return null;
+  return {
+    homeTeam,
+    awayTeam,
+    homeScore: number("match.home_score"),
+    awayScore: number("match.away_score"),
+    competition: text("match.competition"),
   };
 }
 
@@ -186,7 +239,12 @@ async function safeEditionDetails(variant: PublicVariant) {
         error: error instanceof Error ? error.message : String(error),
       }),
     );
-    return { matchId: null, teamIds: [], proofCards: [] as PublicProofCard[] };
+    return {
+      matchId: null,
+      teamIds: [],
+      fixture: null as PublicFixture | null,
+      proofCards: [] as PublicProofCard[],
+    };
   }
 }
 
@@ -234,7 +292,12 @@ export async function getPublicToday(pundit: PunditId) {
   const active = variant ?? latest?.variant ?? null;
   const details = active
     ? await safeEditionDetails(active)
-    : { matchId: null, teamIds: [], proofCards: [] as PublicProofCard[] };
+    : {
+        matchId: null,
+        teamIds: [],
+        fixture: null as PublicFixture | null,
+        proofCards: [] as PublicProofCard[],
+      };
   const state = !drop
     ? "prelaunch"
     : drop.status === "off_day"
@@ -250,6 +313,7 @@ export async function getPublicToday(pundit: PunditId) {
     latest,
     matchId: details.matchId,
     teamIds: details.teamIds,
+    fixture: details.fixture,
     proofCards: details.proofCards,
     recent: anyPunditEditions.filter((edition) => edition.variant.id !== active?.id).slice(0, 4),
   } as const;
@@ -274,6 +338,7 @@ export async function getPublicVariant(dropId: string, pundit: PunditId) {
     latest: null,
     matchId: details.matchId,
     teamIds: details.teamIds,
+    fixture: details.fixture,
     proofCards: details.proofCards,
     recent: [] as PublicEdition[],
   };

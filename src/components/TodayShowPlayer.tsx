@@ -5,6 +5,7 @@ import type {
   PublicEdition,
   PublicProofCard,
   PublicVariant,
+  PublicFixture,
 } from "@/lib/api/editorial-public.server";
 import { coverageDateLabel } from "@/lib/london-date";
 import { playerStore, usePlayer } from "@/lib/player-store";
@@ -31,6 +32,7 @@ export type TodayEditorialResponse = {
   latest: PublicEdition | null;
   matchId: string | null;
   teamIds: string[];
+  fixture: PublicFixture | null;
   proofCards: PublicProofCard[];
   recent: PublicEdition[];
 };

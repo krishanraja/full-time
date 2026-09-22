@@ -39,6 +39,7 @@ async function fetchEditorial(drop: string | undefined, pundit: PersonalityId) {
         latest: null,
         matchId: null,
         teamIds: [],
+        fixture: null,
         proofCards: [],
         recent: [],
       } satisfies TodayEditorialResponse;
