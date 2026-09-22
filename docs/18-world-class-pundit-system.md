@@ -3,7 +3,7 @@
 - **Status:** Current implementation map
 - **Owner:** Product and engineering
 - **Purpose:** Describe what the repository implements, how Today reaches the production pipeline, and where its safety controls live.
-- **Last reviewed:** 2026-09-07
+- **Last reviewed:** 2026-09-22
 
 ## Implementation state
 
@@ -68,6 +68,7 @@ Key code:
 - the current `drop` and requested `variant` when published;
 - `latest`, the newest other published edition for the same AI Pundit, or failing that the most recent edition any AI Pundit published, which the player names as whose it is;
 - `matchId` and `teamIds` from the sealed evidence pack;
+- `fixture`: both team names and, when the pack carries them, both scores and the competition, read from the same sealed evidence pack as the proof cards; null rather than a half-filled fixture when either team name is missing (`fixtureFromPack`, `cb59be3`), and not yet rendered on Today;
 - `proofCards`, capped at three;
 - `recent`, up to four additional published editions for that AI Pundit.
 

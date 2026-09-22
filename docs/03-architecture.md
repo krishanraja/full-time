@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Engineering and operations
 - **Purpose:** Explain system boundaries, data flow, trust, orchestration, and failure behavior.
-- **Last reviewed:** 2026-09-07
+- **Last reviewed:** 2026-09-22
 
 ## System view
 
@@ -106,7 +106,7 @@ Legacy `drops` and `episodes` support archive behavior. They are not the current
 
 ## Public Today boundary
 
-The browser requests one AI Pundit edition at a time. The response may include the current variant, a latest same-AI-Pundit fallback, match and team IDs, up to three proof cards, and recent published editions. Proof projection reads internal sealed evidence through server-only code and returns plain strings; raw provider payloads and internal evidence objects do not cross the boundary.
+The browser requests one AI Pundit edition at a time. The response may include the current variant, a latest same-AI-Pundit fallback, match and team IDs, a fixture (both team names and, when known, both scores and the competition) read from the same sealed evidence pack as the proof cards, up to three proof cards, and recent published editions. The fixture is data-only as of 2026-09-22; where it renders on Today is a decision still owed to Krish. Proof projection reads internal sealed evidence through server-only code and returns plain strings; raw provider payloads and internal evidence objects do not cross the boundary.
 
 An AI Pundit switch is a media transaction. The client preloads the requested audio in a new element, commits the edition and saved preference only after readiness, then releases the previous element. A failure leaves the old edition and preference intact.
 

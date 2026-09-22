@@ -3,7 +3,7 @@
 - **Status:** Current runbook
 - **Owner:** Release operator and on-call
 - **Purpose:** Operate rehearsals, publication, incidents, secrets, deployments, and rollback safely.
-- **Last reviewed:** 2026-09-21
+- **Last reviewed:** 2026-09-22
 
 ## Default posture
 
@@ -65,6 +65,8 @@ Measured per call from `anthropic_cache_usage` on 2026-09-06. A six-pundit run o
 The bill is **output tokens, not input**. A judge reads ~7,200 cached tokens for $0.002 and writes ~950 for $0.014. Prompt caching is working and is not a lever; batching the twelve qualitative judges into fewer calls would save input, which is a fifth of the judge cost.
 
 The model names in this table are unverified against the environment that produced it: the bench that actually published this product's only show was later measured to be Haiku 4.5, not Sonnet 4-6 as assumed here (`00952d4`, 2026-09-21). Treat the $2.14 total as a real measurement and the per-model breakdown as unconfirmed until it is re-measured against the configured environment rather than the code default. Quote the estimate and the logged actual for every run from here on (`AGENTS.md`, "Quote the model spend, every time").
+
+Since 2026-09-22 a run no longer needs to be reconstructed from log lines that age out of the window: `editorial_runs.promise_checks.spend` records the total, the cost and attempt count per pundit, and which pundits were written but never narrated, on every terminal path (`2294b4b`). The judge fan-out also no longer starves its own cache: judging fourteen dimensions at once meant none of them could read the shared evidence-pack cache the others were still writing, because a cache is populated by a request that has completed. One judge now runs alone first to warm it, measured against a 2026-09-21 session where that gap cost $14.91 of input on `gpt-5.6-terra` (1.2% cache hit) where $2.86 would have done on `claude-haiku-4-5` (92.2% cache hit). See `AGENTS.md` for the full measured cost table and the cheapest-first order of instruments.
 
 Levers in order of size:
 
