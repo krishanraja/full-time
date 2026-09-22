@@ -740,12 +740,36 @@ export async function judgeCandidate(subject: JudgeSubject): Promise<HarnessResu
   const harnessNames = Object.keys(
     getPunditSpec(subject.candidate.punditId).requiredThresholds,
   ) as QualitativeHarness[];
+  // One judge runs alone before the rest, to write the shared cache.
+  //
+  // Every judge on a variant sends the same head: the evidence pack, the
+  // licensed claims, the pundit spec and the script. Only the rubric at the
+  // tail differs. That head is the whole point of the cachedContext design and
+  // it is supposed to be written once and read at a tenth of the rate by the
+  // other thirteen.
+  //
+  // Firing all fourteen at once means none of them can read it, because a
+  // cache is populated by a request that has COMPLETED. Measured on
+  // 2026-09-21: 1.2% cache hit on gpt-5.6-terra across 1,514 judge calls,
+  // against 92.2% on claude-haiku-4-5, which survived because Anthropic's
+  // explicit cache_control writes behave differently under concurrency. That
+  // one difference cost $14.91 of input against $2.86 - roughly a third of the
+  // night's entire bill - on a pack that never changed.
+  //
+  // judge-calibration.server.ts already carried this exact note about its own
+  // subjects: "The first one pays to write the shared evidence cache and the
+  // rest read it, which only happens if the first has finished before the rest
+  // start." It was never applied to the judges it calls.
+  //
+  // The cost is one judge of added latency per variant. The saving is the
+  // other thirteen reading instead of writing.
+  const [firstHard, ...restHard] = ["factual_entailment", "humour_safety_semantic"] as const;
+  const warmed = await judgeHardOne(firstHard, subject);
   const [hardJudges, independent] = await Promise.all([
-    Promise.all(
-      (["factual_entailment", "humour_safety_semantic"] as const).map((harness) =>
-        judgeHardOne(harness, subject),
-      ),
-    ),
+    Promise.all(restHard.map((harness) => judgeHardOne(harness, subject))).then((rest) => [
+      warmed,
+      ...rest,
+    ]),
     Promise.all(harnessNames.map((harness) => judgeOne(harness, subject))),
   ]);
   return [

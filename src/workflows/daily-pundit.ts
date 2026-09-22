@@ -137,6 +137,35 @@ export async function dailyPunditWorkflow(input: DailyPunditWorkflowInput) {
           }),
         ),
     );
+    // What this drop cost, recorded where it can be read back.
+    //
+    // Nothing in the database held a cost before this. editorial_runs stores
+    // status, failure, timings and the promise report, and no money at all, so
+    // the only record of spend was the model_cache_usage log lines - which age
+    // out of the log window. Answering "what did that run cost" on 2026-09-21
+    // meant reconstructing $38.86 from 1,682 log entries, which is not a thing
+    // anyone should have to do twice.
+    //
+    // It rides promise_checks because that column is jsonb and already written
+    // on every path, so the cost arrives with no migration and no risk of a
+    // schema change failing a run that has already been paid for.
+    const spend = {
+      totalUsd: Number(variants.reduce((sum, item) => sum + (item.costUsd ?? 0), 0).toFixed(4)),
+      byPundit: Object.fromEntries(
+        variants.map((item) => [item.candidate.punditId, Number((item.costUsd ?? 0).toFixed(4))]),
+      ),
+      attemptsByPundit: Object.fromEntries(
+        variants.map((item) => [item.candidate.punditId, item.attempts]),
+      ),
+      // A variant that was written and then never narrated is spend with no
+      // possible product at the end of it. Counting it separately is what
+      // turns "the run cost six dollars" into "two of those dollars bought
+      // nothing", which is the number worth acting on.
+      writtenButNotProduced: variants
+        .filter((item) => !approved.has(item.candidate.punditId))
+        .map((item) => item.candidate.punditId),
+    };
+
     const promise = await finalizeProducedDropStep({
       dropId: persisted.dropId,
       coverageDate,
@@ -152,7 +181,7 @@ export async function dailyPunditWorkflow(input: DailyPunditWorkflowInput) {
         matchId,
         dropId,
         successfulVariants,
-        promiseChecks: promise,
+        promiseChecks: { ...promise, spend },
         failure: "No variant survived production and the promise checks.",
       });
       return { dropId, matchId, published: false, promise };
@@ -167,7 +196,7 @@ export async function dailyPunditWorkflow(input: DailyPunditWorkflowInput) {
       matchId,
       dropId,
       successfulVariants,
-      promiseChecks: promise,
+      promiseChecks: { ...promise, spend },
     });
     return {
       dropId,
