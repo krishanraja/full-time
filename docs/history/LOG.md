@@ -4,6 +4,12 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-09-21
+
+- reconciled at `7cedeea`: head moved from `e8bd2dd`. Thirty-seven non-steward commits landed in one session: the Anthropic account capped out and the pipeline moved to OpenAI models for the writer and judges; a stricter judge bench was translated with `judgeFloors` and `factual_entailment` set to advisory rather than enforced, both self-expiring when the judge model points back at Anthropic (Ruling, Krish, 2026-09-21); a documented cost figure's model attribution was found wrong and AGENTS.md gained a standing rule to quote the spend estimate and the logged actual on every session (Ruling, Krish, 2026-09-21); the claim laboratory gained a floor alongside its ceiling; the evidence pack gained goal scorers, a derived running score, assists, blocked shots, attributed saves, a league table under a position-only licence, and a second, unlicensed expected-goals opinion (Ruling, Krish, 2026-09-21: ingest it, rights exposure accepted); the gate corpus exporter was fixed to capture what the hard gates actually read and replayed 192 verdicts for the first time; and both 2026-09-21 migrations were applied and read back. No new edition has published since 2026-09-05. Four unrelated commits (`283d737`, `fefe1ad`, `75edaa3`, `b0d22fd`) created and deleted a stray `games/epl` path and carry no documentation consequence.
+- reconciled at `7cedeea`: `NOW.md`. "What changed recently" gained eight 2026-09-21 bullets; "Where it is right now" gained the no-new-publish and dormant-pipeline-tables facts; "What is next and what is waiting on Krish" gained the ingest, standings-licence and bench-expiry open questions; "Do not trust" gained the cost-table model attribution. No bullet older than 30 days existed to roll into this log.
+- reconciled at `7cedeea`: `docs/06-ops.md`. "Default posture" now records the temporary Anthropic-to-OpenAI model routing and when it expires; "What a run costs" carries a note that its per-model attribution is unverified against the environment that produced it (`00952d4`). Review date bumped because the body was checked against the commit record.
+
 ## 2026-09-13
 
 - rolled from NOW.md: 2026-08-11 Pundit-first daily show and the handbook (`729c8e5`, `c782d1c`, `f52eb45`): the player-first Today, six selectable AI Pundits, `product-state.json` and the go-to-market agent manual.
