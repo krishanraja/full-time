@@ -108,6 +108,15 @@
     overscroll-behavior-y: none;
   }
 
+  /* The app is one screen. Ruling (Krish, 2026-09-27): a completely
+     no-scroll experience. The document never scrolls; the frame below fills
+     the dynamic viewport and each screen fits inside it. */
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
   /* Subtle pitch texture: extremely faint radial wash so the background
      doesn't read as flat black. */
   body {
@@ -179,6 +188,18 @@
   font-family: var(--font-mono);
   font-feature-settings: "tnum", "zero", "ss01";
   letter-spacing: -0.01em;
+}
+
+/* The one-screen frame: header, the screen, the mini player and the tab bar
+   stacked in normal flow at the height of the visible viewport. `dvh` follows
+   mobile browser chrome as it shows and hides; `100vh` is the fallback for
+   browsers without it (iOS before 15.4), where it is the larger viewport. */
+@utility app-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 @utility glow-lime {

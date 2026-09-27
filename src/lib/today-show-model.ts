@@ -1,6 +1,40 @@
-import type { PublicEdition } from "@/lib/api/editorial-public.server";
+import type {
+  PublicEdition,
+  PublicFixture,
+  PublicProofCard,
+  PublicToday,
+} from "@/lib/api/editorial-public.server";
 import type { Episode } from "@/data/mockEpisodes";
 import { PERSONALITIES } from "@/components/PersonalitySelector";
+import { clubDisplayName } from "@/lib/premier-league";
+
+/** One AI Pundit's show about one match: what Today plays and names. */
+export type TodayShow = PublicEdition & {
+  fixture: PublicFixture | null;
+  proofCards: PublicProofCard[];
+};
+
+/** The show a Today or variant response carries: today's edition for the
+ *  requested pundit, else the latest one the server chose. */
+export function showFrom(
+  response: Pick<PublicToday, "coverageDate" | "variant" | "latest" | "fixture" | "proofCards">,
+): TodayShow | null {
+  const edition = response.variant
+    ? { coverageDate: response.coverageDate, variant: response.variant }
+    : response.latest;
+  if (!edition) return null;
+  return { ...edition, fixture: response.fixture, proofCards: response.proofCards };
+}
+
+/** "Man City 5-3 Sunderland", or null when there is no fixture to name. */
+export function matchLabel(fixture: PublicFixture | null | undefined): string | null {
+  if (!fixture) return null;
+  const home = clubDisplayName(fixture.homeTeam);
+  const away = clubDisplayName(fixture.awayTeam);
+  return fixture.homeScore != null && fixture.awayScore != null
+    ? `${home} ${fixture.homeScore}-${fixture.awayScore} ${away}`
+    : `${home} v ${away}`;
+}
 
 let fixtureAudio: string | null = null;
 
@@ -38,18 +72,24 @@ function fixtureAudioUrl() {
   return fixtureAudio;
 }
 
-export function editionEpisode(edition: PublicEdition): Episode {
+export function editionEpisode(
+  edition: PublicEdition,
+  fixture: PublicFixture | null = null,
+): Episode {
   const meta = PERSONALITIES.find((item) => item.id === edition.variant.pundit_id)!;
+  // The match, not a placeholder. This used to read "Full Time 0-0 The
+  // Reporter" on the lock screen, the mini player and the completion toast.
   return {
     id: edition.variant.id,
     title: edition.variant.title,
     hook: edition.variant.description,
     script: edition.variant.display_script,
-    homeTeam: "Full Time",
-    awayTeam: meta.name,
-    homeScore: 0,
-    awayScore: 0,
-    competition: "AI Pundit show",
+    homeTeam: fixture ? clubDisplayName(fixture.homeTeam) : "",
+    awayTeam: fixture ? clubDisplayName(fixture.awayTeam) : "",
+    homeScore: fixture?.homeScore ?? 0,
+    awayScore: fixture?.awayScore ?? 0,
+    competition: fixture?.competition ?? "Premier League",
+    matchLabel: matchLabel(fixture) ?? undefined,
     durationSec: edition.variant.audio_duration_sec ?? 0,
     audioUrl:
       edition.variant.audio_url === "__fixture_audio__"

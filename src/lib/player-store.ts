@@ -14,6 +14,10 @@ type State = {
   status: "idle" | "loading" | "playing" | "paused" | "error" | "ended";
   error: string | null;
   playbackRate: number;
+  /** The listener has played this episode at least once. A pundit or match
+   *  switch preloads audio without playing it; the mini player waits for
+   *  this, not for progress, so rewinding a paused show to 0:00 keeps it. */
+  started: boolean;
 };
 
 let state: State = {
@@ -23,6 +27,7 @@ let state: State = {
   status: "idle",
   error: null,
   playbackRate: 1,
+  started: false,
 };
 const listeners = new Set<() => void>();
 const completedListeners = new Set<(ep: Episode) => void>();
@@ -74,7 +79,7 @@ function wireAudio(audio: HTMLAudioElement) {
     if (audioEl !== audio) return;
     const episodeId = state.episode?.id;
     if (!episodeId) return;
-    state = { ...state, isPlaying: true, status: "playing", error: null };
+    state = { ...state, isPlaying: true, status: "playing", error: null, started: true };
     track("play_started", { id: episodeId });
     emit();
   });
@@ -155,9 +160,9 @@ function setMediaSession(ep: Episode) {
   if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
   if (ep.format === "daily") {
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: ep.title,
-      artist: `${ep.punditName ?? "Full Time"} edition`,
-      album: "Full Time morning drop",
+      title: ep.matchLabel ?? ep.title,
+      artist: ep.punditName ?? "Full Time",
+      album: "Full Time",
     });
     navigator.mediaSession.setActionHandler("play", () => playerStore.toggle());
     navigator.mediaSession.setActionHandler("pause", () => playerStore.toggle());
@@ -225,6 +230,7 @@ export const playerStore = {
       status: options.autoplay ? "playing" : "paused",
       error: null,
       playbackRate: state.playbackRate,
+      started: options.autoplay,
     };
     setMediaSession(ep);
     track("pundit_switch_committed", { id: ep.id, autoplay: options.autoplay });
@@ -252,6 +258,7 @@ export const playerStore = {
       status: "loading",
       error: null,
       playbackRate: state.playbackRate,
+      started: same ? state.started : false,
     };
     haptic("tap");
     track("play_intent", { id: ep.id });

@@ -74,7 +74,7 @@ function siteJsonLd() {
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex flex-1 items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <p className="mt-2 text-sm text-muted-foreground">No match here. Try the home feed.</p>
@@ -210,7 +210,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const wideLayout = pathname === "/" || pathname === "/receipts";
+  const wideLayout = pathname === "/receipts";
 
   useEffect(() => {
     if (!hasClientSupabaseConfig()) return;
@@ -226,16 +226,28 @@ function RootComponent() {
     <MotionConfig reducedMotion="user">
       <QueryClientProvider client={queryClient}>
         <CompletionToast />
-        <div
-          className={`mx-auto min-h-screen w-full px-4 pb-[150px] transition-[max-width] md:pb-16 ${
-            wideLayout ? "max-w-5xl" : "max-w-md"
-          }`}
-        >
+        {/* One screen, no page scroll. The screen region can still scroll as
+            a last resort, for legal text or when a listener zooms in, but no
+            tab is allowed to need it at a phone's default size. */}
+        <div className="app-frame">
           <AppHeader />
-          <Outlet />
+          {/* Full width, so a legacy page that does need the last-resort
+              scroll scrolls wherever the pointer is; the column sits inside. */}
+          <div
+            id="screen"
+            className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overscroll-contain"
+          >
+            <div
+              className={`mx-auto flex w-full flex-1 flex-col px-4 ${
+                wideLayout ? "max-w-5xl" : "max-w-md"
+              }`}
+            >
+              <Outlet />
+            </div>
+          </div>
+          {pathname !== "/" && <MiniPlayer />}
+          <BottomNav />
         </div>
-        {pathname !== "/" && <MiniPlayer />}
-        <BottomNav />
       </QueryClientProvider>
     </MotionConfig>
   );

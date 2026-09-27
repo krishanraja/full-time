@@ -13,12 +13,13 @@ export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
+    // The last row of the one-screen frame, in normal flow rather than fixed
+    // over the content, so nothing needs padding to clear it.
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 backdrop-blur-xl md:hidden"
+      className="z-40 shrink-0 md:hidden"
       style={{
-        paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
-        background:
-          "linear-gradient(to top, color-mix(in oklab, var(--background) 96%, transparent), color-mix(in oklab, var(--background) 70%, transparent))",
+        paddingBottom: "max(env(safe-area-inset-bottom), 6px)",
+        background: "color-mix(in oklab, var(--background) 96%, transparent)",
         borderTop: "1px solid var(--pitch-line)",
       }}
     >
@@ -31,7 +32,7 @@ export function BottomNav() {
                 to={to}
                 onClick={() => haptic("tap")}
                 className={cn(
-                  "tap relative flex flex-col items-center gap-1 py-2.5 text-mono text-[10px] uppercase tracking-[0.16em] transition-colors",
+                  "tap relative flex min-h-12 flex-col items-center justify-center gap-1 py-2 text-mono text-[10px] uppercase tracking-[0.16em] transition-colors",
                   active ? "text-foreground" : "text-muted-foreground hover:text-foreground/80",
                 )}
               >

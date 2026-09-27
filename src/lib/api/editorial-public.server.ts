@@ -1,4 +1,6 @@
 import { currentCoverageDate } from "@/lib/london-date";
+import { editionPunditFor } from "@/lib/edition-pundit";
+import { crestUrl, isPremierLeague } from "@/lib/premier-league";
 import { serviceRest } from "@/lib/pundit/service-rest.server";
 import { PUNDIT_IDS, type EvidenceItem, type PunditId } from "@/lib/pundit/types";
 
@@ -81,11 +83,55 @@ export type PublicFixture = {
   homeScore: number | null;
   awayScore: number | null;
   competition: string | null;
+  /** Club crests, from the provider's public imagery via `teams.crest_url`.
+   *  Not in the pack: the pack is what the writer may say, and a crest is
+   *  not a claim. Absent when the team row has none. */
+  homeCrest?: string | null;
+  awayCrest?: string | null;
 };
 
 export type PublicEdition = {
   coverageDate: string;
   variant: PublicVariant;
+};
+
+/** One match Today can show: the drop, its date, who played, and which AI
+ *  Pundits published a show about it.
+ *
+ *  Today used to fall back to "the most recent edition anyone published",
+ *  ordered by publication time. On 2026-09-27 that meant four of six pundits
+ *  opened on Tottenham v Aston Villa from the 19th while the newer Man City v
+ *  Sunderland show sat in a list below it, and switching pundit could quietly
+ *  switch match. A listener could not tell which game they were looking at.
+ *  So the unit is now the match: newest first by the day it was played, and
+ *  the pundit choice happens inside it. */
+export type PublicMatch = {
+  dropId: string;
+  coverageDate: string;
+  fixture: PublicFixture | null;
+  /** In the fixed six-pundit order, so the rail never reshuffles. */
+  pundits: PunditId[];
+  canonicalPundit: PunditId | null;
+};
+
+/** What the Today endpoint returns.
+ *
+ *  `variant` is today's edition for the requested pundit, and `latest` is the
+ *  edition shown when there is none: the most recent Premier League match,
+ *  by the requested pundit when they made it and by whoever did when they did
+ *  not. The player names who made it. */
+export type PublicToday = {
+  coverageDate: string;
+  state: "prelaunch" | "off_day" | "variant_unavailable" | "published";
+  drop: PublicDrop | { id: string } | null;
+  variant: PublicVariant | null;
+  latest: PublicEdition | null;
+  matchId: string | null;
+  teamIds: string[];
+  fixture: PublicFixture | null;
+  proofCards: PublicProofCard[];
+  /** Premier League matches with at least one published show, newest first. */
+  matches: PublicMatch[];
 };
 
 type EvidencePackRow = {
@@ -111,10 +157,28 @@ type MatchIdentityRow = {
   league_id: string;
   home_team_id: string;
   away_team_id: string;
+  home: { crest_url: string | null } | null;
+  away: { crest_url: string | null } | null;
 };
 
-type VariantWithDrop = PublicVariant & {
-  daily_drops: { coverage_date: string; published_at: string | null } | null;
+type DropSummaryRow = {
+  id: string;
+  coverage_date: string;
+  canonical_pundit: string | null;
+};
+
+type VariantPresenceRow = { drop_id: string; pundit_id: string };
+
+type PackMatchRow = { drop_id: string; match_id: string; sealed_at: string };
+
+type MatchSummaryRow = {
+  id: string;
+  league_id: string | null;
+  home_score: number | null;
+  away_score: number | null;
+  home: { name: string; crest_url: string | null } | null;
+  away: { name: string; crest_url: string | null } | null;
+  league: { name: string } | null;
 };
 
 const VARIANT_SELECT =
@@ -162,40 +226,64 @@ export function projectProofCards(
     .slice(0, 3);
 }
 
-async function editionDetails(variant: PublicVariant) {
-  const packs = await serviceRest<EvidencePackRow[]>(
-    `evidence_packs?drop_id=eq.${encodeURIComponent(variant.drop_id)}&sealed_at=not.is.null&select=id,match_id,facts,derivations,unavailable_evidence,sealed_at&limit=1`,
-  );
-  const pack = packs[0] ?? null;
-  if (!pack)
-    return {
-      matchId: null,
-      teamIds: [],
-      fixture: null as PublicFixture | null,
-      proofCards: [] as PublicProofCard[],
-    };
+const NO_DETAILS = {
+  matchId: null,
+  teamIds: [] as string[],
+  fixture: null as PublicFixture | null,
+  proofCards: [] as PublicProofCard[],
+};
 
+/** The pack a published edition was written from.
+ *
+ *  A drop can hold several sealed packs for the same match, one per repair
+ *  run: 2026-09-04 has four. This used to take `limit=1` with no order, so the
+ *  scoreboard and the proof cards could come from different packs on
+ *  different requests, and a proof card vanished whenever the pack returned
+ *  was not the one its claims were licensed against. Now it is the pack the
+ *  edition's own claims name, and failing that the latest sealed one. */
+export function editionPack<T extends { id: string }>(
+  packsNewestFirst: readonly T[],
+  claims: ReadonlyArray<{ evidence_pack_id?: string | null }>,
+): T | null {
+  const votes = new Map<string, number>();
+  for (const claim of claims) {
+    if (!claim.evidence_pack_id) continue;
+    votes.set(claim.evidence_pack_id, (votes.get(claim.evidence_pack_id) ?? 0) + 1);
+  }
+  const named = [...votes.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  return packsNewestFirst.find((pack) => pack.id === named) ?? packsNewestFirst[0] ?? null;
+}
+
+async function editionDetails(variant: PublicVariant) {
   const ids = selectedClaimIds(variant);
-  const [matches, claims] = await Promise.all([
-    serviceRest<MatchIdentityRow[]>(
-      `matches?id=eq.${encodeURIComponent(pack.match_id)}&select=id,league_id,home_team_id,away_team_id&limit=1`,
+  const [packs, claims] = await Promise.all([
+    serviceRest<EvidencePackRow[]>(
+      `evidence_packs?drop_id=eq.${encodeURIComponent(variant.drop_id)}&sealed_at=not.is.null&select=id,match_id,facts,derivations,unavailable_evidence,sealed_at&order=sealed_at.desc&limit=8`,
     ),
     ids.length
-      ? serviceRest<LicensedClaimRow[]>(
-          `analysis_claims?id=in.(${ids.join(",")})&evidence_pack_id=eq.${encodeURIComponent(pack.id)}&status=eq.licensed&select=id,thesis,type,evidence_refs,alternative_explanation,missing_evidence`,
+      ? serviceRest<Array<LicensedClaimRow & { evidence_pack_id: string }>>(
+          `analysis_claims?id=in.(${ids.join(",")})&status=eq.licensed&select=id,evidence_pack_id,thesis,type,evidence_refs,alternative_explanation,missing_evidence`,
         )
       : Promise.resolve([]),
   ]);
+  const pack = editionPack(packs, claims);
+  if (!pack) return NO_DETAILS;
+
+  const matches = await serviceRest<MatchIdentityRow[]>(
+    `matches?id=eq.${encodeURIComponent(pack.match_id)}&select=id,league_id,home_team_id,away_team_id,home:home_team_id(crest_url),away:away_team_id(crest_url)&limit=1`,
+  );
   const match = matches[0] ?? null;
   const order = new Map(ids.map((id, index) => [id, index]));
-  const orderedClaims = [...claims].sort(
-    (a, b) =>
-      (order.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(b.id) ?? Number.MAX_SAFE_INTEGER),
-  );
+  const orderedClaims = claims
+    .filter((claim) => claim.evidence_pack_id === pack.id)
+    .sort(
+      (a, b) =>
+        (order.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (order.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+    );
   return {
     matchId: pack.match_id,
     teamIds: match ? [match.home_team_id, match.away_team_id] : [],
-    fixture: fixtureFromPack(pack.facts),
+    fixture: withCrests(fixtureFromPack(pack.facts), match),
     proofCards: projectProofCards(orderedClaims, [...pack.facts, ...pack.derivations]),
   };
 }
@@ -218,12 +306,29 @@ export function fixtureFromPack(facts: readonly EvidenceItem[]): PublicFixture |
   const homeTeam = text("match.home_team");
   const awayTeam = text("match.away_team");
   if (!homeTeam || !awayTeam) return null;
+  // structured-match.server.ts writes these placeholders when a team or
+  // league join misses. "Home 0, Away 0" on a scoreboard is a broken layout
+  // that looks like a result.
+  if (homeTeam === "Home" && awayTeam === "Away") return null;
+  const competition = text("match.competition");
   return {
     homeTeam,
     awayTeam,
     homeScore: number("match.home_score"),
     awayScore: number("match.away_score"),
-    competition: text("match.competition"),
+    competition: competition === "Competition" ? null : competition,
+  };
+}
+
+function withCrests(
+  fixture: PublicFixture | null,
+  match: Pick<MatchIdentityRow, "home" | "away"> | null,
+): PublicFixture | null {
+  if (!fixture) return null;
+  return {
+    ...fixture,
+    homeCrest: crestUrl(match?.home?.crest_url),
+    awayCrest: crestUrl(match?.away?.crest_url),
   };
 }
 
@@ -239,87 +344,196 @@ async function safeEditionDetails(variant: PublicVariant) {
         error: error instanceof Error ? error.message : String(error),
       }),
     );
-    return {
-      matchId: null,
-      teamIds: [],
-      fixture: null as PublicFixture | null,
-      proofCards: [] as PublicProofCard[],
-    };
+    return NO_DETAILS;
   }
 }
 
-async function latestEditions(pundit?: PunditId, limit = 4): Promise<PublicEdition[]> {
-  const safeLimit = Math.min(8, Math.max(1, limit));
-  const filter = pundit ? `pundit_id=eq.${pundit}&` : "";
-  const rows = await publicRest<VariantWithDrop[]>(
-    `pundit_variants?${filter}status=eq.published&select=${VARIANT_SELECT},daily_drops!inner(coverage_date,published_at)&order=published_at.desc&limit=${safeLimit}`,
-  );
-  return rows.flatMap((row) =>
-    row.daily_drops ? [{ coverageDate: row.daily_drops.coverage_date, variant: row }] : [],
-  );
+/** The Premier League matches Today can show, newest first.
+ *
+ *  Pure, so the rules are tested without a database: a match needs a sealed
+ *  pack naming it, a stored match in the Premier League, and at least one
+ *  published show. Anything else is left out rather than shown half-built. */
+export function assemblePremierLeagueMatches(input: {
+  drops: readonly DropSummaryRow[];
+  variants: readonly VariantPresenceRow[];
+  packs: readonly PackMatchRow[];
+  matches: readonly MatchSummaryRow[];
+}): PublicMatch[] {
+  const matchById = new Map(input.matches.map((match) => [match.id, match]));
+  const latestPack = new Map<string, PackMatchRow>();
+  for (const pack of input.packs) {
+    const seen = latestPack.get(pack.drop_id);
+    if (!seen || pack.sealed_at > seen.sealed_at) latestPack.set(pack.drop_id, pack);
+  }
+  return input.drops
+    .flatMap((drop): PublicMatch[] => {
+      const pack = latestPack.get(drop.id);
+      const match = pack ? matchById.get(pack.match_id) : undefined;
+      if (!match || !isPremierLeague(match.league_id)) return [];
+      const published = new Set(
+        input.variants.filter((row) => row.drop_id === drop.id).map((row) => row.pundit_id),
+      );
+      const pundits = PUNDIT_IDS.filter((id) => published.has(id));
+      if (!pundits.length) return [];
+      return [
+        {
+          dropId: drop.id,
+          coverageDate: drop.coverage_date,
+          fixture:
+            match.home?.name && match.away?.name
+              ? {
+                  homeTeam: match.home.name,
+                  awayTeam: match.away.name,
+                  homeScore: match.home_score,
+                  awayScore: match.away_score,
+                  competition: match.league?.name ?? null,
+                  homeCrest: crestUrl(match.home.crest_url),
+                  awayCrest: crestUrl(match.away.crest_url),
+                }
+              : null,
+          pundits,
+          canonicalPundit: parsePunditId(drop.canonical_pundit),
+        },
+      ];
+    })
+    .sort((a, b) => b.coverageDate.localeCompare(a.coverageDate));
 }
 
-export async function getPublicToday(pundit: PunditId) {
+export { editionPunditFor };
+
+const MATCH_LIMIT = 8;
+
+async function premierLeagueMatches(include?: string): Promise<PublicMatch[]> {
+  const drops = await publicRest<DropSummaryRow[]>(
+    `daily_drops?status=eq.published&select=id,coverage_date,canonical_pundit&order=coverage_date.desc&limit=${MATCH_LIMIT + 4}`,
+  );
+  if (include && isValidDropId(include) && !drops.some((drop) => drop.id === include)) {
+    drops.push(
+      ...(await publicRest<DropSummaryRow[]>(
+        `daily_drops?id=eq.${encodeURIComponent(include)}&status=eq.published&select=id,coverage_date,canonical_pundit&limit=1`,
+      )),
+    );
+  }
+  if (!drops.length) return [];
+  const dropIds = drops.map((drop) => drop.id).join(",");
+  const [variants, packs] = await Promise.all([
+    publicRest<VariantPresenceRow[]>(
+      `pundit_variants?drop_id=in.(${dropIds})&status=eq.published&select=drop_id,pundit_id`,
+    ),
+    serviceRest<PackMatchRow[]>(
+      `evidence_packs?drop_id=in.(${dropIds})&sealed_at=not.is.null&select=drop_id,match_id,sealed_at`,
+    ),
+  ]);
+  const matchIds = [...new Set(packs.map((pack) => pack.match_id))];
+  const matches = matchIds.length
+    ? await publicRest<MatchSummaryRow[]>(
+        `matches?id=in.(${matchIds.map(encodeURIComponent).join(",")})&select=id,league_id,home_score,away_score,home:home_team_id(name,crest_url),away:away_team_id(name,crest_url),league:league_id(name)`,
+      )
+    : [];
+  const assembled = assemblePremierLeagueMatches({ drops, variants, packs, matches });
+  const shown = assembled.slice(0, MATCH_LIMIT);
+  const extra = include ? assembled.find((match) => match.dropId === include) : undefined;
+  return extra && !shown.includes(extra) ? [...shown, extra] : shown;
+}
+
+/** Every published drop covering this date or later is a Premier League
+ *  match. The last one that was not, Barcelona v Rayo Vallecano, covers
+ *  2026-08-31 (read from the database on 2026-09-27), and the daily pick is
+ *  Premier League only from then on. Used only when the league cannot be
+ *  checked, so the degraded list cannot bring that show back. */
+const PREMIER_LEAGUE_ONLY_SINCE = "2026-09-01";
+
+/** The match list when the service-role pack lookup fails.
+ *
+ *  Drops and published variants are public; the pack that maps a drop to its
+ *  match is not. Without this, a service-role outage turned Today into a 503
+ *  although every show was still playable. The league is taken on trust from
+ *  the date, the scoreboard waits for the pack, and the show still plays. */
+async function unverifiedMatches(): Promise<PublicMatch[]> {
+  const drops = await publicRest<DropSummaryRow[]>(
+    `daily_drops?status=eq.published&coverage_date=gte.${PREMIER_LEAGUE_ONLY_SINCE}&select=id,coverage_date,canonical_pundit&order=coverage_date.desc&limit=${MATCH_LIMIT}`,
+  );
+  if (!drops.length) return [];
+  const variants = await publicRest<VariantPresenceRow[]>(
+    `pundit_variants?drop_id=in.(${drops.map((drop) => drop.id).join(",")})&status=eq.published&select=drop_id,pundit_id`,
+  );
+  return drops.flatMap((drop): PublicMatch[] => {
+    const published = new Set(
+      variants.filter((row) => row.drop_id === drop.id).map((row) => row.pundit_id),
+    );
+    const pundits = PUNDIT_IDS.filter((id) => published.has(id));
+    return pundits.length
+      ? [
+          {
+            dropId: drop.id,
+            coverageDate: drop.coverage_date,
+            fixture: null,
+            pundits,
+            canonicalPundit: parsePunditId(drop.canonical_pundit),
+          },
+        ]
+      : [];
+  });
+}
+
+export async function getPublicToday(pundit: PunditId, dropId?: string): Promise<PublicToday> {
   const coverageDate = currentCoverageDate();
-  const [drops, samePunditEditions] = await Promise.all([
+  const [drops, matches] = await Promise.all([
     publicRest<PublicDrop[]>(
       `daily_drops?coverage_date=eq.${encodeURIComponent(coverageDate)}&select=id,coverage_date,canonical_pundit,status,published_at&limit=1`,
     ),
-    latestEditions(pundit, 4),
+    premierLeagueMatches(dropId).catch((error: unknown) => {
+      console.error(
+        JSON.stringify({
+          level: "error",
+          message: "public_today_matches_failed",
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+      return unverifiedMatches();
+    }),
   ]);
   const drop = drops[0] ?? null;
-  let variant: PublicVariant | null = null;
-  if (drop?.status === "published") {
-    const variants = await publicRest<PublicVariant[]>(
-      `pundit_variants?drop_id=eq.${drop.id}&pundit_id=eq.${pundit}&status=eq.published&select=${VARIANT_SELECT}&limit=1`,
+  const featured = (dropId && matches.find((match) => match.dropId === dropId)) || matches[0];
+  const editionPundit = featured ? editionPunditFor(featured, pundit) : null;
+  let edition: PublicEdition | null = null;
+  if (featured && editionPundit) {
+    const rows = await publicRest<PublicVariant[]>(
+      `pundit_variants?drop_id=eq.${featured.dropId}&pundit_id=eq.${editionPundit}&status=eq.published&select=${VARIANT_SELECT}&limit=1`,
     );
-    variant = variants[0] ?? null;
+    if (rows[0]) edition = { coverageDate: featured.coverageDate, variant: rows[0] };
   }
-  // A drop now publishes the pundits that passed rather than all six at once,
-  // so a listener's chosen pundit may have nothing while the show itself is
-  // live. On 2026-09-05 exactly that happened: the Romantic published and the
-  // other five did not, and five of six listeners saw an empty home page with
-  // a finished show sitting behind it.
-  //
-  // So the fallback widens. Their own pundit first, and failing that the most
-  // recent edition anyone published. The player names whoever actually made it,
-  // because serving one persona's audio under another's name is the substitution
-  // the promise checks exist to prevent.
-  const anyPunditEditions = samePunditEditions.length
-    ? samePunditEditions
-    : await latestEditions(undefined, 4);
-  const latest = anyPunditEditions.find((edition) => edition.variant.drop_id !== drop?.id) ?? null;
-  const active = variant ?? latest?.variant ?? null;
-  const details = active
-    ? await safeEditionDetails(active)
-    : {
-        matchId: null,
-        teamIds: [],
-        fixture: null as PublicFixture | null,
-        proofCards: [] as PublicProofCard[],
-      };
+  const details = edition ? await safeEditionDetails(edition.variant) : NO_DETAILS;
+  const isToday =
+    edition != null &&
+    drop?.status === "published" &&
+    edition.variant.drop_id === drop.id &&
+    edition.variant.pundit_id === pundit;
   const state = !drop
     ? "prelaunch"
     : drop.status === "off_day"
       ? "off_day"
-      : variant
+      : isToday
         ? "published"
         : "variant_unavailable";
   return {
     coverageDate,
     state,
     drop,
-    variant,
-    latest,
+    variant: isToday ? edition!.variant : null,
+    latest: isToday ? null : edition,
     matchId: details.matchId,
     teamIds: details.teamIds,
-    fixture: details.fixture,
+    fixture: details.fixture ?? featured?.fixture ?? null,
     proofCards: details.proofCards,
-    recent: anyPunditEditions.filter((edition) => edition.variant.id !== active?.id).slice(0, 4),
-  } as const;
+    matches,
+  };
 }
 
-export async function getPublicVariant(dropId: string, pundit: PunditId) {
+export async function getPublicVariant(
+  dropId: string,
+  pundit: PunditId,
+): Promise<PublicToday | null> {
   const rows = await publicRest<PublicVariant[]>(
     `pundit_variants?drop_id=eq.${encodeURIComponent(dropId)}&pundit_id=eq.${pundit}&status=eq.published&select=${VARIANT_SELECT}&limit=1`,
   );
@@ -340,7 +554,7 @@ export async function getPublicVariant(dropId: string, pundit: PunditId) {
     teamIds: details.teamIds,
     fixture: details.fixture,
     proofCards: details.proofCards,
-    recent: [] as PublicEdition[],
+    matches: [],
   };
 }
 

@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Founder and design
 - **Purpose:** Govern Full Time's visual language, AI Pundit identity, public voice, copy, and generated assets.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-27
 
 ## Brand idea
 
@@ -107,7 +107,9 @@ Canonical assets live in `src/assets`:
 - `full-time-icon-and-favicon.png`: icon and favicon source;
 - `full-time-wordmark.png` and `full-time-wordmark-trim.png`: local fallbacks.
 
-Keep the mark at least 24 pixels square and the wordmark at least 16 pixels high. Do not recolor, stretch, outline, bevel, or animate the logo. Do not use club, league, broadcaster, player, or competition marks without recorded permission.
+Keep the mark at least 24 pixels square and the wordmark at least 16 pixels high. Do not recolor, stretch, outline, bevel, or animate the logo. Do not use league, broadcaster, player, or competition marks without recorded permission; name the Premier League in text, never with its logo.
+
+Club crests are the one exception. Ruling (Krish, 2026-09-27): show club crests from the provider's public imagery, accepting the trademark exposure. They come from `teams.crest_url` through `src/components/ClubCrest.tsx`, sit beside the club's name on Today and Teams, and are never recolored, cropped, or used as Full Time's own mark. [`docs/11-legal.md`](11-legal.md) records the exposure.
 
 ## Color
 

@@ -34,14 +34,17 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
       animate={{ y: 0 }}
       exit={{ y: "100%" }}
       transition={{ type: "spring", stiffness: 280, damping: 32 }}
-      className="fixed inset-0 z-50 flex flex-col bg-background px-5 pb-10"
-      style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-background px-5"
+      style={{
+        paddingTop: "max(env(safe-area-inset-top), 16px)",
+        paddingBottom: "max(env(safe-area-inset-bottom), 24px)",
+      }}
     >
       <div className="flex items-center justify-between">
         <HapticButton
           hapticPattern="soft"
           onClick={onClose}
-          className="grid h-9 w-9 place-items-center rounded-full border border-[var(--pitch-line)]"
+          className="grid h-11 w-11 place-items-center rounded-full border border-[var(--pitch-line)]"
           aria-label="Close"
         >
           <ChevronDown className="h-5 w-5" />
@@ -49,14 +52,16 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
         <div className="text-mono text-[10px] uppercase tracking-[0.22em] text-[var(--lime)]">
           Now playing
         </div>
-        <div className="h-9 w-9" />
+        <div className="h-11 w-11" />
       </div>
 
-      <div className="mt-12">
+      <div className="mt-[clamp(16px,6dvh,48px)] min-h-0">
         <div className="text-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-          {episode.format === "daily" ? `${episode.punditName} edition` : episode.competition}
+          {episode.competition}
         </div>
-        {episode.format !== "daily" && (
+        {/* The match first, the same as Today. An AI Pundit edition used to
+            show only "{pundit} edition" and a model-written headline. */}
+        {(episode.format !== "daily" || episode.matchLabel) && (
           <>
             <div className="mt-3 flex items-baseline gap-3">
               <div className="text-mono text-[64px] leading-none tabular-nums">
@@ -71,14 +76,24 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
             </div>
           </>
         )}
-        <div className="mt-6 text-2xl font-semibold leading-tight tracking-tight">
-          {episode.title}
-        </div>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{episode.hook}</p>
+        {episode.format === "daily" ? (
+          <div className="mt-5 text-lg font-semibold tracking-tight text-[var(--lime)]">
+            {episode.punditName}
+          </div>
+        ) : (
+          <>
+            <div className="mt-6 line-clamp-2 text-2xl font-semibold leading-tight tracking-tight">
+              {episode.title}
+            </div>
+            <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+              {episode.hook}
+            </p>
+          </>
+        )}
       </div>
 
-      <div className="mt-auto">
-        <div className="flex h-20 items-end justify-between gap-[3px]">
+      <div className="mt-auto shrink-0">
+        <div className="flex h-[clamp(48px,10dvh,80px)] items-end justify-between gap-[3px]">
           {wave.map((v, i) => {
             const passed = i / wave.length < progress;
             return (
@@ -102,7 +117,7 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
           <span className="tabular-nums">−{fmt(Math.max(0, episode.durationSec - elapsed))}</span>
         </div>
 
-        <div className="mt-8 flex items-center justify-center gap-10">
+        <div className="mt-[clamp(16px,4dvh,32px)] flex items-center justify-center gap-10">
           <HapticButton
             hapticPattern="swipe"
             onClick={() => playerStore.skip(-15)}
@@ -140,7 +155,7 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
               onClick={() => playerStore.setPlaybackRate(rate)}
               aria-pressed={playbackRate === rate}
               className={
-                "rounded-full border px-2.5 py-1 text-mono text-[10px] tabular-nums " +
+                "min-h-11 min-w-11 rounded-full border px-2.5 text-mono text-[11px] tabular-nums " +
                 (playbackRate === rate
                   ? "border-[var(--lime)] text-[var(--lime)]"
                   : "border-[var(--pitch-line)] text-muted-foreground")
@@ -157,7 +172,7 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
           </p>
         )}
 
-        <div className="text-mono mt-8 text-center text-[10px] uppercase tracking-[0.22em] text-muted-foreground/70">
+        <div className="text-mono mt-[clamp(12px,3dvh,32px)] text-center text-[10px] uppercase tracking-[0.22em] text-muted-foreground/70">
           AI-narrated · Full Time
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { addCalendarDays, londonDayBounds, londonLocalTime } from "@/lib/london-date";
+import { PREMIER_LEAGUE, PREMIER_LEAGUE_ID } from "@/lib/premier-league";
 import { serviceRest, serviceRpc } from "./service-rest.server";
 
 export type RunMode = "full_rehearsal" | "publication";
@@ -35,6 +36,11 @@ export async function selectFeatureMatch(coverageDate: string) {
   const { data, error } = await supabaseAdmin
     .from("matches")
     .select("id, importance_score, kickoff_at")
+    // The Premier League only. Without this the day's most important match
+    // anywhere won, and the 2026-08-31 show was Barcelona v Rayo Vallecano on
+    // a day a Premier League match was also played. A day without a finished
+    // Premier League match now fails here, before any paid step runs.
+    .eq("league_id", PREMIER_LEAGUE_ID)
     .eq("status", "finished")
     .not("home_score", "is", null)
     .not("away_score", "is", null)
@@ -44,7 +50,9 @@ export async function selectFeatureMatch(coverageDate: string) {
     .limit(20);
   if (error) throw new Error(error.message);
   const candidates = data ?? [];
-  if (!candidates.length) throw new Error(`No finished match is available for ${coverageDate}.`);
+  if (!candidates.length) {
+    throw new Error(`No finished ${PREMIER_LEAGUE.name} match is available for ${coverageDate}.`);
+  }
   const { data: contexts, error: contextError } = await supabaseAdmin
     .from("match_context")
     .select("match_id, feeds_agree")
