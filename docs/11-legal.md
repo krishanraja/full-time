@@ -32,6 +32,7 @@ Any change to collection, retention, processors, billing, rights, or disclosure 
 | Prediction and receipt records | Public accountability                  | Retained as editorial records; remove personal linkage where applicable |
 | Stripe identifiers and status  | Existing billing management            | Legal/accounting period, then deletion or minimization                  |
 | PostHog identifiers and events | Product analytics                      | Confirm project region, consent mode, and retention before launch       |
+| Google Analytics page views    | Web traffic and acquisition analytics  | Confirm consent mode and data retention setting                         |
 | Support correspondence         | Resolve requests and incidents         | Define category-specific retention before launch                        |
 
 Do not collect card data, contacts, microphone, camera, precise location, or cross-site profiles in the current product.
@@ -41,6 +42,7 @@ Do not collect card data, contacts, microphone, camera, precise location, or cro
 - document controller identity and contact route;
 - confirm UK/EU legal bases and consent behavior with counsel;
 - configure and record PostHog region, retention, cookie behavior, and opt-out;
+- configure and record Google Analytics consent mode, retention, and cookie behavior (tag `G-W2QL8RKFJ1`, loaded on every page since 2026-09-27);
 - document international transfers and processor agreements;
 - publish deletion, access, correction, portability, and objection procedures;
 - test account export and deletion end to end;
@@ -116,6 +118,7 @@ Current or retained integrations include:
 | ElevenLabs | TTS and transcription services                           | Approved script and pronunciation context; no account PII by design               |
 | Stripe     | Existing billing management and future reviewed checkout | Email, customer, subscription, and provider-held payment data                     |
 | PostHog    | Product analytics                                        | Pseudonymous usage events and request metadata                                    |
+| Google     | Web analytics (Google Analytics 4, gtag.js)              | Pseudonymous page views, referrer and device metadata, first-party `_ga` cookies  |
 | FotMob     | Second expected-goals model, read-only, unlicensed       | No data sent; match identifiers requested. See the free-to-access note above      |
 
 The CSS font stack names Geist but the current repository does not request Google Fonts or another web-font provider. Do not list a font processor unless a deployed build makes that request.

@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { hasClientSupabaseConfig } from "@/lib/supabase-availability";
 import { SITE_URL, DEFAULT_COVER_IMAGE_URL } from "@/lib/site-url";
 import { ldJson } from "@/lib/seo";
+import { GOOGLE_TAG_INIT, GOOGLE_TAG_SRC } from "@/lib/google-tag";
 
 const SITE_NAME_TITLE = "Full Time - Six AI Pundits, one real football match";
 const SITE_DESCRIPTION =
@@ -188,6 +189,13 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
+        {/* Google tag (gtag.js), top of <head> as Google asks. React 19 still
+            emits charset, viewport, preloads and stylesheets ahead of it, so
+            in the served HTML it is the first script, not the first tag. Not
+            in `head().scripts` beside PostHog: HeadContent emits those after
+            every meta tag. */}
+        <script async src={GOOGLE_TAG_SRC} />
+        <script dangerouslySetInnerHTML={{ __html: GOOGLE_TAG_INIT }} />
         <HeadContent />
       </head>
       <body>
