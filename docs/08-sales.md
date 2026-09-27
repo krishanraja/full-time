@@ -3,7 +3,7 @@
 - **Status:** Current commercial posture
 - **Owner:** Founder and business development
 - **Purpose:** Define what an agent may qualify, offer, promise, decline, and escalate before public launch.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-27
 
 ## Commercial truth
 
@@ -97,7 +97,7 @@ That is not the offer. Full Time is an original AI format with synthetic voices 
 
 ### “Can you cover our competition now?”
 
-Coverage depends on recorded data rights, identifier quality, evaluation, pronunciation, voice capacity, and daily rehearsals. The current intended beta is Premier League first, but that restriction is not yet enforced in the Teams product. No competition promise can be made without release evidence.
+Coverage depends on recorded data rights, identifier quality, evaluation, pronunciation, voice capacity, and daily rehearsals. The beta is Premier League only, enforced since 2026-09-27 across the daily pick, ingest, prediction sync, Teams, and Today (`docs/19-release-state.md`). No competition beyond Premier League can be promised without a new release decision.
 
 ### “What results can you guarantee?”
 

@@ -5,7 +5,7 @@ This handbook is the operating contract for Full Time. It serves founders, produ
 - **Status:** Current documentation index
 - **Owner:** Founder and product
 - **Purpose:** Route every reader and autonomous agent to the right source of truth.
-- **Last reviewed:** 2026-09-09
+- **Last reviewed:** 2026-09-27
 - **Production authority:** GitHub `main` plus observed behavior on the current Vercel production deployment
 
 ## Source-of-truth order

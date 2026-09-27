@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Engineering
 - **Purpose:** Provide a reliable setup path, repository map, invariants, and change checklist.
-- **Last reviewed:** 2026-09-07
+- **Last reviewed:** 2026-09-27
 
 ## Quick start
 
