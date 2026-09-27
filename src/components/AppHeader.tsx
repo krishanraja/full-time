@@ -2,25 +2,29 @@ import { Link } from "@tanstack/react-router";
 import { Wordmark } from "./Wordmark";
 
 /**
- * Persistent app shell header.
+ * Persistent app shell header, the first row of the one-screen frame.
  * - Brand mark (public app icon, served from /icon-192.png so it works on any host) + wordmark top-left.
  * - A single lime hairline anchors the bottom edge.
- * - Frosted backdrop so scrolling content reads through it. Honors the top safe-area inset.
+ * - Honors the top safe-area inset.
+ *
+ * It used to carry a hard-coded "Pre-launch" status chip that read no flag
+ * and stayed on screen for weeks after the founder launch override on
+ * 2026-09-04. It said something false and cost a row of attention, so it
+ * went rather than being corrected to "Beta".
  */
 export function AppHeader() {
   return (
     <header
-      className="sticky top-0 z-30 -mx-4 mb-2 backdrop-blur"
+      className="z-30 shrink-0"
       style={{
-        background:
-          "linear-gradient(to bottom, color-mix(in oklab, var(--background) 94%, transparent), color-mix(in oklab, var(--background) 72%, transparent))",
-        paddingTop: "max(env(safe-area-inset-top), 10px)",
+        background: "color-mix(in oklab, var(--background) 94%, transparent)",
+        paddingTop: "max(env(safe-area-inset-top), 6px)",
       }}
     >
-      <div className="flex h-14 items-center justify-between px-4">
+      <div className="mx-auto flex h-12 w-full max-w-5xl items-center justify-between px-4">
         <Link to="/" aria-label="Full Time home" className="tap inline-flex items-center gap-2">
-          <img src="/icon-192.png" alt="" aria-hidden className="h-8 w-8" draggable={false} />
-          <Wordmark className="h-[22px] w-auto" />
+          <img src="/icon-192.png" alt="" aria-hidden className="h-7 w-7" draggable={false} />
+          <Wordmark className="h-[20px] w-auto" />
         </Link>
         <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
           {[
@@ -42,12 +46,6 @@ export function AppHeader() {
             </Link>
           ))}
         </nav>
-        {/* Honest, calm status. The product is deliberately the day-after
-            moment, not live, so no real-time claim here. */}
-        <div className="text-mono inline-flex items-center text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
-          <span className="ml-2">Pre-launch</span>
-        </div>
       </div>
       <div className="h-px w-full bg-gradient-to-r from-transparent via-[color:color-mix(in_oklab,var(--lime)_45%,transparent)] to-transparent" />
     </header>

@@ -202,7 +202,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const wideLayout = pathname === "/" || pathname === "/receipts";
+  const wideLayout = pathname === "/receipts";
 
   useEffect(() => {
     if (!hasClientSupabaseConfig()) return;
@@ -218,16 +218,22 @@ function RootComponent() {
     <MotionConfig reducedMotion="user">
       <QueryClientProvider client={queryClient}>
         <CompletionToast />
-        <div
-          className={`mx-auto min-h-screen w-full px-4 pb-[150px] transition-[max-width] md:pb-16 ${
-            wideLayout ? "max-w-5xl" : "max-w-md"
-          }`}
-        >
+        {/* One screen, no page scroll. The screen region can still scroll as
+            a last resort, for legal text or when a listener zooms in, but no
+            tab is allowed to need it at a phone's default size. */}
+        <div className="app-frame">
           <AppHeader />
-          <Outlet />
+          <div
+            id="screen"
+            className={`mx-auto flex min-h-0 w-full flex-1 flex-col overflow-y-auto overscroll-contain px-4 ${
+              wideLayout ? "max-w-5xl" : "max-w-md"
+            }`}
+          >
+            <Outlet />
+          </div>
+          {pathname !== "/" && <MiniPlayer />}
+          <BottomNav />
         </div>
-        {pathname !== "/" && <MiniPlayer />}
-        <BottomNav />
       </QueryClientProvider>
     </MotionConfig>
   );

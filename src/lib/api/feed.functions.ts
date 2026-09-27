@@ -8,6 +8,12 @@ import {
   londonDayBounds,
   londonTimeLabel,
 } from "@/lib/london-date";
+import {
+  PREMIER_LEAGUE_ID,
+  clubDisplayName,
+  crestUrl,
+  currentSeasonClubs,
+} from "@/lib/premier-league";
 
 function publicClient() {
   return createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
@@ -157,13 +163,40 @@ export const getEpisode = createServerFn({ method: "GET" })
     return shape(row as unknown as EpisodeRow);
   });
 
-export const getTeamsAndLeagues = createServerFn({ method: "GET" }).handler(async () => {
+/** The twenty clubs of the current Premier League season, for Teams.
+ *
+ *  It used to return every stored team and league: 120 clubs from five
+ *  leagues, from 1. FC Heidenheim to Wolves, on a product that covers one.
+ *  The current season is the latest one any Premier League match is stored
+ *  under, and the clubs are the ones that play in it, which drops relegated
+ *  clubs still carrying the league id (`currentSeasonClubs`). */
+export const getPremierLeagueClubs = createServerFn({ method: "GET" }).handler(async () => {
   const sb = publicClient();
-  const [teamsRes, leaguesRes] = await Promise.all([
-    sb.from("teams").select("id, name, short, league_id, color").order("name"),
-    sb.from("leagues").select("id, name, country").order("name"),
+  const latest = await sb
+    .from("matches")
+    .select("season")
+    .eq("league_id", PREMIER_LEAGUE_ID)
+    .not("season", "is", null)
+    .order("season", { ascending: false })
+    .limit(1);
+  if (latest.error) throw new Error(latest.error.message);
+  const season = latest.data?.[0]?.season;
+  if (season == null) return { season: null, clubs: [] };
+  const [teamsRes, matchesRes] = await Promise.all([
+    sb.from("teams").select("id, name, crest_url").eq("league_id", PREMIER_LEAGUE_ID),
+    sb
+      .from("matches")
+      .select("home_team_id, away_team_id")
+      .eq("league_id", PREMIER_LEAGUE_ID)
+      .eq("season", season)
+      .limit(1000),
   ]);
   if (teamsRes.error) throw new Error(teamsRes.error.message);
-  if (leaguesRes.error) throw new Error(leaguesRes.error.message);
-  return { teams: teamsRes.data ?? [], leagues: leaguesRes.data ?? [] };
+  if (matchesRes.error) throw new Error(matchesRes.error.message);
+  const clubs = currentSeasonClubs(teamsRes.data ?? [], matchesRes.data ?? []).map((team) => ({
+    id: team.id,
+    name: clubDisplayName(team.name),
+    crestUrl: crestUrl(team.crest_url),
+  }));
+  return { season, clubs };
 });

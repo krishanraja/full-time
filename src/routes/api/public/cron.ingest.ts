@@ -15,6 +15,7 @@ import { apiFootballClient } from "@/lib/api/api-football.server";
 import { matchImportance } from "@/lib/api/match-importance";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { currentCoverageDate } from "@/lib/london-date";
+import { PREMIER_LEAGUE } from "@/lib/premier-league";
 import {
   hasStat,
   statLabels,
@@ -43,12 +44,20 @@ const STAT_FIELDS = [
   ["offsides", "Offsides"],
 ] as const;
 
+/** The Premier League only (`src/lib/premier-league.ts`). Five leagues were
+ *  ingested until 2026-09-27, and enrichment below takes the TOP_N fixtures
+ *  across all of them, so on a busy weekend Premier League matches were left
+ *  without events or statistics: three of four on 2026-08-29. With the daily
+ *  pick now restricted to the Premier League, an unenriched pick would spend a
+ *  full run on a thin evidence pack. */
 const LEAGUES = [
-  { afId: 39, id: "af_39", name: "Premier League", country: "England", fd: "PL" },
-  { afId: 140, id: "af_140", name: "La Liga", country: "Spain", fd: "PD" },
-  { afId: 135, id: "af_135", name: "Serie A", country: "Italy", fd: "SA" },
-  { afId: 78, id: "af_78", name: "Bundesliga", country: "Germany", fd: "BL1" },
-  { afId: 61, id: "af_61", name: "Ligue 1", country: "France", fd: "FL1" },
+  {
+    afId: PREMIER_LEAGUE.providerId,
+    id: PREMIER_LEAGUE.id,
+    name: PREMIER_LEAGUE.name,
+    country: PREMIER_LEAGUE.country,
+    fd: PREMIER_LEAGUE.footballDataCode,
+  },
 ];
 
 /** Untyped API-Football payload. The provider's response shape is wide, varies

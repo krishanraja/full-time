@@ -6,7 +6,11 @@ import { useOnComplete } from "../lib/player-store";
 export function CompletionToast({ children }: { children?: ReactNode }) {
   const [msg, setMsg] = useState<string | null>(null);
   useOnComplete((ep) => {
-    setMsg(`Done • ${ep.homeTeam} ${ep.homeScore}–${ep.awayScore} ${ep.awayTeam}`);
+    const match =
+      ep.format === "daily"
+        ? (ep.matchLabel ?? ep.punditName ?? ep.title)
+        : `${ep.homeTeam} ${ep.homeScore}-${ep.awayScore} ${ep.awayTeam}`;
+    setMsg(`Done • ${match}`);
     setTimeout(() => setMsg(null), 2200);
   });
   return (

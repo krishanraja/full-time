@@ -92,3 +92,30 @@ export function coverageDateLabel(isoDate: string): string {
     month: "long",
   }).format(new Date(`${isoDate}T12:00:00Z`));
 }
+
+/** "Sun 20 Sep": short enough to share one line with the competition name
+ *  on a phone-width scoreboard. Spelled out rather than left to Intl, whose
+ *  en-GB short month for September is "Sept" in current ICU and "Sep" in
+ *  older ones, so the label would depend on the runtime. */
+const SHORT_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const SHORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+export function coverageDateShortLabel(isoDate: string): string {
+  // A coverage date is a London calendar day; noon UTC is inside it in both
+  // GMT and BST, so the UTC fields are the London ones.
+  const date = new Date(`${isoDate}T12:00:00Z`);
+  return `${SHORT_WEEKDAYS[date.getUTCDay()]} ${date.getUTCDate()} ${SHORT_MONTHS[date.getUTCMonth()]}`;
+}

@@ -20,4 +20,8 @@ export type Episode = {
   format?: "match" | "daily";
   punditName?: string;
   script?: string;
+  /** "Man City 5-3 Sunderland" for an AI Pundit edition, so every player
+   *  surface can say which match it is. Absent when the pack carried no
+   *  fixture. */
+  matchLabel?: string;
 };

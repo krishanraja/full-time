@@ -6,13 +6,17 @@ import { applyPersonaRiskTilt } from "./predictions";
 import { serviceRest } from "./service-rest.server";
 import { PUNDIT_IDS, type AnalysisClaim, type EvidencePack, type PunditId } from "./types";
 import { apiFootballClient } from "@/lib/api/api-football.server";
+import { PREMIER_LEAGUE } from "@/lib/premier-league";
 
+/** The Premier League only, the same scope as the ingest and the daily pick
+ *  (`src/lib/premier-league.ts`). */
 const LEAGUES = [
-  { providerId: 39, id: "af_39", name: "Premier League", country: "England" },
-  { providerId: 140, id: "af_140", name: "La Liga", country: "Spain" },
-  { providerId: 135, id: "af_135", name: "Serie A", country: "Italy" },
-  { providerId: 78, id: "af_78", name: "Bundesliga", country: "Germany" },
-  { providerId: 61, id: "af_61", name: "Ligue 1", country: "France" },
+  {
+    providerId: PREMIER_LEAGUE.providerId,
+    id: PREMIER_LEAGUE.id,
+    name: PREMIER_LEAGUE.name,
+    country: PREMIER_LEAGUE.country,
+  },
 ] as const;
 
 type ProviderFixture = {

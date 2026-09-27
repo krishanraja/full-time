@@ -155,9 +155,9 @@ function setMediaSession(ep: Episode) {
   if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
   if (ep.format === "daily") {
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: ep.title,
-      artist: `${ep.punditName ?? "Full Time"} edition`,
-      album: "Full Time morning drop",
+      title: ep.matchLabel ?? ep.title,
+      artist: ep.punditName ?? "Full Time",
+      album: "Full Time",
     });
     navigator.mediaSession.setActionHandler("play", () => playerStore.toggle());
     navigator.mediaSession.setActionHandler("pause", () => playerStore.toggle());
