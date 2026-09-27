@@ -1,6 +1,6 @@
 import { AnimatePresence } from "framer-motion";
 import { Pause, Play } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { playerStore, usePlayer } from "../lib/player-store";
 import { HapticButton } from "./HapticButton";
 import { ExpandedPlayer } from "./ExpandedPlayer";
@@ -9,15 +9,19 @@ import { ExpandedPlayer } from "./ExpandedPlayer";
  * The show you started, carried onto Teams and Settings. A row of the
  * one-screen frame above the tab bar, not a card floating over content.
  *
- * It appears only once a listener has actually started a show. Loading an
- * edition (a pundit switch preloads its audio) used to be enough, so Teams
- * showed "AI Pundit show · Now playing" over a show nobody had pressed play
- * on, and named no match.
+ * It appears only once a listener has actually started a show (`started`).
+ * Loading an edition (a pundit switch preloads its audio) used to be enough,
+ * so Teams showed "AI Pundit show · Now playing" over a show nobody had
+ * pressed play on, and named no match.
  */
 export function MiniPlayer() {
-  const { episode, isPlaying, progress, status } = usePlayer();
+  const { episode, isPlaying, progress, status, started } = usePlayer();
   const [expanded, setExpanded] = useState(false);
-  if (!episode || (!isPlaying && progress === 0)) return null;
+  const visible = episode != null && started;
+  useEffect(() => {
+    if (!visible) setExpanded(false);
+  }, [visible]);
+  if (!episode || !visible) return null;
 
   const daily = episode.format === "daily";
   const headline = daily

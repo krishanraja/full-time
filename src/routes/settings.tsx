@@ -39,7 +39,7 @@ export const Route = createFileRoute("/settings")({
 const SETTINGS_SEED = "settings";
 
 const row =
-  "flex min-h-[60px] w-full items-center justify-between gap-3 px-4 py-2.5 text-left";
+  "flex min-h-[60px] w-full items-center justify-between gap-3 px-4 py-2.5 text-left [@media(max-height:620px)]:min-h-[52px] [@media(max-height:620px)]:py-1.5";
 const rowLabel = "text-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground";
 
 function PunditRow({
@@ -54,12 +54,22 @@ function PunditRow({
   return (
     <Drawer open={open} onOpenChange={setOpen} shouldScaleBackground={false}>
       <DrawerTrigger asChild>
-        <HapticButton hapticPattern="soft" className={row} aria-label={`Change AI Pundit. ${selected.name} is selected.`}>
+        <HapticButton
+          hapticPattern="soft"
+          className={row}
+          aria-label={`Change AI Pundit. ${selected.name} is selected.`}
+        >
           <span className="flex min-w-0 items-center gap-3">
-            <PunditAvatar punditId={active} editionSeed={SETTINGS_SEED} className="h-10 w-10 shrink-0 rounded-[12px]" />
+            <PunditAvatar
+              punditId={active}
+              editionSeed={SETTINGS_SEED}
+              className="h-10 w-10 shrink-0 rounded-[12px]"
+            />
             <span className="min-w-0">
               <span className={cn(rowLabel, "block")}>Your AI Pundit</span>
-              <span className="mt-0.5 block text-sm font-semibold tracking-tight">{selected.name}</span>
+              <span className="mt-0.5 block text-sm font-semibold tracking-tight">
+                {selected.name}
+              </span>
             </span>
           </span>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -82,15 +92,20 @@ function PunditRow({
             <X className="h-4 w-4" />
           </button>
         </DrawerHeader>
-        <div className="grid gap-1.5" role="radiogroup" aria-label="AI Pundits">
+        {/* Scrolls inside the sheet when six rows do not fit (a short phone
+            or zoom), so the last AI Pundits stay reachable. */}
+        <div
+          className="grid min-h-0 gap-1.5 overflow-y-auto overscroll-contain"
+          role="group"
+          aria-label="AI Pundits"
+        >
           {PERSONALITIES.map((item) => {
             const checked = item.id === active;
             return (
               <HapticButton
                 key={item.id}
                 hapticPattern="soft"
-                role="radio"
-                aria-checked={checked}
+                aria-pressed={checked}
                 onClick={() => {
                   setOpen(false);
                   if (!checked) onChoose(item.id);
@@ -102,10 +117,16 @@ function PunditRow({
                     : "border-[var(--pitch-line)] bg-[#0d1315]",
                 )}
               >
-                <PunditAvatar punditId={item.id} editionSeed={SETTINGS_SEED} className="h-10 w-10 rounded-[12px]" />
+                <PunditAvatar
+                  punditId={item.id}
+                  editionSeed={SETTINGS_SEED}
+                  className="h-10 w-10 rounded-[12px]"
+                />
                 <span className="min-w-0">
                   <strong className="block text-sm">{item.name}</strong>
-                  <small className="mt-0.5 block truncate text-xs text-muted-foreground">{item.tag}</small>
+                  <small className="mt-0.5 block truncate text-xs text-muted-foreground">
+                    {item.tag}
+                  </small>
                 </span>
                 <span
                   className={cn(
@@ -209,7 +230,9 @@ function Settings() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col py-[clamp(10px,2dvh,20px)]">
-      <h1 className="text-[28px] font-semibold leading-tight tracking-tight">Settings</h1>
+      <h1 className="text-[28px] font-semibold leading-tight tracking-tight [@media(max-height:620px)]:sr-only">
+        Settings
+      </h1>
 
       <div className="surface mt-[clamp(10px,2.4dvh,20px)] divide-y divide-[var(--pitch-line)] overflow-hidden rounded-[var(--radius-lg)]">
         <PunditRow active={personality} onChoose={choosePersonality} />
@@ -256,7 +279,9 @@ function Settings() {
             aria-pressed={notifications}
             aria-label="Morning recap notification"
             className={cn(
-              "relative h-7 w-12 shrink-0 rounded-full transition-colors",
+              // The pill is 48x28; the pseudo-element takes the tap target
+              // to 44px tall without changing how it looks.
+              "relative h-7 w-12 shrink-0 rounded-full transition-colors before:absolute before:-inset-y-2 before:inset-x-0 before:content-['']",
               notifications ? "bg-[var(--lime)]" : "bg-white/12",
               recapDisabled && "opacity-40",
             )}
@@ -293,20 +318,28 @@ function Settings() {
       {/* The disclosure docs/05-content-safety.md and docs/11-legal.md require
           in Settings: AI-written scripts from checked match data, synthetic
           voices, no copyrighted broadcast audio. Shorter, not softer. */}
-      <section className="mt-[clamp(12px,3dvh,24px)] text-xs leading-relaxed text-muted-foreground">
-        <h2 className="eyebrow mb-1.5">How Full Time works</h2>
+      <section className="mt-[clamp(8px,3dvh,24px)] text-xs leading-relaxed text-muted-foreground">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="eyebrow">How Full Time works</h2>
+          <div className="flex gap-4 text-mono text-[10px] uppercase tracking-[0.18em]">
+            <Link
+              to="/legal/privacy"
+              className="inline-flex min-h-11 items-center hover:text-foreground"
+            >
+              Privacy
+            </Link>
+            <Link
+              to="/legal/terms"
+              className="inline-flex min-h-11 items-center hover:text-foreground"
+            >
+              Terms
+            </Link>
+          </div>
+        </div>
         <p>
           AI Pundits write every show from checked, licensed match data. The voices are synthetic.
           We use no copyrighted broadcast audio.
         </p>
-        <div className="mt-1 flex gap-5 text-mono text-[10px] uppercase tracking-[0.18em]">
-          <Link to="/legal/privacy" className="inline-flex min-h-11 items-center hover:text-foreground">
-            Privacy
-          </Link>
-          <Link to="/legal/terms" className="inline-flex min-h-11 items-center hover:text-foreground">
-            Terms
-          </Link>
-        </div>
       </section>
     </div>
   );

@@ -3,6 +3,7 @@ import {
   PREMIER_LEAGUE_ID,
   clubDisplayName,
   crestUrl,
+  currentSeasonClubIds,
   currentSeasonClubs,
   isPremierLeague,
 } from "./premier-league";
@@ -74,5 +75,30 @@ describe("crestUrl", () => {
     expect(crestUrl("not a url")).toBeNull();
     expect(crestUrl(null)).toBeNull();
     expect(crestUrl("")).toBeNull();
+  });
+});
+
+describe("currentSeasonClubIds", () => {
+  const season = (year: number, clubs: number, offset = 0) =>
+    Array.from({ length: clubs / 2 }, (_, index) => ({
+      season: year,
+      home_team_id: `c${offset + index * 2}`,
+      away_team_id: `c${offset + index * 2 + 1}`,
+    }));
+
+  it("uses the newest season once all twenty clubs have played", () => {
+    expect(currentSeasonClubIds([...season(2026, 20), ...season(2025, 20, 100)])).toHaveLength(20);
+    expect(currentSeasonClubIds([...season(2026, 20), ...season(2025, 20, 100)])).toContain("c0");
+  });
+
+  it("keeps last season while the new one has only its opening fixtures", () => {
+    const ids = currentSeasonClubIds([...season(2027, 2, 200), ...season(2026, 20)]);
+    expect(ids).toHaveLength(20);
+    expect(ids).not.toContain("c200");
+  });
+
+  it("falls back to the fullest season when none has twenty", () => {
+    expect(currentSeasonClubIds([...season(2027, 4, 200), ...season(2026, 10)])).toHaveLength(10);
+    expect(currentSeasonClubIds([])).toEqual([]);
   });
 });

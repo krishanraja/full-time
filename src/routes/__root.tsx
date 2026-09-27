@@ -73,7 +73,7 @@ function siteJsonLd() {
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex flex-1 items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <p className="mt-2 text-sm text-muted-foreground">No match here. Try the home feed.</p>
@@ -223,13 +223,19 @@ function RootComponent() {
             tab is allowed to need it at a phone's default size. */}
         <div className="app-frame">
           <AppHeader />
+          {/* Full width, so a legacy page that does need the last-resort
+              scroll scrolls wherever the pointer is; the column sits inside. */}
           <div
             id="screen"
-            className={`mx-auto flex min-h-0 w-full flex-1 flex-col overflow-y-auto overscroll-contain px-4 ${
-              wideLayout ? "max-w-5xl" : "max-w-md"
-            }`}
+            className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overscroll-contain"
           >
-            <Outlet />
+            <div
+              className={`mx-auto flex w-full flex-1 flex-col px-4 ${
+                wideLayout ? "max-w-5xl" : "max-w-md"
+              }`}
+            >
+              <Outlet />
+            </div>
           </div>
           {pathname !== "/" && <MiniPlayer />}
           <BottomNav />

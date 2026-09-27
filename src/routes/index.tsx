@@ -32,12 +32,22 @@ async function fetchToday(pundit: PersonalityId, drop: string | undefined) {
 /** One pundit's show about one match. A 404 means that pundit published
  *  nothing for it, which Today prevents by only offering pundits who did. */
 async function fetchShow(drop: string, pundit: PersonalityId) {
-  const response = await fetch(
-    `/api/public/drops/${encodeURIComponent(drop)}/variants/${pundit}`,
-    { signal: AbortSignal.timeout(15_000) },
-  );
+  const response = await fetch(`/api/public/drops/${encodeURIComponent(drop)}/variants/${pundit}`, {
+    signal: AbortSignal.timeout(15_000),
+  });
   if (!response.ok) throw new Error("We could not fetch that checked show.");
   return (await response.json()) as PublicToday;
+}
+
+/** The show the listener last committed to on Today: switched to, stepped
+ *  to, or pressed play on. Module state, so it outlives the page: leaving for
+ *  Teams and coming back used to reopen on the server's pick while another
+ *  match kept playing, with no pause control on screen. Restored only while
+ *  the player still holds that exact show. */
+let committed: TodayShow | null = null;
+
+function pinnedShow(): TodayShow | null {
+  return committed && playerStore.get().episode?.id === committed.variant.id ? committed : null;
 }
 
 export const Route = createFileRoute("/")({
@@ -68,9 +78,18 @@ function Home() {
   // pundit made a show, and on whoever did when they did not.
   const [preferred, setPreferred] = useState<PersonalityId>(search.pundit ?? "zen");
   const [preferenceHydrated, setPreferenceHydrated] = useState(Boolean(search.pundit));
+  // Whether `preferred` came from this device (local storage or the device
+  // cookie) rather than the "zen" default. Only a real choice is copied to a
+  // signed-in profile: copying the default overwrote a pick made on another
+  // device the first time a listener opened Today somewhere new.
+  const [preferenceFromDevice, setPreferenceFromDevice] = useState(false);
   // What is on screen once the listener has moved: another pundit or another
   // match. Null means "whatever the Today response opened on".
-  const [view, setView] = useState<TodayShow | null>(null);
+  const [view, setViewState] = useState<TodayShow | null>(pinnedShow);
+  const setView = useCallback((show: TodayShow) => {
+    committed = show;
+    setViewState(show);
+  }, []);
   const [pending, setPending] = useState<{ dropId: string; pundit: PersonalityId } | null>(null);
   const [failed, setFailed] = useState<{
     dropId: string;
@@ -79,12 +98,15 @@ function Home() {
   } | null>(null);
   const [switchError, setSwitchError] = useState<string | null>(null);
   const preferenceRevision = useRef(0);
+  // The latest match list, read inside open() without re-creating it.
+  const matchesRef = useRef<PublicMatch[]>([]);
 
   useEffect(() => {
     if (search.pundit) return;
     const stored = validPundit(localStorage.getItem(VOICE_STYLE_STORAGE_KEY));
     if (stored) {
       setPreferred(stored);
+      setPreferenceFromDevice(true);
       setPreferenceHydrated(true);
       return;
     }
@@ -95,7 +117,10 @@ function Home() {
       .then((payload: { pundit?: string } | null) => {
         if (!active || revision !== preferenceRevision.current) return;
         const saved = validPundit(payload?.pundit);
-        if (saved) setPreferred(saved);
+        if (saved) {
+          setPreferred(saved);
+          setPreferenceFromDevice(true);
+        }
       })
       .catch(() => undefined)
       .finally(() => {
@@ -120,6 +145,7 @@ function Home() {
     retry: false,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     enabled: !useFixture && openingPundit !== null,
   });
 
@@ -127,6 +153,7 @@ function Home() {
     (pundit: PersonalityId) => {
       preferenceRevision.current += 1;
       setPreferenceHydrated(true);
+      setPreferenceFromDevice(true);
       setPreferred(pundit);
       localStorage.setItem(VOICE_STYLE_STORAGE_KEY, pundit);
       void fetch("/api/profile/pundit", {
@@ -142,7 +169,9 @@ function Home() {
   );
 
   useEffect(() => {
-    if (!preferenceHydrated || !session?.access_token || search.pundit) return;
+    if (!preferenceHydrated || !preferenceFromDevice || !session?.access_token || search.pundit) {
+      return;
+    }
     void fetch("/api/profile/pundit", {
       method: "PUT",
       headers: {
@@ -151,7 +180,7 @@ function Home() {
       },
       body: JSON.stringify({ pundit: preferred }),
     });
-  }, [preferenceHydrated, search.pundit, preferred, session?.access_token]);
+  }, [preferenceFromDevice, preferenceHydrated, search.pundit, preferred, session?.access_token]);
 
   /** Load the requested show before committing to it: the show on screen
    *  stays playable until the new one's audio is ready, and play or pause
@@ -172,11 +201,22 @@ function Home() {
               queryFn: () => fetchShow(dropId, pundit),
               staleTime: 5 * 60_000,
             });
-        const next = response ? showFrom(response) : null;
-        if (!next) throw new Error("That show is not available.");
-        await playerStore.switchEpisode(editionEpisode(next, next.fixture), {
-          autoplay: wasPlaying,
-        });
+        const found = response ? showFrom(response) : null;
+        if (!found) throw new Error("That show is not available.");
+        // The variant endpoint loses the fixture when its pack lookup fails;
+        // the match list still knows who played.
+        const next: TodayShow = found.fixture
+          ? found
+          : {
+              ...found,
+              fixture: matchesRef.current.find((match) => match.dropId === dropId)?.fixture ?? null,
+            };
+        // Already loaded: keep its place rather than restart it from 0:00.
+        if (playerStore.get().episode?.id !== next.variant.id) {
+          await playerStore.switchEpisode(editionEpisode(next, next.fixture), {
+            autoplay: wasPlaying,
+          });
+        }
         setView(next);
         if (remember) persistPreference(pundit);
       } catch (error) {
@@ -190,12 +230,16 @@ function Home() {
         setPending(null);
       }
     },
-    [pending, persistPreference, queryClient, useFixture],
+    [pending, persistPreference, queryClient, setView, useFixture],
   );
 
   const data = useFixture ? todayFixture(preferred, search.drop) : today.data;
+  matchesRef.current = data?.matches ?? [];
 
-  if (!useFixture && today.isError) {
+  // Only when there is nothing to show. A failed background refetch keeps
+  // the last good data; replacing it with this screen took away the play
+  // control while the audio kept playing.
+  if (!useFixture && today.isError && !today.data) {
     return (
       <main className="flex min-h-0 flex-1 flex-col justify-center py-4">
         <h1 className="text-[34px] font-semibold leading-none tracking-tight [text-wrap:balance]">
@@ -217,12 +261,18 @@ function Home() {
 
   if (!data) {
     return (
-      <main className="flex min-h-0 flex-1 flex-col justify-center gap-4 py-4" aria-label="Loading today's show">
+      <main
+        className="flex min-h-0 flex-1 flex-col justify-center gap-4 py-4"
+        aria-label="Loading today's show"
+      >
         <div className="h-3 w-44 animate-pulse rounded bg-[var(--lime)]/20" />
         <div className="h-[108px] animate-pulse rounded-2xl bg-white/[0.04]" />
         <div className="mt-6 grid grid-cols-6 gap-2">
           {PERSONALITIES.map((item) => (
-            <div key={item.id} className="aspect-square animate-pulse rounded-[16px] bg-white/[0.04]" />
+            <div
+              key={item.id}
+              className="aspect-square animate-pulse rounded-[16px] bg-white/[0.04]"
+            />
           ))}
         </div>
         <div className="mt-6 h-16 animate-pulse rounded-full bg-white/[0.04]" />
@@ -241,6 +291,7 @@ function Home() {
       pending={pending}
       switchError={switchError}
       onOpen={(dropId, pundit) => void open(dropId, pundit, true)}
+      onPlay={(played) => setView(played)}
       onStep={(match: PublicMatch) => {
         const pundit = editionPunditFor(match, preferred);
         if (pundit) void open(match.dropId, pundit, false);

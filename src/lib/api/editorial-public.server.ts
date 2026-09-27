@@ -436,13 +436,62 @@ async function premierLeagueMatches(include?: string): Promise<PublicMatch[]> {
   return extra && !shown.includes(extra) ? [...shown, extra] : shown;
 }
 
+/** Every published drop covering this date or later is a Premier League
+ *  match. The last one that was not, Barcelona v Rayo Vallecano, covers
+ *  2026-08-31 (read from the database on 2026-09-27), and the daily pick is
+ *  Premier League only from then on. Used only when the league cannot be
+ *  checked, so the degraded list cannot bring that show back. */
+const PREMIER_LEAGUE_ONLY_SINCE = "2026-09-01";
+
+/** The match list when the service-role pack lookup fails.
+ *
+ *  Drops and published variants are public; the pack that maps a drop to its
+ *  match is not. Without this, a service-role outage turned Today into a 503
+ *  although every show was still playable. The league is taken on trust from
+ *  the date, the scoreboard waits for the pack, and the show still plays. */
+async function unverifiedMatches(): Promise<PublicMatch[]> {
+  const drops = await publicRest<DropSummaryRow[]>(
+    `daily_drops?status=eq.published&coverage_date=gte.${PREMIER_LEAGUE_ONLY_SINCE}&select=id,coverage_date,canonical_pundit&order=coverage_date.desc&limit=${MATCH_LIMIT}`,
+  );
+  if (!drops.length) return [];
+  const variants = await publicRest<VariantPresenceRow[]>(
+    `pundit_variants?drop_id=in.(${drops.map((drop) => drop.id).join(",")})&status=eq.published&select=drop_id,pundit_id`,
+  );
+  return drops.flatMap((drop): PublicMatch[] => {
+    const published = new Set(
+      variants.filter((row) => row.drop_id === drop.id).map((row) => row.pundit_id),
+    );
+    const pundits = PUNDIT_IDS.filter((id) => published.has(id));
+    return pundits.length
+      ? [
+          {
+            dropId: drop.id,
+            coverageDate: drop.coverage_date,
+            fixture: null,
+            pundits,
+            canonicalPundit: parsePunditId(drop.canonical_pundit),
+          },
+        ]
+      : [];
+  });
+}
+
 export async function getPublicToday(pundit: PunditId, dropId?: string): Promise<PublicToday> {
   const coverageDate = currentCoverageDate();
   const [drops, matches] = await Promise.all([
     publicRest<PublicDrop[]>(
       `daily_drops?coverage_date=eq.${encodeURIComponent(coverageDate)}&select=id,coverage_date,canonical_pundit,status,published_at&limit=1`,
     ),
-    premierLeagueMatches(dropId),
+    premierLeagueMatches(dropId).catch((error: unknown) => {
+      console.error(
+        JSON.stringify({
+          level: "error",
+          message: "public_today_matches_failed",
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+      return unverifiedMatches();
+    }),
   ]);
   const drop = drops[0] ?? null;
   const featured = (dropId && matches.find((match) => match.dropId === dropId)) || matches[0];
@@ -481,7 +530,10 @@ export async function getPublicToday(pundit: PunditId, dropId?: string): Promise
   };
 }
 
-export async function getPublicVariant(dropId: string, pundit: PunditId): Promise<PublicToday | null> {
+export async function getPublicVariant(
+  dropId: string,
+  pundit: PunditId,
+): Promise<PublicToday | null> {
   const rows = await publicRest<PublicVariant[]>(
     `pundit_variants?drop_id=eq.${encodeURIComponent(dropId)}&pundit_id=eq.${pundit}&status=eq.published&select=${VARIANT_SELECT}&limit=1`,
   );

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { currentCoverageDate, londonDate, londonDayBounds, coverageDateShortLabel } from "./london-date";
+import {
+  currentCoverageDate,
+  londonDate,
+  londonDayBounds,
+  coverageDateShortLabel,
+} from "./london-date";
 
 describe("London coverage dates", () => {
   it("uses London rather than the server locale", () => {

@@ -16,7 +16,10 @@ import { editionPunditFor } from "@/lib/edition-pundit";
 const crest = (providerTeamId: number) =>
   `https://media.api-sports.io/football/teams/${providerTeamId}.png`;
 
-type FixtureMatch = PublicMatch & { fixture: PublicFixture; titles: Partial<Record<PunditId, string>> };
+type FixtureMatch = PublicMatch & {
+  fixture: PublicFixture;
+  titles: Partial<Record<PunditId, string>>;
+};
 
 const MATCHES: FixtureMatch[] = [
   {

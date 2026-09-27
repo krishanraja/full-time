@@ -1,9 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  getPublicToday,
-  isValidDropId,
-  parsePunditId,
-} from "@/lib/api/editorial-public.server";
+import { getPublicToday, isValidDropId, parsePunditId } from "@/lib/api/editorial-public.server";
 
 export const Route = createFileRoute("/api/public/drops/today")({
   server: {

@@ -3,9 +3,9 @@
 - **Status:** Current
 - **Owner:** Engineering
 - **Purpose:** Explain TanStack Start file routing and identify the exact public, compatibility, crawler, and operator surfaces.
-- **Last reviewed:** 2026-09-07
+- **Last reviewed:** 2026-09-27
 
-TanStack Start generates routes from files in this directory. Do not create `src/pages`, `app`, or a second root layout. [`__root.tsx`](./__root.tsx) owns the document shell, Today/Teams/Settings navigation, providers, shared player, and error boundaries. Never edit generated `routeTree.gen.ts`.
+TanStack Start generates routes from files in this directory. Do not create `src/pages`, `app`, or a second root layout. [`__root.tsx`](./__root.tsx) owns the document shell, the no-scroll frame, Today/Teams/Settings navigation, providers, shared player, and error boundaries. Never edit generated `routeTree.gen.ts`.
 
 ## File naming
 
@@ -26,20 +26,22 @@ Use a bare `$` for a dynamic segment. Square brackets escape a literal character
 
 Only three destinations appear in the app shell:
 
-| Label    | URL          | File            | Current purpose                                                                               |
-| -------- | ------------ | --------------- | --------------------------------------------------------------------------------------------- |
-| Today    | `/`          | `index.tsx`     | Player-first AI Pundit show, proof, recent editions, and conditional settled-record entry     |
-| Teams    | `/following` | `following.tsx` | Compatibility route for saved team and league preferences                                     |
-| Settings | `/settings`  | `settings.tsx`  | Account, AI Pundit choice, status, notifications, disclosure, and existing billing management |
+| Label    | URL          | File            | Current purpose                                                                                                                                                            |
+| -------- | ------------ | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Today    | `/`          | `index.tsx`     | One Premier League match at a time: competition and date with earlier and later chevrons, crests and score, the six AI Pundits as a rail, the player, and proof in a sheet |
+| Teams    | `/following` | `following.tsx` | The twenty clubs of the current Premier League season, with crests, to follow                                                                                              |
+| Settings | `/settings`  | `settings.tsx`  | One card of rows: AI Pundit (picker drawer), account, morning recap, and billing for existing Pro subscribers only, with the AI disclosure beneath it                      |
 
 The route remains `/following` to preserve stored links and compatibility. The user-facing label is Teams.
+
+The app is a completely no-scroll experience (Ruling, Krish, 2026-09-27). The document never scrolls: `__root.tsx` holds the header, the screen region (`#screen`), the mini player, and the tab bar in normal flow inside the `app-frame` utility (100dvh, with a 100vh fallback, in `src/styles.css`). `#screen` scrolls only as a last resort, for legal text or zoom. The mini player appears off Today once a show has been started and names the match. Legacy direct-URL routes (`/receipts`, `/archive`, `/episode/:id`, `/pro`, `/waitlist`, and the legal pages) were not re-laid-out and scroll inside the screen region.
 
 ## Other product routes
 
 | URL              | File                | Current state                                                                                    |
 | ---------------- | ------------------- | ------------------------------------------------------------------------------------------------ |
 | `/feed`          | `feed.tsx`          | Redirects to Today; no standalone Feed page                                                      |
-| `/receipts`      | `receipts.tsx`      | Unlisted legacy searchable prediction ledger; replacement with settled-only track record pending |
+| `/receipts`      | `receipts.tsx`      | Unlisted legacy searchable prediction ledger with no in-app entry; settled-only replacement pending |
 | `/episode/:id`   | `episode.$id.tsx`   | Legacy shareable episode and transcript page                                                     |
 | `/archive`       | `archive.tsx`       | Signed-in labelled archive/demo browser; on-demand narration off unless `ENABLE_LEGACY_DAILY_DROP=true`, and the server reports availability |
 | `/auth`          | `auth.tsx`          | Optional magic-link authentication                                                               |
@@ -59,23 +61,23 @@ The route remains `/following` to preserve stored links and compatibility. The u
 
 ## Public AI Pundit API
 
-| Method and URL                               | File                                       | Response job                                                                       |
-| -------------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------- |
-| `GET /api/public/pundits`                    | `api/public/pundits.ts`                    | Six versioned AI Pundit specs with public fields                                   |
-| `GET /api/public/drops/today?pundit=<id>`    | `api/public/drops.today.ts`                | Current, same-pundit latest fallback, match/team IDs, proof cards, recent editions |
-| `GET /api/public/drops/:id/variants/:pundit` | `api/public/drops.$id.variants.$pundit.ts` | Shareable published variant with the same proof projection                         |
-| `GET /api/public/pundits/:id/predictions`    | `api/public/pundits.$id.predictions.ts`    | Compatibility prediction list; scores hidden unless enabled                        |
-| `GET /api/public/pundits/:id/receipts`       | `api/public/pundits.$id.receipts.ts`       | Settled, judgeable records only                                                    |
-| `PUT /api/profile/pundit`                    | `api/profile/pundit.ts`                    | Anonymous cookie or authenticated profile preference                               |
-| `POST /api/stripe/webhook`                   | `api/stripe/webhook.ts`                    | Existing billing state synchronization                                             |
+| Method and URL                                          | File                                       | Response job                                                |
+| ------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------- |
+| `GET /api/public/pundits`                               | `api/public/pundits.ts`                    | Six versioned AI Pundit specs with public fields            |
+| `GET /api/public/drops/today?pundit=<id>[&drop=<uuid>]` | `api/public/drops.today.ts`                | Current variant, or `latest`: the newest Premier League match's edition (or the `drop` parameter's match), by the requested AI Pundit, else the canonical one, else the first that published; match/team IDs, fixture with crests, proof cards, and `matches` (Premier League matches with a published show, newest first, at most eight, each with who published). `recent` is removed |
+| `GET /api/public/drops/:id/variants/:pundit`            | `api/public/drops.$id.variants.$pundit.ts` | Shareable published variant with the same proof projection  |
+| `GET /api/public/pundits/:id/predictions`               | `api/public/pundits.$id.predictions.ts`    | Compatibility prediction list; scores hidden unless enabled |
+| `GET /api/public/pundits/:id/receipts`                  | `api/public/pundits.$id.receipts.ts`       | Settled, judgeable records only                             |
+| `PUT /api/profile/pundit`                               | `api/profile/pundit.ts`                    | Anonymous cookie or authenticated profile preference        |
+| `POST /api/stripe/webhook`                              | `api/stripe/webhook.ts`                    | Existing billing state synchronization                      |
 
-Unknown AI Pundit IDs and malformed drop IDs return `400`. Missing published variants return `404`. Current-drop service failures return `503` rather than fabricated content.
+Unknown AI Pundit IDs and malformed drop IDs return `400`. On the Today endpoint, a malformed or unshowable `drop` is ignored and Today opens on the newest Premier League match. Missing published variants return `404`. Current-drop service failures return `503` rather than fabricated content.
 
 ## Protected operator API
 
 | Endpoint                             | Purpose                                                                                |
 | ------------------------------------ | -------------------------------------------------------------------------------------- |
-| `/api/public/cron/ingest`            | Scheduled structured-data ingest and settlement                                        |
+| `/api/public/cron/ingest`            | Scheduled Premier League ingest and settlement                                         |
 | `/api/public/cron/daily-drop`        | Disabled legacy recovery generator                                                     |
 | `/api/internal/daily-rehearsal`      | Durable six-variant workflow                                                           |
 | `/api/internal/preflight`            | Free check of everything a paid run needs before it starts                             |
@@ -93,8 +95,8 @@ Internal and cron handlers use the shared timing-safe bearer validator and a fea
 
 ## Known route gaps
 
-- Teams still fetches all stored leagues and teams. The three-team prompt and the personalised-feed promise were removed in `407be64`; it does not yet implement Premier-League-only availability.
-- `/receipts` still calls the broader predictions endpoint and renders search, filters, open-state logic, and technical score cards. Today itself uses the settled-only endpoint before linking.
+- `/receipts` still calls the broader predictions endpoint and renders search, filters, open-state logic, and technical score cards. Today no longer links to it (removed 2026-09-27), so it has no in-app entry.
+- Legacy direct-URL routes (`/receipts`, `/archive`, `/episode/:id`, `/pro`, `/waitlist`, and the legal pages) were not re-laid-out for the no-scroll frame and scroll inside the screen region.
 - Several legacy archive, episode, waitlist, and legal copy surfaces predate the final AI Pundit language pass.
 
 Record a gap in `docs/product-state.json` until code and live readback close it.

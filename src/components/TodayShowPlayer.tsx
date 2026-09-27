@@ -188,7 +188,7 @@ function ProofSheet({ cards, punditName }: { cards: PublicProofCard[]; punditNam
         </button>
       </DrawerTrigger>
       <DrawerContent className="mx-auto max-h-[86dvh] max-w-[560px] rounded-t-[28px] border-[var(--pitch-line)] bg-card px-4 pb-[max(20px,env(safe-area-inset-bottom))]">
-        <DrawerHeader className="grid grid-cols-[1fr_44px] items-start gap-3 px-0 pb-3 pt-4 text-left">
+        <DrawerHeader className="grid shrink-0 grid-cols-[1fr_44px] items-start gap-3 px-0 pb-3 pt-4 text-left">
           <div>
             <DrawerTitle className="text-[22px] leading-tight">Show me why</DrawerTitle>
             <DrawerDescription className="mt-1 text-[13px]">
@@ -204,34 +204,38 @@ function ProofSheet({ cards, punditName }: { cards: PublicProofCard[]; punditNam
             <X className="h-4 w-4" />
           </button>
         </DrawerHeader>
+        {/* The sheet is capped at 86dvh. On a short phone or at high zoom a
+            long card scrolls inside it, so Back and Next stay reachable. */}
         {card && (
-          <article className="rounded-2xl border border-[var(--pitch-line)] bg-[#0d1315] p-4 text-[14px] leading-[1.45]">
-            <p className="text-mono text-[10px] uppercase tracking-[0.11em] text-[var(--lime)]">
-              The claim
-            </p>
-            <p className="mt-1 line-clamp-4">{card.claim}</p>
-            <p className="mt-3 text-mono text-[10px] uppercase tracking-[0.11em] text-[var(--lime)]">
-              The match fact
-            </p>
-            <ul className="mt-1 list-disc space-y-1 pl-5">
-              {card.evidence.map((line) => (
-                <li key={line} className="line-clamp-2">
-                  {line}
-                </li>
-              ))}
-            </ul>
-            {card.boundary && (
-              <>
-                <p className="mt-3 text-mono text-[10px] uppercase tracking-[0.11em] text-[var(--lime)]">
-                  What this cannot prove
-                </p>
-                <p className="mt-1 line-clamp-3 text-muted-foreground">{card.boundary}</p>
-              </>
-            )}
-          </article>
+          <div className="min-h-0 overflow-y-auto overscroll-contain">
+            <article className="rounded-2xl border border-[var(--pitch-line)] bg-[#0d1315] p-4 text-[14px] leading-[1.45]">
+              <p className="text-mono text-[10px] uppercase tracking-[0.11em] text-[var(--lime)]">
+                The claim
+              </p>
+              <p className="mt-1 line-clamp-4">{card.claim}</p>
+              <p className="mt-3 text-mono text-[10px] uppercase tracking-[0.11em] text-[var(--lime)]">
+                The match fact
+              </p>
+              <ul className="mt-1 list-disc space-y-1 pl-5">
+                {card.evidence.map((line) => (
+                  <li key={line} className="line-clamp-2">
+                    {line}
+                  </li>
+                ))}
+              </ul>
+              {card.boundary && (
+                <>
+                  <p className="mt-3 text-mono text-[10px] uppercase tracking-[0.11em] text-[var(--lime)]">
+                    What this cannot prove
+                  </p>
+                  <p className="mt-1 line-clamp-3 text-muted-foreground">{card.boundary}</p>
+                </>
+              )}
+            </article>
+          </div>
         )}
         {cards.length > 1 && (
-          <div className="mt-3 flex items-center justify-between">
+          <div className="mt-3 flex shrink-0 items-center justify-between">
             <button
               type="button"
               onClick={() => setIndex((value) => Math.max(0, value - 1))}
@@ -265,6 +269,7 @@ export function TodayShowPlayer({
   pending,
   switchError,
   onOpen,
+  onPlay,
   onStep,
   onRetry,
 }: {
@@ -275,16 +280,15 @@ export function TodayShowPlayer({
   switchError: string | null;
   /** Open another pundit's show about the match on screen. */
   onOpen: (dropId: string, pundit: PunditId) => void;
+  /** The listener pressed play on the show on screen: pin it there. */
+  onPlay: (show: TodayShow) => void;
   /** Move to an earlier or later match. */
   onStep: (match: PublicMatch) => void;
   onRetry: () => void;
 }) {
   const player = usePlayer();
   const [notice, setNotice] = useState<string | null>(null);
-  const episode = useMemo(
-    () => (show ? editionEpisode(show, show.fixture) : null),
-    [show],
-  );
+  const episode = useMemo(() => (show ? editionEpisode(show, show.fixture) : null), [show]);
   useEffect(() => setNotice(null), [show?.variant.id]);
 
   if (!show || !episode) {
@@ -356,7 +360,8 @@ export function TodayShowPlayer({
           <div className="flex items-center justify-between gap-2">
             <StepButton target={earlier} direction="earlier" disabled={busy} onStep={onStep} />
             <p className="eyebrow min-w-0 truncate text-center tracking-[0.14em]">
-              {fixture?.competition ?? "Premier League"} · {coverageDateShortLabel(match.coverageDate)}
+              {fixture?.competition ?? "Premier League"} ·{" "}
+              {coverageDateShortLabel(match.coverageDate)}
             </p>
             <StepButton target={later} direction="later" disabled={busy} onStep={onStep} />
           </div>
@@ -369,10 +374,7 @@ export function TodayShowPlayer({
           )}
         </section>
 
-        <section
-          aria-labelledby="pundit-rail-label"
-          className="mt-[clamp(10px,3.6dvh,44px)]"
-        >
+        <section aria-labelledby="pundit-rail-label" className="mt-[clamp(10px,3.6dvh,44px)]">
           <p
             id="pundit-rail-label"
             className="text-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground"
@@ -380,7 +382,7 @@ export function TodayShowPlayer({
             Pick your AI Pundit
           </p>
           <div
-            role="radiogroup"
+            role="group"
             aria-labelledby="pundit-rail-label"
             className="mt-[clamp(6px,1.4dvh,10px)] grid grid-cols-6 gap-[clamp(6px,2vw,10px)]"
           >
@@ -392,8 +394,7 @@ export function TodayShowPlayer({
                 <HapticButton
                   key={item.id}
                   hapticPattern="soft"
-                  role="radio"
-                  aria-checked={checked}
+                  aria-pressed={checked}
                   aria-disabled={!available || busy}
                   aria-label={available ? item.name : `${item.name}, no show for this match`}
                   onClick={() => {
@@ -435,7 +436,14 @@ export function TodayShowPlayer({
           <div className="grid grid-cols-[64px_1fr] items-center gap-3.5">
             <HapticButton
               hapticPattern="success"
-              onClick={() => (active ? playerStore.toggle() : playerStore.play(episode, [episode]))}
+              onClick={() => {
+                if (active) {
+                  playerStore.toggle();
+                  return;
+                }
+                onPlay(show);
+                playerStore.play(episode, [episode]);
+              }}
               disabled={busy}
               className="grid h-16 w-16 place-items-center rounded-full border-0 bg-[var(--lime)] text-[#09100c] shadow-[0_10px_28px_rgba(99,255,63,.16)] disabled:opacity-60"
               aria-label={

@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Engineering and product
 - **Purpose:** Let a new technical or commercial agent find current truth, act safely, and leave an auditable handoff.
-- **Last reviewed:** 2026-09-07
+- **Last reviewed:** 2026-09-27
 
 ## Start here
 
@@ -33,8 +33,10 @@ Full Time is an AI-native football audio product in live beta by founder overrid
 - `/feed`: redirects to Today
 - Reporter RSS: retained
 - Generated avatars: deterministic SVGs seeded by drop and AI Pundit IDs
-- Teams gap: label changed and the personalisation promise removed (`407be64`); beta league restriction and ordering not complete
-- Track-record gap: Today uses settled-only availability, direct `/receipts` still uses the legacy ledger UI
+- Scope: Premier League only across the daily pick, ingest, prediction sync, Teams, and Today (Ruling, Krish, 2026-09-27; `src/lib/premier-league.ts`)
+- Teams: the twenty clubs of the current Premier League season (`getPremierLeagueClubs`), no league rows; older follows stay stored and out of the count
+- Today: one Premier League match at a time, with crests, score, and the six AI Pundits as a rail; the app never scrolls (Ruling, Krish, 2026-09-27)
+- Track-record gap: Today no longer carries an entry, and direct `/receipts` still uses the legacy ledger UI with no in-app entry
 - Production schema target: Supabase project `hzadscrqmyilbisexvyz`
 - Live and external blockers: [`19-release-state.md`](./19-release-state.md)
 
@@ -63,7 +65,7 @@ Full Time is an AI-native football audio product in live beta by founder overrid
 | AI Pundit public copy             | `PersonalitySelector.tsx`, `01-brand.md`                                                 |
 | Generated avatars                 | `PunditAvatar.tsx`, `pundit/avatar-model.ts`                                             |
 | Public current-drop API and proof | `editorial-public.server.ts`, its tests, public drop routes                              |
-| Teams                             | `following.tsx`, `feed.functions.ts`, `follow-store.ts`                                  |
+| Teams                             | `following.tsx`, `feed.functions.ts`, `follow-store.ts`, `premier-league.ts`             |
 | Track record                      | `receipts.tsx`, public predictions and receipts routes                                   |
 | Evidence or claims                | `src/lib/pundit/evidence.ts`, `claim-lab.ts`                                             |
 | AI Pundit behavior                | `src/lib/pundit/specs.ts`                                                                |

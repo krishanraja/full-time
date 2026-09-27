@@ -3,7 +3,7 @@
 - **Status:** Current operating posture; final launch requires qualified counsel
 - **Owner:** Founder and legal
 - **Purpose:** Record data, rights, disclosure, billing, processor, and incident requirements.
-- **Last reviewed:** 2026-09-21
+- **Last reviewed:** 2026-09-27
 
 > This document is an internal operating record, not legal advice.
 
@@ -72,9 +72,18 @@ The product:
 - uses commercially licensed synthetic voices selected through full-length testing;
 - preserves source permission, attribution, and expiry in `research_sources`;
 - avoids living-pundit style and voice imitation;
-- does not use broadcast audio, highlight footage, transcripts, club crests, league marks, or broadcaster marks without permission.
+- does not use broadcast audio, highlight footage, transcripts, league marks, or broadcaster marks without permission;
+- shows club crests from the data provider's public imagery without permission, by founder ruling (below).
 
 NotebookLM is an internal research workbench. It is not a production writer or a substitute for source rights.
+
+### Club crests, from 2026-09-27
+
+Ruling (Krish, 2026-09-27): show club crests from the provider's public imagery, accepting the trademark exposure. This replaces the earlier rule that no club crest is used without recorded permission.
+
+What that means in plain terms. A club crest is the club's mark. No club granted permission and none was sought. The image is API-Football's team logo, stored by the ingest as `teams.crest_url` and rendered by `src/components/ClubCrest.tsx` beside the club's name on Today and Teams. It is decorative, carries no alt text, and a crest that fails to load leaves an empty square. `crestUrl` in `src/lib/premier-league.ts` passes only an https URL to an image tag.
+
+What stays prohibited. League marks, the Premier League logo included, and broadcaster marks are still not used; the competition is named in text only. If the posture changes, crests are removed in one place, because every crest on screen goes through `ClubCrest`.
 
 ## AI disclosure
 

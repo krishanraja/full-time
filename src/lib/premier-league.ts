@@ -76,8 +76,38 @@ export function currentSeasonClubs<T extends ClubRow>(
   teams: readonly T[],
   seasonMatches: readonly SeasonMatchRow[],
 ): T[] {
-  const playing = new Set(seasonMatches.flatMap((match) => [match.home_team_id, match.away_team_id]));
+  const playing = new Set(
+    seasonMatches.flatMap((match) => [match.home_team_id, match.away_team_id]),
+  );
   return teams
     .filter((team) => playing.has(team.id))
     .sort((a, b) => clubDisplayName(a.name).localeCompare(clubDisplayName(b.name), "en-GB"));
+}
+
+/** The Premier League has twenty clubs. A season with fewer stored is not
+ *  finished loading, not smaller. */
+export const PREMIER_LEAGUE_CLUBS = 20;
+
+/** Which stored season's clubs to show when there is no standings snapshot.
+ *
+ *  Matches are stored one finished day at a time, so a new season holds two
+ *  clubs after its Friday opener and all twenty only once every club has
+ *  played: on 2026-08-22 this season held 10. The newest season is used
+ *  once it holds all twenty; until then the previous one is, which is closer
+ *  to right than a list with half the league missing. */
+export function currentSeasonClubIds(
+  seasonMatches: ReadonlyArray<SeasonMatchRow & { season: number | null }>,
+): string[] {
+  const bySeason = new Map<number, Set<string>>();
+  for (const match of seasonMatches) {
+    if (match.season == null) continue;
+    const clubs = bySeason.get(match.season) ?? new Set<string>();
+    clubs.add(match.home_team_id);
+    clubs.add(match.away_team_id);
+    bySeason.set(match.season, clubs);
+  }
+  const seasons = [...bySeason.entries()].sort((a, b) => b[0] - a[0]);
+  const complete = seasons.find(([, clubs]) => clubs.size >= PREMIER_LEAGUE_CLUBS);
+  const fullest = [...seasons].sort((a, b) => b[1].size - a[1].size)[0];
+  return [...((complete ?? fullest)?.[1] ?? [])];
 }

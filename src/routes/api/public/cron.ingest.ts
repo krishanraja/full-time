@@ -677,6 +677,24 @@ async function handleIngest({ request }: { request: Request }) {
       const payload = await af(`/standings?league=${lg.afId}&season=${SEASON}`);
       // The provider nests groups one level deeper than a single league needs.
       const groups: Json[][] = payload[0]?.league?.standings ?? [];
+      // Every club in the table gets a team row, so a promoted club has a
+      // name and a crest on Teams before its first match is stored.
+      const tableTeams: TeamRow[] = groups.flat().flatMap((entry: Json) =>
+        entry?.team?.id && entry.team.name
+          ? [
+              {
+                id: `af_${entry.team.id}`,
+                name: entry.team.name,
+                short: short(entry.team.name),
+                league_id: lg.id,
+                crest_url: entry.team.logo ?? null,
+              },
+            ]
+          : [],
+      );
+      if (tableTeams.length) {
+        await supabaseAdmin.from("teams").upsert(tableTeams, { onConflict: "id" });
+      }
       const rows = groups.flat().flatMap((entry: Json) => {
         const teamId = entry?.team?.id;
         if (!teamId) return [];
