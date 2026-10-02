@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Founder and product
 - **Purpose:** Define the product, its user promise, evidence boundary, and launch standard.
-- **Last reviewed:** 2026-09-27
+- **Last reviewed:** 2026-10-02
 
 ## Product in one sentence
 
@@ -61,7 +61,7 @@ No output may imitate a living pundit's recognizable wording, style, or vocal id
 
 ## Generated visual identity
 
-Each AI Pundit has an abstract motif. The current player combines the drop ID and AI Pundit ID to generate stable SVG geometry for that edition. A new edition can look different; the same edition does not flicker into a new identity on reload.
+Each AI Pundit has a screenprint-style cover on its own paper colour, and Today draws the match as an engraved seal in the two clubs' colours with each club's floodlight behind it. All three are generated from the drop ID, the score, and the clubs as stable SVG for that match. A new match looks different; the same match does not flicker into a new identity on reload. [`01-brand.md`](01-brand.md) describes each piece.
 
 This is procedural generation in product code. It is not request-time image-model generation and must not be described as a photoreal person, digital human, or licensed likeness.
 

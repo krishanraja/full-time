@@ -98,9 +98,9 @@
       "The Private verification waitlist card, the Pro upsell priced at checkout while checkout is disabled, and six tall AI Pundit cards were removed on 2026-09-27."
     ],
     "avatars": [
-      "Every AI Pundit has a distinct abstract visual motif.",
-      "The visual is generated deterministically from the daily-drop ID and AI Pundit ID, so it changes by edition without changing during one edition.",
-      "The current implementation generates SVG geometry in the browser. It does not call an image model at request time."
+      "Every AI Pundit has a screenprint-style cover on its own paper colour, generated from the drop ID, the score, and the clubs' colours (since 2026-10-02; it replaced the orbit avatar).",
+      "Today draws the match as an engraved seal in the two clubs' colours around a 90-minute track, with each club's floodlight behind it. Both are generated from the drop ID and the score, so they change by match without changing during one match.",
+      "All of it is deterministic SVG built in product code; the covers and the seal's plate and track render on the server, the seal's weave and the atmosphere in the browser. Nothing calls an image model at request time."
     ],
     "personalization": [
       "All six AI Pundits are free and selectable without an account.",
@@ -237,8 +237,10 @@
       "src/lib/pundit/specs.ts"
     ],
     "avatars": [
-      "src/components/PunditAvatar.tsx",
-      "src/lib/pundit/avatar-model.ts"
+      "src/lib/pundit-cover.ts",
+      "src/lib/match-seal.ts",
+      "src/lib/match-atmosphere.ts",
+      "src/lib/club-colours.ts"
     ],
     "teams": [
       "src/routes/following.tsx",

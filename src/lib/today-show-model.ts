@@ -90,6 +90,8 @@ export function editionEpisode(
     awayScore: fixture?.awayScore ?? 0,
     competition: fixture?.competition ?? "Premier League",
     matchLabel: matchLabel(fixture) ?? undefined,
+    punditId: edition.variant.pundit_id,
+    coverSeed: edition.variant.drop_id,
     durationSec: edition.variant.audio_duration_sec ?? 0,
     audioUrl:
       edition.variant.audio_url === "__fixture_audio__"

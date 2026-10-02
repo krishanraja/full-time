@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Engineering and product
 - **Purpose:** Let a new technical or commercial agent find current truth, act safely, and leave an auditable handoff.
-- **Last reviewed:** 2026-09-27
+- **Last reviewed:** 2026-10-02
 
 ## Start here
 
@@ -63,7 +63,7 @@ Full Time is an AI-native football audio product in live beta by founder overrid
 | --------------------------------- | ---------------------------------------------------------------------------------------- |
 | Today UI and switching            | `src/routes/index.tsx`, `src/components/TodayShowPlayer.tsx`, `src/lib/player-store.ts`  |
 | AI Pundit public copy             | `PersonalitySelector.tsx`, `01-brand.md`                                                 |
-| Generated avatars                 | `PunditAvatar.tsx`, `pundit/avatar-model.ts`                                             |
+| Generated visuals                 | `pundit-cover.ts`, `match-seal.ts`, `match-atmosphere.ts`                                |
 | Public current-drop API and proof | `editorial-public.server.ts`, its tests, public drop routes                              |
 | Teams                             | `following.tsx`, `feed.functions.ts`, `follow-store.ts`, `premier-league.ts`             |
 | Track record                      | `receipts.tsx`, public predictions and receipts routes                                   |

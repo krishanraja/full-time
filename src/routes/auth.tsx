@@ -17,8 +17,7 @@ export const Route = createFileRoute("/auth")({
     pageSeo({
       path: "/auth",
       title: "Sign in • Full Time",
-      description:
-        "Magic-link sign in. No password.",
+      description: "Magic-link sign in. No password.",
       noindex: true,
     }),
   component: AuthPage,
@@ -51,21 +50,21 @@ function AuthPage() {
     <div className="pb-6 pt-4">
       <button
         onClick={() => navigate({ to: "/settings" })}
-        className="text-mono mb-6 text-[10px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
+        className="-ml-1 mb-3 min-h-11 px-1 text-[14px] text-ink-2 hover:text-foreground"
       >
         ← Back
       </button>
       <div className="eyebrow">Account</div>
-      <h1 className="mt-2 text-[30px] font-semibold leading-tight tracking-tight">
+      <h1 className="serif mt-2 text-[clamp(34px,10vw,46px)] leading-[1.02]">
         Sync across devices.
       </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Optional and free. Unlocks all six pundits and saves your follows, voice, and
-        notification preference across devices.
+      <p className="mt-3 max-w-[38ch] text-[15px] leading-relaxed text-ink-2">
+        Optional and free. Unlocks all six pundits and saves your follows, voice, and notification
+        preference across devices.
       </p>
 
       {sent ? (
-        <div className="mt-8 rounded-[var(--radius-lg)] border border-[color:color-mix(in_oklab,var(--lime)_45%,transparent)] bg-[color:color-mix(in_oklab,var(--lime)_8%,transparent)] p-5 text-sm">
+        <div className="mt-8 rounded-[3px] border border-[var(--pitch-line)] bg-card p-5 text-[15px]">
           Check your inbox for the sign-in link. You can close this tab.
         </div>
       ) : (
@@ -77,11 +76,11 @@ function AuthPage() {
             placeholder="you@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="surface rounded-[var(--radius-lg)] px-4 py-3 text-sm outline-none focus:border-[var(--lime)]"
+            className="min-h-12 rounded-[3px] border border-[var(--pitch-line)] bg-card px-4 text-[15px] outline-none placeholder:text-ink-3 focus:border-foreground"
           />
           <HapticButton
             disabled={busy}
-            className="glow-lime rounded-full bg-[var(--lime)] px-5 py-3 text-sm font-semibold tracking-tight text-[var(--primary-foreground)] disabled:opacity-50"
+            className="min-h-12 rounded-[3px] bg-foreground px-5 text-[15px] font-semibold text-[var(--ground-2)] disabled:opacity-50"
           >
             {busy ? "Sending…" : "Email me a magic link"}
           </HapticButton>

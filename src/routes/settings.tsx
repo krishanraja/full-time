@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Check, ChevronRight, X } from "lucide-react";
 import { PERSONALITIES, type PersonalityId } from "@/components/PersonalitySelector";
 import { HapticButton } from "@/components/HapticButton";
-import { PunditAvatar } from "@/components/PunditAvatar";
+import { PunditCover } from "@/components/PunditCover";
 import {
   Drawer,
   DrawerContent,
@@ -40,7 +40,7 @@ const SETTINGS_SEED = "settings";
 
 const row =
   "flex min-h-[60px] w-full items-center justify-between gap-3 px-4 py-2.5 text-left [@media(max-height:620px)]:min-h-[52px] [@media(max-height:620px)]:py-1.5";
-const rowLabel = "text-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground";
+const rowLabel = "text-[11.5px] font-semibold tracking-[0.06em] text-[#b3a690]";
 
 function PunditRow({
   active,
@@ -60,25 +60,23 @@ function PunditRow({
           aria-label={`Change AI Pundit. ${selected.name} is selected.`}
         >
           <span className="flex min-w-0 items-center gap-3">
-            <PunditAvatar
-              punditId={active}
-              editionSeed={SETTINGS_SEED}
-              className="h-10 w-10 shrink-0 rounded-[12px]"
-            />
+            <span className="relative h-12 w-10 shrink-0">
+              <PunditCover punditId={active} seed={SETTINGS_SEED} />
+            </span>
             <span className="min-w-0">
               <span className={cn(rowLabel, "block")}>Your AI Pundit</span>
-              <span className="mt-0.5 block text-sm font-semibold tracking-tight">
-                {selected.name}
-              </span>
+              <span className="serif mt-0.5 block text-[19px] leading-tight">{selected.name}</span>
             </span>
           </span>
           <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
         </HapticButton>
       </DrawerTrigger>
-      <DrawerContent className="mx-auto max-h-[88dvh] max-w-[560px] rounded-t-[28px] border-[var(--pitch-line)] bg-card px-4 pb-[max(18px,env(safe-area-inset-bottom))]">
+      <DrawerContent className="mx-auto max-h-[88dvh] max-w-[560px] rounded-t-[10px] border-[var(--pitch-line)] bg-card px-4 pb-[max(18px,env(safe-area-inset-bottom))]">
         <DrawerHeader className="grid grid-cols-[1fr_44px] items-start gap-3 px-0 pb-3 pt-4 text-left">
           <div>
-            <DrawerTitle className="text-[22px] leading-tight">Pick your AI Pundit</DrawerTitle>
+            <DrawerTitle className="serif text-[28px] font-normal leading-tight">
+              Pick your AI Pundit
+            </DrawerTitle>
             <DrawerDescription className="mt-1 text-[13px]">
               Your pick changes the whole show, not only the voice.
             </DrawerDescription>
@@ -111,19 +109,17 @@ function PunditRow({
                   if (!checked) onChoose(item.id);
                 }}
                 className={cn(
-                  "grid min-h-[58px] w-full grid-cols-[40px_minmax(0,1fr)_22px] items-center gap-x-3 rounded-[14px] border px-3 py-1.5 text-left",
+                  "grid min-h-[58px] w-full grid-cols-[40px_minmax(0,1fr)_22px] items-center gap-x-3 rounded-[3px] border px-3 py-1.5 text-left",
                   checked
-                    ? "border-[color:color-mix(in_oklab,var(--lime)_55%,transparent)] bg-[color:color-mix(in_oklab,var(--lime)_10%,transparent)]"
-                    : "border-[var(--pitch-line)] bg-[#0d1315]",
+                    ? "border-foreground bg-[var(--ground-2)]"
+                    : "border-[var(--pitch-line)] bg-[var(--ground)]",
                 )}
               >
-                <PunditAvatar
-                  punditId={item.id}
-                  editionSeed={SETTINGS_SEED}
-                  className="h-10 w-10 rounded-[12px]"
-                />
+                <span className="relative h-12 w-10">
+                  <PunditCover punditId={item.id} seed={SETTINGS_SEED} />
+                </span>
                 <span className="min-w-0">
-                  <strong className="block text-sm">{item.name}</strong>
+                  <strong className="serif block text-[18px] font-normal">{item.name}</strong>
                   <small className="mt-0.5 block truncate text-xs text-muted-foreground">
                     {item.tag}
                   </small>
@@ -132,8 +128,8 @@ function PunditRow({
                   className={cn(
                     "grid h-[21px] w-[21px] place-items-center rounded-full border",
                     checked
-                      ? "border-[var(--lime)] bg-[var(--lime)] text-[#071008]"
-                      : "border-white/30 text-transparent",
+                      ? "border-foreground bg-foreground text-[var(--ground-2)]"
+                      : "border-[rgb(241_233_218/30%)] text-transparent",
                   )}
                   aria-hidden
                 >
@@ -230,11 +226,11 @@ function Settings() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col py-[clamp(10px,2dvh,20px)]">
-      <h1 className="text-[28px] font-semibold leading-tight tracking-tight [@media(max-height:620px)]:sr-only">
+      <h1 className="serif text-[clamp(30px,calc(8.3dvh-14.4px),50px)] leading-[0.95] [@media(max-height:620px)]:sr-only">
         Settings
       </h1>
 
-      <div className="surface mt-[clamp(10px,2.4dvh,20px)] divide-y divide-[var(--pitch-line)] overflow-hidden rounded-[var(--radius-lg)]">
+      <div className="mt-[clamp(10px,2.4dvh,20px)] divide-y divide-[var(--pitch-line)] overflow-hidden rounded-[3px] bg-card shadow-[inset_0_0_0_1px_rgba(241,233,218,0.06)]">
         <PunditRow active={personality} onChoose={choosePersonality} />
 
         {user ? (
@@ -248,7 +244,7 @@ function Settings() {
             <HapticButton
               hapticPattern="soft"
               onClick={() => void supabase.auth.signOut()}
-              className="min-h-11 shrink-0 px-1 text-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground"
+              className="min-h-11 shrink-0 px-1 text-[13px] font-medium text-ink-2 underline underline-offset-4"
             >
               Sign out
             </HapticButton>
@@ -257,7 +253,7 @@ function Settings() {
           <Link to="/auth" className={row}>
             <span>
               <span className={cn(rowLabel, "block")}>Account</span>
-              <span className="mt-0.5 block text-sm font-semibold tracking-tight">
+              <span className="serif mt-0.5 block text-[19px] leading-tight">
                 Sync across devices
               </span>
             </span>
@@ -270,7 +266,7 @@ function Settings() {
             <span className={cn(rowLabel, "block")}>
               {user ? "One nudge when a show is ready" : "Sign in to turn on"}
             </span>
-            <span className="mt-0.5 block text-sm font-semibold tracking-tight">Morning recap</span>
+            <span className="mt-0.5 block serif text-[19px] leading-tight">Morning recap</span>
           </span>
           <HapticButton
             hapticPattern="soft"
@@ -282,7 +278,7 @@ function Settings() {
               // The pill is 48x28; the pseudo-element takes the tap target
               // to 44px tall without changing how it looks.
               "relative h-7 w-12 shrink-0 rounded-full transition-colors before:absolute before:-inset-y-2 before:inset-x-0 before:content-['']",
-              notifications ? "bg-[var(--lime)]" : "bg-white/12",
+              notifications ? "bg-foreground" : "bg-white/12",
               recapDisabled && "opacity-40",
             )}
           >
@@ -301,13 +297,13 @@ function Settings() {
           <div className={row}>
             <span>
               <span className={cn(rowLabel, "block")}>Existing Pro account</span>
-              <span className="mt-0.5 block text-sm font-semibold tracking-tight">Billing</span>
+              <span className="mt-0.5 block serif text-[19px] leading-tight">Billing</span>
             </span>
             <HapticButton
               hapticPattern="soft"
               onClick={() => void manageBilling()}
               disabled={billingBusy}
-              className="min-h-11 shrink-0 px-1 text-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground disabled:opacity-40"
+              className="min-h-11 shrink-0 px-1 text-[13px] font-medium text-ink-2 underline underline-offset-4 disabled:opacity-40"
             >
               {billingBusy ? "Opening..." : "Manage"}
             </HapticButton>
@@ -318,10 +314,10 @@ function Settings() {
       {/* The disclosure docs/05-content-safety.md and docs/11-legal.md require
           in Settings: AI-written scripts from checked match data, synthetic
           voices, no copyrighted broadcast audio. Shorter, not softer. */}
-      <section className="mt-[clamp(8px,3dvh,24px)] text-xs leading-relaxed text-muted-foreground">
+      <section className="mt-[clamp(8px,3dvh,24px)] text-[13px] leading-relaxed text-ink-2">
         <div className="flex items-center justify-between gap-3">
           <h2 className="eyebrow">How Full Time works</h2>
-          <div className="flex gap-4 text-mono text-[10px] uppercase tracking-[0.18em]">
+          <div className="flex gap-4 text-[13px]">
             <Link
               to="/legal/privacy"
               className="inline-flex min-h-11 items-center hover:text-foreground"

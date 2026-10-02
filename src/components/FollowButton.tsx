@@ -1,15 +1,13 @@
-import { Check } from "lucide-react";
 import { useFollowed, useToggleFollow } from "../lib/follow-store";
-import { ClubCrest } from "./ClubCrest";
+import { CrestDisc } from "./CrestDisc";
 import { HapticButton } from "./HapticButton";
 import { cn } from "../lib/utils";
 
 /**
- * One club on Teams: crest, name, and whether you follow it.
- *
- * The name stays on the button when followed. It used to swap to
- * "Following", which in a grid of twenty left a listener unable to see which
- * clubs they had picked. The state is carried by colour and `aria-pressed`.
+ * One club on Teams: its crest ringed in its colour, its name, and whether
+ * you follow it. A followed club becomes a cream card with a tick, and keeps
+ * its name (it used to swap to "Following", which hid which clubs you had
+ * picked). The state is also carried by `aria-pressed`.
  */
 export function FollowButton({
   id,
@@ -30,25 +28,38 @@ export function FollowButton({
       aria-pressed={on}
       aria-label={label}
       className={cn(
-        "relative flex min-h-[clamp(46px,8.2dvh,72px)] w-full flex-col items-center justify-center gap-[clamp(2px,0.6dvh,4px)] rounded-[14px] border px-0.5 py-1 text-center transition-colors",
-        on
-          ? "border-[color:color-mix(in_oklab,var(--lime)_65%,transparent)] bg-[color:color-mix(in_oklab,var(--lime)_12%,transparent)]"
-          : "border-[var(--pitch-line)] bg-card hover:border-foreground/30",
+        "relative flex h-full min-h-11 w-full flex-col items-center justify-center gap-[clamp(3px,calc(2.2dvh-9px),8px)] px-0.5 pb-1 pt-1.5 text-center",
+        on && "rounded-[2px] bg-[#efe6d6]",
       )}
     >
       {on && (
         <span
-          className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-[var(--lime)] text-[var(--primary-foreground)]"
+          className="absolute right-1.5 top-1.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-[#16110d]"
           aria-hidden
         >
-          <Check className="h-2.5 w-2.5" strokeWidth={3.5} />
+          <svg viewBox="0 0 14 14" className="h-3.5 w-3.5">
+            <path
+              d="M4 7.2l2 2 4-4.4"
+              fill="none"
+              stroke="#F1E9DA"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </span>
       )}
-      <ClubCrest src={crest} className="h-[clamp(20px,4dvh,30px)] w-[clamp(20px,4dvh,30px)]" />
+      <CrestDisc
+        club={label}
+        crest={crest}
+        ringWidth={2}
+        plain={on}
+        className="h-[clamp(28px,5.1dvh,40px)] w-[clamp(28px,5.1dvh,40px)] [--ring-gap:1.5px] shadow-[0_1px_2px_rgba(0,0,0,0.22)]"
+      />
       <span
         className={cn(
-          "line-clamp-2 w-full text-[clamp(10px,2.8vw,12px)] font-semibold leading-[1.1] tracking-[-0.035em] hyphens-auto [overflow-wrap:normal]",
-          on ? "text-[var(--lime)]" : "text-foreground",
+          "w-full whitespace-nowrap text-[clamp(10.5px,1.65dvh,12.5px)] leading-[1.15] tracking-[0.005em]",
+          on ? "font-semibold text-[#1c1611]" : "font-medium text-ink-2",
         )}
       >
         {label}

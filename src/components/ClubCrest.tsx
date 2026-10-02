@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -7,10 +7,19 @@ import { cn } from "@/lib/utils";
  * Ruling (Krish, 2026-09-27): show club crests, accepting the trademark
  * exposure; docs/11-legal.md records it. The image is decorative beside the
  * club's name, so it carries no alt text, and a crest that fails to load
- * leaves an empty square of the same size rather than a broken-image icon or
- * a layout shift.
+ * leaves an empty square of the same size (or the `fallback`) rather than a
+ * broken-image icon or a layout shift.
  */
-export function ClubCrest({ src, className }: { src?: string | null; className?: string }) {
+export function ClubCrest({
+  src,
+  className,
+  fallback = null,
+}: {
+  src?: string | null;
+  className?: string;
+  /** Shown when there is no crest or it fails to load. */
+  fallback?: ReactNode;
+}) {
   // Keyed on the URL, so a new crest gets a fresh attempt.
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const failed = src != null && failedSrc === src;
@@ -39,7 +48,9 @@ export function ClubCrest({ src, className }: { src?: string | null; className?:
           referrerPolicy="no-referrer"
           onError={() => setFailedSrc(src)}
         />
-      ) : null}
+      ) : (
+        fallback
+      )}
     </span>
   );
 }

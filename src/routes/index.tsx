@@ -242,16 +242,16 @@ function Home() {
   if (!useFixture && today.isError && !today.data) {
     return (
       <main className="flex min-h-0 flex-1 flex-col justify-center py-4">
-        <h1 className="text-[34px] font-semibold leading-none tracking-tight [text-wrap:balance]">
+        <h1 className="serif text-[clamp(38px,11vw,50px)] leading-[0.98] [text-wrap:balance]">
           The show is having a wobble
         </h1>
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+        <p className="mt-4 text-[15px] leading-relaxed text-ink-2">
           Your saved AI Pundit is safe. Try again in a moment.
         </p>
         <button
           type="button"
           onClick={() => void today.refetch()}
-          className="mt-5 min-h-11 self-start rounded-full bg-[var(--lime)] px-5 text-sm font-semibold text-[var(--primary-foreground)]"
+          className="mt-5 min-h-11 self-start rounded-[3px] bg-foreground px-5 text-sm font-semibold text-[var(--ground-2)]"
         >
           Try again
         </button>
@@ -262,20 +262,19 @@ function Home() {
   if (!data) {
     return (
       <main
-        className="flex min-h-0 flex-1 flex-col justify-center gap-4 py-4"
+        className="flex min-h-0 flex-1 flex-col items-center justify-center gap-[clamp(16px,4dvh,40px)] py-4"
         aria-label="Loading today's show"
       >
-        <div className="h-3 w-44 animate-pulse rounded bg-[var(--lime)]/20" />
-        <div className="h-[108px] animate-pulse rounded-2xl bg-white/[0.04]" />
-        <div className="mt-6 grid grid-cols-6 gap-2">
+        <div className="h-[min(47vw,26.4dvh,206px)] w-[min(47vw,26.4dvh,206px)] animate-pulse rounded-full bg-white/[0.04]" />
+        <div className="grid w-full grid-cols-6 gap-[7px]">
           {PERSONALITIES.map((item) => (
             <div
               key={item.id}
-              className="aspect-square animate-pulse rounded-[16px] bg-white/[0.04]"
+              className="h-[clamp(48px,8.8dvh,68px)] animate-pulse rounded-[2px] bg-white/[0.04]"
             />
           ))}
         </div>
-        <div className="mt-6 h-16 animate-pulse rounded-full bg-white/[0.04]" />
+        <div className="h-[clamp(52px,7.6dvh,58px)] w-full animate-pulse rounded-full bg-white/[0.04]" />
       </main>
     );
   }

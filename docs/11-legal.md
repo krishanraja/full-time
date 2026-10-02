@@ -3,7 +3,7 @@
 - **Status:** Current operating posture; final launch requires qualified counsel
 - **Owner:** Founder and legal
 - **Purpose:** Record data, rights, disclosure, billing, processor, and incident requirements.
-- **Last reviewed:** 2026-09-27
+- **Last reviewed:** 2026-10-02
 
 > This document is an internal operating record, not legal advice.
 
@@ -130,7 +130,7 @@ Current or retained integrations include:
 | Google     | Web analytics (Google Analytics 4, gtag.js)              | Pseudonymous page views, referrer and device metadata, first-party `_ga` cookies  |
 | FotMob     | Second expected-goals model, read-only, unlicensed       | No data sent; match identifiers requested. See the free-to-access note above      |
 
-The CSS font stack names Geist but the current repository does not request Google Fonts or another web-font provider. Do not list a font processor unless a deployed build makes that request.
+Since 2026-10-02 the app uses Instrument Serif and Schibsted Grotesk, both under the SIL Open Font License 1.1, bundled from the `@fontsource` packages and served from Full Time's own origin. No request goes to Google Fonts or any other web-font provider, so there is no font processor to list.
 
 Confirm contracts, regions, retention, subprocessors, and deletion behavior before launch. The public privacy page must match reality.
 
