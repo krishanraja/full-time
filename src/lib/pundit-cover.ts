@@ -22,6 +22,7 @@ export const COVER_WIDTH = 100;
 export const COVER_HEIGHT = 118;
 
 const CREAM = "#F1E9DA";
+const HEX = /^#[0-9a-f]{6}$/i;
 
 /** Each AI Pundit's paper. */
 export const PUNDIT_HUES: Record<PunditId, string> = {
@@ -102,7 +103,9 @@ function sample(random: Random, n: number, k: number) {
  *  separates, then its primary lifted (hue and chroma kept), then its
  *  secondary, then cream. */
 export function accentFor(colours: readonly [string, string], paper: string): string {
-  const [primary, secondary] = colours;
+  // Only a plain six-digit hex reaches the markup. Today every caller passes
+  // the constant club table, but this is the one door a colour comes in by.
+  const [primary, secondary] = colours.map((c) => (HEX.test(c) ? c : CREAM));
   const candidates: string[] = [];
   if (!isNeutral(primary)) candidates.push(primary, lift(primary, 0.5, 0.84));
   if (!isNeutral(secondary)) candidates.push(secondary, lift(secondary, 0.5, 0.84));

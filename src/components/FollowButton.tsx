@@ -3,6 +3,15 @@ import { CrestDisc } from "./CrestDisc";
 import { HapticButton } from "./HapticButton";
 import { cn } from "../lib/utils";
 
+/** A ceiling on a label's width in em of Schibsted Grotesk semibold,
+ *  measured at up to 0.50em a character across a name and 0.60em inside
+ *  one long word. "Crystal Palace" on a 320px phone shrinks a little rather
+ *  than spilling past its card. */
+function labelEm(label: string) {
+  const longest = Math.max(...label.split(/\s+/).map((word) => word.length));
+  return Math.max(label.length * 0.505, longest * 0.61);
+}
+
 /**
  * One club on Teams: its crest ringed in its colour, its name, and whether
  * you follow it. A followed club becomes a cream card with a tick, and keeps
@@ -28,7 +37,7 @@ export function FollowButton({
       aria-pressed={on}
       aria-label={label}
       className={cn(
-        "relative flex h-full min-h-11 w-full flex-col items-center justify-center gap-[clamp(3px,calc(2.2dvh-9px),8px)] px-0.5 pb-1 pt-1.5 text-center",
+        "relative flex h-full min-h-11 w-full flex-col items-center justify-center gap-[clamp(3px,calc(2.2dvh-9px),8px)] px-0.5 pb-1 pt-1.5 text-center [container-type:inline-size]",
         on && "rounded-[2px] bg-[#efe6d6]",
       )}
     >
@@ -58,9 +67,12 @@ export function FollowButton({
       />
       <span
         className={cn(
-          "w-full whitespace-nowrap text-[clamp(10.5px,1.65dvh,12.5px)] leading-[1.15] tracking-[0.005em]",
+          "w-full whitespace-nowrap leading-[1.15] tracking-[0.005em]",
           on ? "font-semibold text-[#1c1611]" : "font-medium text-ink-2",
         )}
+        style={{
+          fontSize: `min(clamp(10.5px, 1.65dvh, 12.5px), calc(100cqi / ${labelEm(label).toFixed(2)}))`,
+        }}
       >
         {label}
       </span>

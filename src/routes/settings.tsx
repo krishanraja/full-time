@@ -286,8 +286,10 @@ function Settings() {
               className={cn(
                 // Anchored left: without it the button centres the knob and
                 // an off switch draws as on.
-                "absolute left-0 top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform",
-                notifications ? "translate-x-5" : "translate-x-0.5",
+                "absolute left-0 top-0.5 h-6 w-6 rounded-full shadow transition-transform",
+                // A dark knob on the cream track when on: white on cream
+                // read at 1.2:1.
+                notifications ? "translate-x-5 bg-[var(--ground-2)]" : "translate-x-0.5 bg-white",
               )}
             />
           </HapticButton>

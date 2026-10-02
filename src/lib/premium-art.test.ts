@@ -67,10 +67,14 @@ describe("AI Pundit covers", () => {
     }
   });
 
-  it("prints each pundit on its own paper", () => {
-    for (const pundit of PUNDIT_IDS) {
-      expect(coverArt(pundit, match)).toContain(`fill="${PUNDIT_HUES[pundit]}"`);
-    }
+  it("prints each pundit on its own paper, and no two share one", () => {
+    const papers = PUNDIT_IDS.map((pundit) => {
+      const art = coverArt(pundit, match);
+      // The first fill is the paper the rest is printed on.
+      return art.match(/fill="(#[0-9A-Fa-f]{6})"/)?.[1];
+    });
+    expect(papers).toEqual(PUNDIT_IDS.map((pundit) => PUNDIT_HUES[pundit]));
+    expect(new Set(papers).size).toBe(PUNDIT_IDS.length);
   });
 
   it("marks every goal in the scoring club's ink on The Gaffer's board", () => {
@@ -88,9 +92,21 @@ describe("AI Pundit covers", () => {
   });
 
   it("never builds markup from anything but numbers and fixed colours", () => {
-    expect(coverArt("zen", { ...match, seed: '"><script>alert(1)</script>' })).not.toContain(
-      "<script",
-    );
+    const hostile = '#ff0000"/><script>alert(1)</script>';
+    for (const pundit of PUNDIT_IDS) {
+      const art = coverArt(pundit, {
+        ...match,
+        seed: '"><script>alert(1)</script>',
+        homeColours: [hostile, hostile],
+        awayColours: ["#fff", hostile],
+      });
+      expect(art).not.toContain("<script");
+      expect(art).not.toContain("alert");
+      for (const [, value] of art.matchAll(/(?:fill|stroke)="([^"]*)"/g)) {
+        expect(value).toMatch(/^(#[0-9A-F]{6}|none)$/i);
+      }
+    }
+    expect(accentFor([hostile, hostile], PUNDIT_HUES.gaffer)).toMatch(/^#[0-9A-F]{6}$/i);
   });
 });
 

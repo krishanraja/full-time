@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type {
   PublicFixture,
   PublicMatch,
@@ -80,9 +80,19 @@ function personality(id: PunditId) {
   return PERSONALITIES.find((item) => item.id === id)!;
 }
 
+/** The longest word in a club's name, in em of Instrument Serif. Measured
+ *  at 0.33 to 0.44em a character for long words; 0.45 keeps a margin. */
+function longestWordEm(name: string) {
+  return Math.max(...name.split(/\s+/).map((word) => word.length)) * 0.45;
+}
+
 function Side({ name, crest, lost }: { name: string; crest?: string | null; lost: boolean }) {
+  const display = clubDisplayName(name);
   return (
-    <div className="flex flex-col items-center gap-[clamp(7px,1.3dvh,11px)] text-center">
+    // A width container: a long name wraps at its spaces, and its longest
+    // word sets a ceiling on the size (cqi), so "Bournemouth" on a 320px
+    // phone shrinks to fit rather than pushing the seal off-centre.
+    <div className="flex min-w-0 flex-col items-center gap-[clamp(7px,1.3dvh,11px)] text-center [container-type:inline-size]">
       <CrestDisc
         club={name}
         crest={crest}
@@ -91,19 +101,24 @@ function Side({ name, crest, lost }: { name: string; crest?: string | null; lost
       />
       <span
         className={cn(
-          "serif whitespace-nowrap text-[clamp(17px,calc(var(--seal)*0.102),21px)] leading-none [text-shadow:0_1px_10px_rgba(12,9,7,0.7)]",
+          "serif max-w-full leading-[1.02] [text-shadow:0_1px_10px_rgba(12,9,7,0.7)] [text-wrap:balance]",
           lost && "text-ink-2",
         )}
+        style={{
+          fontSize: `min(clamp(17px, calc(var(--seal) * 0.102), 21px), calc(100cqi / ${longestWordEm(display).toFixed(2)}))`,
+        }}
       >
-        {clubDisplayName(name)}
+        {display}
       </span>
     </div>
   );
 }
 
 /** The scoreboard: both clubs either side of the seal that holds the score.
- *  The visible board is decorative; the h1 says the same thing in words. */
-function Board({ fixture, seed }: { fixture: PublicFixture; seed: string }) {
+ *  The visible board is decorative; the h1 says the same thing in words.
+ *  Memoised: Today re-renders on every playback tick and the board only
+ *  changes with the match. */
+const Board = memo(function Board({ fixture, seed }: { fixture: PublicFixture; seed: string }) {
   const seal = useRef<HTMLDivElement>(null);
   const { homeScore: home, awayScore: away } = fixture;
   const known = home != null && away != null;
@@ -125,8 +140,12 @@ function Board({ fixture, seed }: { fixture: PublicFixture; seed: string }) {
       {/* The seal takes the height the board section was left (cqh), capped
           by the width, so it is as large as the screen allows and never
           pushes the player off a short one. */}
+      {/* minmax(0,1fr): a plain 1fr column grows to fit a name that will
+          not wrap, which pushed the seal off-centre and, at 320px, made the
+          screen scroll sideways. Below about 100px of height (a phone on its
+          side) there is no room for the seal, so the score goes on one line. */}
       <div
-        className="relative grid w-full grid-cols-[1fr_var(--seal)_1fr] items-center px-0 [--seal:min(47vw,88cqh,248px)]"
+        className="relative grid w-full grid-cols-[minmax(0,1fr)_var(--seal)_minmax(0,1fr)] items-center px-0 [--seal:min(47vw,88cqh,248px)] [@container(max-height:100px)]:hidden"
         aria-hidden
       >
         <Side name={fixture.homeTeam} crest={fixture.homeCrest} lost={known && home! < away!} />
@@ -142,9 +161,19 @@ function Board({ fixture, seed }: { fixture: PublicFixture; seed: string }) {
         </div>
         <Side name={fixture.awayTeam} crest={fixture.awayCrest} lost={known && away! < home!} />
       </div>
+      <p
+        className="serif hidden w-full items-center justify-center gap-[0.4em] whitespace-nowrap text-[clamp(18px,4.4vw,26px)] leading-none [@container(max-height:100px)]:flex"
+        aria-hidden
+      >
+        <span className="min-w-0 truncate">{clubDisplayName(fixture.homeTeam)}</span>
+        <span className="text-[1.3em] [font-variant-numeric:lining-nums]">
+          {known ? `${home}–${away}` : "v"}
+        </span>
+        <span className="min-w-0 truncate">{clubDisplayName(fixture.awayTeam)}</span>
+      </p>
     </>
   );
-}
+});
 
 function StepButton({
   target,
@@ -363,7 +392,7 @@ export function TodayShowPlayer({
       {/* The selected AI Pundit's paper washes the lower ground, faintly. */}
       <Backdrop>
         <div
-          className="absolute inset-0 transition-[background] duration-500"
+          className="absolute inset-0"
           style={{
             background: `radial-gradient(110% 34% at 50% 80%, color-mix(in srgb, ${hue} 12%, transparent), transparent 72%)`,
           }}

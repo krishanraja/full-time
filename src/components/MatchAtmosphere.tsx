@@ -8,8 +8,11 @@ type Layout = { width: number; height: number; cx: number; cy: number; radius: n
 /** The floodlit matchday layer behind the seal (`src/lib/match-atmosphere.ts`).
  *
  *  It needs the laid-out size and where the seal sits, so it measures both
- *  and redraws when either moves: rotation, browser chrome, font load.
- *  Before it measures, and without JavaScript, the ground is simply plain. */
+ *  and redraws when either changes: rotation, browser chrome, font load, a
+ *  new match, or the board section shrinking because a status line wrapped
+ *  (which moves the seal without resizing it, so watching the seal alone
+ *  missed it). Before it measures, and without JavaScript, the ground is
+ *  simply plain. */
 export function MatchAtmosphere({
   seed,
   homeTeam,
@@ -47,8 +50,17 @@ export function MatchAtmosphere({
     const observer = new ResizeObserver(measure);
     observer.observe(container);
     observer.observe(seal);
-    return () => observer.disconnect();
-  }, [sealRef]);
+    const board = seal.closest("section");
+    if (board) observer.observe(board);
+    let live = true;
+    void document.fonts?.ready.then(() => {
+      if (live) measure();
+    });
+    return () => {
+      live = false;
+      observer.disconnect();
+    };
+  }, [sealRef, homeTeam, awayTeam]);
 
   const markup = useMemo(
     () =>

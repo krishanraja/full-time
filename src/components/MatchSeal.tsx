@@ -39,6 +39,9 @@ export function MatchSeal({
         : "",
     [mounted, seed, homeTeam, awayTeam, homeScore, awayScore],
   );
+  // Memoised as one string: the parent re-renders on every playback tick,
+  // and rebuilding a hundred-kilobyte string four times a second is waste.
+  const markup = useMemo(() => sealPlate(seed) + weave + sealTrack(), [seed, weave]);
   const homeLost = known && homeScore! < awayScore!;
   const awayLost = known && awayScore! < homeScore!;
   return (
@@ -48,7 +51,7 @@ export function MatchSeal({
         className="absolute inset-0 h-full w-full overflow-visible"
         focusable="false"
         // Built only from numbers and fixed colours (match-seal.ts).
-        dangerouslySetInnerHTML={{ __html: sealPlate(seed) + weave + sealTrack() }}
+        dangerouslySetInnerHTML={{ __html: markup }}
       />
       <div className="absolute inset-0 grid grid-cols-2 items-center">
         {[

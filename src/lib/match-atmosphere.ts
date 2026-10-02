@@ -64,7 +64,10 @@ export function atmosphere(input: AtmosphereInput): string {
     `<linearGradient id="atmFv" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="${n(H)}"><stop offset="0" stop-color="#fff"/><stop offset="${fadeFrom.toFixed(3)}" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="atmMv"><rect width="${n(W)}" height="${n(H)}" fill="url(#atmFv)"/></mask>`,
   );
   s.push(
-    `<linearGradient id="atmFh"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".16" stop-color="#fff"/><stop offset=".84" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="atmMh"><rect width="${n(W)}" height="${n(H)}" fill="url(#atmFh)"/></mask>`,
+    // In user space: the default objectBoundingBox region gave the
+    // touchline (a path with no height) an empty mask, so it never drew, and
+    // cropped the LED boards' glow to their own box.
+    `<linearGradient id="atmFh" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${n(W)}" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".16" stop-color="#fff"/><stop offset=".84" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="atmMh" maskUnits="userSpaceOnUse" x="0" y="0" width="${n(W)}" height="${n(H)}"><rect width="${n(W)}" height="${n(H)}" fill="url(#atmFh)"/></mask>`,
   );
   const lamp = (id: string, x: number, colour: string, k: number) =>
     `<radialGradient id="${id}" gradientUnits="userSpaceOnUse" cx="${n(x)}" cy="${n(yFar - R * 1.35)}" r="${n(W * 1.05)}"><stop offset="0" stop-color="${colour}" stop-opacity="${(0.34 * k).toFixed(3)}"/><stop offset=".3" stop-color="${colour}" stop-opacity="${(0.16 * k).toFixed(3)}"/><stop offset=".7" stop-color="${colour}" stop-opacity="${(0.04 * k).toFixed(3)}"/><stop offset="1" stop-color="${colour}" stop-opacity="0"/></radialGradient>`;
