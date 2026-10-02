@@ -91,7 +91,9 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+// The router types a boundary error as unknown since 1.170: anything can be
+// thrown. Nothing here reads it as an Error, so the type is all that changes.
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
