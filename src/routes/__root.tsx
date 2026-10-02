@@ -91,7 +91,9 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+// The router types a boundary error as unknown since 1.170: anything can be
+// thrown. Nothing here reads it as an Error, so the type is all that changes.
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -229,13 +231,20 @@ function RootComponent() {
         {/* One screen, no page scroll. The screen region can still scroll as
             a last resort, for legal text or when a listener zooms in, but no
             tab is allowed to need it at a phone's default size. */}
-        <div className="app-frame">
+        <div className="app-frame relative">
+          {/* Behind everything: a screen's light (the floodlit match on Today,
+              the followed clubs on Teams) draws here, so it reaches the top. */}
+          <div
+            id="app-backdrop"
+            className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+            aria-hidden
+          />
           <AppHeader />
           {/* Full width, so a legacy page that does need the last-resort
               scroll scrolls wherever the pointer is; the column sits inside. */}
           <div
             id="screen"
-            className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overscroll-contain"
+            className="relative z-[1] flex min-h-0 w-full flex-1 flex-col overflow-y-auto overscroll-contain"
           >
             <div
               className={`mx-auto flex w-full flex-1 flex-col px-4 ${
@@ -247,6 +256,7 @@ function RootComponent() {
           </div>
           {pathname !== "/" && <MiniPlayer />}
           <BottomNav />
+          <div className="app-grain" aria-hidden />
         </div>
       </QueryClientProvider>
     </MotionConfig>

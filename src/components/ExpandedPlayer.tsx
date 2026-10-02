@@ -49,35 +49,32 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
         >
           <ChevronDown className="h-5 w-5" />
         </HapticButton>
-        <div className="text-mono text-[10px] uppercase tracking-[0.22em] text-[var(--lime)]">
-          Now playing
-        </div>
+        <div className="text-[12px] font-semibold tracking-[0.07em] text-ink-2">NOW PLAYING</div>
         <div className="h-11 w-11" />
       </div>
 
-      <div className="mt-[clamp(16px,6dvh,48px)] min-h-0">
-        <div className="text-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-          {episode.competition}
-        </div>
+      {/* Sizes follow the height, so a 548px screen fits; overflow-hidden
+          is the backstop that keeps text from painting under the controls. */}
+      <div className="mt-[clamp(8px,calc(9dvh-30px),48px)] min-h-0 overflow-hidden">
+        <div className="text-[14px] font-semibold text-ink-2">{episode.competition}</div>
         {/* The match first, the same as Today. An AI Pundit edition used to
             show only "{pundit} edition" and a model-written headline. */}
         {(episode.format !== "daily" || episode.matchLabel) && (
           <>
-            <div className="mt-3 flex items-baseline gap-3">
-              <div className="text-mono text-[64px] leading-none tabular-nums">
+            <div className="mt-[clamp(6px,1.5dvh,12px)] flex items-baseline gap-3">
+              <div className="serif text-[clamp(44px,9dvh,72px)] leading-none [font-variant-numeric:lining-nums]">
                 {episode.homeScore}
                 <span className="text-muted-foreground/40">·</span>
                 <span className="text-muted-foreground">{episode.awayScore}</span>
               </div>
             </div>
-            <div className="mt-3 text-lg font-semibold tracking-tight">
-              {episode.homeTeam} <span className="text-muted-foreground">vs</span>{" "}
-              {episode.awayTeam}
+            <div className="serif mt-[clamp(6px,1.5dvh,12px)] text-[clamp(18px,3.6dvh,26px)] leading-tight">
+              {episode.homeTeam} <span className="text-ink-2">v</span> {episode.awayTeam}
             </div>
           </>
         )}
         {episode.format === "daily" ? (
-          <div className="mt-5 text-lg font-semibold tracking-tight text-[var(--lime)]">
+          <div className="serif mt-[clamp(8px,2dvh,20px)] text-[clamp(17px,3.4dvh,24px)] italic text-ink-2">
             {episode.punditName}
           </div>
         ) : (
@@ -101,7 +98,6 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
                 key={i}
                 style={{
                   height: `${v * 100}%`,
-                  boxShadow: passed ? "0 0 8px var(--lime)" : undefined,
                 }}
                 className={
                   "w-[3px] rounded-full transition-colors " +
@@ -112,7 +108,7 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
           })}
         </div>
 
-        <div className="text-mono mt-3 flex justify-between text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+        <div className="mt-3 flex justify-between text-[12px] text-ink-2">
           <span className="tabular-nums">{fmt(elapsed)}</span>
           <span className="tabular-nums">−{fmt(Math.max(0, episode.durationSec - elapsed))}</span>
         </div>
@@ -129,7 +125,7 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
           <HapticButton
             onClick={() => playerStore.toggle()}
             aria-label={isPlaying ? "Pause" : "Play"}
-            className="glow-lime grid h-20 w-20 place-items-center rounded-full bg-[var(--lime)] text-[var(--primary-foreground)]"
+            className="grid h-[clamp(60px,12dvh,80px)] w-[clamp(60px,12dvh,80px)] place-items-center rounded-full bg-[var(--lime)] text-[var(--primary-foreground)]"
           >
             {isPlaying ? (
               <Pause className="h-8 w-8" fill="currentColor" />
@@ -155,10 +151,10 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
               onClick={() => playerStore.setPlaybackRate(rate)}
               aria-pressed={playbackRate === rate}
               className={
-                "min-h-11 min-w-11 rounded-full border px-2.5 text-mono text-[11px] tabular-nums " +
+                "min-h-11 min-w-11 rounded-full border px-2.5 text-[12px] tabular-nums " +
                 (playbackRate === rate
-                  ? "border-[var(--lime)] text-[var(--lime)]"
-                  : "border-[var(--pitch-line)] text-muted-foreground")
+                  ? "border-foreground text-foreground"
+                  : "border-[var(--pitch-line)] text-ink-2")
               }
             >
               {rate}x
@@ -172,7 +168,7 @@ export function ExpandedPlayer({ onClose }: { onClose: () => void }) {
           </p>
         )}
 
-        <div className="text-mono mt-[clamp(12px,3dvh,32px)] text-center text-[10px] uppercase tracking-[0.22em] text-muted-foreground/70">
+        <div className="mt-[clamp(12px,3dvh,32px)] text-center text-[12px] text-ink-3">
           AI-narrated · Full Time
         </div>
       </div>

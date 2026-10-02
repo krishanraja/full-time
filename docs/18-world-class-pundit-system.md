@@ -3,7 +3,7 @@
 - **Status:** Current implementation map
 - **Owner:** Product and engineering
 - **Purpose:** Describe what the repository implements, how Today reaches the production pipeline, and where its safety controls live.
-- **Last reviewed:** 2026-09-27
+- **Last reviewed:** 2026-10-02
 
 ## Implementation state
 
@@ -56,7 +56,7 @@ Key code:
 | Premier League scope, short names, crest URLs               | `src/lib/premier-league.ts`, `src/components/ClubCrest.tsx`         |
 | Edition-to-player model                                     | `src/lib/today-show-model.ts`                                       |
 | Public AI Pundit copy                                       | `src/components/PersonalitySelector.tsx`                            |
-| Generated visual model                                      | `src/components/PunditAvatar.tsx`, `src/lib/pundit/avatar-model.ts` |
+| Generated visual model                                      | `src/lib/pundit-cover.ts`, `src/components/PunditCover.tsx`         |
 | Public APIs                                                 | `src/routes/api/public`                                             |
 
 ## Current public response
@@ -78,9 +78,9 @@ The shareable variant route applies the same proof-card projection. A proof card
 
 ## Generated visual model
 
-The avatar is deterministic procedural art. `punditAvatarModel` hashes `dropId:punditId`, then produces rotation, orbit, and dot values. `PunditAvatar` combines those values with one of six fixed motifs.
+Each AI Pundit's cover is deterministic procedural art. `coverArt` seeds a generator with `punditId|dropId` and draws that AI Pundit's motif on its own paper colour, reading the score and the clubs' colours (The Gaffer's board marks one O per goal). `PunditAvatar`, the earlier orbit-and-dot avatar, is no longer rendered.
 
-This gives each edition a fresh but stable abstract identity without a runtime image-generation provider. Tests verify stable output for the same seed and variation across editions and AI Pundits.
+This gives each match a fresh but stable identity without a runtime image-generation provider. `src/lib/premium-art.test.ts` verifies stable output for the same match, a new cover for a new match, each AI Pundit's paper, and that no markup is built from anything but numbers and fixed colours.
 
 ## Production pipeline
 

@@ -4,7 +4,6 @@ import { Wordmark } from "./Wordmark";
 /**
  * Persistent app shell header, the first row of the one-screen frame.
  * - Brand mark (public app icon, served from /icon-192.png so it works on any host) + wordmark top-left.
- * - A single lime hairline anchors the bottom edge.
  * - Honors the top safe-area inset.
  *
  * It used to carry a hard-coded "Pre-launch" status chip that read no flag
@@ -14,14 +13,12 @@ import { Wordmark } from "./Wordmark";
  */
 export function AppHeader() {
   return (
+    // Transparent, so a screen's light in the backdrop reaches the top.
     <header
-      className="z-30 shrink-0"
-      style={{
-        background: "color-mix(in oklab, var(--background) 94%, transparent)",
-        paddingTop: "max(env(safe-area-inset-top), 6px)",
-      }}
+      className="relative z-30 shrink-0"
+      style={{ paddingTop: "max(env(safe-area-inset-top), 6px)" }}
     >
-      <div className="mx-auto flex h-12 w-full max-w-5xl items-center justify-between px-4">
+      <div className="mx-auto flex h-[clamp(44px,7.4dvh,52px)] w-full max-w-5xl items-center justify-between px-4">
         <Link to="/" aria-label="Full Time home" className="tap inline-flex items-center gap-2">
           <img src="/icon-192.png" alt="" aria-hidden className="h-7 w-7" draggable={false} />
           <Wordmark className="h-[20px] w-auto" />
@@ -36,10 +33,10 @@ export function AppHeader() {
               key={to}
               to={to}
               activeOptions={{ exact: to === "/" }}
-              className="inline-flex min-h-11 items-center rounded-full px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-white/[0.04] hover:text-foreground"
+              className="inline-flex min-h-11 items-center px-3 py-2 text-sm font-medium text-ink-3 transition-colors hover:text-foreground"
               activeProps={{
                 className:
-                  "inline-flex min-h-11 items-center rounded-full bg-white/[0.06] px-3 py-2 text-xs font-semibold text-foreground",
+                  "inline-flex min-h-11 items-center px-3 py-2 text-sm font-medium text-foreground underline decoration-2 underline-offset-[10px]",
               }}
             >
               {label}
@@ -47,7 +44,6 @@ export function AppHeader() {
           ))}
         </nav>
       </div>
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-[color:color-mix(in_oklab,var(--lime)_45%,transparent)] to-transparent" />
     </header>
   );
 }

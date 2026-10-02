@@ -83,9 +83,10 @@ for (const path of currentDocs) {
   // the shared judge cache fix, per-run spend recording, and the fixture field
   // added to the public payload; only the documents that changed carry that date.
   // 2026-09-27 is Premier League only, one match on Today, and the no-scroll frame.
+  // 2026-10-02 is the premium visual system: covers, seal, atmosphere, type.
   requireText(
     path,
-    /\*\*Last (?:reviewed|verified):\*\* 2026-0(?:8-11|9-04|9-07|9-21|9-22|9-27)/,
+    /\*\*Last (?:reviewed|verified):\*\* 2026-(?:0(?:8-11|9-04|9-07|9-21|9-22|9-27)|10-02)/,
     "review date is stale",
   );
 }

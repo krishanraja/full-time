@@ -1,3 +1,5 @@
+import type { PunditId } from "@/lib/pundit/types";
+
 // Episode type used across UI components. Sourced from Lovable Cloud
 // at runtime via @/lib/api/feed.functions.ts; this file just keeps the
 // shape stable for the player and card components.
@@ -24,4 +26,8 @@ export type Episode = {
    *  surface can say which match it is. Absent when the pack carried no
    *  fixture. */
   matchLabel?: string;
+  /** The AI Pundit and drop that made this edition, so the mini player can
+   *  print the same cover as Today. */
+  punditId?: PunditId;
+  coverSeed?: string;
 };

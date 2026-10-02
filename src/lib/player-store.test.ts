@@ -5,6 +5,7 @@ type Listener = { callback: EventListener; once: boolean };
 
 class FakeAudio {
   static rejectNextPlay = false;
+  static all: FakeAudio[] = [];
   src = "";
   preload = "";
   muted = false;
@@ -12,6 +13,10 @@ class FakeAudio {
   currentTime = 0;
   duration = 360;
   private listeners = new Map<string, Listener[]>();
+
+  constructor() {
+    FakeAudio.all.push(this);
+  }
 
   addEventListener(
     type: string,
@@ -29,7 +34,7 @@ class FakeAudio {
     );
   }
 
-  private emit(type: string) {
+  emit(type: string) {
     const current = this.listeners.get(type) ?? [];
     for (const listener of current) listener.callback(new Event(type));
     this.listeners.set(
@@ -109,5 +114,21 @@ describe("transactional AI Pundit switching", () => {
       progress: 0,
       status: "paused",
     });
+  });
+
+  it("shows a show that resumes after buffering as playing, so it can be paused", async () => {
+    // A browser fires "play" once, then "waiting" while it buffers and
+    // "playing" when sound starts. Without "playing" the button kept showing
+    // Play and LOADING over a show that was audibly playing, and a tap could
+    // not pause it.
+    const { playerStore } = await import("./player-store");
+    const show = episode("buffering");
+    playerStore.play(show, [show]);
+    await Promise.resolve();
+    const audio = FakeAudio.all.filter((item) => item.src === show.audioUrl).at(-1)!;
+    audio.emit("waiting");
+    expect(playerStore.get()).toMatchObject({ isPlaying: false, status: "loading" });
+    audio.emit("playing");
+    expect(playerStore.get()).toMatchObject({ isPlaying: true, status: "playing" });
   });
 });
