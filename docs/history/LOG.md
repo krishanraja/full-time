@@ -4,6 +4,13 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-10-02
+
+- reconciled at `a1df850`: head moved from `a2861d4`. Six non-steward commits landed: the premium visual system for Today, Teams and Settings (`2701907`, with two fix-ups `878d422` and `7b5bb65`), the TanStack Start XSS patch and the audit advisories that had turned main red (`5894eca`), and a player fix so a buffered show reads as playing (`e67fa4f`), merged as PR #74.
+- reconciled at `a1df850`: `NOW.md`. "Where it is right now" gained the visual system and the security patch, with the sideways-phone scroll and the untested real devices recorded as open; "What changed recently" gained three 2026-10-02 bullets; "What is next" gained the landscape layout and device check.
+- checked, unchanged: `docs/00-product.md`, `docs/01-brand.md`, `docs/02-developer.md`, `docs/11-legal.md`, `docs/13-agent-handoff.md`, `docs/18-world-class-pundit-system.md`, `docs/product-state.json`. Commit `2701907` already carried the docs for the visual system in the same commit, stamped 2026-10-02, and they agree with the code it changed. `docs/product-state.json` `asOf` and the pin in `scripts/check-documentation.mjs` stay 2026-09-27, as that commit chose, because the rest of the state was not re-reconciled.
+- not changed: stamps on `docs/03-architecture.md`, `docs/04-data-model.md`, `docs/05-content-safety.md`, `docs/06-ops.md`, `docs/12-roadmap.md`, `docs/19-release-state.md`, `src/routes/README.md`. The digest flags them as older than the code, but the 2026-10-02 commits touched only presentation, the player store and dependency pins, none of which those documents describe, so the stamp is not bumped without a body check.
+
 ## 2026-09-27
 
 - reconciled at `a2861d4`: head moved from `cb59be3`. Five non-steward commits landed: Google Analytics (`gtag.js`, page views only) now loads beside PostHog on every page and the privacy page names it (`4e1e682`); four rulings from Krish made the product Premier League only end to end, one match at a time on Today, and a completely no-scroll app, with club crests shown from the provider's public imagery on an accepted trademark exposure (`29dd5ad`); a same-day adversarial review of that commit found fifteen issues, fourteen confirmed and fixed, the sharpest being that Today did not pin the show a listener had committed to across a tab switch (`92deeda`); `cd055a8` and `a2861d4` are the branch and PR #73 merges. `92deeda`'s own message named four commercial docs as left for the docs steward.
