@@ -63,6 +63,15 @@ function wireAudio(audio: HTMLAudioElement) {
     state = { ...state, isPlaying: false, status: "loading" };
     emit();
   });
+  // "play" fires once, when playback is asked for. After "waiting", the
+  // browser fires "playing" when sound actually starts, which on a phone
+  // stream is the usual order: without it the button showed Play and LOADING
+  // over a show that was playing, and could not pause it.
+  audio.addEventListener("playing", () => {
+    if (audioEl !== audio || !state.episode) return;
+    state = { ...state, isPlaying: true, status: "playing", error: null };
+    emit();
+  });
   audio.addEventListener("error", () => {
     if (audioEl === audio) {
       failPlayback("This show could not be loaded. Check your connection and try again.");
