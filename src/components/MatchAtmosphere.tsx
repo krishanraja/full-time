@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type RefObject } from "react";
+import { flushSync } from "react-dom";
 import { clubInks } from "@/lib/club-colours";
 import { atmosphere } from "@/lib/match-atmosphere";
 import { BACKDROP_ID, Backdrop } from "./Backdrop";
@@ -34,20 +35,24 @@ export function MatchAtmosphere({
     const container = document.getElementById(BACKDROP_ID);
     const seal = sealRef.current;
     if (!container || !seal || typeof ResizeObserver === "undefined") return;
-    const measure = () => {
+    const measure = (sync = false) => {
       const outer = container.getBoundingClientRect();
       const dial = seal.getBoundingClientRect();
       const height = Math.round(dial.bottom - outer.top + dial.height * 0.45);
-      setLayout({
+      const next = {
         width: outer.width,
         height,
         cx: dial.left - outer.left + dial.width / 2,
         cy: dial.top - outer.top + dial.height / 2,
         radius: dial.width / 2,
-      });
+      };
+      // From the observer, commit before the browser paints: a deferred
+      // update left the moved seal over the old light for a frame or two.
+      if (sync) flushSync(() => setLayout(next));
+      else setLayout(next);
     };
     measure();
-    const observer = new ResizeObserver(measure);
+    const observer = new ResizeObserver(() => measure(true));
     observer.observe(container);
     observer.observe(seal);
     const board = seal.closest("section");

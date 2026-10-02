@@ -3,10 +3,11 @@ import { CrestDisc } from "./CrestDisc";
 import { HapticButton } from "./HapticButton";
 import { cn } from "../lib/utils";
 
-/** A ceiling on a label's width in em of Schibsted Grotesk semibold,
- *  measured at up to 0.50em a character across a name and 0.60em inside
- *  one long word. "Crystal Palace" on a 320px phone shrinks a little rather
- *  than spilling past its card. */
+/** A label's width in em of Schibsted Grotesk semibold, estimated from
+ *  measurements (up to 0.50em a character across a name, 0.60em inside one
+ *  long word). The size below also keeps 3px in hand for renderers that
+ *  round glyph advances, so "Crystal Palace" on a 320px phone shrinks a
+ *  little rather than spilling past its card. */
 function labelEm(label: string) {
   const longest = Math.max(...label.split(/\s+/).map((word) => word.length));
   return Math.max(label.length * 0.505, longest * 0.61);
@@ -71,7 +72,7 @@ export function FollowButton({
           on ? "font-semibold text-[#1c1611]" : "font-medium text-ink-2",
         )}
         style={{
-          fontSize: `min(clamp(10.5px, 1.65dvh, 12.5px), calc(100cqi / ${labelEm(label).toFixed(2)}))`,
+          fontSize: `min(clamp(10.5px, 1.65dvh, 12.5px), calc((100cqi - 3px) / ${labelEm(label).toFixed(2)}))`,
         }}
       >
         {label}

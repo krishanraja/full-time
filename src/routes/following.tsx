@@ -66,7 +66,7 @@ function Following() {
           <p className="eyebrow">Premier League</p>
           {count > 0 && <p className="text-[13px] text-ink-2">{count} followed</p>}
         </div>
-        <h1 className="serif mt-[clamp(2px,calc(2.8dvh-13.4px),8px)] text-[clamp(30px,calc(8.3dvh-14.4px),50px)] leading-[0.95] tracking-[-0.005em] [@media(max-height:560px)]:sr-only">
+        <h1 className="serif mt-[clamp(2px,calc(2.8dvh-13.4px),8px)] text-[clamp(30px,calc(8.3dvh-14.4px),50px)] leading-[0.95] tracking-[-0.005em] [@media(max-height:580px)]:sr-only">
           Your teams.
         </h1>
         {/* Honest about what a follow does, in one line. Full Time makes one

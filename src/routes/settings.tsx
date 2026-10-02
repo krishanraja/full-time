@@ -289,7 +289,9 @@ function Settings() {
                 "absolute left-0 top-0.5 h-6 w-6 rounded-full shadow transition-transform",
                 // A dark knob on the cream track when on: white on cream
                 // read at 1.2:1.
-                notifications ? "translate-x-5 bg-[var(--ground-2)]" : "translate-x-0.5 bg-white",
+                notifications
+                  ? "translate-x-[22px] bg-[var(--ground-2)]"
+                  : "translate-x-0.5 bg-white",
               )}
             />
           </HapticButton>

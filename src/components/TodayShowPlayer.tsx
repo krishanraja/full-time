@@ -81,9 +81,10 @@ function personality(id: PunditId) {
 }
 
 /** The longest word in a club's name, in em of Instrument Serif. Measured
- *  at 0.33 to 0.44em a character for long words; 0.45 keeps a margin. */
+ *  at up to 0.448em a character (Bournemouth); 0.46 keeps a margin for
+ *  renderers that round glyph advances. */
 function longestWordEm(name: string) {
-  return Math.max(...name.split(/\s+/).map((word) => word.length)) * 0.45;
+  return Math.max(...name.split(/\s+/).map((word) => word.length)) * 0.46;
 }
 
 function Side({ name, crest, lost }: { name: string; crest?: string | null; lost: boolean }) {
@@ -91,13 +92,22 @@ function Side({ name, crest, lost }: { name: string; crest?: string | null; lost
   return (
     // A width container: a long name wraps at its spaces, and its longest
     // word sets a ceiling on the size (cqi), so "Bournemouth" on a 320px
-    // phone shrinks to fit rather than pushing the seal off-centre.
-    <div className="flex min-w-0 flex-col items-center gap-[clamp(7px,1.3dvh,11px)] text-center [container-type:inline-size]">
+    // phone shrinks to fit rather than pushing the seal off-centre. Both
+    // sides start from the same top line, set so a crest and a one-line
+    // name sit centred on the seal; a name that wraps hangs below without
+    // moving its crest, so the two crests stay level.
+    <div
+      className="flex min-w-0 flex-col items-center gap-[var(--crest-gap)] text-center [container-type:inline-size]"
+      style={{
+        paddingTop:
+          "max(0px, calc((var(--seal) - var(--crest) - var(--crest-gap) - var(--club) * 1.02) / 2))",
+      }}
+    >
       <CrestDisc
         club={name}
         crest={crest}
         ringWidth={3}
-        className="h-[max(44px,calc(var(--seal)*0.3))] w-[max(44px,calc(var(--seal)*0.3))]"
+        className="h-[var(--crest)] w-[var(--crest)]"
       />
       <span
         className={cn(
@@ -105,7 +115,7 @@ function Side({ name, crest, lost }: { name: string; crest?: string | null; lost
           lost && "text-ink-2",
         )}
         style={{
-          fontSize: `min(clamp(17px, calc(var(--seal) * 0.102), 21px), calc(100cqi / ${longestWordEm(display).toFixed(2)}))`,
+          fontSize: `min(var(--club), calc(100cqi / ${longestWordEm(display).toFixed(2)}))`,
         }}
       >
         {display}
@@ -145,7 +155,7 @@ const Board = memo(function Board({ fixture, seed }: { fixture: PublicFixture; s
           screen scroll sideways. Below about 100px of height (a phone on its
           side) there is no room for the seal, so the score goes on one line. */}
       <div
-        className="relative grid w-full grid-cols-[minmax(0,1fr)_var(--seal)_minmax(0,1fr)] items-center px-0 [--seal:min(47vw,88cqh,248px)] [@container(max-height:100px)]:hidden"
+        className="relative grid w-full grid-cols-[minmax(0,1fr)_var(--seal)_minmax(0,1fr)] items-start px-0 [--club:clamp(17px,calc(var(--seal)*0.102),21px)] [--crest-gap:clamp(7px,1.3dvh,11px)] [--crest:max(44px,calc(var(--seal)*0.3))] [--seal:min(47vw,88cqh,248px)] [@container(max-height:100px)]:hidden"
         aria-hidden
       >
         <Side name={fixture.homeTeam} crest={fixture.homeCrest} lost={known && home! < away!} />
