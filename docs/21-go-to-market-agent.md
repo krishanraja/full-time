@@ -3,7 +3,7 @@
 - **Status:** Current and binding
 - **Owner:** Founder, marketing, and sales
 - **Purpose:** Train autonomous agents to explain, market, qualify, and sell the product without inventing availability, proof, pricing, or rights.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-27
 
 ## Start with current truth
 
@@ -109,7 +109,7 @@ The product can save followed teams and an AI Pundit preference. It does not yet
 
 ### “Which leagues are live?”
 
-The intended beta is Premier League first, but the current Teams implementation has not enforced that restriction. Do not market league coverage until the release state records the exact live set.
+Premier League only. The 2026-09-27 ruling made this enforced across the daily pick, ingest, prediction sync, Teams, and Today (`docs/19-release-state.md`). Do not promise another league or competition until a new release decision records it.
 
 ### “How much is it?”
 
@@ -156,7 +156,7 @@ An asset fails if any answer is no:
 - Does it make the football benefit clear before technical detail?
 - Can a ten-year-old understand the primary copy?
 - Does every material claim have a current source?
-- Does it avoid promising Premier League filtering, personal shows, daily reliability, prediction performance, launch timing, or paid availability before those states are verified?
+- Does it avoid promising personal shows, daily reliability, prediction performance, launch timing, or paid availability before those states are verified? (Premier League filtering is verified and enforced since 2026-09-27; it may be stated plainly.)
 - Does it use one clear CTA?
 - Is the external action still a draft unless Krish approved the exact send, post, publication, or commercial step?
 

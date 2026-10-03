@@ -26,8 +26,8 @@ export const Route = createFileRoute("/legal/privacy")({
       </p>
       <p className="mt-3 text-muted-foreground">
         We do not sell your data. Product analytics from PostHog tell us which shows people start,
-        finish, or have trouble playing. It sets a first-party cookie so a returning visitor counts
-        once.
+        finish, or have trouble playing. Google Analytics tells us which pages people visit and how
+        they found us. Both set first-party cookies so a returning visitor counts once.
       </p>
       <p className="mt-3 text-muted-foreground">
         Want your data deleted? Sign out and email support. We will remove your account on request.

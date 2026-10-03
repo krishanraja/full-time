@@ -1,19 +1,25 @@
-import { Check, ChevronRight, Pause, Play, X } from "lucide-react";
-import { useMemo, useState, type CSSProperties } from "react";
-import { Link } from "@tanstack/react-router";
+import { ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
+import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type {
-  PublicEdition,
+  PublicFixture,
+  PublicMatch,
   PublicProofCard,
-  PublicVariant,
+  PublicToday,
 } from "@/lib/api/editorial-public.server";
-import { coverageDateLabel } from "@/lib/london-date";
+import { coverageDateLabel, coverageDateShortLabel } from "@/lib/london-date";
 import { playerStore, usePlayer } from "@/lib/player-store";
+import { clubDisplayName } from "@/lib/premier-league";
+import { PUNDIT_HUES } from "@/lib/pundit-cover";
 import type { PunditId } from "@/lib/pundit/types";
-import type { PublicPrediction } from "@/lib/api/editorial-public.server";
-import { editionEpisode } from "@/lib/today-show-model";
+import { editionEpisode, matchLabel, type TodayShow } from "@/lib/today-show-model";
+import { cn } from "@/lib/utils";
+import { Backdrop } from "./Backdrop";
+import { CrestDisc } from "./CrestDisc";
 import { HapticButton } from "./HapticButton";
-import { PERSONALITIES, type PersonalityId } from "./PersonalitySelector";
-import { PunditAvatar } from "./PunditAvatar";
+import { MatchAtmosphere } from "./MatchAtmosphere";
+import { MatchSeal } from "./MatchSeal";
+import { PERSONALITIES } from "./PersonalitySelector";
+import { PunditCover } from "./PunditCover";
 import {
   Drawer,
   DrawerContent,
@@ -23,42 +29,39 @@ import {
   DrawerTrigger,
 } from "./ui/drawer";
 
-export type TodayEditorialResponse = {
-  coverageDate: string;
-  state: "prelaunch" | "off_day" | "variant_unavailable" | "published";
-  drop: { id: string } | null;
-  variant: PublicVariant | null;
-  latest: PublicEdition | null;
-  matchId: string | null;
-  teamIds: string[];
-  proofCards: PublicProofCard[];
-  recent: PublicEdition[];
-};
+/**
+ * Today: one match, on one screen.
+ *
+ * Ruling (Krish, 2026-09-27): show which game it is, one select thing that
+ * shows the novelty, and nothing that needs a scroll. This page used to open
+ * on a model-written headline and dek with no team names or score anywhere,
+ * then a list of other matches below the player, so a listener could not
+ * tell which game they were hearing about.
+ *
+ * Top to bottom: the match (competition, date, both clubs, the score), the
+ * six AI Pundits for that match as the one novel thing, the player, and a
+ * quiet "Show me why" that opens the proof in a sheet. Earlier Premier League
+ * matches are one tap away on either side of the date, one at a time.
+ *
+ * Ruling (Krish, 2026-10-02): adopt the premium design. The score sits in an
+ * engraved seal woven in the two clubs' colours, the clubs' floodlight comes
+ * in from each side, and each AI Pundit is a printed cover for this match.
+ */
 
 function fmt(seconds: number) {
   const safe = Number.isFinite(seconds) ? Math.max(0, Math.round(seconds)) : 0;
   return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
 }
 
-/** Joins the last two words with a non-breaking space so a title never ends
- *  on a one-word orphan. */
-const NO_BREAK_SPACE = String.fromCharCode(160);
-
-function withoutOrphan(value: string) {
-  const words = value.trim().split(/\s+/);
-  if (words.length < 3) return value;
-  return `${words.slice(0, -2).join(" ")} ${words.slice(-2).join(NO_BREAK_SPACE)}`;
-}
-
 /** Each empty state says what is true. No published show has ever existed
- *  (`prelaunch`), no match was covered on this date (`off_day`), or this AI
- *  Pundit's edition did not pass its checks (`variant_unavailable`). */
-function emptyStateCopy(state: TodayEditorialResponse["state"]) {
+ *  (`prelaunch`), no match was covered on this date (`off_day`), or nothing
+ *  passed its checks (`variant_unavailable`). */
+function emptyStateCopy(state: PublicToday["state"]) {
   switch (state) {
     case "prelaunch":
       return {
         title: "First show is on the way",
-        body: "We publish the moment a match passes every check. Your AI Pundit will be ready.",
+        body: "We publish the moment a Premier League match passes every check.",
       };
     case "off_day":
       return {
@@ -68,184 +71,306 @@ function emptyStateCopy(state: TodayEditorialResponse["state"]) {
     default:
       return {
         title: "Nothing ready just yet",
-        body: "We only play shows that passed every check. Come back soon and we will keep your AI Pundit ready.",
+        body: "We only play shows that passed every check. Come back soon.",
       };
   }
 }
 
-function editionFor(response: TodayEditorialResponse): PublicEdition | null {
-  if (response.variant) {
-    return { coverageDate: response.coverageDate, variant: response.variant };
-  }
-  return response.latest;
+function personality(id: PunditId) {
+  return PERSONALITIES.find((item) => item.id === id)!;
 }
 
-function PunditPicker({
-  active,
-  editionSeed,
-  pending,
-  onChoose,
-}: {
-  active: PunditId;
-  editionSeed: string;
-  pending: PunditId | null;
-  onChoose: (id: PunditId) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const selected = PERSONALITIES.find((item) => item.id === active)!;
+/** The longest word in a club's name, in em of Instrument Serif. Measured
+ *  at up to 0.448em a character (Bournemouth); 0.46 keeps a margin for
+ *  renderers that round glyph advances. */
+function longestWordEm(name: string) {
+  return Math.max(...name.split(/\s+/).map((word) => word.length)) * 0.46;
+}
+
+function Side({ name, crest, lost }: { name: string; crest?: string | null; lost: boolean }) {
+  const display = clubDisplayName(name);
   return (
-    <Drawer open={open} onOpenChange={setOpen} shouldScaleBackground={false}>
-      <DrawerTrigger asChild>
-        <HapticButton
-          hapticPattern="soft"
-          className="grid min-h-[92px] w-full grid-cols-[66px_minmax(0,1fr)_auto] items-center gap-x-3 rounded-[17px] border border-[color:color-mix(in_oklab,var(--lime)_38%,transparent)] bg-[color:color-mix(in_oklab,var(--lime)_10%,transparent)] px-3.5 py-3 text-left max-[349px]:grid-cols-[52px_minmax(0,1fr)_20px] max-[349px]:gap-x-2"
-          aria-label={`Change AI Pundit. ${selected.name} is selected.`}
-        >
-          <PunditAvatar
-            punditId={active}
-            editionSeed={editionSeed}
-            className="h-[66px] w-[66px] max-[349px]:h-[52px] max-[349px]:w-[52px] max-[349px]:rounded-[14px]"
+    // A width container: a long name wraps at its spaces, and its longest
+    // word sets a ceiling on the size (cqi), so "Bournemouth" on a 320px
+    // phone shrinks to fit rather than pushing the seal off-centre. Both
+    // sides start from the same top line, set so a crest and a one-line
+    // name sit centred on the seal; a name that wraps hangs below without
+    // moving its crest, so the two crests stay level.
+    <div
+      className="flex min-w-0 flex-col items-center gap-[var(--crest-gap)] text-center [container-type:inline-size]"
+      style={{
+        paddingTop:
+          "max(0px, calc((var(--seal) - var(--crest) - var(--crest-gap) - var(--club) * 1.02) / 2))",
+      }}
+    >
+      <CrestDisc
+        club={name}
+        crest={crest}
+        ringWidth={3}
+        className="h-[var(--crest)] w-[var(--crest)]"
+      />
+      <span
+        className={cn(
+          "serif max-w-full leading-[1.02] [text-shadow:0_1px_10px_rgba(12,9,7,0.7)] [text-wrap:balance]",
+          lost && "text-ink-2",
+        )}
+        style={{
+          fontSize: `min(var(--club), calc(100cqi / ${longestWordEm(display).toFixed(2)}))`,
+        }}
+      >
+        {display}
+      </span>
+    </div>
+  );
+}
+
+/** The scoreboard: both clubs either side of the seal that holds the score.
+ *  The visible board is decorative; the h1 says the same thing in words.
+ *  Memoised: Today re-renders on every playback tick and the board only
+ *  changes with the match. */
+const Board = memo(function Board({ fixture, seed }: { fixture: PublicFixture; seed: string }) {
+  const seal = useRef<HTMLDivElement>(null);
+  const { homeScore: home, awayScore: away } = fixture;
+  const known = home != null && away != null;
+  return (
+    <>
+      <h1 id="today-match" className="sr-only">
+        {known
+          ? `${fixture.homeTeam} ${home}, ${fixture.awayTeam} ${away}`
+          : `${fixture.homeTeam} against ${fixture.awayTeam}`}
+      </h1>
+      <MatchAtmosphere
+        seed={seed}
+        homeTeam={fixture.homeTeam}
+        awayTeam={fixture.awayTeam}
+        homeScore={home}
+        awayScore={away}
+        sealRef={seal}
+      />
+      {/* The seal takes the height the board section was left (cqh), capped
+          by the width, so it is as large as the screen allows and never
+          pushes the player off a short one. */}
+      {/* minmax(0,1fr): a plain 1fr column grows to fit a name that will
+          not wrap, which pushed the seal off-centre and, at 320px, made the
+          screen scroll sideways. Below about 100px of height (a phone on its
+          side) there is no room for the seal, so the score goes on one line. */}
+      <div
+        className="relative grid w-full grid-cols-[minmax(0,1fr)_var(--seal)_minmax(0,1fr)] items-start px-0 [--club:clamp(17px,calc(var(--seal)*0.102),21px)] [--crest-gap:clamp(7px,1.3dvh,11px)] [--crest:max(44px,calc(var(--seal)*0.3))] [--seal:min(47vw,88cqh,248px)] [@container(max-height:100px)]:hidden"
+        aria-hidden
+      >
+        <Side name={fixture.homeTeam} crest={fixture.homeCrest} lost={known && home! < away!} />
+        <div ref={seal} className="relative">
+          <MatchSeal
+            seed={seed}
+            homeTeam={fixture.homeTeam}
+            awayTeam={fixture.awayTeam}
+            homeScore={home}
+            awayScore={away}
+            className="w-[var(--seal)]"
           />
-          <span className="min-w-0">
-            <span className="text-mono block text-[10px] uppercase tracking-[0.15em] text-[var(--lime)]">
-              AI Pundit
-            </span>
-            <strong className="mt-1 block whitespace-nowrap text-[clamp(14px,4.35vw,17px)] font-semibold">
-              {selected.name}
-            </strong>
-            <span className="mt-1 block text-[13px] leading-[1.3] text-muted-foreground [text-wrap:pretty]">
-              {selected.tag}
-            </span>
-          </span>
-          <span className="text-xs font-semibold max-[349px]:sr-only">Change</span>
-          <ChevronRight className="hidden h-5 w-5 max-[349px]:block" aria-hidden />
-        </HapticButton>
+        </div>
+        <Side name={fixture.awayTeam} crest={fixture.awayCrest} lost={known && away! < home!} />
+      </div>
+      <p
+        className="serif hidden w-full items-center justify-center gap-[0.4em] whitespace-nowrap text-[clamp(18px,4.4vw,26px)] leading-none [@container(max-height:100px)]:flex"
+        aria-hidden
+      >
+        <span className="min-w-0 truncate">{clubDisplayName(fixture.homeTeam)}</span>
+        <span className="text-[1.3em] [font-variant-numeric:lining-nums]">
+          {known ? `${home}–${away}` : "v"}
+        </span>
+        <span className="min-w-0 truncate">{clubDisplayName(fixture.awayTeam)}</span>
+      </p>
+    </>
+  );
+});
+
+function StepButton({
+  target,
+  direction,
+  disabled,
+  onStep,
+}: {
+  target: PublicMatch | undefined;
+  direction: "earlier" | "later";
+  disabled: boolean;
+  onStep: (match: PublicMatch) => void;
+}) {
+  const Icon = direction === "earlier" ? ChevronLeft : ChevronRight;
+  if (!target) return <span className="h-11 w-11 shrink-0" aria-hidden />;
+  const label = matchLabel(target.fixture) ?? "another match";
+  return (
+    <HapticButton
+      hapticPattern="swipe"
+      onClick={() => onStep(target)}
+      disabled={disabled}
+      className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-ink-2 hover:text-foreground disabled:opacity-40"
+      aria-label={`${direction === "earlier" ? "Earlier" : "Later"} match: ${label}, ${coverageDateLabel(target.coverageDate)}`}
+    >
+      <Icon className="h-[22px] w-[22px]" strokeWidth={1.6} />
+    </HapticButton>
+  );
+}
+
+function ProofSheet({ cards, punditName }: { cards: PublicProofCard[]; punditName: string }) {
+  const [open, setOpen] = useState(false);
+  const [index, setIndex] = useState(0);
+  const card = cards[Math.min(index, cards.length - 1)];
+  return (
+    <Drawer
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) setIndex(0);
+      }}
+      shouldScaleBackground={false}
+    >
+      <DrawerTrigger asChild>
+        <button
+          type="button"
+          className="serif inline-flex min-h-11 items-center px-3.5 text-[clamp(17px,2.5dvh,19px)] italic text-ink-2 hover:text-foreground"
+        >
+          <span className="border-b border-[rgb(241_233_218/28%)] pb-px">Show me why</span>
+        </button>
       </DrawerTrigger>
-      <DrawerContent className="mx-auto max-h-[84dvh] max-w-[760px] rounded-t-[28px] border-[var(--pitch-line)] bg-card px-4 pb-[max(22px,env(safe-area-inset-bottom))]">
-        <DrawerHeader className="grid grid-cols-[1fr_44px] gap-3 px-0 pb-2 pt-5 text-left">
+      <DrawerContent className="mx-auto max-h-[86dvh] max-w-[560px] rounded-t-[10px] border-[var(--pitch-line)] bg-card px-4 pb-[max(20px,env(safe-area-inset-bottom))]">
+        <DrawerHeader className="grid shrink-0 grid-cols-[1fr_44px] items-start gap-3 px-0 pb-3 pt-4 text-left">
           <div>
-            <DrawerTitle className="text-[25px] leading-tight [text-wrap:balance]">
-              Pick your AI Pundit
+            <DrawerTitle className="serif text-[28px] font-normal leading-tight">
+              Show me why
             </DrawerTitle>
             <DrawerDescription className="mt-1 text-[13px]">
-              Same match. Six complete shows. Fresh look every show.
+              What {punditName} said, and the match facts behind it.
             </DrawerDescription>
           </div>
           <button
             type="button"
             onClick={() => setOpen(false)}
             className="grid h-11 w-11 place-items-center rounded-full border border-[var(--pitch-line)]"
-            aria-label="Close AI Pundit picker"
+            aria-label="Close the proof"
           >
             <X className="h-4 w-4" />
           </button>
         </DrawerHeader>
-
-        <div className="relative mx-1 mb-4 mt-5 grid grid-cols-6 pt-4" aria-hidden>
-          <span className="absolute left-[8%] right-[8%] top-[7px] h-0.5 bg-white/15" />
-          {PERSONALITIES.map((item) => (
-            <span
-              key={item.id}
-              className={`relative grid min-h-11 place-items-start text-center text-mono text-[8px] text-muted-foreground before:absolute before:-top-[13px] before:left-1/2 before:h-[11px] before:w-[11px] before:-translate-x-1/2 before:rounded-full before:border-2 before:border-card before:bg-[#5d6662] ${
-                item.id === active
-                  ? "text-foreground before:h-[15px] before:w-[15px] before:-translate-y-0.5 before:bg-[var(--lime)] before:shadow-[0_0_0_2px_rgba(99,255,63,.2)]"
-                  : ""
-              }`}
+        {/* The sheet is capped at 86dvh. On a short phone or at high zoom a
+            long card scrolls inside it, so Back and Next stay reachable. */}
+        {card && (
+          <div className="min-h-0 overflow-y-auto overscroll-contain">
+            <article className="rounded-[3px] border border-[var(--pitch-line)] bg-[var(--ground-2)] p-4 text-[14px] leading-[1.45]">
+              <p className="text-[12px] font-semibold tracking-[0.06em] text-ink-2">THE CLAIM</p>
+              <p className="serif mt-1 line-clamp-4 text-[19px] leading-snug">{card.claim}</p>
+              <p className="mt-3 text-[12px] font-semibold tracking-[0.06em] text-ink-2">
+                THE MATCH FACT
+              </p>
+              <ul className="mt-1 list-disc space-y-1 pl-5">
+                {card.evidence.map((line) => (
+                  <li key={line} className="line-clamp-2">
+                    {line}
+                  </li>
+                ))}
+              </ul>
+              {card.boundary && (
+                <>
+                  <p className="mt-3 text-[12px] font-semibold tracking-[0.06em] text-ink-2">
+                    WHAT THIS CANNOT PROVE
+                  </p>
+                  <p className="mt-1 line-clamp-3 text-ink-2">{card.boundary}</p>
+                </>
+              )}
+            </article>
+          </div>
+        )}
+        {cards.length > 1 && (
+          <div className="mt-3 flex shrink-0 items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setIndex((value) => Math.max(0, value - 1))}
+              disabled={index === 0}
+              className="min-h-11 px-2 text-sm font-semibold disabled:opacity-30"
             >
-              {item.name.replace("The ", "").slice(0, 4).toUpperCase()}
+              Back
+            </button>
+            <span className="text-[12px] text-ink-2 [font-variant-numeric:tabular-nums]">
+              {index + 1} of {cards.length}
             </span>
-          ))}
-        </div>
-
-        <div className="grid gap-2" role="radiogroup" aria-label="AI Pundits">
-          {PERSONALITIES.map((item) => {
-            const checked = item.id === active;
-            const loading = item.id === pending;
-            return (
-              <HapticButton
-                key={item.id}
-                hapticPattern="soft"
-                role="radio"
-                aria-checked={checked}
-                disabled={pending !== null}
-                onClick={() => {
-                  if (checked) {
-                    setOpen(false);
-                    return;
-                  }
-                  setOpen(false);
-                  onChoose(item.id);
-                }}
-                className={`grid min-h-[72px] w-full grid-cols-[48px_minmax(0,1fr)_24px] items-center gap-x-3 rounded-[15px] border px-3 py-2 text-left disabled:opacity-70 ${
-                  checked
-                    ? "border-[color:color-mix(in_oklab,var(--lime)_55%,transparent)] bg-[color:color-mix(in_oklab,var(--lime)_10%,transparent)]"
-                    : "border-[var(--pitch-line)] bg-[#0d1315]"
-                }`}
-              >
-                <PunditAvatar
-                  punditId={item.id}
-                  editionSeed={editionSeed}
-                  className="h-12 w-12 rounded-[14px]"
-                />
-                <span className="min-w-0">
-                  <strong className="block whitespace-nowrap text-sm">{item.name}</strong>
-                  <small className="mt-1 block text-xs leading-[1.3] text-muted-foreground [text-wrap:pretty]">
-                    {loading ? `Loading ${item.name}...` : item.tag}
-                  </small>
-                </span>
-                <span
-                  className={`grid h-[21px] w-[21px] place-items-center rounded-full border ${
-                    checked
-                      ? "border-[var(--lime)] bg-[var(--lime)] text-[#071008]"
-                      : "border-white/30 text-transparent"
-                  }`}
-                  aria-hidden
-                >
-                  <Check className="h-3 w-3" strokeWidth={3} />
-                </span>
-              </HapticButton>
-            );
-          })}
-        </div>
+            <button
+              type="button"
+              onClick={() => setIndex((value) => Math.min(cards.length - 1, value + 1))}
+              disabled={index >= cards.length - 1}
+              className="min-h-11 px-2 text-sm font-semibold text-foreground disabled:opacity-30"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </DrawerContent>
     </Drawer>
   );
 }
 
 export function TodayShowPlayer({
-  response,
-  activePundit,
-  pendingPundit,
+  show,
+  matches,
+  state,
+  pending,
   switchError,
-  settled,
-  onChoosePundit,
+  onOpen,
+  onPlay,
+  onStep,
   onRetry,
 }: {
-  response: TodayEditorialResponse;
-  activePundit: PersonalityId;
-  pendingPundit: PersonalityId | null;
+  show: TodayShow | null;
+  matches: PublicMatch[];
+  state: PublicToday["state"];
+  pending: { dropId: string; pundit: PunditId } | null;
   switchError: string | null;
-  settled: PublicPrediction[];
-  onChoosePundit: (id: PersonalityId) => void;
+  /** Open another pundit's show about the match on screen. */
+  onOpen: (dropId: string, pundit: PunditId) => void;
+  /** The listener pressed play on the show on screen: pin it there. */
+  onPlay: (show: TodayShow) => void;
+  /** Move to an earlier or later match. */
+  onStep: (match: PublicMatch) => void;
   onRetry: () => void;
 }) {
   const player = usePlayer();
-  const [proofOpen, setProofOpen] = useState(false);
-  const edition = editionFor(response);
-  const episode = useMemo(() => (edition ? editionEpisode(edition) : null), [edition]);
-  const active = episode != null && player.episode?.id === episode.id;
+  const [notice, setNotice] = useState<string | null>(null);
+  const episode = useMemo(() => (show ? editionEpisode(show, show.fixture) : null), [show]);
+  useEffect(() => setNotice(null), [show?.variant.id]);
+
+  if (!show || !episode) {
+    const empty = emptyStateCopy(state);
+    return (
+      <main className="flex min-h-0 flex-1 flex-col justify-center py-4">
+        <p className="eyebrow">Premier League</p>
+        <h1 className="serif mt-2 max-w-[14ch] text-[clamp(38px,11vw,50px)] leading-[0.98]">
+          {empty.title}
+        </h1>
+        <p className="mt-4 max-w-[34ch] text-[15px] leading-relaxed text-ink-2">{empty.body}</p>
+      </main>
+    );
+  }
+
+  const madeBy = show.variant.pundit_id;
+  const index = matches.findIndex((match) => match.dropId === show.variant.drop_id);
+  const match: PublicMatch =
+    matches[index] ??
+    ({
+      dropId: show.variant.drop_id,
+      coverageDate: show.coverageDate,
+      fixture: show.fixture,
+      pundits: [madeBy],
+      canonicalPundit: null,
+    } satisfies PublicMatch);
+  const fixture = show.fixture ?? match.fixture;
+  const earlier = index >= 0 ? matches[index + 1] : undefined;
+  const later = index > 0 ? matches[index - 1] : undefined;
+
+  const active = player.episode?.id === episode.id;
   const playing = active && player.isPlaying;
   const progress = active ? player.progress : 0;
-  const elapsed = progress * (episode?.durationSec ?? 0);
-  // The pundit who actually made this edition, which is not always the one the
-  // listener picked: when their own pundit has published nothing, they are
-  // shown the most recent show anyone published. Naming it after the selected
-  // pundit would be the persona substitution every gate downstream forbids.
-  const meta =
-    PERSONALITIES.find((item) => item.id === (edition?.variant.pundit_id ?? activePundit)) ??
-    PERSONALITIES.find((item) => item.id === activePundit)!;
-  const fallback = response.variant == null && edition != null;
-  const playerState = pendingPundit
+  const elapsed = progress * episode.durationSec;
+  const busy = pending !== null;
+  const playerState = busy
     ? "LOADING"
     : playing
       ? "PLAYING"
@@ -255,239 +380,203 @@ export function TodayShowPlayer({
           ? "PAUSED"
           : "READY";
 
-  if (!edition || !episode) {
-    const empty = emptyStateCopy(response.state);
-    return (
-      <main className="px-0 pb-8 pt-4">
-        <p className="eyebrow">{coverageDateLabel(response.coverageDate)}</p>
-        <section className="surface rounded-[26px] border-t-2 border-t-[var(--lime)] p-5">
-          <h1 className="max-w-[18ch] text-[clamp(30px,9vw,46px)] font-semibold leading-[0.98] tracking-[-0.055em] [text-wrap:balance]">
-            {empty.title}
-          </h1>
-          <p className="mt-4 max-w-[36ch] text-[15px] leading-relaxed text-muted-foreground [text-wrap:pretty]">
-            {empty.body}
-          </p>
-        </section>
-      </main>
-    );
-  }
+  const shown = personality(pending?.dropId === match.dropId ? pending.pundit : madeBy);
+  const status = switchError ? (
+    <span className="text-[#ff8877]">
+      {switchError}{" "}
+      <button type="button" onClick={onRetry} className="font-semibold text-foreground underline">
+        Retry
+      </button>
+    </span>
+  ) : pending ? (
+    `Loading ${personality(pending.pundit).name}...`
+  ) : (
+    (notice ?? shown.tag)
+  );
+
+  const partial = match.pundits.length < PERSONALITIES.length;
+  const hue = PUNDIT_HUES[pending?.dropId === match.dropId ? pending.pundit : madeBy];
 
   return (
-    <main className="px-0 pb-8 pt-4">
-      <p className="eyebrow mb-3">{coverageDateLabel(edition.coverageDate)}</p>
-      <article
-        className="surface relative overflow-hidden rounded-[26px] border-t-2 border-t-[var(--lime)] p-5 sm:p-7"
-        aria-labelledby="today-show-title"
-      >
-        {fallback && (
-          <p className="mb-3 text-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-            Latest show for {meta.name} · {coverageDateLabel(edition.coverageDate)}
-          </p>
-        )}
-        <h1
-          id="today-show-title"
-          className="max-w-[20ch] text-[clamp(30px,9vw,46px)] font-semibold leading-[0.98] tracking-[-0.055em] [hyphens:none] [overflow-wrap:normal] [text-wrap:balance]"
-        >
-          {withoutOrphan(episode.title)}
-        </h1>
-        <p className="mb-[18px] mt-[13px] max-w-[36ch] text-[15px] leading-[1.45] text-[#c5cbc8] [hyphens:none] [text-wrap:pretty]">
-          {episode.hook}
-        </p>
-
-        <PunditPicker
-          active={activePundit}
-          editionSeed={edition.variant.drop_id}
-          pending={pendingPundit}
-          onChoose={onChoosePundit}
-        />
-
-        <div className="mt-[17px] grid grid-cols-[64px_1fr] items-center gap-3.5">
-          <HapticButton
-            hapticPattern="success"
-            onClick={() => (active ? playerStore.toggle() : playerStore.play(episode, [episode]))}
-            disabled={pendingPundit !== null}
-            className="grid h-16 w-16 place-items-center rounded-full border-0 bg-[var(--lime)] text-[#09100c] shadow-[0_10px_28px_rgba(99,255,63,.16)] disabled:opacity-60"
-            aria-label={playing ? "Pause today's show" : "Play today's show"}
-          >
-            {playing ? (
-              <Pause className="h-7 w-7" fill="currentColor" />
-            ) : (
-              <Play className="h-7 w-7" fill="currentColor" />
-            )}
-          </HapticButton>
-          <div className="min-w-0">
-            <div className="mb-2 flex justify-between gap-2 text-mono text-[10px] tracking-[0.08em]">
-              <span className="text-[var(--lime)]">{playerState}</span>
-              <span className="text-muted-foreground">
-                {fmt(elapsed)} / {fmt(episode.durationSec)}
-              </span>
-            </div>
-            <input
-              className="today-progress w-full"
-              type="range"
-              min="0"
-              max="1000"
-              value={Math.round(progress * 1000)}
-              onChange={(event) => playerStore.seek(Number(event.target.value) / 1000)}
-              aria-label="Show progress"
-              style={{ "--progress": `${progress * 100}%` } as CSSProperties}
-              disabled={!active}
-            />
-          </div>
-        </div>
-
-        {response.proofCards.length > 0 && (
-          <div>
-            <button
-              type="button"
-              className="mt-2 inline-flex min-h-12 items-center gap-2 text-sm font-semibold"
-              aria-expanded={proofOpen}
-              aria-controls="today-proof-cards"
-              onClick={() => setProofOpen((value) => !value)}
-            >
-              <span className="grid h-[25px] w-[25px] place-items-center rounded-full border border-[color:color-mix(in_oklab,var(--lime)_50%,transparent)] text-mono text-[var(--lime)]">
-                ?
-              </span>
-              {proofOpen ? "Hide the proof" : "Show me why"}
-            </button>
-            {proofOpen && (
-              <div id="today-proof-cards" className="mt-2 grid gap-2.5">
-                {response.proofCards.map((card) => (
-                  <article
-                    key={card.id}
-                    className="rounded-2xl border border-[var(--pitch-line)] bg-[#0d1315] p-4 text-[13px] leading-[1.45]"
-                  >
-                    <p>
-                      <strong className="text-mono text-[10px] uppercase tracking-[0.11em] text-[var(--lime)]">
-                        The claim
-                      </strong>
-                      <br />
-                      {card.claim}
-                    </p>
-                    <div className="mt-2">
-                      <strong className="text-mono text-[10px] uppercase tracking-[0.11em] text-[var(--lime)]">
-                        The match fact
-                      </strong>
-                      <ul className="mt-1 list-disc space-y-1 pl-5">
-                        {card.evidence.map((line) => (
-                          <li key={line}>{line}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    {card.boundary && (
-                      <p className="mt-2 text-muted-foreground">
-                        <strong className="text-mono text-[10px] uppercase tracking-[0.11em] text-[var(--lime)]">
-                          What this cannot prove
-                        </strong>
-                        <br />
-                        {card.boundary}
-                      </p>
-                    )}
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {active && player.status === "error" && player.error && (
-          <p role="alert" className="mt-3 text-xs text-[#ff8877]">
-            {player.error}
-          </p>
-        )}
-      </article>
-
-      {(pendingPundit || switchError) && (
+    <main className="flex min-h-0 flex-1 flex-col" aria-labelledby="today-match">
+      {/* The selected AI Pundit's paper washes the lower ground, faintly. */}
+      <Backdrop>
         <div
-          className="fixed bottom-[94px] left-1/2 z-[70] flex w-[min(calc(100%_-_32px),540px)] -translate-x-1/2 items-center justify-between gap-3 rounded-[14px] border border-[var(--pitch-line)] bg-[#1a2123] p-3.5 text-[13px] shadow-2xl"
-          role={switchError ? "alert" : "status"}
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(110% 34% at 50% 80%, color-mix(in srgb, ${hue} 12%, transparent), transparent 72%)`,
+          }}
+        />
+      </Backdrop>
+
+      <div className="mt-[clamp(0px,0.6dvh,6px)] flex h-11 shrink-0 items-center justify-between">
+        <StepButton target={earlier} direction="earlier" disabled={busy} onStep={onStep} />
+        <p className="min-w-0 truncate whitespace-nowrap text-center text-[14px] text-ink-2">
+          <b className="font-semibold text-foreground">
+            {fixture?.competition ?? "Premier League"}
+          </b>
+          <span className="px-[0.4em]">·</span>
+          {coverageDateShortLabel(match.coverageDate)}
+        </p>
+        <StepButton target={later} direction="later" disabled={busy} onStep={onStep} />
+      </div>
+
+      {/* The match takes whatever height is left, so the seal grows on a tall
+          phone and nothing needs a scroll on a short one. A size container:
+          its own content never pushes the column taller. */}
+      <section className="flex min-h-0 flex-[1_1_0] items-center justify-center [container-type:size]">
+        {fixture ? (
+          <Board fixture={fixture} seed={match.dropId} />
+        ) : (
+          <h1 id="today-match" className="serif text-[34px]">
+            {coverageDateLabel(match.coverageDate)}
+          </h1>
+        )}
+      </section>
+
+      <section aria-labelledby="pundit-rail-label" className="shrink-0">
+        <h2
+          id="pundit-rail-label"
+          className="serif mb-[clamp(8px,1.4dvh,12px)] text-[clamp(17px,2.6dvh,20px)] italic"
+        >
+          Pick your AI Pundit
+          {partial && (
+            <span className="text-[#b3a690] [word-spacing:0.1em]">
+              {" · "}
+              {match.pundits.length} on this match
+            </span>
+          )}
+        </h2>
+        <div
+          role="group"
+          aria-labelledby="pundit-rail-label"
+          className="grid grid-cols-6 gap-[7px]"
+        >
+          {PERSONALITIES.map((item) => {
+            const available = match.pundits.includes(item.id);
+            const checked = item.id === madeBy;
+            const loading = pending?.pundit === item.id && pending.dropId === match.dropId;
+            return (
+              <HapticButton
+                key={item.id}
+                hapticPattern="soft"
+                aria-pressed={checked}
+                aria-disabled={!available || busy}
+                aria-label={available ? item.name : `${item.name}, no show for this match`}
+                onClick={() => {
+                  if (busy || checked) return;
+                  if (!available) {
+                    setNotice(`No show from ${item.name} for this match.`);
+                    return;
+                  }
+                  setNotice(null);
+                  onOpen(match.dropId, item.id);
+                }}
+                className={cn(
+                  "relative h-[clamp(48px,8.8dvh,68px)] w-full rounded-[2px]",
+                  "after:pointer-events-none after:absolute after:inset-0 after:z-[2] after:rounded-[2px]",
+                  checked &&
+                    "shadow-[0_8px_20px_rgba(0,0,0,0.4)] after:border-2 after:border-foreground",
+                  !available && "after:border after:border-[#3a332c]",
+                  loading && "animate-pulse",
+                )}
+              >
+                <PunditCover
+                  punditId={item.id}
+                  seed={match.dropId}
+                  fixture={fixture}
+                  className={cn(
+                    available && !checked && "[&>svg]:[filter:saturate(0.62)_brightness(0.9)]",
+                    !available && "[filter:grayscale(1)_brightness(0.35)]",
+                  )}
+                />
+              </HapticButton>
+            );
+          })}
+        </div>
+        <div
+          className="mt-[clamp(14px,2.5dvh,22px)] min-h-[52px] [@media(max-height:600px)]:mt-2"
           aria-live="polite"
         >
-          <span>
-            {switchError ??
-              `Loading ${PERSONALITIES.find((item) => item.id === pendingPundit)?.name}. Your show is still here.`}
-          </span>
-          {switchError && (
-            <button
-              type="button"
-              onClick={onRetry}
-              className="min-h-11 px-2 font-semibold text-[var(--lime)]"
-            >
-              Retry
-            </button>
-          )}
+          <p className="serif text-[clamp(25px,4dvh,31px)] leading-[1.02]">
+            {shown.name.startsWith("The ") ? (
+              <>
+                <i className="pr-[0.04em] text-ink-2">The</i> {shown.name.slice(4)}
+              </>
+            ) : (
+              shown.name
+            )}
+          </p>
+          <p className="mt-[clamp(2px,0.5dvh,5px)] line-clamp-2 text-[clamp(13.5px,2dvh,15px)] leading-[1.3] text-ink-2">
+            {status}
+          </p>
         </div>
-      )}
+      </section>
 
-      {response.recent.length > 0 && (
-        <section className="mt-8" aria-labelledby="more-to-play-title">
-          <div className="mb-3 flex items-baseline justify-between gap-3">
-            <h2
-              id="more-to-play-title"
-              className="text-xl font-semibold tracking-[-0.025em] [text-wrap:balance]"
-            >
-              More to play
-            </h2>
-            <span className="text-xs text-muted-foreground">Checked shows only</span>
-          </div>
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            {response.recent.slice(0, 4).map((recent) => {
-              const item = PERSONALITIES.find(
-                (personality) => personality.id === recent.variant.pundit_id,
-              )!;
-              const recentEpisode = editionEpisode(recent);
-              return (
-                <article
-                  key={recent.variant.id}
-                  className="grid min-h-[82px] grid-cols-[1fr_44px] items-center gap-2 rounded-[17px] border border-[var(--pitch-line)] bg-card p-3.5"
-                >
-                  <div className="min-w-0">
-                    <div className="text-mono text-[10px] uppercase tracking-[0.1em] text-[var(--lime)]">
-                      {coverageDateLabel(recent.coverageDate)}
-                    </div>
-                    <p className="mt-1 text-sm font-semibold [hyphens:none] [text-wrap:balance]">
-                      {withoutOrphan(recent.variant.title)}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {item.name} ·{" "}
-                      {Math.max(1, Math.round((recent.variant.audio_duration_sec ?? 0) / 60))} min
-                    </p>
-                  </div>
-                  <HapticButton
-                    hapticPattern="success"
-                    onClick={() => playerStore.play(recentEpisode, [recentEpisode])}
-                    className="grid h-11 w-11 place-items-center rounded-full border border-[var(--pitch-line)]"
-                    aria-label={`Play ${recent.variant.title}`}
-                  >
-                    <Play className="h-4 w-4" fill="currentColor" />
-                  </HapticButton>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {settled.length > 0 && (
-        <section className="mt-8" aria-labelledby="pundit-record-title">
-          <h2
-            id="pundit-record-title"
-            className="mb-3 text-xl font-semibold tracking-[-0.025em] [text-wrap:balance]"
-          >
-            How did they do?
-          </h2>
-          <Link
-            to="/receipts"
-            className="grid grid-cols-[1fr_auto] gap-2 rounded-[17px] border border-[var(--pitch-line)] bg-card p-4"
-          >
-            <strong className="[text-wrap:balance]">{meta.name}, checked after full time</strong>
-            <span className="text-[13px] font-semibold text-[var(--lime)]">See it</span>
-            <span className="col-span-2 text-[13px] leading-[1.4] text-muted-foreground">
-              What they said, what happened, and the bit they missed.
+      <section
+        aria-label="Player"
+        className="mt-[clamp(10px,3dvh,26px)] flex shrink-0 items-center gap-4 [@media(max-height:600px)]:mt-2"
+      >
+        <HapticButton
+          hapticPattern="success"
+          onClick={() => {
+            if (active) {
+              playerStore.toggle();
+              return;
+            }
+            onPlay(show);
+            playerStore.play(episode, [episode]);
+          }}
+          disabled={busy}
+          className="grid h-[clamp(52px,7.6dvh,58px)] w-[clamp(52px,7.6dvh,58px)] shrink-0 place-items-center rounded-full border-0 bg-[var(--lime)] text-[var(--primary-foreground)] disabled:opacity-60"
+          aria-label={
+            playing
+              ? `Pause ${shown.name} on ${matchLabel(fixture) ?? "this match"}`
+              : `Play ${shown.name} on ${matchLabel(fixture) ?? "this match"}`
+          }
+        >
+          {playing ? (
+            <Pause className="h-[38%] w-[38%]" fill="currentColor" strokeWidth={0} />
+          ) : (
+            <Play
+              className="h-[38%] w-[38%] translate-x-[1px]"
+              fill="currentColor"
+              strokeWidth={0}
+            />
+          )}
+        </HapticButton>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[12.5px] font-semibold tracking-[0.07em]">{playerState}</span>
+            <span className="text-[14px] text-ink-2 [font-variant-numeric:tabular-nums]">
+              <b className="font-medium text-foreground">{fmt(elapsed)}</b> /{" "}
+              {fmt(episode.durationSec)}
             </span>
-          </Link>
-        </section>
+          </div>
+          <input
+            className="today-progress -mb-[13px] -mt-[9px] w-full"
+            type="range"
+            min="0"
+            max="1000"
+            value={Math.round(progress * 1000)}
+            onChange={(event) => playerStore.seek(Number(event.target.value) / 1000)}
+            aria-label="Show progress"
+            style={{ "--progress": `${progress * 100}%` } as CSSProperties}
+            disabled={!active}
+          />
+        </div>
+      </section>
+      {active && player.status === "error" && player.error && (
+        <p role="alert" className="mt-2 shrink-0 text-xs text-[#ff8877]">
+          {player.error}
+        </p>
       )}
+      <div className="mt-[clamp(2px,1.2dvh,10px)] flex h-11 shrink-0 justify-center [@media(max-height:600px)]:mt-0">
+        {show.proofCards.length > 0 && (
+          <ProofSheet cards={show.proofCards} punditName={personality(madeBy).name} />
+        )}
+      </div>
+      <div className="shrink-0 basis-[clamp(4px,2dvh,18px)] [@media(max-height:600px)]:basis-1" />
     </main>
   );
 }

@@ -3,7 +3,7 @@
 - **Status:** Current and binding
 - **Owner:** Editorial, product, engineering, and legal
 - **Purpose:** Define what Full Time may claim, how humour works, what blocks publication, and how incidents are handled.
-- **Last reviewed:** 2026-09-07
+- **Last reviewed:** 2026-09-21
 
 ## Core rule
 
@@ -29,6 +29,14 @@ Every factual or analytical statement points to evidence IDs. A claim is rejecte
 - hides missing evidence that would materially change the judgment.
 
 Structured match data may support recorded events, statistics, game state, variance, and calibrated expectations. It does not prove pressing shapes, spacing, body position, coaching intent, confidence, effort, leadership, or dressing-room politics.
+
+### League position
+
+From 2026-09-21 the evidence pack may carry a league table for the two clubs in the match, taken from a standings snapshot captured at or after kickoff. It licenses exactly what the snapshot states: a position, a points total, matches played, and the gap between the two. A positional statement is licensed the same way a number is, by citing the evidence that carries it, and is refused when the pack carries no table. That is a tightening as well as an unlock: the score-derived number licence makes small integers available, so "fourth in the table" was sayable before with no table in the evidence at all.
+
+Season-level outcomes stay unavailable whatever the table says. Relegation, survival, the title, European qualification, promotion and the play-offs all depend on matches remaining, on other clubs' fixtures, or on a competition's qualification rules, and a standings snapshot carries none of those. A table says a side is fourth; it does not say that fourth is a European place this season.
+
+Ruling (Krish, 2026-09-21): licence it, do not open it.
 
 ## Public proof cards
 

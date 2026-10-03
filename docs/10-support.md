@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Support and product
 - **Purpose:** Provide plain, accurate user answers, first-line diagnosis, and escalation paths.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-27
 
 ## Tone
 
@@ -59,7 +59,7 @@ No. Full Time is football commentary, not betting advice. Public forecast scores
 
 ### Which leagues are available?
 
-The intended beta is Premier League first, with other leagues later. The Teams screen has not yet finished that restriction, so confirm the exact live data before telling a user that a league is supported.
+Premier League only, since 2026-09-27. Teams lists the twenty clubs of the current Premier League season; there are no other leagues and none coming later. Older follows from other leagues stay saved but do not count.
 
 ### What does following a team change?
 

@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Engineering
 - **Purpose:** Provide a reliable setup path, repository map, invariants, and change checklist.
-- **Last reviewed:** 2026-09-07
+- **Last reviewed:** 2026-10-02
 
 ## Quick start
 
@@ -53,7 +53,9 @@ src/routes/                     pages and HTTP routes
 src/workflows/                  durable daily-pundit workflow and retryable steps
 src/components/                 product components and UI primitives
 src/components/TodayShowPlayer.tsx  player-first Today experience
-src/components/PunditAvatar.tsx     generated AI Pundit edition visuals
+src/components/PunditCover.tsx      generated AI Pundit covers (src/lib/pundit-cover.ts)
+src/components/MatchSeal.tsx        the engraved score seal (src/lib/match-seal.ts)
+src/components/MatchAtmosphere.tsx  club floodlight behind the seal (src/lib/match-atmosphere.ts)
 src/hooks/                      auth, entitlement and feed hooks
 src/lib/pundit/                 current six-pundit intelligence system
 src/lib/api/                    application services and legacy recap path

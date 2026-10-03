@@ -3,7 +3,7 @@
 - **Status:** Current operating posture; final launch requires qualified counsel
 - **Owner:** Founder and legal
 - **Purpose:** Record data, rights, disclosure, billing, processor, and incident requirements.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-10-02
 
 > This document is an internal operating record, not legal advice.
 
@@ -32,6 +32,7 @@ Any change to collection, retention, processors, billing, rights, or disclosure 
 | Prediction and receipt records | Public accountability                  | Retained as editorial records; remove personal linkage where applicable |
 | Stripe identifiers and status  | Existing billing management            | Legal/accounting period, then deletion or minimization                  |
 | PostHog identifiers and events | Product analytics                      | Confirm project region, consent mode, and retention before launch       |
+| Google Analytics page views    | Web traffic and acquisition analytics  | Confirm consent mode and data retention setting                         |
 | Support correspondence         | Resolve requests and incidents         | Define category-specific retention before launch                        |
 
 Do not collect card data, contacts, microphone, camera, precise location, or cross-site profiles in the current product.
@@ -41,6 +42,7 @@ Do not collect card data, contacts, microphone, camera, precise location, or cro
 - document controller identity and contact route;
 - confirm UK/EU legal bases and consent behavior with counsel;
 - configure and record PostHog region, retention, cookie behavior, and opt-out;
+- configure and record Google Analytics consent mode, retention, and cookie behavior (tag `G-W2QL8RKFJ1`, loaded on every page since 2026-09-27);
 - document international transfers and processor agreements;
 - publish deletion, access, correction, portability, and objection procedures;
 - test account export and deletion end to end;
@@ -52,6 +54,19 @@ Do not collect card data, contacts, microphone, camera, precise location, or cro
 
 Full Time may use only data, research, voices, and assets covered by a recorded permission, license, or counsel-approved legal basis.
 
+### Free-to-access sources, from 2026-09-21
+
+Ruling (Krish, 2026-09-21): ingest the free-to-access analytics tier for production evidence, accepting the rights exposure. The recommendation was against it and is recorded here rather than relitigated.
+
+What that means in plain terms. These sources are free to read and were never licensed for reuse. No permission was sought or granted for automated collection or commercial use, and at least one of them states that its data is for private individuals and not for commercial or AI products using automated collection. The founder override of 2026-09-04 waived the data-rights sign-off; it did not close it, and this keeps it open by choice rather than by backlog.
+
+The record stays honest about that. Every such source carries `basis: "unlicensed"` with its restriction written out in full, and no `research_sources` row will claim a permission nobody granted. A fabricated audit record would cost more than the data is worth, because the audit trail is the whole basis of this product's editorial claim.
+
+Two consequences follow in the code rather than only here:
+
+- a number from one of these sources enters the evidence pack as an estimate with its model named, never as a counted fact, because who may use a number and what the number is are separate questions;
+- every such source is fail-soft, so nothing a listener hears depends on one being reachable, and every line derived from one is individually identifiable for removal if the posture changes.
+
 The product:
 
 - uses structured match facts and original prose;
@@ -59,9 +74,18 @@ The product:
 - uses commercially licensed synthetic voices selected through full-length testing;
 - preserves source permission, attribution, and expiry in `research_sources`;
 - avoids living-pundit style and voice imitation;
-- does not use broadcast audio, highlight footage, transcripts, club crests, league marks, or broadcaster marks without permission.
+- does not use broadcast audio, highlight footage, transcripts, league marks, or broadcaster marks without permission;
+- shows club crests from the data provider's public imagery without permission, by founder ruling (below).
 
 NotebookLM is an internal research workbench. It is not a production writer or a substitute for source rights.
+
+### Club crests, from 2026-09-27
+
+Ruling (Krish, 2026-09-27): show club crests from the provider's public imagery, accepting the trademark exposure. This replaces the earlier rule that no club crest is used without recorded permission.
+
+What that means in plain terms. A club crest is the club's mark. No club granted permission and none was sought. The image is API-Football's team logo, stored by the ingest as `teams.crest_url` and rendered by `src/components/ClubCrest.tsx` beside the club's name on Today and Teams. It is decorative, carries no alt text, and a crest that fails to load leaves an empty square. `crestUrl` in `src/lib/premier-league.ts` passes only an https URL to an image tag.
+
+What stays prohibited. League marks, the Premier League logo included, and broadcaster marks are still not used; the competition is named in text only. If the posture changes, crests are removed in one place, because every crest on screen goes through `ClubCrest`.
 
 ## AI disclosure
 
@@ -103,8 +127,10 @@ Current or retained integrations include:
 | ElevenLabs | TTS and transcription services                           | Approved script and pronunciation context; no account PII by design               |
 | Stripe     | Existing billing management and future reviewed checkout | Email, customer, subscription, and provider-held payment data                     |
 | PostHog    | Product analytics                                        | Pseudonymous usage events and request metadata                                    |
+| Google     | Web analytics (Google Analytics 4, gtag.js)              | Pseudonymous page views, referrer and device metadata, first-party `_ga` cookies  |
+| FotMob     | Second expected-goals model, read-only, unlicensed       | No data sent; match identifiers requested. See the free-to-access note above      |
 
-The CSS font stack names Geist but the current repository does not request Google Fonts or another web-font provider. Do not list a font processor unless a deployed build makes that request.
+Since 2026-10-02 the app uses Instrument Serif and Schibsted Grotesk, both under the SIL Open Font License 1.1, bundled from the `@fontsource` packages and served from Full Time's own origin. No request goes to Google Fonts or any other web-font provider, so there is no font processor to list.
 
 Confirm contracts, regions, retention, subprocessors, and deletion behavior before launch. The public privacy page must match reality.
 

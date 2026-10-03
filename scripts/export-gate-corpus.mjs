@@ -32,21 +32,35 @@ async function rest(path) {
   return response.json();
 }
 
+// Every field below is one the hard gates actually read. A corpus that stores
+// the prose but not the pack, the claims and the thesis can only replay the
+// gates that are pure functions of text, which are not the ones that have been
+// getting this wrong. The join is variant.drop_id -> pack.drop_id ->
+// claim.evidence_pack_id, so no fourth query is needed.
 const packs = await rest(
-  "evidence_packs?select=id,match_id,facts,derivations,unavailable_evidence&order=created_at.desc&limit=10",
+  "evidence_packs?select=id,drop_id,match_id,version,created_at,facts,derivations," +
+    "unavailable_evidence&order=created_at.desc&limit=40",
 );
 const variants = await rest(
-  "pundit_variants?select=id,drop_id,pundit_id,status,display_script&display_script=not.is.null&limit=100",
+  "pundit_variants?select=id,drop_id,pundit_id,spec_version,status,display_script,spoken_script," +
+    "thesis,beat_outline,performance_plan&display_script=not.is.null&limit=100",
 );
 const claims = await rest(
-  "analysis_claims?select=id,match_id,type,thesis,evidence_refs,confidence&limit=300",
+  "analysis_claims?select=id,evidence_pack_id,match_id,type,thesis,evidence_refs,confidence," +
+    "alternative_explanation,missing_evidence,falsifier,evaluation_rule&limit=600",
 );
 
 // The gate verdicts are what makes this a golden set rather than a pile of
 // text: they record what the gates concluded at the time, so a change of mind
 // is visible rather than silent.
+//
+// Both directions are kept. Failures alone would catch a gate that goes soft,
+// and miss a gate that starts refusing correct writing - which is the fault
+// class this file exists for. Qualitative judges are excluded because their
+// verdicts are a model's opinion and cannot be replayed deterministically.
 const verdicts = await rest(
-  "harness_runs?select=variant_id,harness_name,attempt,passed,failure,evidence_span&passed=eq.false&limit=2000",
+  "harness_runs?select=variant_id,harness_name,attempt,passed,failure,evidence_span" +
+    "&hard_gate=eq.true&limit=4000",
 );
 
 const corpus = {
@@ -59,7 +73,8 @@ const corpus = {
     packs: packs.length,
     variants: variants.length,
     claims: claims.length,
-    failedVerdicts: verdicts.length,
+    hardGateVerdicts: verdicts.length,
+    failedVerdicts: verdicts.filter((v) => !v.passed).length,
   },
 };
 
@@ -68,5 +83,6 @@ mkdirSync(dirname(target), { recursive: true });
 writeFileSync(target, `${JSON.stringify(corpus, null, 2)}\n`);
 console.log(
   `Wrote ${target}: ${corpus.counts.packs} packs, ${corpus.counts.variants} scripts, ` +
-    `${corpus.counts.claims} claims, ${corpus.counts.failedVerdicts} failed verdicts.`,
+    `${corpus.counts.claims} claims, ${corpus.counts.hardGateVerdicts} hard-gate verdicts ` +
+    `(${corpus.counts.failedVerdicts} failed).`,
 );

@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { hasClientSupabaseConfig } from "@/lib/supabase-availability";
 import { SITE_URL, DEFAULT_COVER_IMAGE_URL } from "@/lib/site-url";
 import { ldJson } from "@/lib/seo";
+import { GOOGLE_TAG_INIT, GOOGLE_TAG_SRC } from "@/lib/google-tag";
 
 const SITE_NAME_TITLE = "Full Time - Six AI Pundits, one real football match";
 const SITE_DESCRIPTION =
@@ -73,7 +74,7 @@ function siteJsonLd() {
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex flex-1 items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <p className="mt-2 text-sm text-muted-foreground">No match here. Try the home feed.</p>
@@ -90,7 +91,9 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+// The router types a boundary error as unknown since 1.170: anything can be
+// thrown. Nothing here reads it as an Error, so the type is all that changes.
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -188,6 +191,13 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
+        {/* Google tag (gtag.js), top of <head> as Google asks. React 19 still
+            emits charset, viewport, preloads and stylesheets ahead of it, so
+            in the served HTML it is the first script, not the first tag. Not
+            in `head().scripts` beside PostHog: HeadContent emits those after
+            every meta tag. */}
+        <script async src={GOOGLE_TAG_SRC} />
+        <script dangerouslySetInnerHTML={{ __html: GOOGLE_TAG_INIT }} />
         <HeadContent />
       </head>
       <body>
@@ -202,7 +212,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const wideLayout = pathname === "/" || pathname === "/receipts";
+  const wideLayout = pathname === "/receipts";
 
   useEffect(() => {
     if (!hasClientSupabaseConfig()) return;
@@ -218,16 +228,36 @@ function RootComponent() {
     <MotionConfig reducedMotion="user">
       <QueryClientProvider client={queryClient}>
         <CompletionToast />
-        <div
-          className={`mx-auto min-h-screen w-full px-4 pb-[150px] transition-[max-width] md:pb-16 ${
-            wideLayout ? "max-w-5xl" : "max-w-md"
-          }`}
-        >
+        {/* One screen, no page scroll. The screen region can still scroll as
+            a last resort, for legal text or when a listener zooms in, but no
+            tab is allowed to need it at a phone's default size. */}
+        <div className="app-frame relative">
+          {/* Behind everything: a screen's light (the floodlit match on Today,
+              the followed clubs on Teams) draws here, so it reaches the top. */}
+          <div
+            id="app-backdrop"
+            className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+            aria-hidden
+          />
           <AppHeader />
-          <Outlet />
+          {/* Full width, so a legacy page that does need the last-resort
+              scroll scrolls wherever the pointer is; the column sits inside. */}
+          <div
+            id="screen"
+            className="relative z-[1] flex min-h-0 w-full flex-1 flex-col overflow-y-auto overscroll-contain"
+          >
+            <div
+              className={`mx-auto flex w-full flex-1 flex-col px-4 ${
+                wideLayout ? "max-w-5xl" : "max-w-md"
+              }`}
+            >
+              <Outlet />
+            </div>
+          </div>
+          {pathname !== "/" && <MiniPlayer />}
+          <BottomNav />
+          <div className="app-grain" aria-hidden />
         </div>
-        {pathname !== "/" && <MiniPlayer />}
-        <BottomNav />
       </QueryClientProvider>
     </MotionConfig>
   );

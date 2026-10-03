@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Data and engineering
 - **Purpose:** Map the production schema, ownership, immutability, RLS, and migration rules.
-- **Last reviewed:** 2026-09-07
+- **Last reviewed:** 2026-09-27
 
 ## Authority
 
@@ -56,7 +56,7 @@ erDiagram
 
 New billing is disabled in application code. Retained columns support existing subscriber management and future reviewed reactivation.
 
-The intended Premier-League-only beta is an application-response rule, not a schema migration. Existing non-Premier-League follows remain stored. The current `getTeamsAndLeagues` function has not yet applied the beta restriction, so no document or agent may claim it has shipped.
+Premier League only is an application-response rule, not a schema migration, and it has shipped. Ruling (Krish, 2026-09-27): Premier League teams only, across the product. The league id is one constant, `PREMIER_LEAGUE_ID` (`af_39`) in `src/lib/premier-league.ts`; team `af_39` is Wolves, so league ids are compared only against league ids. `getPremierLeagueClubs` in `src/lib/api/feed.functions.ts` (which replaced `getTeamsAndLeagues`) returns the twenty clubs of the current season: the clubs that appear in a match of the latest stored Premier League season, because `teams.league_id = af_39` alone returned 25 on 2026-09-27, relegated clubs included. Existing follows of other leagues' clubs, `league:` ids, and legacy ids remain stored in `follows` and are excluded from the Teams count.
 
 ### Editorial intelligence
 

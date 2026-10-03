@@ -17,6 +17,13 @@ function nullableNumber(value: number | string | null | undefined): number | nul
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+type EstimateRow = {
+  source_id: string;
+  model: string;
+  home_xg: number | string | null;
+  away_xg: number | string | null;
+};
+
 type PriorRow = {
   kickoff_at: string;
   home_team_id: string;
@@ -77,21 +84,26 @@ export async function loadStructuredMatch(matchId: string) {
       supabaseAdmin
         .from("matches")
         .select(
-          "id, kickoff_at, home_team_id, away_team_id, home_score, away_score, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name)",
+          "id, kickoff_at, home_team_id, away_team_id, home_score, away_score, league_id, season, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name)",
         )
         .eq("id", matchId)
         .single(),
       supabaseAdmin
         .from("match_events")
+        // The assist is embedded by constraint name, not by column:
+        // match_events has two foreign keys into players, so the column form is
+        // ambiguous. The whole select has to stay one string literal, because
+        // supabase-js parses it at compile time to type the row and a
+        // concatenated expression types every column as an error.
         .select(
-          "id, type, minute, added_time, team_id, player_name, detail, source, teams:team_id(name)",
+          "id, type, minute, added_time, team_id, player_name, detail, source, teams:team_id(name), assist:players!match_events_assist_player_id_fkey(name)",
         )
         .eq("match_id", matchId)
         .order("minute"),
       supabaseAdmin.from("match_stats").select("*").eq("match_id", matchId).maybeSingle(),
       supabaseAdmin
         .from("match_context")
-        .select("feeds_agree")
+        .select("feeds_agree, matchday, home_gk_name, away_gk_name, home_gk_subbed, away_gk_subbed")
         .eq("match_id", matchId)
         .maybeSingle(),
     ]);
@@ -104,49 +116,113 @@ export async function loadStructuredMatch(matchId: string) {
   const rowWithTeams = match as unknown as MatchRow & {
     home_team_id: string;
     away_team_id: string;
+    league_id: string | null;
+    season: number | null;
   };
   const teamIds = [rowWithTeams.home_team_id, rowWithTeams.away_team_id].filter(Boolean);
-  const [{ data: priorRows }, { data: h2hRows }] = await Promise.all([
-    teamIds.length
-      ? supabaseAdmin
-          .from("matches")
-          .select(
-            "kickoff_at, home_team_id, away_team_id, home_score, away_score, home:home_team_id(name), away:away_team_id(name)",
-          )
-          .eq("status", "finished")
-          .lt("kickoff_at", row.kickoff_at)
-          // The lower bound is the fix: without it the query happily returns a
-          // result from the previous calendar year and calls it form.
-          .gte(
-            "kickoff_at",
-            new Date(
-              new Date(row.kickoff_at).getTime() - FORM_WINDOW_DAYS * 24 * 60 * 60 * 1000,
-            ).toISOString(),
-          )
-          .or(teamIds.map((id) => `home_team_id.eq.${id},away_team_id.eq.${id}`).join(","))
-          .order("kickoff_at", { ascending: false })
-          .limit(FORM_MATCHES * 4)
-      : Promise.resolve({ data: [] }),
-    teamIds.length === 2
-      ? supabaseAdmin
-          .from("h2h_cache")
-          .select("meetings")
-          // The pairing is stored in whichever order the ingest saw it, and a
-          // row cannot have the same team on both sides, so asking for both
-          // columns to be one of these two teams matches it either way round.
-          // A nested and-inside-or would do the same and would return nothing
-          // at all if a bracket were wrong, which is the shape of failure that
-          // has already cost this project five days of expected goals.
-          .in("team_a_id", teamIds)
-          .in("team_b_id", teamIds)
-          .limit(1)
-      : Promise.resolve({ data: [] }),
-  ]);
+  const [{ data: priorRows }, { data: h2hRows }, { data: standingsRows }, { data: estimateRows }] =
+    await Promise.all([
+      teamIds.length
+        ? supabaseAdmin
+            .from("matches")
+            .select(
+              "kickoff_at, home_team_id, away_team_id, home_score, away_score, home:home_team_id(name), away:away_team_id(name)",
+            )
+            .eq("status", "finished")
+            .lt("kickoff_at", row.kickoff_at)
+            // The lower bound is the fix: without it the query happily returns a
+            // result from the previous calendar year and calls it form.
+            .gte(
+              "kickoff_at",
+              new Date(
+                new Date(row.kickoff_at).getTime() - FORM_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+              ).toISOString(),
+            )
+            .or(teamIds.map((id) => `home_team_id.eq.${id},away_team_id.eq.${id}`).join(","))
+            .order("kickoff_at", { ascending: false })
+            .limit(FORM_MATCHES * 4)
+        : Promise.resolve({ data: [] }),
+      teamIds.length === 2
+        ? supabaseAdmin
+            .from("h2h_cache")
+            .select("meetings")
+            // The pairing is stored in whichever order the ingest saw it, and a
+            // row cannot have the same team on both sides, so asking for both
+            // columns to be one of these two teams matches it either way round.
+            // A nested and-inside-or would do the same and would return nothing
+            // at all if a bracket were wrong, which is the shape of failure that
+            // has already cost this project five days of expected goals.
+            .in("team_a_id", teamIds)
+            .in("team_b_id", teamIds)
+            .limit(1)
+        : Promise.resolve({ data: [] }),
+      // The league table as it stood after this match was played.
+      //
+      // At or after kickoff, ascending, one row: the first snapshot taken once
+      // this result was in it. A table captured before the match cannot license
+      // a statement about the position after it, and the most recent snapshot
+      // would fold in later rounds when a backfill reaches an old fixture.
+      rowWithTeams.league_id && rowWithTeams.season != null
+        ? supabaseAdmin
+            .from("standings_snapshots")
+            .select("rows, captured_at")
+            .eq("league_id", rowWithTeams.league_id)
+            .eq("season", rowWithTeams.season)
+            .gte("captured_at", row.kickoff_at)
+            .order("captured_at", { ascending: true })
+            .limit(1)
+        : Promise.resolve({ data: [] }),
+      // Second opinions on the numbers, from whatever answered when this match
+      // was ingested. Read from the database like everything else, so the pack
+      // stays closed-world and a run is reproducible.
+      //
+      // Through the untyped reader because the generated Supabase types cannot
+      // carry a table whose migration has not been applied, and those types are
+      // regenerated from the live schema rather than hand-edited. An absent
+      // table reads as no estimates, which is what no source answering looks
+      // like anyway.
+      (async () => {
+        try {
+          const { serviceRest } = await import("./service-rest.server");
+          return {
+            data: await serviceRest<EstimateRow[]>(
+              `source_match_estimates?match_id=eq.${encodeURIComponent(matchId)}` +
+                "&select=source_id,model,home_xg,away_xg",
+            ),
+          };
+        } catch {
+          return { data: [] as EstimateRow[] };
+        }
+      })(),
+    ]);
   const prior = (priorRows ?? []) as unknown as PriorRow[];
   const teamName = new Map([
     [rowWithTeams.home_team_id, row.home?.name],
     [rowWithTeams.away_team_id, row.away?.name],
   ]);
+
+  // Two clubs, not twenty. A full table is about three thousand characters per
+  // league, and a step reads the pack roughly a hundred and seventy times.
+  const snapshot = (standingsRows ?? [])[0] as { rows: unknown; captured_at: string } | undefined;
+  const standingFor = (teamId: string) => {
+    const rows = Array.isArray(snapshot?.rows)
+      ? (snapshot.rows as Array<Record<string, unknown>>)
+      : [];
+    const entry = rows.find((candidate) => candidate.team_id === teamId);
+    if (!entry) return undefined;
+    return {
+      rank: nullableNumber(entry.rank as number | null),
+      points: nullableNumber(entry.points as number | null),
+      played: nullableNumber(entry.played as number | null),
+    };
+  };
+  const table = snapshot
+    ? {
+        capturedAt: snapshot.captured_at,
+        home: standingFor(rowWithTeams.home_team_id),
+        away: standingFor(rowWithTeams.away_team_id),
+      }
+    : undefined;
   const meetings = (
     ((h2hRows ?? [])[0]?.meetings ?? []) as Array<{
       date?: string;
@@ -157,15 +233,13 @@ export async function loadStructuredMatch(matchId: string) {
     }>
   )
     .filter((meeting) => meeting.date && meeting.home_id && meeting.away_id)
-    .map(
-      (meeting): PriorMeeting => ({
-        date: meeting.date!,
-        homeTeam: teamName.get(meeting.home_id!) ?? meeting.home_id!,
-        awayTeam: teamName.get(meeting.away_id!) ?? meeting.away_id!,
-        homeGoals: meeting.home_goals ?? 0,
-        awayGoals: meeting.away_goals ?? 0,
-      }),
-    )
+    .map((meeting): PriorMeeting => ({
+      date: meeting.date!,
+      homeTeam: teamName.get(meeting.home_id!) ?? meeting.home_id!,
+      awayTeam: teamName.get(meeting.away_id!) ?? meeting.away_id!,
+      homeGoals: meeting.home_goals ?? 0,
+      awayGoals: meeting.away_goals ?? 0,
+    }))
     .sort((left, right) => right.date.localeCompare(left.date))
     .slice(0, FORM_MATCHES);
   const stat = stats as Record<string, number | string | null> | null;
@@ -188,6 +262,18 @@ export async function loadStructuredMatch(matchId: string) {
       team: (event.teams as { name?: string } | null)?.name ?? event.team_id,
       player: event.player_name,
       detail: (event as { detail?: string | null }).detail ?? null,
+      // Goals only. The provider keeps the incoming player of a substitution in
+      // the same column, which the ingest de-inverts into player_name with the
+      // outgoing man in detail. Reading it for a substitution would present the
+      // player who went off as the assister, and no gate could catch that: he
+      // is a real player who really was on the pitch, so the entity licence
+      // would pass him and a judge would have no reason to doubt it.
+      //
+      // Penalties are excluded for a different reason. Whatever the provider
+      // records there, it is not an assist in the sense a pundit means, and
+      // this product does not make a claim stronger than its evidence.
+      assist:
+        event.type === "goal" ? ((event.assist as { name?: string } | null)?.name ?? null) : null,
       source: event.source ?? "database-verified",
     })),
     stats: stat
@@ -208,9 +294,21 @@ export async function loadStructuredMatch(matchId: string) {
           awayCorners: nullableNumber(stat.away_corners),
           homeSaves: nullableNumber(stat.home_saves),
           awaySaves: nullableNumber(stat.away_saves),
+          homeBlocked: nullableNumber(stat.home_blocked),
+          awayBlocked: nullableNumber(stat.away_blocked),
           source: String(stat.source ?? "database-verified"),
         }
       : undefined,
+    goalkeepers: {
+      home: {
+        name: context?.home_gk_name ?? null,
+        subbed: context?.home_gk_subbed ?? null,
+      },
+      away: {
+        name: context?.away_gk_name ?? null,
+        subbed: context?.away_gk_subbed ?? null,
+      },
+    },
     form: {
       home: priorMatches(
         prior.filter(
@@ -231,6 +329,14 @@ export async function loadStructuredMatch(matchId: string) {
     },
     headToHead: meetings,
     feedsAgree: context?.feeds_agree ?? null,
+    matchday: context?.matchday ?? null,
+    table,
+    estimates: (estimateRows ?? []).map((estimate) => ({
+      sourceId: estimate.source_id,
+      model: estimate.model,
+      homeXg: nullableNumber(estimate.home_xg),
+      awayXg: nullableNumber(estimate.away_xg),
+    })),
   };
   const entities = [
     row.home?.name,

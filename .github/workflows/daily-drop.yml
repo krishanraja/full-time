@@ -9,6 +9,9 @@ on:
       matchId:
         description: "Produce this exact match instead of the day's most important one"
         required: false
+      attempts:
+        description: "Repair rounds per pundit (default 2). 1 halves the cost of a diagnostic run; it can only lower the environment's ceiling, never raise it"
+        required: false
 
 jobs:
   drop:
@@ -22,6 +25,9 @@ jobs:
           if [ -n "${MATCH_IN:-}" ]; then
             if [ -z "$QS" ]; then QS="?matchId=${MATCH_IN}"; else QS="${QS}&matchId=${MATCH_IN}"; fi
           fi
+          if [ -n "${ATTEMPTS_IN:-}" ]; then
+            if [ -z "$QS" ]; then QS="?attempts=${ATTEMPTS_IN}"; else QS="${QS}&attempts=${ATTEMPTS_IN}"; fi
+          fi
           curl --fail --silent --show-error \
             -X POST "${FULL_TIME_URL}/api/internal/daily-rehearsal${QS}" \
             -H "Content-Type: application/json" \
@@ -32,3 +38,4 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           DATE_IN: ${{ inputs.date }}
           MATCH_IN: ${{ inputs.matchId }}
+          ATTEMPTS_IN: ${{ inputs.attempts }}

@@ -32,7 +32,12 @@ try {
 
 if (state) {
   if (state.schemaVersion !== 1) failures.push(`${statePath}: unsupported schemaVersion`);
-  if (state.asOf !== "2026-09-07")
+  // 2026-09-21 is the league-table evidence tier, the provider drift ledger and
+  // the second expected-goals model. The date is pinned rather than free so that
+  // a stale product-state cannot pass by accident; it moves when the state is
+  // genuinely reconciled, in the same commit.
+  // 2026-09-27 is Premier League only, one match on Today, and the no-scroll frame.
+  if (state.asOf !== "2026-09-27")
     failures.push(`${statePath}: asOf must match this reconciliation`);
   if (state.product?.lifecycle !== "live-beta") failures.push(`${statePath}: lifecycle drifted`);
   if (
@@ -73,10 +78,15 @@ for (const path of currentDocs) {
   requireText(path, /\*\*Owner:\*\*/, "missing Owner field");
   requireText(path, /\*\*Purpose:\*\*/, "missing Purpose field");
   // 2026-08-11 was the full handbook reconciliation. 2026-09-04 is the founder
-  // launch override; only the documents that changed carry that date.
+  // launch override; only the documents that changed carry that date. 2026-09-21
+  // is the league-table evidence tier and the consequence licence. 2026-09-22 is
+  // the shared judge cache fix, per-run spend recording, and the fixture field
+  // added to the public payload; only the documents that changed carry that date.
+  // 2026-09-27 is Premier League only, one match on Today, and the no-scroll frame.
+  // 2026-10-02 is the premium visual system: covers, seal, atmosphere, type.
   requireText(
     path,
-    /\*\*Last (?:reviewed|verified):\*\* 2026-0(?:8-11|9-04|9-07)/,
+    /\*\*Last (?:reviewed|verified):\*\* 2026-(?:0(?:8-11|9-04|9-07|9-21|9-22|9-27)|10-02)/,
     "review date is stale",
   );
 }

@@ -27,6 +27,15 @@ export type StructuredMatchInput = {
     addedTime?: number | null;
     team: string | null;
     player: string | null;
+    /** Who assisted the goal. Only ever set for a plain goal.
+     *
+     *  The provider stores this in the same column it uses for the incoming
+     *  player on a substitution, which the ingest de-inverts. Reading it for a
+     *  substitution would name the man who went off as the assister, and no
+     *  gate could catch it, because he is a real player who really was on the
+     *  pitch. A penalty is excluded too: whatever the provider puts there, it
+     *  is not an assist in the sense a pundit means it. */
+    assist?: string | null;
     /** Provider detail. For a substitution this carries the outgoing player as
      *  "off:Name", which is the only record of who left the pitch. */
     detail?: string | null;
@@ -49,7 +58,56 @@ export type StructuredMatchInput = {
     awayCorners?: number | null;
     homeSaves?: number | null;
     awaySaves?: number | null;
+    homeBlocked?: number | null;
+    awayBlocked?: number | null;
     source: string;
+  };
+  /** Who kept goal, and whether he was still there at the end.
+   *
+   *  Ingested since August for an angle on the legacy path, and never read by
+   *  the live one. It matters because saves are recorded for a side and not for
+   *  a player, so a pundit cannot attribute one without the pack saying who was
+   *  in goal for all ninety minutes. */
+  goalkeepers?: {
+    home?: { name: string | null; subbed: boolean | null };
+    away?: { name: string | null; subbed: boolean | null };
+  };
+  /** Where these two stood in the league once this result was in the table.
+   *
+   *  Two clubs, not twenty: a full table is about three thousand characters
+   *  per league and a step reads the pack roughly a hundred and seventy times.
+   *
+   *  Its presence is what licenses a positional statement at all. The reader
+   *  only supplies it from a snapshot captured at or after kickoff, so a table
+   *  from before the match never reaches here, and an absent table leaves the
+   *  consequence gate exactly as shut as it has always been. */
+  /** Which round of the league this was.
+   *
+   *  It belongs with the season facts rather than the table ones, because it
+   *  is true whether or not a standings snapshot exists and it licenses
+   *  nothing positional on its own. "Seven games in" is a fact about the
+   *  calendar; "seventh in the table" is a fact about the table. */
+  matchday?: number | null;
+  /** Numbers from models other than the licensed feed's own.
+   *
+   *  Every one enters the pack as an estimate with its model named, whatever
+   *  the source's rights posture: who may use a number and what the number is
+   *  are separate questions, and a scraped expected-goals figure would still
+   *  be a model's output with a signed licence behind it.
+   *
+   *  More than one is the point rather than redundancy. Two models disagreeing
+   *  about whether a chance was good is a better line than either number
+   *  alone, and it is the one thing a single feed can never produce. */
+  estimates?: Array<{
+    sourceId: string;
+    model: string;
+    homeXg?: number | null;
+    awayXg?: number | null;
+  }>;
+  table?: {
+    capturedAt: string;
+    home?: { rank: number | null; points: number | null; played: number | null };
+    away?: { rank: number | null; points: number | null; played: number | null };
   };
   /** What each side did before this match, and what these two have done to
    *  each other. The pack has always held one match in isolation, which is
@@ -112,6 +170,35 @@ function derived(
   return { id, kind: "derived", label, value, source, provenance, formula };
 }
 
+/** A number a model produced, not a number anyone counted.
+ *
+ *  docs/05-content-safety.md requires the product to distinguish a model
+ *  estimate from an observed fact, and until this kind existed the pack had no
+ *  way to express the difference. Expected goals is why it matters: carried as
+ *  a plain fact it is indistinguishable from a shot count, which is how a
+ *  pundit ends up saying a side "should have scored two" as though someone had
+ *  counted them.
+ *
+ *  The model is named in the item and repeated in the label, because the label
+ *  is what the writer reads. */
+function estimate(
+  id: string,
+  label: string,
+  value: EvidenceItem["value"],
+  model: string,
+  provenance: string,
+): EvidenceItem {
+  return {
+    id,
+    kind: "estimate",
+    label: `${label} (estimated by ${model}, not counted)`,
+    value,
+    source: model,
+    provenance,
+    model,
+  };
+}
+
 function finite(value: number | null | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
@@ -132,7 +219,13 @@ export function outgoingPlayer(detail: string | null | undefined): string | null
  *  side. A substitution names only the player arriving, and the provider keeps
  *  the departing one in a detail field the pack used to discard. */
 function eventLabel(
-  event: { type: string; team: string | null; player: string | null; detail?: string | null },
+  event: {
+    type: string;
+    team: string | null;
+    player: string | null;
+    detail?: string | null;
+    assist?: string | null;
+  },
   homeTeam: string,
   awayTeam: string,
 ): string {
@@ -152,7 +245,107 @@ function eventLabel(
     if (event.player) return `substitution event: ${team} bring on ${event.player}`;
     if (off) return `substitution event: ${team} take off ${off}`;
   }
+  // Who made the goal is the second most interesting fact about it, and the
+  // pack has been throwing it away since it was first ingested.
+  //
+  // The first version of this required an assist as well as a scorer, so an
+  // UNASSISTED goal fell through to the bare fallback below and reached the
+  // writer as the four characters "goal event" - no scorer, no side. That is
+  // what quarantined the 2026-09-20 drop: Manchester City 5-3 Sunderland had
+  // two unassisted goals, so two of its eight arrived nameless and sideless,
+  // every one of the six pundits reconstructed the scoreline by hand, and two
+  // judges reading the same pack reconstructed two different ones (3-3 and 4-3
+  // at minute 59, where it was in fact 4-3). All six variants failed
+  // factual_entailment, which is why the run's own diagnostic read "every
+  // pundit failed the same harnesses, which points at a shared input".
+  //
+  // So the rule is now the general one rather than the goal-shaped one: an
+  // event names its player and its side whenever it knows them, whatever its
+  // type. The bare fallback is for an event that genuinely carries neither,
+  // and a label that says only "yellow event" or "var event" is a prompt to
+  // speculate rather than a fact to cite.
+  const team = event.team ?? "the side";
+  if (event.type === "goal" && event.player) {
+    const scorer = `goal event: ${event.player} of ${team}`;
+    return event.assist ? `${scorer}, assisted by ${event.assist}` : scorer;
+  }
+  if (event.player) return `${event.type} event: ${event.player} of ${team}`;
+  if (event.team) return `${event.type} event: ${team}`;
   return `${event.type} event`;
+}
+
+/** The score after each goal, so nobody has to reconstruct it.
+ *
+ *  `match.home_score` and `match.away_score` are the FINAL score and the pack
+ *  carried nothing else, so a writer describing the state of the game at the
+ *  hour mark had to count goal events itself and hope the judge counted the
+ *  same way. It did not: see the note in `eventLabel`. The Reporter's spec
+ *  lists "score progression" as its first evidence preference and the pack has
+ *  never supplied it.
+ *
+ *  This is arithmetic over events the pack already states, so it is `derived`
+ *  rather than `fact`, and it carries the running totals as values so the
+ *  numeric licence covers a writer who says "four-three" about the 59th
+ *  minute. Own goals count for the team the provider records them against,
+ *  which is the team they benefit - the same convention `eventLabel` uses. */
+function scoreProgression(
+  events: ReadonlyArray<{
+    id: string;
+    type: string;
+    team: string | null;
+    minute: number | null;
+    source: string;
+  }>,
+  homeTeam: string,
+  awayTeam: string,
+  finalHome: number | null | undefined,
+  finalAway: number | null | undefined,
+): EvidenceItem[] {
+  // "penalty_miss" is not a goal and must not match on the substring, so the
+  // test is against the whole type rather than against /goal/.
+  const scoring = new Set(["goal", "penalty_goal", "own_goal"]);
+  const goals = events.filter((event) => scoring.has(event.type) && event.team);
+
+  // Two ways this would state a scoreline nobody can stand behind, and both
+  // end the same way: say nothing. A progression is only worth having if it is
+  // right every time, because a writer cites it instead of counting and a
+  // judge checks prose against it.
+  //
+  // An unordered goal cannot be placed, and guessing its position would invent
+  // a state of the game that never existed.
+  if (goals.some((goal) => goal.minute === null)) return [];
+
+  // And if the running total does not land on the score the match row states,
+  // the event list is incomplete - which is exactly the condition under which
+  // a confident progression does the most damage.
+  const homeGoals = goals.filter((goal) => goal.team === homeTeam).length;
+  const awayGoals = goals.length - homeGoals;
+  if (
+    typeof finalHome !== "number" ||
+    typeof finalAway !== "number" ||
+    homeGoals !== finalHome ||
+    awayGoals !== finalAway
+  ) {
+    return [];
+  }
+
+  let home = 0;
+  let away = 0;
+  return goals
+    .slice()
+    .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))
+    .map((goal) => {
+      if (goal.team === homeTeam) home += 1;
+      else away += 1;
+      return derived(
+        `derived.score_after_${goal.minute}`,
+        `Score after the goal on ${goal.minute} minutes: ${homeTeam} ${home}-${away} ${awayTeam}`,
+        [home, away],
+        goal.source,
+        `match_events.id=${goal.id}`,
+        "goals for each side among events up to and including this minute",
+      );
+    });
 }
 
 export function buildEvidencePack(input: StructuredMatchInput, version = 1): EvidencePack {
@@ -165,6 +358,18 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     fact("match.kickoff", "Kickoff", match.kickoffAt, match.source, "matches.kickoff_at"),
     fact("match.competition", "Competition", match.competition, match.source, "matches.league_id"),
   ];
+
+  if (finite(input.matchday)) {
+    facts.push(
+      fact(
+        "match.matchday",
+        "League round",
+        input.matchday,
+        match.source,
+        "match_context.matchday",
+      ),
+    );
+  }
 
   if (input.feedsAgree != null) {
     facts.push(
@@ -179,10 +384,14 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
   }
 
   for (const event of input.events) {
+    // The rule about which events can carry an assister lives here as well as
+    // in the reader, because the pack is what a claim cites. A caller that
+    // passes one on a substitution gets it ignored rather than licensed.
+    const assist = event.type === "goal" ? (event.assist ?? null) : null;
     facts.push(
       fact(
         `event.${event.id}`,
-        eventLabel(event, match.homeTeam, match.awayTeam),
+        eventLabel({ ...event, assist }, match.homeTeam, match.awayTeam),
         // The outgoing player belongs in the value, not only the label: the
         // entity licence is built from values, so a name that appears only in
         // prose would be read as invented.
@@ -192,6 +401,7 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
           event.team,
           event.player,
           ...(outgoingPlayer(event.detail) ? [outgoingPlayer(event.detail)] : []),
+          ...(assist ? [assist] : []),
         ],
         event.source,
         `match_events.id=${event.id}`,
@@ -216,12 +426,26 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     ["stats.away_corners", "Away corners", stats?.awayCorners],
     ["stats.home_saves", "Home saves", stats?.homeSaves],
     ["stats.away_saves", "Away saves", stats?.awaySaves],
+    // Blocked shots are the nearest thing to a chance-quality signal that the
+    // provider still sends. A shot blocked by a defender never reached the
+    // keeper, so shots minus blocked is closer to what a side actually made
+    // than the shot count the scoreline gets argued with.
+    ["stats.home_blocked", "Home shots blocked by the defence", stats?.homeBlocked],
+    ["stats.away_blocked", "Away shots blocked by the defence", stats?.awayBlocked],
   ];
   for (const [id, label, value] of statEntries) {
     if (finite(value)) facts.push(fact(id, label, value, stats?.source ?? "unknown", id));
   }
 
-  const derivations: EvidenceItem[] = [];
+  const derivations: EvidenceItem[] = [
+    ...scoreProgression(
+      input.events,
+      match.homeTeam,
+      match.awayTeam,
+      match.homeScore,
+      match.awayScore,
+    ),
+  ];
 
   // What each side arrived carrying, and what these two have done to each other.
   //
@@ -261,14 +485,19 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
       fact(
         `form.${side}_span`,
         `${team} results available as recent form`,
-        [matches.length, matches[matches.length - 1].date.slice(0, 10), matches[0].date.slice(0, 10)],
+        [
+          matches.length,
+          matches[matches.length - 1].date.slice(0, 10),
+          matches[0].date.slice(0, 10),
+        ],
         "database-verified",
         "matches",
       ),
     );
     const points = matches.reduce(
       (total, prior) =>
-        total + (prior.goalsFor > prior.goalsAgainst ? 3 : prior.goalsFor === prior.goalsAgainst ? 1 : 0),
+        total +
+        (prior.goalsFor > prior.goalsAgainst ? 3 : prior.goalsFor === prior.goalsAgainst ? 1 : 0),
       0,
     );
     derivations.push(
@@ -312,9 +541,15 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
   // writers another figure to differ over.
   for (const [key, label, home, away] of [
     ["shots", "Shots in the match", stats?.homeShots, stats?.awayShots],
-    ["shots_on_target", "Shots on target in the match", stats?.homeShotsOnTarget, stats?.awayShotsOnTarget],
+    [
+      "shots_on_target",
+      "Shots on target in the match",
+      stats?.homeShotsOnTarget,
+      stats?.awayShotsOnTarget,
+    ],
     ["corners", "Corners in the match", stats?.homeCorners, stats?.awayCorners],
     ["saves", "Saves in the match", stats?.homeSaves, stats?.awaySaves],
+    ["blocked", "Shots blocked in the match", stats?.homeBlocked, stats?.awayBlocked],
   ] as const) {
     if (!finite(home) || !finite(away)) continue;
     derivations.push(
@@ -419,6 +654,154 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
         ),
       );
     }
+  }
+
+  // Second and third opinions on the same ninety minutes.
+  //
+  // These sit in the derivations array rather than the facts array, and the
+  // reason is not tidiness: facts is where counted things live, and a claim
+  // that cites one of these is citing a model. The kind carries the meaning;
+  // the array is only storage, and evidence ids are a stored contract so a
+  // third array would be a migration and a rename of nothing.
+  for (const source of input.estimates ?? []) {
+    for (const [side, team, value] of [
+      ["home", match.homeTeam, source.homeXg],
+      ["away", match.awayTeam, source.awayXg],
+    ] as const) {
+      if (!finite(value)) continue;
+      derivations.push(
+        estimate(
+          `estimate.${source.sourceId}_${side}_xg`,
+          `${team} expected goals`,
+          value,
+          source.model,
+          `${source.sourceId}:${match.homeTeam} v ${match.awayTeam}`,
+        ),
+      );
+    }
+  }
+
+  // Where the models disagree.
+  //
+  // The pipeline already trusts this shape: two independent feeds are compared
+  // on the scoreline and a disagreement blocks generation. Nothing that
+  // careful was ever done with the numbers, which are the part where models
+  // actually differ. A scoreline disagreement means somebody is wrong; an
+  // expected-goals disagreement means the chance was genuinely arguable, and
+  // that is a better thing for a pundit to have than either figure on its own.
+  const xgBySide = (side: "home" | "away") =>
+    (input.estimates ?? [])
+      .map((source) => ({
+        model: source.model,
+        value: side === "home" ? source.homeXg : source.awayXg,
+      }))
+      .filter((entry): entry is { model: string; value: number } => finite(entry.value));
+  for (const [side, team] of [
+    ["home", match.homeTeam],
+    ["away", match.awayTeam],
+  ] as const) {
+    const values = xgBySide(side);
+    if (values.length < 2) continue;
+    const numbers = values.map((entry) => entry.value);
+    const spread = Number((Math.max(...numbers) - Math.min(...numbers)).toFixed(2));
+    if (spread < 0.3) continue;
+    derivations.push(
+      derived(
+        `derived.${side}_xg_disagreement`,
+        `How far the models are apart on ${team} expected goals`,
+        spread,
+        values.map((entry) => entry.model).join(", "),
+        values.map((entry) => `estimate.${side}_xg`).join(","),
+        "highest model estimate minus lowest",
+      ),
+    );
+  }
+
+  // The league table, for these two clubs alone.
+  //
+  // This is the first thing the pack has ever carried that can support a
+  // sentence about the season. Everything it carries is a figure the snapshot
+  // states: a rank, a points total, a number of matches played, and the gap
+  // between the two. It says nothing about what any of that means, because
+  // what it means depends on matches remaining, other clubs' fixtures and
+  // qualification rules, and the snapshot carries none of those.
+  const table = input.table;
+  for (const [side, team, standing] of [
+    ["home", match.homeTeam, table?.home],
+    ["away", match.awayTeam, table?.away],
+  ] as const) {
+    if (!standing) continue;
+    const provenance = `standings_snapshots.captured_at=${table?.capturedAt ?? "unknown"}`;
+    if (finite(standing.rank)) {
+      facts.push(
+        fact(
+          `table.${side}_rank`,
+          `${team} position in the table`,
+          standing.rank,
+          "api-football",
+          provenance,
+        ),
+      );
+    }
+    if (finite(standing.points)) {
+      facts.push(
+        fact(`table.${side}_points`, `${team} points`, standing.points, "api-football", provenance),
+      );
+    }
+    if (finite(standing.played)) {
+      facts.push(
+        fact(
+          `table.${side}_played`,
+          `${team} matches played`,
+          standing.played,
+          "api-football",
+          provenance,
+        ),
+      );
+    }
+  }
+  if (finite(table?.home?.points) && finite(table?.away?.points)) {
+    derivations.push(
+      derived(
+        "derived.table_points_gap",
+        "Points between these two in the table",
+        Math.abs(table.home.points - table.away.points),
+        "api-football",
+        "table.home_points,table.away_points",
+        "absolute difference of the two points totals",
+      ),
+    );
+  }
+
+  // Saves are recorded for a side and never for a player. The writer is told
+  // that in the system prompt and no gate enforces it, so putting a keeper's
+  // name in the pack beside a saves figure would invite exactly the
+  // attribution the prompt forbids and nothing would catch it.
+  //
+  // So the attribution is a licensed derivation rather than a bare name. It
+  // exists only when the same man kept goal for the whole match, and its
+  // formula says plainly what has been done. A keeper who was substituted, or
+  // whose substitution is unrecorded, produces nothing at all: unknown is
+  // treated as subbed, because half a match of saves attributed to one of two
+  // keepers is the error this is here to prevent.
+  //
+  // The name sits in the label, not the value. The entity licence reads both,
+  // and a number is what the value is for.
+  for (const [side, keeper, saves] of [
+    ["home", input.goalkeepers?.home, stats?.homeSaves],
+    ["away", input.goalkeepers?.away, stats?.awaySaves],
+  ] as const) {
+    if (!keeper?.name || keeper.subbed !== false || !finite(saves)) continue;
+    derivations.push(
+      derived(
+        `derived.${side}_gk_saves`,
+        `Saves by ${keeper.name}`,
+        saves,
+        stats?.source ?? "provider",
+        `stats.${side}_saves,match_context.${side}_gk_name`,
+        `stats.${side}_saves, attributed to the goalkeeper who played the whole match`,
+      ),
+    );
   }
 
   if (finite(stats?.homeShots) && stats.homeShots > 0) {

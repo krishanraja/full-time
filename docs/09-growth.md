@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Product and growth
 - **Purpose:** Define the product metrics, event taxonomy, growth loops, and experiment rules.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-27
 
 ## Measurement principle
 

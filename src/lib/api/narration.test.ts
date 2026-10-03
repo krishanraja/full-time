@@ -82,3 +82,63 @@ describe("narration capacity gate", () => {
     ).toBe(true);
   });
 });
+
+/** Tag placement has to scale with the length of the read.
+ *
+ *  Four tags is a delivery change every fourteen seconds on the 55-second
+ *  episode this module was written for, and one every ninety-five seconds on
+ *  the six-minute format it now serves. The second measured 2.1 LU against a
+ *  header that records untagged delivery at 1.9, and quarantined a script that
+ *  had passed all twenty-five editorial harnesses. */
+describe("delivery tags scale with the length of the script", () => {
+  // The shape that produced 2.1 LU: ten beats, 5,060 characters, 382 seconds.
+  const longPlan: PerformanceBeat[] = (
+    [
+      "setup",
+      "explanation",
+      "explanation",
+      "explanation",
+      "evidence",
+      "verdict",
+      "pivot",
+      "punchline",
+      "prediction",
+      "receipt",
+    ] as const
+  ).map((intent, index) => ({
+    text: `Beat ${index} ${"word ".repeat(95)}`.trim(),
+    intent,
+    pace: "measured" as const,
+    energy: 3 as const,
+  }));
+  const longScript = longPlan.map((beat) => beat.text).join(" ");
+  const countTags = (spoken: string) => (spoken.match(/\[/g) || []).length;
+
+  it("places more than the old fixed four on a six-minute read", () => {
+    const spoken = applyPerformanceCadence(longScript, "stats", longPlan);
+    expect(countTags(spoken)).toBeGreaterThan(4);
+  });
+
+  it("stays inside the budget it is allowed, for every pundit", () => {
+    for (const pundit of ["zen", "gaffer", "stats", "romantic", "doomer", "banter"] as const) {
+      const spoken = applyPerformanceCadence(longScript, pundit, longPlan);
+      // narrate() throws on this, so a placement change that outgrows the
+      // budget stops narration altogether instead of just sounding flat.
+      expect(tagBudgetOk(spoken)).toBe(true);
+      expect(tagsAllowlisted(spoken)).toBe(true);
+      expect(spokenIdentity(spoken, longScript)).toBe(true);
+    }
+  });
+
+  it("leaves a short script where it was", () => {
+    const spoken = applyPerformanceCadence(script, "zen", plan);
+    expect(countTags(spoken)).toBeLessThanOrEqual(4);
+    expect(tagBudgetOk(spoken)).toBe(true);
+  });
+
+  // The rail is a rail. A script that somehow arrived carrying a tag every
+  // few words is still refused.
+  it("still refuses a runaway", () => {
+    expect(tagBudgetOk(`${"[excited] word ".repeat(40)}`)).toBe(false);
+  });
+});

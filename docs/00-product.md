@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Founder and product
 - **Purpose:** Define the product, its user promise, evidence boundary, and launch standard.
-- **Last reviewed:** 2026-09-07
+- **Last reviewed:** 2026-10-02
 
 ## Product in one sentence
 
@@ -18,27 +18,29 @@ The product should feel great because it is AI. It does not try to hide the mach
 A listener should be able to:
 
 1. open Today without an account or autoplay;
-2. see a playable show in the first mobile viewport;
-3. understand the title and hook without specialist football language;
-4. choose one of six AI Pundits from a simple bottom drawer;
+2. see which game it is (competition, date, both clubs with their crests, and the score) and a playable show, all on one screen with no scroll;
+3. see the six AI Pundits for that match as a rail, with any that made no show for it dimmed;
+4. tap an AI Pundit to hear their show, or step to an earlier or later Premier League match from beside the date;
 5. switch safely without losing the playable show when the new edition fails;
-6. tap **Show me why** for plain proof behind an important claim;
-7. hear more approved editions below the player;
-8. see **How did they do?** only when a settled record exists.
+6. tap **Show me why** for plain proof behind an important claim, one card at a time.
 
-The interface should feel playful, warm, and obvious to a ten-year-old. Technical rigor belongs underneath the experience, not in the primary vocabulary.
+The interface should feel playful, warm, and obvious to a ten-year-old. Technical rigor belongs underneath the experience, not in the primary vocabulary. Today says plainly which game it is and carries one select element that shows the novelty (Ruling, Krish, 2026-09-27): the rail of six AI Pundits for one match.
 
 ## Current product shape
 
 The public shell has three destinations:
 
-- **Today:** the AI Pundit player, proof, recent approved shows, and conditional track-record entry;
-- **Teams:** the compatibility route at `/following` for saved team and league preferences;
-- **Settings:** account, AI Pundit choice, product state, notification state, disclosure, and existing billing management.
+- **Today:** one Premier League match at a time, with the match, the six AI Pundits as a rail, the player, and proof in a sheet;
+- **Teams:** the route at `/following` for following the twenty clubs of the current Premier League season;
+- **Settings:** one card of rows for AI Pundit choice, account, the morning recap, and existing billing management, with the AI disclosure beneath it.
 
-`/feed` redirects to Today. `/receipts` remains an unlisted compatibility route. The Reporter RSS endpoint remains an acquisition surface.
+The app is a completely no-scroll experience (Ruling, Krish, 2026-09-27). The document never scrolls: a full-height frame holds the header, the screen, the mini player once a show has started, and the tab bar. Legacy direct-URL routes such as `/receipts`, `/archive`, `/episode/:id`, and the legal pages were not re-laid-out and scroll inside the screen region.
 
-The exact implemented state and known gaps live in [`product-state.json`](./product-state.json). In particular, Premier-League-only Teams behavior and the simplified settled-only `/receipts` experience are not yet complete and cannot be promised.
+Club crests come from the data provider's public imagery, and the trademark exposure is accepted by founder ruling (2026-09-27). The Premier League's own mark is not used; the competition is named in text only.
+
+`/feed` redirects to Today. `/receipts` remains an unlisted compatibility route with no in-app entry. The Reporter RSS endpoint remains an acquisition surface.
+
+The exact implemented state and known gaps live in [`product-state.json`](./product-state.json). In particular, the simplified settled-only `/receipts` experience is not yet complete and cannot be promised.
 
 ## AI Pundit contract
 
@@ -59,7 +61,7 @@ No output may imitate a living pundit's recognizable wording, style, or vocal id
 
 ## Generated visual identity
 
-Each AI Pundit has an abstract motif. The current player combines the drop ID and AI Pundit ID to generate stable SVG geometry for that edition. A new edition can look different; the same edition does not flicker into a new identity on reload.
+Each AI Pundit has a screenprint-style cover on its own paper colour, and Today draws the match as an engraved seal in the two clubs' colours with each club's floodlight behind it. All three are generated from the drop ID, the score, and the clubs as stable SVG for that match. A new match looks different; the same match does not flicker into a new identity on reload. [`01-brand.md`](01-brand.md) describes each piece.
 
 This is procedural generation in product code. It is not request-time image-model generation and must not be described as a photoreal person, digital human, or licensed likeness.
 
@@ -86,13 +88,13 @@ The simple public form is: **The data shows what happened, but not always why.**
 
 ## Proof cards
 
-**Show me why** may reveal one to three cards. Each card contains:
+**Show me why** opens a sheet that shows one card at a time, up to three. Each card contains:
 
 1. the claim in plain English;
 2. up to three recorded facts or derivations supporting it;
 3. a short boundary saying what the facts cannot prove.
 
-Cards come only from a sealed evidence pack and licensed claim IDs selected by the published edition. The request does not ask a model to improvise an explanation. Missing support removes the card.
+Cards come only from a sealed evidence pack and licensed claim IDs selected by the published edition. The pack is chosen deterministically: the one the licensed claims name, else the latest sealed pack. The request does not ask a model to improvise an explanation. Missing support removes the card.
 
 ## Switching and fallback
 
@@ -102,8 +104,9 @@ The listener's current show is the safe state.
 - While paused, a successful switch loads the requested edition at the beginning without autoplay.
 - The saved preference changes only after the requested media loads.
 - Failure leaves the previous edition playable and offers retry.
-- Full Time never substitutes a different AI Pundit.
-- When today has no edition for that AI Pundit, Full Time offers that AI Pundit's latest approved edition with its real date, and failing that the most recent edition any AI Pundit published, named as whose it is, with the picker one tap away (`407be64`).
+- Full Time never silently substitutes a different AI Pundit.
+- Switching AI Pundit never changes the match. Stepping to another match is the same load-before-commit switch.
+- Today opens on the newest Premier League match with a published show, or on a shared link's own match. It plays the requested AI Pundit's edition when they made one for that match, else the drop's canonical AI Pundit, else the first that did, and the rail names who made the show on screen (`src/lib/edition-pundit.ts`).
 
 ## Accountability
 
@@ -111,13 +114,13 @@ Accountability supports the show; it is not the front door and it is never a bet
 
 Predictions lock before kickoff when that system is enabled. Settlement uses the original test. Wrong calls remain part of the record. Primary public copy should say what the AI Pundit said, what happened, and what it missed. Internal metrics such as calibration, Brier score, and log loss belong behind optional detail and only after release evidence allows them to be public.
 
-The current direct `/receipts` route still exposes the older searchable ledger. Today uses the settled-only endpoint for its quiet entry. Replacing the compatibility route remains product work.
+The current direct `/receipts` route still exposes the older searchable ledger. Today no longer carries the quiet entry: it was removed on 2026-09-27, and it had never rendered in production because the prediction ledger is empty and registration is disabled. `/receipts` has no in-app entry. Replacing the compatibility route remains product work.
 
 ## Beta and personalization
 
-The intended beta competition is the Premier League. Other major leagues should remain visible as coming later. That restriction has not yet shipped in the Teams data response, so marketing and support must describe exact live coverage only after readback.
+Full Time is for Premier League teams only, across the whole product (Ruling, Krish, 2026-09-27). One constant, `src/lib/premier-league.ts`, is read by the daily pick, the ingest, prediction sync, Teams, and Today. A day without a finished Premier League match publishes nothing and fails before any paid step. There are no other leagues on Teams and no coming-later league rows; that part of the 2026-08-11 decision is superseded ([`12-roadmap.md`](./12-roadmap.md)). Follows saved before the change, including other leagues' clubs, stay in storage and out of the count.
 
-Saved team preferences exist. They do not yet create a private show or club-built playlist. Personalization may reorder approved content only when exact match metadata supports the relationship.
+Saved team preferences exist. They do not yet create a private show or club-built playlist, and a follow does not change which match Today shows. Personalization may reorder approved content only when exact match metadata supports the relationship.
 
 ## Current posture
 

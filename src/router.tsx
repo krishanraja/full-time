@@ -9,6 +9,9 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
+    // The document never scrolls; the screen region is what can. Without
+    // this a page could open part-way down, at the previous page's offset.
+    scrollToTopSelectors: ["#screen"],
     defaultPreloadStaleTime: 0,
   });
 

@@ -43,5 +43,14 @@ supabase/.temp/
 # stores only their schema and operating instructions.
 /_corpus/
 
+# The exported gate corpus is real published scripts and the evidence packs
+# behind them, and those packs are built from a paid match feed. This
+# repository is public, so committing it would redistribute a licensed
+# provider's data. The replay skips cleanly when the file is absent, so the
+# regression loop works locally without the corpus ever being shared.
+#
+# One line to reverse if the corpus should be shared after all.
+/src/lib/pundit/__fixtures__/gate-corpus.json
+
 # Docs steward working files (control-center checkout and digest)
 .steward/

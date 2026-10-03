@@ -311,3 +311,54 @@ describe("a roster padded to match its own count", () => {
     expect(check("Liverpool won it late (2-1) after an hour of pressure.")).not.toMatch(/names/);
   });
 });
+
+/** A prediction at even odds licenses no sentence.
+ *
+ *  On the 2026-09-20 drop the laboratory produced exactly one - Sunderland to
+ *  score in their next fixture, confidence 0.5 - and all six pundits rendered
+ *  it "more likely than not", which means strictly greater than a half. Every
+ *  judge caught it and every variant was quarantined on the same line, which
+ *  is why the run's diagnostic reported a shared input rather than six bad
+ *  writers. */
+describe("a prediction has to commit to a direction", () => {
+  const prediction = (confidence: number) =>
+    claim({
+      type: "prediction",
+      thesis: "Sunderland score in their next league fixture.",
+      evidenceRefs: ["stats.home_shots"],
+      confidence,
+      falsifier: "Sunderland fail to score in their next league fixture.",
+      evaluationRule: { metric: "goals", operator: "gte", value: 1, window: "next_match" },
+    } as Partial<AnalysisClaim>);
+
+  it("refuses a prediction at exactly even odds", () => {
+    const result = licenseClaim(prediction(0.5), pack);
+    expect(result.licensed).toBe(false);
+    expect(result.failures.join(" ")).toMatch(/states no direction/i);
+  });
+
+  it("allows a prediction that commits, either way", () => {
+    for (const confidence of [0.51, 0.7, 0.3]) {
+      expect(licenseClaim(prediction(confidence), pack).failures.join(" ")).not.toMatch(
+        /states no direction/i,
+      );
+    }
+  });
+
+  // The rule is about predictions, not about every claim that happens to sit
+  // at a half. An opinion at 0.5 is a pundit saying it could go either way,
+  // which is a legitimate thing for a pundit to say.
+  it("leaves a non-prediction at 0.5 alone", () => {
+    expect(
+      licenseClaim(
+        claim({
+          type: "opinion",
+          thesis: "The result could have gone either way.",
+          evidenceRefs: ["stats.home_shots"],
+          confidence: 0.5,
+        }),
+        pack,
+      ).failures.join(" "),
+    ).not.toMatch(/states no direction/i);
+  });
+});

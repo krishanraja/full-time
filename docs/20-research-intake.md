@@ -3,7 +3,7 @@
 - **Status:** Current operating contract
 - **Owner:** Founder, editorial, and data
 - **Purpose:** Make one rights-cleared text-file drop Krish's only weekly action while preserving provenance, originality, and fail-closed corpus admission.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-27
 
 ## Krish's only action
 

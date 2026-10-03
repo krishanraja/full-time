@@ -1,48 +1,53 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Shield, Settings as Cog } from "lucide-react";
 import { haptic } from "../lib/haptics";
 import { cn } from "../lib/utils";
 
 const ITEMS = [
-  { to: "/", label: "Today", Icon: Home },
-  { to: "/following", label: "Teams", Icon: Shield },
-  { to: "/settings", label: "Settings", Icon: Cog },
+  { to: "/", label: "Today" },
+  { to: "/following", label: "Teams" },
+  { to: "/settings", label: "Settings" },
 ] as const;
 
+/** The tab bar: three words, the current one in cream and underlined.
+ *  Text only since 2026-10-02: the icons and the glowing lime bar were part
+ *  of what read as a generated template. */
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
+    // The last row of the one-screen frame, in normal flow rather than fixed
+    // over the content, so nothing needs padding to clear it.
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 backdrop-blur-xl md:hidden"
+      className="relative z-40 shrink-0 md:hidden"
       style={{
-        paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
-        background:
-          "linear-gradient(to top, color-mix(in oklab, var(--background) 96%, transparent), color-mix(in oklab, var(--background) 70%, transparent))",
+        paddingBottom: "env(safe-area-inset-bottom)",
+        background: "rgb(21 17 13 / 90%)",
         borderTop: "1px solid var(--pitch-line)",
       }}
     >
-      <ul className="mx-auto grid max-w-md grid-cols-3">
-        {ITEMS.map(({ to, label, Icon }) => {
+      <ul className="mx-auto grid h-[clamp(50px,7.6dvh,58px)] max-w-md grid-cols-3 px-2">
+        {ITEMS.map(({ to, label }) => {
           const active = pathname === to;
           return (
-            <li key={to} className="relative">
+            <li key={to} className="flex">
               <Link
                 to={to}
                 onClick={() => haptic("tap")}
+                aria-current={active ? "page" : undefined}
                 className={cn(
-                  "tap relative flex flex-col items-center gap-1 py-2.5 text-mono text-[10px] uppercase tracking-[0.16em] transition-colors",
-                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground/80",
+                  "tap flex min-h-11 flex-1 items-center justify-center text-[14.5px] font-medium tracking-[0.01em] transition-colors",
+                  active ? "text-foreground" : "text-ink-3 hover:text-ink-2",
                 )}
               >
-                <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.25 : 1.75} />
-                <span>{label}</span>
-                {active && (
-                  <span
-                    className="absolute -top-px left-1/2 h-[2px] w-8 -translate-x-1/2 rounded-full bg-[var(--lime)]"
-                    style={{ boxShadow: "0 0 10px var(--lime)" }}
-                  />
-                )}
+                <span
+                  className={cn(
+                    "relative px-0.5 py-1.5",
+                    active &&
+                      "after:absolute after:inset-x-0 after:bottom-px after:h-0.5 after:rounded-[1px] after:bg-foreground",
+                  )}
+                >
+                  {label}
+                </span>
               </Link>
             </li>
           );

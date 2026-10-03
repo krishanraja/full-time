@@ -1,13 +1,22 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+/* Self-hosted, open-licensed (SIL OFL): Instrument Serif carries the match
+   and the AI Pundits' names, Schibsted Grotesk everything else. The app used
+   to declare Geist and never load it, so it rendered in the system default. */
+@import "@fontsource/instrument-serif/latin-400.css";
+@import "@fontsource/instrument-serif/latin-400-italic.css";
+@import "@fontsource-variable/schibsted-grotesk/wght.css";
 
 @custom-variant dark (&:is(.dark *));
 
 /* ---- Theme tokens ------------------------------------------------------ */
-/* Brand: vivid lime (from logo) on near-black pitch. Editorial, broadcast-
-   tool feel: hairline borders, mono numerals, lime reserved for affordances
-   and key moments. */
+/* Ruling (Krish, 2026-10-02): adopt the premium design. A warm umber ground,
+   cream ink, an editorial serif for the match and the AI Pundits, and lime
+   (the logo's green) kept for the brand mark, play and pause, and progress.
+   The near-black ground with neon on every element read as a generated
+   template; the club colours and the AI Pundits' covers now carry the
+   colour. */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -47,49 +56,62 @@
   --color-pitch-line: var(--pitch-line);
   --color-chalk-muted: var(--muted-foreground);
 
-  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: "Schibsted Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Instrument Serif", Georgia, serif;
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-raise: var(--raise);
 }
 
 :root {
-  --radius: 0.875rem;
+  --radius: 0.25rem;
 
-  /* Pitch: deep, slightly cool near-black */
-  --background: oklch(0.155 0.008 240);
-  --foreground: oklch(0.985 0.004 240);
-  --card: oklch(0.195 0.01 240);
-  --card-foreground: oklch(0.985 0.004 240);
-  --popover: oklch(0.195 0.01 240);
-  --popover-foreground: oklch(0.985 0.004 240);
+  /* Ground: warm umber, darker toward the tab bar */
+  --ground: #1c1611;
+  --ground-2: #15110d;
+  --raise: #261f19;
+  --background: var(--ground-2);
+  --foreground: #f1e9da;
+  --card: var(--raise);
+  --card-foreground: #f1e9da;
+  --popover: var(--raise);
+  --popover-foreground: #f1e9da;
 
-  /* Lime: pulled directly from the logo's electric green */
+  /* Ink: cream, and two quieter steps that keep AA on the ground */
+  --ink: #f1e9da;
+  --ink-2: #b9ac98;
+  --ink-3: #998c7a;
+
+  /* Lime: the logo's green, for play and pause and progress only */
   --lime: oklch(0.88 0.24 138);
   --lime-glow: oklch(0.93 0.22 138);
   --primary: var(--lime);
-  --primary-foreground: oklch(0.16 0.01 240);
+  --primary-foreground: #0e1a08;
 
-  --secondary: oklch(0.235 0.012 240);
-  --secondary-foreground: oklch(0.985 0.004 240);
-  --muted: oklch(0.215 0.011 240);
-  --muted-foreground: oklch(0.68 0.012 240);
-  --accent: var(--lime);
-  --accent-foreground: oklch(0.16 0.01 240);
+  --secondary: #2c241d;
+  --secondary-foreground: #f1e9da;
+  --muted: #221b15;
+  --muted-foreground: var(--ink-2);
+  --accent: var(--ink);
+  --accent-foreground: var(--ground-2);
 
-  /* Signal colour: reserved for live/breaking only */
   --ember: oklch(0.72 0.2 35);
   --destructive: oklch(0.65 0.22 25);
-  --destructive-foreground: oklch(0.98 0.004 240);
+  --destructive-foreground: #f1e9da;
 
-  /* Hairlines */
-  --pitch-line: oklch(1 0 0 / 8%);
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: var(--lime);
+  /* Rules */
+  --pitch-line: rgb(241 233 218 / 13%);
+  --border: rgb(241 233 218 / 13%);
+  --input: rgb(241 233 218 / 20%);
+  --ring: var(--ink);
 
   --gradient-lime: linear-gradient(135deg, var(--lime), var(--lime-glow));
-  --shadow-lime: 0 12px 40px -12px color-mix(in oklab, var(--lime) 55%, transparent);
-  --shadow-card: 0 1px 0 0 oklch(1 0 0 / 4%) inset, 0 24px 60px -28px oklch(0 0 0 / 60%);
+  --shadow-lime: 0 10px 28px -14px color-mix(in oklab, var(--lime) 45%, transparent);
+  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 4%) inset, 0 24px 60px -28px rgb(0 0 0 / 60%);
 }
 
 @layer base {
@@ -102,26 +124,23 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     overscroll-behavior-y: none;
   }
 
-  /* Subtle pitch texture: extremely faint radial wash so the background
-     doesn't read as flat black. */
+  /* The app is one screen. Ruling (Krish, 2026-09-27): a completely
+     no-scroll experience. The document never scrolls; the frame below fills
+     the dynamic viewport and each screen fits inside it. */
+  html,
   body {
-    background-image:
-      radial-gradient(
-        120% 80% at 50% -10%,
-        color-mix(in oklab, var(--lime) 6%, transparent),
-        transparent 55%
-      ),
-      radial-gradient(
-        60% 60% at 100% 100%,
-        color-mix(in oklab, var(--lime) 3%, transparent),
-        transparent 60%
-      );
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Warm umber, lit from above and darker toward the tab bar. */
+  body {
+    background-image: linear-gradient(180deg, #1e1813 0%, var(--ground) 38%, var(--ground-2) 100%);
     background-attachment: fixed;
   }
 
@@ -131,7 +150,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--lime);
+    outline: 2px solid var(--ink);
     outline-offset: 3px;
   }
 
@@ -181,6 +200,18 @@
   letter-spacing: -0.01em;
 }
 
+/* The one-screen frame: header, the screen, the mini player and the tab bar
+   stacked in normal flow at the height of the visible viewport. `dvh` follows
+   mobile browser chrome as it shows and hides; `100vh` is the fallback for
+   browsers without it (iOS before 15.4), where it is the larger viewport. */
+@utility app-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
 @utility glow-lime {
   box-shadow: var(--shadow-lime);
 }
@@ -192,17 +223,88 @@
 }
 
 @utility eyebrow {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--lime);
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+/* A serif line: the match, the AI Pundits' names, titles. */
+@utility serif {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: 0.003em;
+}
+
+/* In the components layer, so a utility on the same element wins: an
+   unlayered class beat Tailwind's utilities whatever the order, which gave
+   Teams crests the heavy Today shadow instead of the light one asked for. */
+@layer components {
+  /* Film grain over the whole frame, printed rather than glowing. A tiled
+     noise texture, so it costs one small image and no per-frame filter. */
+  .app-grain {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.07;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .95 0 0 0 0 .88 0 0 0 1.6 -.3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+  }
+
+  /* An AI Pundit cover, printed on its paper with a little grain. */
+  .pundit-plate {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 2px;
+  }
+
+  .pundit-plate svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .pundit-plate::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    opacity: 0.5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='96' height='96' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 96px 96px;
+  }
+
+  /* A crest on a cream plate, ringed in the club's own colour. The ring is
+     its own layer, so no ring colour leaks at the disc's edge. */
+  .crest-disc {
+    position: relative;
+    display: grid;
+    place-items: center;
+    border-radius: 9999px;
+    background: #ede5d6;
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 20%) inset,
+      0 6px 16px rgb(0 0 0 / 38%);
+  }
+
+  .crest-disc::before {
+    content: "";
+    position: absolute;
+    inset: var(--ring-gap, 2px);
+    border-radius: 9999px;
+    border: var(--ring-width, 2.5px) solid var(--ring, #e6dfd2);
+  }
 }
 
 .today-progress {
   --progress: 0%;
-  height: 24px;
+  height: 44px;
   appearance: none;
   cursor: pointer;
   background: transparent;
@@ -213,42 +315,41 @@
 }
 
 .today-progress::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: 999px;
+  height: 2px;
+  border-radius: 1px;
   background: linear-gradient(
     to right,
     var(--lime) var(--progress),
-    color-mix(in oklab, white 14%, transparent) var(--progress)
+    rgb(241 233 218 / 18%) var(--progress)
   );
 }
 
 .today-progress::-moz-range-track {
-  height: 4px;
-  border-radius: 999px;
-  background: color-mix(in oklab, white 14%, transparent);
+  height: 2px;
+  border-radius: 1px;
+  background: rgb(241 233 218 / 18%);
 }
 
 .today-progress::-moz-range-progress {
-  height: 4px;
-  border-radius: 999px;
+  height: 2px;
+  border-radius: 1px;
   background: var(--lime);
 }
 
 .today-progress::-webkit-slider-thumb {
-  width: 18px;
-  height: 18px;
-  margin-top: -7px;
+  width: 12px;
+  height: 12px;
+  margin-top: -5px;
   appearance: none;
-  border: 3px solid var(--card);
+  border: 0;
   border-radius: 50%;
-  background: var(--lime);
-  box-shadow: 0 0 0 1px var(--lime);
+  background: var(--ink);
 }
 
 .today-progress::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border: 3px solid var(--card);
+  width: 12px;
+  height: 12px;
+  border: 0;
   border-radius: 50%;
-  background: var(--lime);
+  background: var(--ink);
 }

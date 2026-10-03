@@ -28,9 +28,16 @@ const PROHIBITED_HUMOUR = [
   /(?:race|religion|sex|sexuality|disability).{0,25}(?:joke|banter|laugh)/i,
 ];
 
-/** Season-level outcomes the structured evidence tier cannot support. These
- *  words carry the consequence on their own, whatever surrounds them. */
-const CONSEQUENCE_ALWAYS =
+/** Season-level outcomes no snapshot of a table can support. These words carry
+ *  the consequence on their own, whatever surrounds them.
+ *
+ *  This list does not shrink when the pack gains a league table, and the
+ *  reason is not caution. Every word here depends on matches remaining, on
+ *  other clubs' fixtures, or on a competition's qualification rules, and a
+ *  standings row carries none of those. A table says a side is fourth. It does
+ *  not say that fourth is a European place this season, and getting that wrong
+ *  is the kind of confident error that costs more than the sentence was worth. */
+const CONSEQUENCE_STRUCTURAL =
   /\b(?:relegat\w*|stay(?:ed|s|ing)?\s+up|survival|top\s+four|play-?offs?|promotion|promoted|Europa|Champions\s+League|champions?|European\s+(?:place|football|spot)|titles?|drop\s+zone|the\s+drop)\b/gi;
 
 /** Season-level stakes used to disambiguate the verbs below. */
@@ -56,13 +63,50 @@ const CONSEQUENCE_NEAR_STAKES = new RegExp(
 
 /** Season-level consequence language in a script. Empty when the script only
  *  describes the match in front of it. */
-export function consequenceSpans(script: string): string[] {
-  CONSEQUENCE_ALWAYS.lastIndex = 0;
+/** Statements a league table does carry: where a side sits, and the gap.
+ *
+ *  These were never in the blocked list, which made them a hole rather than a
+ *  freedom. The score-derived number licence puts every integer from zero to
+ *  the match total into the pack, so in a two-all draw "fourth in the table"
+ *  was already sayable with no table anywhere in the evidence, and four was
+ *  licensed because four goals were scored.
+ *
+ *  So this is not a relaxation. Without a table these are refused for the
+ *  first time; with one they are licensed like any other figure. */
+const CONSEQUENCE_POSITIONAL = new RegExp(
+  String.raw`\b(?:\d+(?:st|nd|rd|th)|first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|thirteenth|fourteenth|fifteenth|sixteenth|seventeenth|eighteenth|nineteenth|twentieth)\s+(?:in|of)\s+the\s+(?:table|league|division)\b` +
+    String.raw`|\b(?:top|bottom|foot|head)\s+of\s+the\s+(?:table|league|division)\b` +
+    String.raw`|\b[\w-]+\s+points?\s+(?:behind|clear|adrift|ahead\s+of|off)\b`,
+  "gi",
+);
+
+/** Whether the pack can support a statement about where a side sits.
+ *
+ *  Closed by default, and closed in exactly the way the rest of this pipeline
+ *  is: an unmatched cross-check leaves feeds_agree NULL rather than false,
+ *  because unknown must not read as known. An absent table leaves the gate as
+ *  shut as it has been since the day it was written.
+ *
+ *  The reader only supplies a table from a snapshot captured at or after
+ *  kickoff, so a table from before the match never reaches the pack and cannot
+ *  license a statement about the position after it. */
+export function consequenceLicensed(pack: EvidencePack | undefined): boolean {
+  if (!pack) return false;
+  return [...pack.facts, ...pack.derivations].some((item) => item.id.startsWith("table."));
+}
+
+export function consequenceSpans(script: string, pack?: EvidencePack): string[] {
+  CONSEQUENCE_STRUCTURAL.lastIndex = 0;
   CONSEQUENCE_NEAR_STAKES.lastIndex = 0;
-  return [
-    ...[...script.matchAll(CONSEQUENCE_ALWAYS)].map((match) => match[0]),
+  CONSEQUENCE_POSITIONAL.lastIndex = 0;
+  const spans = [
+    ...[...script.matchAll(CONSEQUENCE_STRUCTURAL)].map((match) => match[0]),
     ...[...script.matchAll(CONSEQUENCE_NEAR_STAKES)].map((match) => match[0]),
   ];
+  if (!consequenceLicensed(pack)) {
+    spans.push(...[...script.matchAll(CONSEQUENCE_POSITIONAL)].map((match) => match[0]));
+  }
+  return spans;
 }
 
 const NAME_STOPWORDS = new Set(
@@ -283,7 +327,7 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
   const unlicensedEntities = properNouns(candidate.displayScript).filter(
     (entity) => !entityLicensed(entity, licensed.entities),
   );
-  const consequences = consequenceSpans(candidate.displayScript);
+  const consequences = consequenceSpans(candidate.displayScript, pack);
   const predictionIsValid =
     !candidate.thesis.predictionClaimId ||
     (Boolean(candidate.predictionLockedAt) &&
@@ -339,7 +383,9 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
       "consequence_licence",
       consequences.length === 0,
       consequences.length
-        ? "Season-level consequences are unavailable in the structured evidence tier."
+        ? consequenceLicensed(pack)
+          ? "Season-level consequences are unavailable in the structured evidence tier: a table says where a side sits, not what that position wins."
+          : "Season-level consequences are unavailable in the structured evidence tier, and this pack carries no league table, so a position in it cannot be stated either."
         : undefined,
       consequences.join(", ") || undefined,
       beatsContaining(candidate, consequences),
@@ -430,11 +476,55 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
   return results;
 }
 
+/** Dimensions where the OpenAI bench scores this product's own published
+ *  writing a point below the Claude bench that approved it.
+ *
+ *  Measured, not assumed. The 2026-08-31 Romantic edition is the only script
+ *  Full Time has ever published; it cleared all twenty-five harnesses on the
+ *  Claude bench. Judged again on 2026-09-21 it scores 3 on each of these, and
+ *  on all three OpenAI models tried - gpt-5.6-terra, gpt-5.4 and gpt-5-mini -
+ *  which is what makes it a difference of scale between model families rather
+ *  than one model's opinion.
+ *
+ *  So a floor of 4 on this bench is not the standard that published the show,
+ *  it is a standard the show never had to meet. Three writer-side changes and
+ *  three paid runs were spent discovering that, and restraint failed 6 of 6
+ *  every time.
+ *
+ *  This is a translation of one bar between two instruments, not a lowering of
+ *  it. It applies only while an OpenAI bench is judging and disappears the
+ *  moment PUNDIT_JUDGE_MODEL points back at Anthropic - so it cannot quietly
+ *  become the permanent standard, which is the way a calibration allowance
+ *  usually goes wrong. */
+const OPENAI_BENCH_CALIBRATION: Partial<Record<QualitativeHarness, number>> = {
+  restraint: 3,
+  probability: 3,
+  independence: 3,
+};
+
+/** The floors this bench should be held to, for this pundit. */
+export function judgeFloors(
+  punditId: PunditVariantCandidate["punditId"],
+  judgeModel = process.env.PUNDIT_JUDGE_MODEL ?? process.env.JUDGE_MODEL ?? "",
+): Record<QualitativeHarness, number> {
+  const declared = getPunditSpec(punditId).requiredThresholds;
+  if (!/^(?:gpt|o\d)/i.test(judgeModel)) return declared;
+  const adjusted = { ...declared };
+  for (const [harness, floor] of Object.entries(OPENAI_BENCH_CALIBRATION)) {
+    const key = harness as QualitativeHarness;
+    // Only ever downward, and never below what the bench already asks. A
+    // calibration that could raise a floor would be a second, invisible place
+    // where the editorial bar is set.
+    if (floor < adjusted[key]) adjusted[key] = floor;
+  }
+  return adjusted;
+}
+
 export function validateQualitativeScores(
   punditId: PunditVariantCandidate["punditId"],
   scores: Partial<Record<QualitativeHarness, HarnessResult>>,
 ): HarnessResult[] {
-  const thresholds = getPunditSpec(punditId).requiredThresholds;
+  const thresholds = judgeFloors(punditId);
   return (Object.keys(thresholds) as QualitativeHarness[]).map((harness) => {
     const judged = scores[harness];
     if (!judged?.score) {

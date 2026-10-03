@@ -3,7 +3,7 @@
 - **Status:** Current pre-launch playbook
 - **Owner:** Founder and marketing
 - **Purpose:** Define the audience, argument, proof, copy, channels, and limits for marketing Full Time.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-09-27
 
 ## The call
 
@@ -127,7 +127,6 @@ Every brief must name audience, desired action, source files, claim list, and un
 
 Do not claim:
 
-- Premier-League-only filtering until the Teams server response and UI enforce it;
 - club-built playlists or personally generated shows;
 - a completed quiet settled-only track-record route;
 - public forecast performance;

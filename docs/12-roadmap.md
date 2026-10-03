@@ -3,13 +3,13 @@
 - **Status:** Current
 - **Owner:** Founder and product
 - **Purpose:** Show what remains, what is deliberately deferred, and which product decisions govern the work.
-- **Last reviewed:** 2026-09-07
+- **Last reviewed:** 2026-09-27
 
 ## Current objective
 
 Prove, in public, that all six AI Pundits are consistently useful, distinct, funny, evidence-grounded, and listenable. Since the founder launch override of 2026-09-04 ([`19-release-state.md`](./19-release-state.md)) that proof happens on the live beta rather than before a launch.
 
-Today and the three-tab shell are live at fulltime.fm, and the 04:45 UTC workflow publishes every AI Pundit edition that passes its automated checks (migration `20260905060000_publish_the_variants_that_passed.sql`). The immediate implementation gaps are Premier-League-only Teams, the quiet settled-only track record, and the Settings language pass. The external critical path, licensed inputs, forecast proof, founder-approved scripts and voices, blind listener results, seven rehearsals, and revision-bound sign-offs, was waived as a launch condition by the override and remains open work.
+Today and the three-tab shell are live at fulltime.fm, and the 04:45 UTC workflow publishes every AI Pundit edition that passes its automated checks (migration `20260905060000_publish_the_variants_that_passed.sql`). Premier League only Teams, a one-match Today, the no-scroll frame, and the Settings screen shipped in code on 2026-09-27 (decision log below). The immediate implementation gaps are the quiet settled-only track record, which has no in-app entry, and the language pass on metadata, legal copy, sitemap, and machine-facing docs. The external critical path, licensed inputs, forecast proof, founder-approved scripts and voices, blind listener results, seven rehearsals, and revision-bound sign-offs, was waived as a launch condition by the override and remains open work.
 
 ## Workstreams
 
@@ -17,9 +17,9 @@ Today and the three-tab shell are live at fulltime.fm, and the 04:45 UTC workflo
 | ------------------------------ | --------------------- | ---------------------------------------------------------- | ---------------------------- |
 | Truthful public state          | Complete and deployed | Ongoing regression review                                  | Live beta                    |
 | Player-first Today             | Complete and deployed | Physical-device and live-data regression review            | Live beta                    |
-| Premier League Teams beta      | Incomplete            | Preserve old follows; verify exact availability response   | Do not promise               |
-| Quiet settled track record     | Partial               | Replace legacy `/receipts` search and open-call behavior   | Unlisted compatibility route |
-| Settings language              | Partial               | AI Pundit terminology and simple playful copy              | Needs copy pass              |
+| Premier League Teams beta      | Complete (2026-09-27) | Read back the twenty clubs on the matching deployment      | Premier League only          |
+| Quiet settled track record     | Partial               | Replace legacy `/receipts` search and open-call behavior   | Unlisted, no in-app entry    |
+| Settings language              | Settings screen done  | Metadata, legal copy, sitemap, machine-facing docs         | Needs copy pass beyond Settings |
 | Evidence and claim licensing   | Complete              | Evaluation corpus must prove it                            | Gate waived 2026-09-04; open |
 | Six persona systems            | Complete              | Blind identity and founder taste thresholds                | Gate waived 2026-09-04; open |
 | Humour and editorial harnesses | Complete              | 360-script and human review                                | Gate waived 2026-09-04; open |
@@ -35,11 +35,9 @@ The sequence below was written before the 2026-09-04 override. Steps 2 to 6 rema
 
 ### 1. Finish the beta surfaces
 
-- Restrict the Teams response to Premier League clubs and return explicit league availability.
-- Put the league row before teams, disable other leagues as coming later, and remove the three-team minimum.
-- Preserve old non-Premier-League follows outside beta counts and promises.
-- Replace `/receipts` with settled-only `How did they do?` cards and optional defined detail.
-- Reconcile Settings, metadata, legal copy, sitemap, and machine-facing docs to AI Pundit language.
+- Done 2026-09-27: Teams lists the twenty clubs of the current Premier League season, with no league row and no coming-later leagues (the three-team prompt went on 2026-09-06). Old non-Premier-League follows stay stored outside the count.
+- Replace `/receipts` with settled-only `How did they do?` cards and optional defined detail, and give it an entry in the product again.
+- Reconcile metadata, legal copy, sitemap, and machine-facing docs to AI Pundit language. Settings was done on 2026-09-27.
 
 ### 2. Rights and data
 
@@ -86,7 +84,7 @@ The sequence below was written before the 2026-09-04 override. Steps 2 to 6 rema
 ## After launch, not before
 
 - Ask Your Pundit, subject to [`16-ask-your-pundit.md`](./16-ask-your-pundit.md).
-- Additional leagues and competitions with licensed evidence and evaluation coverage.
+- Additional leagues and competitions with licensed evidence and evaluation coverage, by a new founder decision: the 2026-09-27 ruling makes the product Premier League only.
 - Deeper personalization and account sync.
 - Sponsor or membership experiments that preserve editorial independence.
 - Richer tactical claims only after licensed film or tracking evidence and new gates.
@@ -107,6 +105,13 @@ The sequence below was written before the 2026-09-04 override. Steps 2 to 6 rema
 ## Decision log
 
 Use: **Decision - Context - Tradeoff - Reversible?** Add new entries at the top.
+
+### 2026-09-27 - Premier League only, one match, no scroll
+
+- **Decision:** Four rulings (Krish, 2026-09-27). Premier League teams only, across the whole product. Today shows one match at a time, says plainly which game it is, and carries one select novelty element: the six AI Pundits for that match as a rail. The app is a completely no-scroll experience. Club crests are shown from the data provider's public imagery, accepting the trademark exposure ("I accept exposure, we are just using public imagery"); the Premier League's own mark is still not used and the competition is named in text only.
+- **Context:** Krish: "This whole product is supposed to be for Premier League teams only but the settings show different teams." Today was "so hard to figure out what game I'm looking at. It's just full of verbal diarrhoea and trying too hard to be cool. It just needs to show what game it is and maybe then something like one really select thing that shows its novelty. It's also supposed to be a completely no-scroll experience in this whole entire app." The daily pick had no league filter: the 2026-08-31 published show was Barcelona v Rayo Vallecano and 2026-09-03 picked Toulouse v Lille. Today's fallback ordered by publication time and widened to any match, so four of six AI Pundits opened on Tottenham v Aston Villa (19 September) while the newer Man City 5-3 Sunderland (20 September) sat in a list below.
+- **Tradeoff:** A day without a finished Premier League match publishes nothing; it fails selection before any paid step, so it costs nothing. The ingest and prediction sync pull the Premier League only. The published La Liga edition stays in the database and no longer reaches Today. Today loses the model-written headline and dek, the More to play list, and the How did they do? entry, so `/receipts` has no in-app entry. Crests carry a trademark exposure the founder accepted knowingly. Legacy direct-URL routes still scroll inside the screen region until they are re-laid-out.
+- **Reversible?** Yes. A league comes back through `src/lib/premier-league.ts` and the ingest, by a new founder decision; crests come out through `src/components/ClubCrest.tsx`; the frame and Today layout are layout. This entry supersedes the league-visibility part of the 2026-08-11 decision "Premier League first, staged personalization" below: there are no coming-later leagues and no league rows. The crest ruling overrides the prohibition on club crests without recorded permission in [`11-legal.md`](./11-legal.md) and [`01-brand.md`](./01-brand.md); league and broadcaster marks stay prohibited. Recorded from the code and commit record on 2026-09-27.
 
 ### 2026-09-05 - Publish the pundits that passed
 
@@ -179,7 +184,8 @@ Older June and July plans are retained in [`14-build-plan.md`](./14-build-plan.m
 - **Decision:** The intended beta is Premier League first. Other leagues appear as coming later. Saved teams may affect approved ordering only when exact metadata supports it; personal show generation is deferred.
 - **Context:** Broad league choice implied coverage and personalization the pipeline could not yet approve.
 - **Tradeoff:** Narrower beta scope and preserved but hidden non-Premier-League follows.
-- **Reversible?** Yes, after data, evaluation, and production coverage expand. The current Teams route has not implemented this decision yet.
+- **Reversible?** Yes, after data, evaluation, and production coverage expand.
+- **Overridden:** in part, 2026-09-27, by the Premier League only decision above. Other leagues no longer appear as coming later; Teams shows the Premier League clubs alone. Preserved non-Premier-League follows and staged personalization stand.
 
 ### 2026-08-11 - Quiet accountability
 

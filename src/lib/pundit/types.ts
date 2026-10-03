@@ -1,7 +1,19 @@
 export const PUNDIT_IDS = ["zen", "gaffer", "stats", "romantic", "doomer", "banter"] as const;
 export type PunditId = (typeof PUNDIT_IDS)[number];
 
-export type EvidenceKind = "fact" | "derived";
+/** What kind of thing an evidence item is.
+ *
+ *  "fact" is something that was counted or recorded: a goal, a corner, a
+ *  scoreline. "derived" is arithmetic this repository did on facts, and its
+ *  formula says exactly what. "estimate" is a number a model produced, and it
+ *  is a separate kind because docs/05-content-safety.md requires the product
+ *  to distinguish a model estimate from an observed fact, and until now the
+ *  pack had no way to express the difference.
+ *
+ *  Expected goals is the reason. It was carried as a plain fact for months,
+ *  indistinguishable from a shot count, which is how a pundit ends up saying a
+ *  side "should have scored two" as though someone had counted them. */
+export type EvidenceKind = "fact" | "derived" | "estimate";
 export type EvidenceValue = string | number | boolean | null;
 
 export type EvidenceItem = {
@@ -12,6 +24,9 @@ export type EvidenceItem = {
   source: string;
   provenance: string;
   formula?: string;
+  /** For an estimate: the model that produced it, named so a listener could be
+   *  told whose number it is. An estimate without one is not publishable. */
+  model?: string;
 };
 
 export type EvidencePack = {

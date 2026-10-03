@@ -191,9 +191,11 @@ describe("own goal labelling", () => {
     expect(label).toContain("A One of North FC");
   });
 
-  it("leaves an ordinary goal label alone", () => {
+  it("names the scorer and the side on a goal with no assist", () => {
     const pack = buildEvidencePack(input);
-    expect(pack.facts.find((item) => item.id === "event.goal-1")?.label).toBe("goal event");
+    expect(pack.facts.find((item) => item.id === "event.goal-1")?.label).toBe(
+      "goal event: A One of North FC",
+    );
   });
 });
 
@@ -234,6 +236,86 @@ describe("substitution labelling", () => {
     expect(pack.facts.find((item) => item.id === "event.sub-1")?.label).toBe(
       "substitution event: North FC bring on In Coming",
     );
+  });
+});
+
+/** Who made the goal is the second most interesting fact about it, and the pack
+ *  threw it away from the day it was first ingested. */
+describe("who assisted the goal", () => {
+  const assisted = {
+    ...input,
+    events: [
+      {
+        id: "goal-1",
+        type: "goal" as const,
+        minute: 23,
+        team: "North FC",
+        player: "Scorer Name",
+        assist: "Passer Name",
+        source: "provider-a",
+      },
+    ],
+  };
+
+  it("names the assister in the label", () => {
+    const pack = buildEvidencePack(assisted);
+    expect(pack.facts.find((item) => item.id === "event.goal-1")?.label).toBe(
+      "goal event: Scorer Name of North FC, assisted by Passer Name",
+    );
+  });
+
+  it("licenses the assister by putting him in the value", () => {
+    const pack = buildEvidencePack(assisted);
+    expect(pack.facts.find((item) => item.id === "event.goal-1")?.value).toContain("Passer Name");
+  });
+
+  /** The first version of this test asserted the bug. It checked that an
+   *  unassisted goal said nothing about an assist, which was right, by
+   *  requiring the whole label to be the bare string "goal event", which threw
+   *  away the scorer and the side as well. That is what reached the writer on
+   *  2026-09-20 and quarantined the drop, and the test held it in place. Both
+   *  halves are asserted separately now: the assist is absent, the scorer is
+   *  not. */
+  it("names the scorer but no assist on an unassisted goal", () => {
+    const pack = buildEvidencePack({
+      ...assisted,
+      events: [{ ...assisted.events[0], assist: null }],
+    });
+    const item = pack.facts.find((entry) => entry.id === "event.goal-1");
+    expect(item?.label).toBe("goal event: Scorer Name of North FC");
+    expect(item?.label).not.toContain("assisted by");
+    expect(item?.value).not.toContain("Passer Name");
+  });
+
+  /** The provider keeps the incoming player of a substitution in the same
+   *  column as the assister, which the ingest de-inverts. If the pack ever
+   *  reads it for a substitution it will present the man who went off as
+   *  having assisted, and no gate can catch that: he is a real player who
+   *  really was on the pitch, so the entity licence passes him and a judge has
+   *  no reason to doubt it. */
+  it("never calls a substituted player an assister", () => {
+    const pack = buildEvidencePack({
+      ...input,
+      events: [
+        {
+          id: "sub-1",
+          type: "sub" as const,
+          minute: 68,
+          team: "North FC",
+          player: "In Coming",
+          detail: "off:Out Going",
+          assist: "Out Going",
+          source: "provider-a",
+        },
+      ],
+    });
+    const item = pack.facts.find((entry) => entry.id === "event.sub-1");
+    expect(item?.label).toBe("substitution event: North FC bring on In Coming for Out Going");
+    expect(item?.label).not.toContain("assisted");
+    // Once, not twice: the outgoing player is already licensed by the detail
+    // field, and the pack should not gain a second copy of him from a column
+    // that does not mean what its name says for this event type.
+    expect((item?.value as unknown[]).filter((entry) => entry === "Out Going")).toHaveLength(1);
   });
 });
 
@@ -279,6 +361,219 @@ describe("shot location, the chance-quality signal that survived", () => {
   it("says nothing rather than dividing by no shots at all", () => {
     const pack = withShots({ homeShotsInsideBox: 0, homeShotsOutsideBox: 0 });
     expect(derivation(pack, "derived.home_inside_box_percent")).toBeUndefined();
+  });
+});
+
+/** The last chance-quality signal the provider still sends. A shot blocked by a
+ *  defender never reached the keeper, so it separates what a side made from
+ *  what it merely attempted - which is the distinction xG used to carry. */
+describe("shots the defence blocked", () => {
+  const blocked = {
+    ...input,
+    stats: { ...input.stats!, homeBlocked: 7, awayBlocked: 2 },
+  };
+
+  it("states each side's blocked shots and the match total", () => {
+    const pack = buildEvidencePack(blocked);
+    expect(pack.facts.find((item) => item.id === "stats.home_blocked")?.value).toBe(7);
+    expect(pack.facts.find((item) => item.id === "stats.away_blocked")?.value).toBe(2);
+    expect(pack.derivations.find((item) => item.id === "derived.match_blocked")?.value).toBe(9);
+  });
+
+  it("states nothing when the provider sent nothing", () => {
+    const pack = buildEvidencePack(input);
+    expect(pack.facts.find((item) => item.id === "stats.home_blocked")).toBeUndefined();
+    expect(pack.derivations.find((item) => item.id === "derived.match_blocked")).toBeUndefined();
+  });
+});
+
+/** Saves are recorded for a side and never for a player. The writer is told so
+ *  in the system prompt and no gate enforces it, so the pack has to make the
+ *  attribution itself or not at all. */
+describe("attributing saves to the keeper who made them", () => {
+  const wholeMatch = {
+    ...input,
+    stats: { ...input.stats!, homeSaves: 6, awaySaves: 3 },
+    goalkeepers: {
+      home: { name: "Steady Hands", subbed: false },
+      away: { name: "Other Keeper", subbed: false },
+    },
+  };
+
+  it("names the keeper in the label and keeps the number in the value", () => {
+    const item = buildEvidencePack(wholeMatch).derivations.find(
+      (entry) => entry.id === "derived.home_gk_saves",
+    );
+    expect(item?.label).toBe("Saves by Steady Hands");
+    expect(item?.value).toBe(6);
+    expect(item?.formula).toContain("played the whole match");
+  });
+
+  it("attributes nothing when the keeper was substituted", () => {
+    const pack = buildEvidencePack({
+      ...wholeMatch,
+      goalkeepers: { ...wholeMatch.goalkeepers, home: { name: "Steady Hands", subbed: true } },
+    });
+    expect(pack.derivations.find((item) => item.id === "derived.home_gk_saves")).toBeUndefined();
+  });
+
+  /** Unknown is treated as substituted. Half a match of saves attributed to one
+   *  of two keepers is the error this exists to prevent, and an unrecorded
+   *  substitution is exactly the case where it would happen. */
+  it("attributes nothing when the substitution is unrecorded", () => {
+    const pack = buildEvidencePack({
+      ...wholeMatch,
+      goalkeepers: { ...wholeMatch.goalkeepers, home: { name: "Steady Hands", subbed: null } },
+    });
+    expect(pack.derivations.find((item) => item.id === "derived.home_gk_saves")).toBeUndefined();
+  });
+
+  it("attributes nothing when the provider sent no saves", () => {
+    const pack = buildEvidencePack({ ...wholeMatch, stats: input.stats });
+    expect(pack.derivations.find((item) => item.id === "derived.home_gk_saves")).toBeUndefined();
+  });
+
+  it("attributes nothing when the keeper is not named", () => {
+    const pack = buildEvidencePack({
+      ...wholeMatch,
+      goalkeepers: { ...wholeMatch.goalkeepers, home: { name: null, subbed: false } },
+    });
+    expect(pack.derivations.find((item) => item.id === "derived.home_gk_saves")).toBeUndefined();
+  });
+});
+
+/** standings_snapshots existed for six weeks with nothing writing to it, and
+ *  the cost of that empty table was the gate in harness.ts that refuses every
+ *  sentence about the season. */
+describe("where these two stood in the table", () => {
+  const withTable = {
+    ...input,
+    matchday: 5,
+    table: {
+      capturedAt: "2026-09-05T00:15:00Z",
+      home: { rank: 3, points: 10, played: 5 },
+      away: { rank: 12, points: 5, played: 5 },
+    },
+  };
+
+  it("states each side's position, points and matches played", () => {
+    const pack = buildEvidencePack(withTable);
+    expect(pack.facts.find((item) => item.id === "table.home_rank")?.value).toBe(3);
+    expect(pack.facts.find((item) => item.id === "table.away_points")?.value).toBe(5);
+    expect(pack.facts.find((item) => item.id === "table.home_played")?.value).toBe(5);
+  });
+
+  it("states the gap, which is the figure a pundit actually reaches for", () => {
+    const item = buildEvidencePack(withTable).derivations.find(
+      (entry) => entry.id === "derived.table_points_gap",
+    );
+    expect(item?.value).toBe(5);
+    expect(item?.formula).toContain("difference");
+  });
+
+  /** The provenance is the audit trail for a season-level sentence: which
+   *  snapshot licensed it, and when that snapshot was taken. */
+  it("records which snapshot licensed it", () => {
+    const item = buildEvidencePack(withTable).facts.find((entry) => entry.id === "table.home_rank");
+    expect(item?.provenance).toContain("2026-09-05T00:15:00Z");
+  });
+
+  it("states nothing at all when there is no snapshot", () => {
+    const pack = buildEvidencePack(input);
+    expect(pack.facts.some((item) => item.id.startsWith("table."))).toBe(false);
+    expect(pack.derivations.some((item) => item.id.startsWith("table."))).toBe(false);
+  });
+
+  it("states one side when the snapshot only knows one of them", () => {
+    const pack = buildEvidencePack({
+      ...withTable,
+      table: { ...withTable.table, away: undefined },
+    });
+    expect(pack.facts.find((item) => item.id === "table.home_rank")?.value).toBe(3);
+    expect(pack.facts.find((item) => item.id === "table.away_rank")).toBeUndefined();
+    expect(pack.derivations.find((item) => item.id === "derived.table_points_gap")).toBeUndefined();
+  });
+
+  /** The round is a fact about the calendar, not about the table, and it must
+   *  not license a positional sentence on its own. */
+  it("keeps the league round out of the table namespace", () => {
+    const pack = buildEvidencePack({ ...input, matchday: 5 });
+    expect(pack.facts.find((item) => item.id === "match.matchday")?.value).toBe(5);
+    expect(pack.facts.some((item) => item.id.startsWith("table."))).toBe(false);
+  });
+});
+
+/** A number a model produced is not a number anyone counted, and until the
+ *  estimate kind existed the pack had no way to say so. Expected goals is why
+ *  it matters: carried as a plain fact it is indistinguishable from a shot
+ *  count, which is how a pundit ends up saying a side should have scored two
+ *  as though someone had counted them. */
+describe("numbers a model produced", () => {
+  const withEstimates = {
+    ...input,
+    estimates: [
+      { sourceId: "fotmob", model: "FotMob expected goals", homeXg: 0.79, awayXg: 1.65 },
+      { sourceId: "other", model: "Another model", homeXg: 1.4, awayXg: 1.6 },
+    ],
+  };
+
+  it("marks an estimate as an estimate and names the model", () => {
+    const item = buildEvidencePack(withEstimates).derivations.find(
+      (entry) => entry.id === "estimate.fotmob_home_xg",
+    );
+    expect(item?.kind).toBe("estimate");
+    expect(item?.model).toBe("FotMob expected goals");
+    expect(item?.value).toBe(0.79);
+  });
+
+  /** The label is what the writer reads, so the label has to carry it too. */
+  it("says in the label that it was not counted", () => {
+    const item = buildEvidencePack(withEstimates).derivations.find(
+      (entry) => entry.id === "estimate.fotmob_home_xg",
+    );
+    expect(item?.label).toContain("estimated by FotMob expected goals");
+    expect(item?.label).toContain("not counted");
+  });
+
+  it("carries every model's number rather than picking one", () => {
+    const ids = buildEvidencePack(withEstimates).derivations.map((entry) => entry.id);
+    expect(ids).toContain("estimate.fotmob_home_xg");
+    expect(ids).toContain("estimate.other_home_xg");
+  });
+
+  /** The payoff for multi-sourcing, and the one thing a single feed can never
+   *  produce. Two models disagreeing about whether a chance was good is a
+   *  better line than either number alone. */
+  it("states how far the models are apart when they disagree", () => {
+    const item = buildEvidencePack(withEstimates).derivations.find(
+      (entry) => entry.id === "derived.home_xg_disagreement",
+    );
+    expect(item?.value).toBe(0.61);
+    expect(item?.source).toContain("FotMob");
+  });
+
+  it("says nothing when the models agree closely enough not to be worth a line", () => {
+    const pack = buildEvidencePack(withEstimates);
+    // The away figures are 1.65 and 1.60.
+    expect(
+      pack.derivations.find((item) => item.id === "derived.away_xg_disagreement"),
+    ).toBeUndefined();
+  });
+
+  it("says nothing about disagreement when only one model answered", () => {
+    const pack = buildEvidencePack({
+      ...input,
+      estimates: [withEstimates.estimates[0]],
+    });
+    expect(
+      pack.derivations.find((item) => item.id === "derived.home_xg_disagreement"),
+    ).toBeUndefined();
+    expect(pack.derivations.find((item) => item.id === "estimate.fotmob_home_xg")).toBeDefined();
+  });
+
+  it("carries nothing at all when no source answered", () => {
+    const pack = buildEvidencePack(input);
+    expect(pack.derivations.some((item) => item.kind === "estimate")).toBe(false);
   });
 });
 
@@ -352,11 +647,29 @@ describe("what each side arrived carrying", () => {
 
   const form = {
     home: [
-      { date: "2026-08-30T14:00:00Z", opponent: "Everton", venue: "away", goalsFor: 1, goalsAgainst: 1 },
-      { date: "2026-08-23T14:00:00Z", opponent: "Brentford", venue: "home", goalsFor: 0, goalsAgainst: 2 },
+      {
+        date: "2026-08-30T14:00:00Z",
+        opponent: "Everton",
+        venue: "away",
+        goalsFor: 1,
+        goalsAgainst: 1,
+      },
+      {
+        date: "2026-08-23T14:00:00Z",
+        opponent: "Brentford",
+        venue: "home",
+        goalsFor: 0,
+        goalsAgainst: 2,
+      },
     ],
     away: [
-      { date: "2026-08-31T14:00:00Z", opponent: "Arsenal", venue: "home", goalsFor: 3, goalsAgainst: 0 },
+      {
+        date: "2026-08-31T14:00:00Z",
+        opponent: "Arsenal",
+        venue: "home",
+        goalsFor: 3,
+        goalsAgainst: 0,
+      },
     ],
   };
 
@@ -450,5 +763,99 @@ describe("what the two sides produced between them", () => {
     expect(
       [...pack.facts, ...pack.derivations].find((entry) => entry.id === "derived.match_corners"),
     ).toBeUndefined();
+  });
+});
+
+/** The state of the game, which the pack has never carried.
+ *
+ *  `match.home_score` and `match.away_score` are the FINAL score and were the
+ *  only scoreline in the pack, so a writer describing the hour mark counted
+ *  goal events by hand. On the 2026-09-20 drop two judges reading the same
+ *  pack counted differently - one put minute 59 at 3-3, the other at 4-3, and
+ *  the truth was 4-3 - and all six variants failed factual_entailment. */
+describe("score progression", () => {
+  const timeline: StructuredMatchInput = {
+    ...input,
+    match: { ...input.match, homeScore: 2, awayScore: 1 },
+    events: [
+      { id: "g1", type: "goal", minute: 12, team: "North FC", player: "A One", source: "p" },
+      { id: "g3", type: "goal", minute: 70, team: "North FC", player: "C Three", source: "p" },
+      { id: "g2", type: "goal", minute: 34, team: "South FC", player: "B Two", source: "p" },
+      { id: "s1", type: "sub", minute: 60, team: "North FC", player: "D Four", source: "p" },
+    ],
+  };
+  const progression = (pack: ReturnType<typeof buildEvidencePack>) =>
+    pack.derivations.filter((item) => item.id.startsWith("derived.score_after_"));
+
+  it("states the score after each goal, in minute order", () => {
+    expect(progression(buildEvidencePack(timeline)).map((item) => item.label)).toEqual([
+      "Score after the goal on 12 minutes: North FC 1-0 South FC",
+      "Score after the goal on 34 minutes: North FC 1-1 South FC",
+      "Score after the goal on 70 minutes: North FC 2-1 South FC",
+    ]);
+  });
+
+  it("licenses the running totals as numbers, so a writer may state them", () => {
+    expect(progression(buildEvidencePack(timeline)).map((item) => item.value)).toEqual([
+      [1, 0],
+      [1, 1],
+      [2, 1],
+    ]);
+  });
+
+  it("counts an own goal for the side the provider records it against", () => {
+    const pack = buildEvidencePack({
+      ...timeline,
+      match: { ...timeline.match, homeScore: 1, awayScore: 1 },
+      events: [
+        { id: "g1", type: "goal", minute: 12, team: "North FC", player: "A One", source: "p" },
+        { id: "og", type: "own_goal", minute: 50, team: "South FC", player: "A One", source: "p" },
+      ],
+    });
+    expect(progression(pack).map((item) => item.label)).toEqual([
+      "Score after the goal on 12 minutes: North FC 1-0 South FC",
+      "Score after the goal on 50 minutes: North FC 1-1 South FC",
+    ]);
+  });
+
+  it("does not count a missed penalty as a goal", () => {
+    const pack = buildEvidencePack({
+      ...timeline,
+      match: { ...timeline.match, homeScore: 1, awayScore: 0 },
+      events: [
+        { id: "g1", type: "goal", minute: 12, team: "North FC", player: "A One", source: "p" },
+        {
+          id: "pm",
+          type: "penalty_miss",
+          minute: 40,
+          team: "North FC",
+          player: "A One",
+          source: "p",
+        },
+      ],
+    });
+    expect(progression(pack)).toHaveLength(1);
+  });
+
+  // Both of these would state a scoreline nobody can stand behind. A writer
+  // cites the progression INSTEAD of counting, so a wrong one is worse than
+  // none at all.
+  it("says nothing when a goal has no minute to place it at", () => {
+    expect(
+      progression(
+        buildEvidencePack({
+          ...timeline,
+          events: [...timeline.events, { ...timeline.events[0], id: "g4", minute: null }],
+        }),
+      ),
+    ).toHaveLength(0);
+  });
+
+  it("says nothing when the goals do not add up to the stated final score", () => {
+    expect(
+      progression(
+        buildEvidencePack({ ...timeline, match: { ...timeline.match, homeScore: 4 } }),
+      ),
+    ).toHaveLength(0);
   });
 });

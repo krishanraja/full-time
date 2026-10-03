@@ -11,13 +11,20 @@
 // pipeline.
 
 import { createFileRoute } from "@tanstack/react-router";
+import { apiFootballClient } from "@/lib/api/api-football.server";
+import { matchImportance } from "@/lib/api/match-importance";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { currentCoverageDate } from "@/lib/london-date";
-import { hasStat, statLabels, statNumber as statN } from "@/lib/api/provider-stats";
+import { PREMIER_LEAGUE } from "@/lib/premier-league";
+import {
+  hasStat,
+  statLabels,
+  statNumber as statN,
+  statPresenceDelta,
+  type PresenceAlarm,
+} from "@/lib/api/provider-stats";
 import type { Database } from "@/integrations/supabase/types";
 
-const AF = "https://v3.football.api-sports.io";
-const PACE_MS = 300; // Pro: 300 req/min. The old 7000 was tuned for the free tier.
 const TOP_N = 12;
 
 /** The statistics we keep, as the column suffix and the provider's label for
@@ -37,12 +44,20 @@ const STAT_FIELDS = [
   ["offsides", "Offsides"],
 ] as const;
 
+/** The Premier League only (`src/lib/premier-league.ts`). Five leagues were
+ *  ingested until 2026-09-27, and enrichment below takes the TOP_N fixtures
+ *  across all of them, so on a busy weekend Premier League matches were left
+ *  without events or statistics: three of four on 2026-08-29. With the daily
+ *  pick now restricted to the Premier League, an unenriched pick would spend a
+ *  full run on a thin evidence pack. */
 const LEAGUES = [
-  { afId: 39, id: "af_39", name: "Premier League", country: "England", fd: "PL" },
-  { afId: 140, id: "af_140", name: "La Liga", country: "Spain", fd: "PD" },
-  { afId: 135, id: "af_135", name: "Serie A", country: "Italy", fd: "SA" },
-  { afId: 78, id: "af_78", name: "Bundesliga", country: "Germany", fd: "BL1" },
-  { afId: 61, id: "af_61", name: "Ligue 1", country: "France", fd: "FL1" },
+  {
+    afId: PREMIER_LEAGUE.providerId,
+    id: PREMIER_LEAGUE.id,
+    name: PREMIER_LEAGUE.name,
+    country: PREMIER_LEAGUE.country,
+    fd: PREMIER_LEAGUE.footballDataCode,
+  },
 ];
 
 /** Untyped API-Football payload. The provider's response shape is wide, varies
@@ -86,8 +101,6 @@ type ContextRow = {
   source: string;
   updated_at: string;
 };
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Yesterday in UK time: the drop recaps the day that just finished. */
 function yesterdayUK(): string {
@@ -177,28 +190,32 @@ async function handleIngest({ request }: { request: Request }) {
   const DATE = url.searchParams.get("date") ?? yesterdayUK();
   const skipCoverage = url.searchParams.get("skipCoverage") === "1";
 
-  let calls = 0;
-  const af = async (path: string, retries = 2): Promise<Json[]> => {
-    await sleep(PACE_MS);
-    calls++;
-    const r = await fetch(AF + path, {
-      headers: { "x-apisports-key": AF_KEY },
-      signal: AbortSignal.timeout(30_000),
-    });
-    const d = (await r.json()) as Json;
-    if (d.errors?.rateLimit && retries > 0) {
-      await sleep(25_000);
-      return af(path, retries - 1);
-    }
-    if (d.errors && Object.keys(d.errors).length) {
-      console.error("[ingest] AF error", path, JSON.stringify(d.errors));
-      return [];
-    }
-    return d.response ?? [];
-  };
-
   const warnings: string[] = [];
+  // "empty" because one bad endpoint must cost one statistic, not a day of
+  // fixtures. It is only safe because the warning is recorded: an endpoint
+  // erroring and a day with no fixtures used to produce the same empty
+  // response body, and neither a reader nor the run ledger could tell them
+  // apart.
+  const provider = apiFootballClient({
+    onError: "empty",
+    timeoutMs: 30_000,
+    onWarning: (message) => {
+      console.error("[ingest] " + message);
+      warnings.push(message);
+    },
+  });
+  const af = (path: string): Promise<Json[]> => provider.get<Json>(path);
+
   let absentStatsReported = false;
+
+  // One row per statistic, accumulated across every fixture that carried
+  // statistics at all. This is what turns "expected goals is missing today"
+  // into "expected goals was here yesterday and is not here now", which is the
+  // sentence nobody got to read for five days.
+  const presence = new Map(
+    STAT_FIELDS.map(([column]) => [column, { fixturesSeen: 0, fixturesPresent: 0 }]),
+  );
+  const labelsSeen = new Set<string>();
 
   // ---- coverage preflight. RISK 1 and the single highest-probability
   // launch-day failure: if events coverage is off, events come back empty,
@@ -242,16 +259,57 @@ async function handleIngest({ request }: { request: Request }) {
       date: DATE,
       season: SEASON,
       finished: 0,
-      calls,
+      calls: provider.calls(),
       warnings,
     });
   }
 
-  const importanceOf = (f: Json) => {
-    const total = (f.goals.home ?? 0) + (f.goals.away ?? 0);
-    const margin = Math.abs((f.goals.home ?? 0) - (f.goals.away ?? 0));
-    return total + (margin <= 1 ? 2 : 0) + (total >= 4 ? 2 : 0);
-  };
+  // The table the two clubs went into the match carrying.
+  //
+  // The standings written later in this run are the table after it, which is
+  // the right thing for the evidence pack and the wrong thing here: whether a
+  // fixture mattered is a question about what was at stake beforehand. The
+  // most recent snapshot before kickoff is exactly that.
+  //
+  // A standings outage leaves the ranking as goals alone, which is what it has
+  // always been. That matters more than it looks: this ranking also decides
+  // which twelve fixtures get events, statistics and lineups at all, so it
+  // must never move because a table failed to arrive.
+  const tableByTeam = new Map<string, { rank: number | null; points: number | null }>();
+  const clubsByLeague = new Map<string, number>();
+  try {
+    const { serviceRest } = await import("@/lib/pundit/service-rest.server");
+    for (const lg of live) {
+      const snapshots = await serviceRest<Array<{ rows: unknown }>>(
+        `standings_snapshots?league_id=eq.${lg.id}&season=eq.${SEASON}` +
+          `&select=rows&order=captured_at.desc&limit=1`,
+      );
+      const rows = Array.isArray(snapshots[0]?.rows)
+        ? (snapshots[0].rows as Array<Record<string, unknown>>)
+        : [];
+      clubsByLeague.set(lg.id, rows.length);
+      for (const entry of rows) {
+        if (typeof entry.team_id !== "string") continue;
+        tableByTeam.set(entry.team_id, {
+          rank: typeof entry.rank === "number" ? entry.rank : null,
+          points: typeof entry.points === "number" ? entry.points : null,
+        });
+      }
+    }
+  } catch (error: unknown) {
+    warnings.push(
+      `Standings unavailable for match ranking, using goals alone: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
+  const importanceOf = (f: Json, leagueId?: string) =>
+    matchImportance({
+      homeGoals: f.goals.home ?? 0,
+      awayGoals: f.goals.away ?? 0,
+      home: tableByTeam.get(`af_${f.teams?.home?.id}`),
+      away: tableByTeam.get(`af_${f.teams?.away?.id}`),
+      clubsInLeague: leagueId ? (clubsByLeague.get(leagueId) ?? 0) : 0,
+    });
   const short = (n: string) =>
     n
       .replace(/[^A-Za-z ]/g, "")
@@ -290,7 +348,7 @@ async function handleIngest({ request }: { request: Request }) {
       away_score: f.goals.away,
       kickoff_at: f.fixture.date,
       status: "finished",
-      importance_score: importanceOf(f),
+      importance_score: importanceOf(f, lg.id),
     })),
     { onConflict: "id" },
   );
@@ -305,7 +363,9 @@ async function handleIngest({ request }: { request: Request }) {
   }
 
   // ---- rich fetch for the top N by importance
-  const ranked = [...all].sort((a, b) => importanceOf(b.f) - importanceOf(a.f)).slice(0, TOP_N);
+  const ranked = [...all]
+    .sort((a, b) => importanceOf(b.f, b.lg.id) - importanceOf(a.f, a.lg.id))
+    .slice(0, TOP_N);
   const contexts: ContextRow[] = [];
 
   for (const { lg, f } of ranked) {
@@ -385,6 +445,14 @@ async function handleIngest({ request }: { request: Request }) {
       // provider did send, so a rename and a withdrawal are told apart at the
       // point where the difference is visible. Reported once per run, because
       // a missing field is missing for every fixture that day.
+      for (const [column, label] of STAT_FIELDS) {
+        const tally = presence.get(column);
+        if (!tally) continue;
+        tally.fixturesSeen += 1;
+        if (hasStat(h, label) || hasStat(a, label)) tally.fixturesPresent += 1;
+      }
+      for (const label of [...statLabels(h), ...statLabels(a)]) labelsSeen.add(label);
+
       const absent = STAT_FIELDS.filter(
         ([, label]) => !hasStat(h, label) && !hasStat(a, label),
       ).map(([, label]) => label);
@@ -528,6 +596,205 @@ async function handleIngest({ request }: { request: Request }) {
     );
   }
 
+  // ---- second opinions on the numbers.
+  //
+  // Ruling (Krish, 2026-09-21): ingest the free-to-access analytics tier for
+  // production evidence, accepting the rights exposure. See docs/11-legal.md,
+  // which records the posture in full rather than implying a permission
+  // nobody granted.
+  //
+  // Written to the database rather than fetched at generation time, because
+  // the evidence pack is built from stored rows so that a run is reproducible
+  // and closed-world. Only the enriched fixtures: these are the ones that can
+  // become a show.
+  let estimates = 0;
+  try {
+    const [{ fotmobAdapter }, { serviceRest }] = await Promise.all([
+      import("@/lib/sources/fotmob.server"),
+      import("@/lib/pundit/service-rest.server"),
+    ]);
+    // Ask the destination whether it exists before asking anyone else for
+    // anything. Without this, a run with the migration unapplied spends a
+    // request per enriched fixture and then throws every answer away when the
+    // write fails, which is both pointless and the behaviour most likely to
+    // get an unlicensed source to stop answering before it is ever used.
+    //
+    // One request, and it doubles as the guard for the table being dropped.
+    await serviceRest<unknown>("source_match_estimates?select=match_id&limit=1");
+
+    const sources = [fotmobAdapter()];
+    const rows: Array<Record<string, unknown>> = [];
+    for (const { f } of ranked) {
+      for (const source of sources) {
+        const stats = await source.fetchMatchStats({
+          homeTeam: f.teams.home.name,
+          awayTeam: f.teams.away.name,
+          date: String(f.fixture.date ?? DATE),
+        });
+        if (!stats) continue;
+        rows.push({
+          match_id: `af_${f.fixture.id}`,
+          source_id: source.id,
+          model: stats.model,
+          rights_basis: source.rights.basis,
+          home_xg: stats.homeXg ?? null,
+          away_xg: stats.awayXg ?? null,
+        });
+      }
+    }
+    if (rows.length) {
+      await serviceRest<null>("source_match_estimates?on_conflict=match_id,source_id", {
+        method: "POST",
+        body: rows,
+        prefer: "resolution=merge-duplicates,return=minimal",
+      });
+      estimates = rows.length;
+    }
+  } catch (error: unknown) {
+    // A second opinion is a second opinion. Nothing a listener hears depends
+    // on one arriving.
+    warnings.push(
+      `Source estimates unavailable: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
+  // ---- league tables.
+  //
+  // standings_snapshots has existed since 6 August and nothing has ever
+  // written to it. The cost of that empty table is not a missing feature: it
+  // is CONSEQUENCE_ALWAYS in harness.ts, which permanently refuses every
+  // title, Europe, relegation and top-four word in every script, because with
+  // no table in the pack there is no honest way to license one.
+  //
+  // One call per league per day, which is what the provider recommends when no
+  // fixture is in progress. The client's "empty" policy means a standings
+  // failure costs the table and nothing else, and the pack treats an absent
+  // snapshot as a closed gate rather than an open one.
+  let standings = 0;
+  try {
+    const { serviceRest } = await import("@/lib/pundit/service-rest.server");
+    for (const lg of live) {
+      const payload = await af(`/standings?league=${lg.afId}&season=${SEASON}`);
+      // The provider nests groups one level deeper than a single league needs.
+      const groups: Json[][] = payload[0]?.league?.standings ?? [];
+      // Every club in the table gets a team row, so a promoted club has a
+      // name and a crest on Teams before its first match is stored.
+      const tableTeams: TeamRow[] = groups.flat().flatMap((entry: Json) =>
+        entry?.team?.id && entry.team.name
+          ? [
+              {
+                id: `af_${entry.team.id}`,
+                name: entry.team.name,
+                short: short(entry.team.name),
+                league_id: lg.id,
+                crest_url: entry.team.logo ?? null,
+              },
+            ]
+          : [],
+      );
+      if (tableTeams.length) {
+        await supabaseAdmin.from("teams").upsert(tableTeams, { onConflict: "id" });
+      }
+      const rows = groups.flat().flatMap((entry: Json) => {
+        const teamId = entry?.team?.id;
+        if (!teamId) return [];
+        return [
+          {
+            team_id: `af_${teamId}`,
+            rank: entry.rank ?? null,
+            points: entry.points ?? null,
+            goalsDiff: entry.goalsDiff ?? null,
+            played: entry.all?.played ?? null,
+            win: entry.all?.win ?? null,
+            draw: entry.all?.draw ?? null,
+            lose: entry.all?.lose ?? null,
+            description: entry.description ?? null,
+          },
+        ];
+      });
+      if (!rows.length) {
+        warnings.push(`No standings rows for ${lg.name} in season ${SEASON}.`);
+        continue;
+      }
+      await serviceRest<null>("standings_snapshots?on_conflict=league_id,season,captured_on", {
+        method: "POST",
+        body: [{ league_id: lg.id, season: SEASON, rows, source: "api-football" }],
+        prefer: "resolution=merge-duplicates,return=minimal",
+      });
+      standings += 1;
+    }
+  } catch (error: unknown) {
+    warnings.push(
+      `Standings unavailable: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
+  // ---- provider drift ledger.
+  //
+  // Observability, not product: the editorial pipeline never reads either
+  // table, and a failure to write them must never fail an ingest. That is also
+  // why it is safe for this code to ship before or after its migration.
+  let drift: PresenceAlarm[] = [];
+  try {
+    const { serviceRest } = await import("@/lib/pundit/service-rest.server");
+    const today = STAT_FIELDS.map(([column, label]) => ({
+      coverage_date: DATE,
+      stat_key: column,
+      provider_label: label,
+      fixtures_seen: presence.get(column)?.fixturesSeen ?? 0,
+      fixtures_present: presence.get(column)?.fixturesPresent ?? 0,
+      provider_labels: [...labelsSeen],
+    }));
+
+    type PresenceRow = (typeof today)[number];
+    const earlier = await serviceRest<PresenceRow[]>(
+      `provider_stat_presence?coverage_date=lt.${DATE}` +
+        `&order=coverage_date.desc&limit=${STAT_FIELDS.length}`,
+    );
+    // The query can straddle two days when an earlier run recorded fewer
+    // statistics, and the older row would then win the comparison. Keep only
+    // the most recent date it returned.
+    const lastDate = earlier[0]?.coverage_date;
+    const previous = earlier.filter((row) => row.coverage_date === lastDate);
+
+    const asPresence = (row: PresenceRow) => ({
+      statKey: row.stat_key,
+      providerLabel: row.provider_label,
+      fixturesSeen: row.fixtures_seen,
+      fixturesPresent: row.fixtures_present,
+    });
+    drift = statPresenceDelta(previous.map(asPresence), today.map(asPresence), [...labelsSeen]);
+    for (const alarm of drift) {
+      const msg = `Provider drift (${alarm.kind}) on ${alarm.statKey}: ${alarm.detail}`;
+      console.error("[ingest] " + msg);
+      warnings.push(msg);
+    }
+
+    await serviceRest<null>("provider_stat_presence", {
+      method: "POST",
+      body: today,
+      prefer: "resolution=merge-duplicates,return=minimal",
+    });
+    await serviceRest<null>("ingest_runs", {
+      method: "POST",
+      body: [
+        {
+          coverage_date: DATE,
+          started_at: new Date(started).toISOString(),
+          finished: all.length,
+          enriched: ranked.length,
+          calls: provider.calls(),
+          warnings,
+        },
+      ],
+      prefer: "return=minimal",
+    });
+  } catch (error: unknown) {
+    warnings.push(
+      `Provider drift ledger unavailable: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
   const response = {
     ok: true,
     date: DATE,
@@ -535,8 +802,11 @@ async function handleIngest({ request }: { request: Request }) {
     finished: all.length,
     enriched: ranked.length,
     crosscheck: { agreed, disagreed, unmatched },
+    standings,
+    estimates,
+    drift,
     predictionSettlement,
-    calls,
+    calls: provider.calls(),
     warnings,
   };
   console.log(
@@ -547,7 +817,7 @@ async function handleIngest({ request }: { request: Request }) {
       date: DATE,
       finished: all.length,
       enriched: ranked.length,
-      calls,
+      calls: provider.calls(),
       warnings: warnings.length,
       durationMs: Date.now() - started,
     }),

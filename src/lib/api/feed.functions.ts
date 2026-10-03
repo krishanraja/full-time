@@ -8,6 +8,14 @@ import {
   londonDayBounds,
   londonTimeLabel,
 } from "@/lib/london-date";
+import {
+  PREMIER_LEAGUE_CLUBS,
+  PREMIER_LEAGUE_ID,
+  clubDisplayName,
+  crestUrl,
+  currentSeasonClubIds,
+  currentSeasonClubs,
+} from "@/lib/premier-league";
 
 function publicClient() {
   return createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
@@ -157,13 +165,67 @@ export const getEpisode = createServerFn({ method: "GET" })
     return shape(row as unknown as EpisodeRow);
   });
 
-export const getTeamsAndLeagues = createServerFn({ method: "GET" }).handler(async () => {
+/** The twenty clubs of the current Premier League season, for Teams.
+ *
+ *  It used to return every stored team and league: 120 clubs from five
+ *  leagues, from 1. FC Heidenheim to Wolves, on a product that covers one.
+ *
+ *  The latest standings snapshot names all twenty from matchday one, so it
+ *  comes first; `teams.league_id` alone returned 25, relegated clubs
+ *  included. Without a snapshot, the clubs that play in the stored season
+ *  with all twenty (`currentSeasonClubIds`). */
+export const getPremierLeagueClubs = createServerFn({ method: "GET" }).handler(async () => {
   const sb = publicClient();
-  const [teamsRes, leaguesRes] = await Promise.all([
-    sb.from("teams").select("id, name, short, league_id, color").order("name"),
-    sb.from("leagues").select("id, name, country").order("name"),
-  ]);
-  if (teamsRes.error) throw new Error(teamsRes.error.message);
-  if (leaguesRes.error) throw new Error(leaguesRes.error.message);
-  return { teams: teamsRes.data ?? [], leagues: leaguesRes.data ?? [] };
+  let ids: string[] = [];
+  try {
+    // Service role: standings_snapshots has no public policy.
+    const { serviceRest } = await import("@/lib/pundit/service-rest.server");
+    const snapshots = await serviceRest<Array<{ rows: Array<{ team_id?: unknown }> | null }>>(
+      `standings_snapshots?league_id=eq.${PREMIER_LEAGUE_ID}&select=rows&order=captured_at.desc&limit=1`,
+    );
+    const fromTable = (snapshots[0]?.rows ?? []).flatMap((row) =>
+      typeof row?.team_id === "string" ? [row.team_id] : [],
+    );
+    if (fromTable.length >= PREMIER_LEAGUE_CLUBS) ids = fromTable;
+  } catch (error) {
+    console.warn(
+      JSON.stringify({
+        level: "warn",
+        message: "teams_standings_unavailable",
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
+  }
+  if (!ids.length) {
+    const seasons = await sb
+      .from("matches")
+      .select("season")
+      .eq("league_id", PREMIER_LEAGUE_ID)
+      .not("season", "is", null)
+      .order("season", { ascending: false })
+      .limit(1);
+    if (seasons.error) throw new Error(seasons.error.message);
+    const latest = seasons.data?.[0]?.season;
+    if (latest == null) return { clubs: [] };
+    const matches = await sb
+      .from("matches")
+      .select("season, home_team_id, away_team_id")
+      .eq("league_id", PREMIER_LEAGUE_ID)
+      .in("season", [latest, latest - 1])
+      .limit(2000);
+    if (matches.error) throw new Error(matches.error.message);
+    ids = currentSeasonClubIds(matches.data ?? []);
+  }
+  if (!ids.length) return { clubs: [] };
+  const teams = await sb.from("teams").select("id, name, crest_url").in("id", ids);
+  if (teams.error) throw new Error(teams.error.message);
+  const clubs = currentSeasonClubs(
+    teams.data ?? [],
+    ids.map((id) => ({ home_team_id: id, away_team_id: id })),
+  ).map((team) => ({
+    id: team.id,
+    name: clubDisplayName(team.name),
+    crestUrl: crestUrl(team.crest_url),
+  }));
+  return { clubs };
 });

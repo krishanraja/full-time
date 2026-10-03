@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { DIMENSION_STANDARDS, SCORE_ANCHORS, SCORING_INSTRUCTION } from "./dimensions";
 import { dedupeClaims, licenseClaims } from "./claim-lab";
-import { anthropicJson } from "./anthropic-json.server";
+import { modelJson } from "./model-json.server";
 import { BudgetExceededError, spentThisStepUsd } from "./model-cost";
 import {
   publicationDecision,
@@ -151,24 +151,73 @@ function citedSpan() {
   );
 }
 
+/** The same tolerance, for the fields that carry a judge's reasoning.
+ *
+ *  `failure` and `requestedRepair` were strict strings while `evidenceSpan`
+ *  had already been widened, and the reason for widening it applies verbatim:
+ *  a judge asked to name EVERY unsupported assertion has a list, and whether
+ *  it sends one string or an array of them is a formatting preference, not a
+ *  difference of meaning.
+ *
+ *  Probed against gpt-5.6-terra on 2026-09-21 before it ever served a paid
+ *  run, it answered `"failure": ["...", "..."]`. Under the strict schema every
+ *  rejection would have failed to parse and been recorded against the variant
+ *  as "did not return a usable judgement" - quarantining scripts for the
+ *  judge's punctuation, which is the fault this file spent the evening
+ *  removing. */
+const citedText = citedSpan;
+
+/** Beat names the judge offers, with anything unrecognised dropped rather than
+ *  taken as grounds to throw the whole judgement away.
+ *
+ *  `failedBeats` steers a repair round at a beat. It is advisory: losing it
+ *  costs the writer a hint, while losing the judgement costs the script. A
+ *  strict z.enum() spent the second to save the first - on 2026-09-21 a judge
+ *  answered "changeMyMind", which is a real field on the thesis and not a beat,
+ *  and its entire verdict was discarded and recorded against the variant as
+ *  "did not return a usable judgement". */
+const advisoryBeats = optionalList(
+  z
+    .array(z.string())
+    .transform((values) =>
+      values.filter((value): value is (typeof beatNames)[number] =>
+        (beatNames as readonly string[]).includes(value),
+      ),
+    ),
+);
+
 export const judgeSchema = z.object({
   score: z.number().int().min(1).max(5),
   evidenceSpan: citedSpan(),
-  failure: optional(z.string()),
-  requestedRepair: optional(z.string()),
-  failedBeats: optionalList(z.array(z.enum(beatNames))),
+  failure: citedText(),
+  requestedRepair: citedText(),
+  failedBeats: advisoryBeats,
 });
 
 /** A fail-closed gate that rejects a script without saying what is unsupported
  *  gives the writer nothing to repair, so it fails the same beats on every
  *  attempt. A rejection must carry its reason. */
-const hardJudgeSchema = z
+export const hardJudgeSchema = z
   .object({
     passed: z.boolean(),
     evidenceSpan: citedSpan(),
-    failure: optional(z.string()),
-    requestedRepair: optional(z.string()),
-    failedBeats: optionalList(z.array(z.enum(beatNames))),
+    failure: citedText(),
+    requestedRepair: citedText(),
+    failedBeats: advisoryBeats,
+  })
+  // A rejection still has to say what is unsupported and where - a repair round
+  // cannot fix what nobody named. But the reason does not have to arrive in the
+  // field we happened to ask for. Four of six judges on the 2026-09-20 drop put
+  // it in the repair or the cited span and left `failure` empty, and all four
+  // verdicts were thrown away for it, which failed six scripts on a schema
+  // detail rather than on their prose.
+  //
+  // So take the reason wherever the judge put it, and keep refusing only when
+  // there is genuinely nothing to hand the writer.
+  .transform((value) => {
+    if (value.passed || value.failure?.trim()) return value;
+    const salvaged = value.requestedRepair?.trim() || value.evidenceSpan?.trim();
+    return salvaged ? { ...value, failure: salvaged } : value;
   })
   .refine((value) => value.passed || Boolean(value.failure?.trim()), {
     message: "A rejection must state what is unsupported and where.",
@@ -226,18 +275,34 @@ async function deterministicClaimId(matchId: string, index: number, thesis: stri
 }
 
 export async function generateClaimLaboratory(pack: EvidencePack): Promise<AnalysisClaim[]> {
-  const output = await anthropicJson({
+  const output = await modelJson({
     model: modelNames().writer,
-    maxTokens: 3_000,
+    // A cap is a ceiling, not an allocation: nothing is charged for headroom
+    // the model does not use, so a tight one buys nothing and costs a whole
+    // run when it is wrong. 3,000 was wrong on 2026-09-21. The pack grew 17%
+    // when it started stating the score after each goal, the laboratory found
+    // correspondingly more to say, and the JSON stopped mid-object - which
+    // model-json reports as a truncation and prepareEditorialStep turns
+    // into a fatal, so the drop died before any pundit wrote a word.
+    //
+    // The contract asks for up to eight fact claims plus the analysis claims
+    // that make six different shows possible, each carrying a thesis,
+    // references, a falsifier and an evaluation rule. That is comfortably more
+    // than 3,000 tokens of JSON whenever the match is interesting.
+    maxTokens: 8_000,
     label: "claim-lab",
     schema: claimSchema,
     system:
-      "You are Full Time's claim laboratory. Produce claims, never prose. Facts are closed-world. Causal strength must not exceed the evidence. Do not infer tactics, intent, psychology or film detail from structured match data. Separate decision quality from outcome. Predictions and counterfactuals need a falsifier and structured rule. Every number in a thesis must be one the evidence you cite actually carries, or the number of evidence references you cite. Count your own citations before you state a count: a thesis that says four while listing five events is worse than no claim at all, because every pundit will repeat it. " +
+      "You are Full Time's claim laboratory. Produce claims, never prose. Facts are closed-world. Causal strength must not exceed the evidence. Do not infer tactics, intent, psychology or film detail from structured match data. Separate decision quality from outcome. Predictions and counterfactuals need a falsifier and structured rule. " +
+      // A prediction at 0.5 is a coin flip, and a pundit cannot say it out loud
+      // without overclaiming in one direction or the other. One of these
+      // quarantined every variant of the 2026-09-20 drop.
+      "Never give a prediction a confidence of exactly 0.5: it states no direction, so there is no honest sentence anyone can build on it. Commit to a number that means something, or leave the prediction out. Every number in a thesis must be one the evidence you cite actually carries, or the number of evidence references you cite. Count your own citations before you state a count: a thesis that says four while listing five events is worse than no claim at all, because every pundit will repeat it. " +
       // Six pundits share this one claim set. When it holds a single analytical
       // idea, six writers produce a single script and every judge calls it a
       // truism, which is what happened on 2026-09-04. Breadth here is what makes
       // six different shows possible downstream.
-      "Six different pundits will each build a different show from this one set, so the set has to hold enough distinct material for six arguments. Never state the same idea twice: if two claims rest on the same evidence, or would be summarised the same way in a sentence, they are one claim and you must keep only the better one. A claim of type fact only restates the evidence pack the pundits already hold, so produce at most eight of them and only where a fact anchors an argument. Spend the rest on analysis, and make those analyses genuinely different from each other: reach for separate parts of the evidence rather than restating the most obvious pattern in new words. Where the match turned on timing, game state, individual contribution, discipline, goalkeeping, substitutions or what the two sides arrived carrying, those are separate arguments from whatever the shot numbers say. If the evidence genuinely supports only one or two analytical readings, say so by returning only those rather than padding: a short honest set is better than a long repetitive one.",
+      "Six different pundits will each build a different show from this one set, so the set has to hold enough distinct material for six arguments. Never state the same idea twice: if two claims rest on the same evidence, or would be summarised the same way in a sentence, they are one claim and you must keep only the better one. A claim of type fact only restates the evidence pack the pundits already hold, so produce at most eight of them and only where a fact anchors an argument. Spend the rest on analysis, and make those analyses genuinely different from each other: reach for separate parts of the evidence rather than restating the most obvious pattern in new words. Where the match turned on timing, game state, individual contribution, discipline, goalkeeping, substitutions or what the two sides arrived carrying, those are separate arguments from whatever the shot numbers say. Six shows of seven hundred and fifty words each are built from this set and nothing else, so it needs at least twelve claims, and at least eight of them analytical rather than plain facts, including a probability claim and a forward-looking one wherever the evidence carries them. Below that the writers run out of material and pad, and padding is what gets their scripts refused - not for inventing anything, but for saying the same true thing three times in different imagery. The pack in front of you holds dozens of facts and derivations: the score after each goal, who scored and who assisted, shots and shots on target and where they came from, saves, blocks, discipline, substitutions and their timing, the league table, recent form and previous meetings. That is far more than twelve readings. Do not invent material to reach the floor. If some corner of the evidence genuinely supports nothing, say nothing about it and take the claim from elsewhere: a fabricated claim fails licensing and costs the whole run, while a thin set merely costs the show, and neither is a reason to write down something the evidence does not carry.",
     user: JSON.stringify({
       evidencePack: compactEvidence(pack),
       outputContract: {
@@ -350,6 +415,8 @@ async function writeDraft(input: {
   prior?: PunditVariantCandidate;
   failures?: ReturnType<typeof requestedRepairs>;
   predictionTiming?: { lockedAt: string; kickoffAt: string };
+  /** Lines this pundit published in the last fortnight. */
+  recentlyUsedLines?: string[];
 }): Promise<z.infer<typeof draftSchema>> {
   const spec = getPunditSpec(input.punditId);
   const claims = claimReferences(input.claims);
@@ -363,12 +430,12 @@ async function writeDraft(input: {
           : undefined,
       }
     : undefined;
-  const draft = await anthropicJson({
+  const draft = await modelJson({
     model: modelNames().writer,
     maxTokens: 16_000,
     schema: draftSchema,
     system:
-      'You are the single Full Time showrunner. Write original English; never imitate a living pundit. The evidence is closed-world: every number you write, in digits or words, must be a value present in the evidence pack (a point, three points for a win, eleven players, forty-five and ninety minutes are the only universal constants), and every proper noun must be a team, player, competition or place named in the evidence pack. Reference claims only by their short id from licensedClaims, such as c1 or c4, and only inside the thesis fields selectedClaimIds, rejectedClaimIds and predictionClaimId. Beat text is read aloud to a listener who cannot see your working: never write a claim id or a phrase such as "per claim c4" or "(c8)" in beat text, and never mention claims, evidence ids or confidence values as labels. State the substance instead. State a figure exactly as the evidence carries it and never round it for the sake of the sentence: if the pack says twenty-nine percent, say twenty-nine percent, because "under thirty percent" states a number the evidence does not carry and the script is refused for it. The same applies to approximations such as "eighty-odd minutes". Any number inside a falsifier or a forward-looking condition must also be a value present in the evidence pack, so build conditions out of numbers this match actually produced. Never state a season-level consequence: relegation, survival, the title, European qualification, promotion and play-offs are all outside this evidence. Length is a hard gate: the ten beats together must run to 750-1100 spoken words, so budget roughly 75 to 110 words per beat and expand your reasoning until you are inside that range. A licensed claim is where an argument starts, not where it finishes: when you build a beat on one, bring a figure from the evidence that the claim itself does not cite, use it to test the claim rather than to decorate it, and say what that figure would have to show for your verdict to be wrong. Never restate the alternative explanation or counterpoint a claim already carries as if it were your own thought. A team figure belongs to the team: shots, shots on target, possession and saves are recorded for a side and never for a player, so never attribute one of them to an individual. It also belongs to the right side: before you write a figure, check the evidence id it came from says home or away and name the team that id belongs to, because giving one side the other side possession figure is a rejection and has happened. Never state a distance in yards or metres: the evidence records how many shots came from inside and outside the box and nothing finer, so a shot from thirty yards, an effort from twenty-five, and the edge of the D are all inventions. Six pundits are writing about this match from this same claim set, and yours has to be the one only you would write. Your persona spec lists preferredClaimTypes: build your argument on claims of those types and lead on the one your lens would reach for first. The most obvious reading of the scoreline is the one every other pundit is already taking, so if the claim you want is the plainest thing the numbers say, take the next one instead and earn it. Every judgment needs a reason. Interpret numbers rather than listing them. Each beat must advance the argument: never restate an observation a previous beat has already made. One argument, made once. State your central point in full in the judgment beat and nowhere else, with the figure that carries it, and cite that figure exactly once in the whole script. The other nine beats each owe the listener something the judgment beat does not give them: the hook opens, the evidence beat supplies material you have not used yet, the counterpoint genuinely argues the other way, the portable line is a new sentence rather than a summary of your case, and the close ends the show without recapping it. If a beat could be deleted and nothing would be lost, it is a restatement and you have to replace it rather than reword it. Saying your best point in five different metaphors is the single most common reason a script is rejected: it reads as padding, not as emphasis. Somewhere in the script, attach an explicit likelihood to a named outcome, and state it in words rather than in figures: more likely than not, roughly a coin toss, comfortably against, I would not back it. Never invent a percentage or a price for it, because a number the evidence pack does not carry is refused whatever it is describing, and a likelihood you have made up is exactly that kind of number. Conditional English such as should, could or the reasonable expectation is not a likelihood at all. What the likelihood attaches to matters more than its wording: it must be something that could genuinely go either way, so putting a confident number on a near-certainty, such as a two-goal burst inside nine minutes not happening again, is not judgement and will be marked as empty. Where two readings of this result compete, that is what to put the likelihood on: say which is the more probable and why, rather than presenting both and stopping. The forward-looking call has to carry real risk: a threshold the side would clear on an ordinary night is not a prediction, so anchor the condition to the specific pattern this match showed, using a number the evidence pack carries, and pick a level that could plausibly fail. The portable line is one sentence a listener could repeat word for word without context. Humour must intensify insight and stay within the supplied safety boundaries, and it has to land as a joke rather than as an observation labelled funny. Build two to four separate humorous moments across the script, each one using a mechanism your own persona spec lists under humourMechanisms; one mild simile in eight hundred words is not enough, and a generic domestic comparison is not your voice. Never announce the joke: do not call anything a comedy, a joke, an irony or absurd, and do not add a sentence afterwards explaining why it was funny. Put the surprise in the last clause of the line and stop there. One concrete image beats a simile that needs unpacking, and a comparison that falls apart when examined is worse than no joke at all. When repairing, change only failed beats and preserve every passed beat verbatim.',
+      'You are the single Full Time showrunner. Two rules decide most rejections, so they come first. ONE: say your central point once. Not once per beat, not once per metaphor - once, in the judgment beat. Before you write each of the other nine beats, name to yourself the thing it gives the listener that no earlier beat gave, and if you cannot name one, the beat is a restatement and you must replace its content rather than reword it. A script that arrives at its point and then re-explains it in fresh imagery is padding, and it is refused every time. TWO: the evidence records what happened, never why anyone did it or what anyone meant by it. A side that scored at twelve, thirty-three and fifty-nine minutes scored at those minutes; it did not refuse, respond, answer, insist, or decline to let anything settle, and nobody chose, accepted, gambled or intended anything. Write the record and your reading of it as separate sentences, so the reading can be argued with rather than smuggled in as a fact. Write original English; never imitate a living pundit. The evidence is closed-world: every number you write, in digits or words, must be a value present in the evidence pack (a point, three points for a win, eleven players, forty-five and ninety minutes are the only universal constants), and every proper noun must be a team, player, competition or place named in the evidence pack. Reference claims only by their short id from licensedClaims, such as c1 or c4, and only inside the thesis fields selectedClaimIds, rejectedClaimIds and predictionClaimId. Beat text is read aloud to a listener who cannot see your working: never write a claim id or a phrase such as "per claim c4" or "(c8)" in beat text, and never mention claims, evidence ids or confidence values as labels. State the substance instead. State a figure exactly as the evidence carries it and never round it for the sake of the sentence: if the pack says twenty-nine percent, say twenty-nine percent, because "under thirty percent" states a number the evidence does not carry and the script is refused for it. The same applies to approximations such as "eighty-odd minutes". Any number inside a falsifier or a forward-looking condition must also be a value present in the evidence pack, so build conditions out of numbers this match actually produced. Never state a season-level consequence: relegation, survival, the title, European qualification, promotion and play-offs are all outside this evidence. Length is a hard gate: the ten beats together must run to 750-1100 spoken words, so budget roughly 75 to 110 words per beat and expand your reasoning until you are inside that range. A licensed claim is where an argument starts, not where it finishes: when you build a beat on one, bring a figure from the evidence that the claim itself does not cite, use it to test the claim rather than to decorate it, and say what that figure would have to show for your verdict to be wrong. Never restate the alternative explanation or counterpoint a claim already carries as if it were your own thought. A team figure belongs to the team: shots, shots on target, possession and saves are recorded for a side and never for a player, so never attribute one of them to an individual. It also belongs to the right side: before you write a figure, check the evidence id it came from says home or away and name the team that id belongs to, because giving one side the other side possession figure is a rejection and has happened. Never state a distance in yards or metres: the evidence records how many shots came from inside and outside the box and nothing finer, so a shot from thirty yards, an effort from twenty-five, and the edge of the D are all inventions. Six pundits are writing about this match from this same claim set, and yours has to be the one only you would write. Your persona spec lists preferredClaimTypes: build your argument on claims of those types and lead on the one your lens would reach for first. The most obvious reading of the scoreline is the one every other pundit is already taking, so if the claim you want is the plainest thing the numbers say, take the next one instead and earn it. Every judgment needs a reason. Interpret numbers rather than listing them. Each beat must advance the argument: never restate an observation a previous beat has already made. One argument, made once. State your central point in full in the judgment beat and nowhere else, with the figure that carries it, and cite that figure exactly once in the whole script. The other nine beats each owe the listener something the judgment beat does not give them: the hook opens, the evidence beat supplies material you have not used yet, the counterpoint genuinely argues the other way, the portable line is a new sentence rather than a summary of your case, and the close ends the show without recapping it. If a beat could be deleted and nothing would be lost, it is a restatement and you have to replace it rather than reword it. Saying your best point in five different metaphors is the single most common reason a script is rejected: it reads as padding, not as emphasis. Somewhere in the script, attach an explicit likelihood to a named outcome, and state it in words rather than in figures: more likely than not, roughly a coin toss, comfortably against, I would not back it. Never invent a percentage or a price for it, because a number the evidence pack does not carry is refused whatever it is describing, and a likelihood you have made up is exactly that kind of number. Conditional English such as should, could or the reasonable expectation is not a likelihood at all. What the likelihood attaches to matters more than its wording: it must be something that could genuinely go either way, so putting a confident number on a near-certainty, such as a two-goal burst inside nine minutes not happening again, is not judgement and will be marked as empty. Where two readings of this result compete, that is what to put the likelihood on: say which is the more probable and why, rather than presenting both and stopping. The forward-looking call has to carry real risk: a threshold the side would clear on an ordinary night is not a prediction, so anchor the condition to the specific pattern this match showed, using a number the evidence pack carries, and pick a level that could plausibly fail. The portable line is one sentence a listener could repeat word for word without context. Humour must intensify insight and stay within the supplied safety boundaries, and it has to land as a joke rather than as an observation labelled funny. Build two to four separate humorous moments across the script, each one using a mechanism your own persona spec lists under humourMechanisms; one mild simile in eight hundred words is not enough, and a generic domestic comparison is not your voice. Never announce the joke: do not call anything a comedy, a joke, an irony or absurd, and do not add a sentence afterwards explaining why it was funny. Put the surprise in the last clause of the line and stop there. One concrete image beats a simile that needs unpacking, and a comparison that falls apart when examined is worse than no joke at all. If linesYouHaveAlreadyUsed is present, those are sentences you published in the last fortnight: a listener who heard them will recognise a reworded version as the same line, so reach for a different thought rather than a different phrasing of that one. When repairing, change only failed beats and preserve every passed beat verbatim.',
     label: `writer:${input.punditId}`,
     cachedContext: [
       // Fixed for the whole run.
@@ -377,7 +444,16 @@ async function writeDraft(input: {
       // dimensions travel with the spec: a script is rejected against these
       // twelve standards, so the writer is told them rather than left to infer
       // them from repair notes one failure at a time.
-      { punditSpec: spec, judgedDimensions: DIMENSION_STANDARDS },
+      // Lines belong in this block rather than the run-wide one because they
+      // are this pundit's own and fixed across its repair rounds, so they ride
+      // the same cache entry as its spec instead of making a third.
+      {
+        punditSpec: spec,
+        judgedDimensions: DIMENSION_STANDARDS,
+        ...(input.recentlyUsedLines?.length
+          ? { linesYouHaveAlreadyUsed: input.recentlyUsedLines }
+          : {}),
+      },
     ],
     user: JSON.stringify({
       priorCandidate: input.prior
@@ -478,11 +554,19 @@ type JudgeSubject = {
   predictionTiming?: { lockedAt: string; kickoffAt: string };
   /** Set for a script from outside the pipeline. See PROSE_ONLY_THESIS. */
   proseOnly?: boolean;
+  /** Judge with this model instead of the environment's.
+   *
+   *  Only calibration passes it, and only so a bench can be compared against
+   *  writing of known quality without a redeploy between candidates. Threaded
+   *  rather than set on process.env, because a serverless instance serves
+   *  concurrent requests and one of them changing the judge model under
+   *  another is the kind of fault that would be blamed on the judges. */
+  judgeModelOverride?: string;
 };
 
 async function judgeOne(
   harness: QualitativeHarness,
-  { candidate, pack, claims, predictionTiming, proseOnly }: JudgeSubject,
+  { candidate, pack, claims, predictionTiming, proseOnly, judgeModelOverride }: JudgeSubject,
 ): Promise<HarnessResult> {
   // The dimension under judgement is deliberately not in the system prompt.
   // The system prompt renders first, so naming the harness there gave each of
@@ -490,9 +574,16 @@ async function judgeOne(
   // evidence pack. It goes in the varying tail instead.
   let output: z.infer<typeof judgeSchema>;
   try {
-    output = await anthropicJson({
-      model: modelNames().judge,
-      maxTokens: 2_000,
+    output = await modelJson({
+      model: judgeModelOverride?.trim() || modelNames().judge,
+      // See the claim laboratory's cap for why this is generous. A judge that
+      // truncates does not fail softly: runHardGates records "did not return a
+      // usable judgement", which is a failure, so a cap set too low quarantines
+      // a script for a reason that has nothing to do with the script. That
+      // happened to factual_entailment at 2,000 tokens on the 2026-09-20 drop,
+      // and this judge is asked for a quoted span and a repair, which is the
+      // long kind of answer.
+      maxTokens: 4_000,
       schema: judgeSchema,
       label: `judge:${harness}`,
       system:
@@ -571,20 +662,23 @@ async function judgeOne(
 
 async function judgeHardOne(
   harness: "factual_entailment" | "humour_safety_semantic",
-  { candidate, pack, claims, proseOnly }: JudgeSubject,
+  { candidate, pack, claims, proseOnly, judgeModelOverride }: JudgeSubject,
 ): Promise<HarnessResult> {
   const factual = harness === "factual_entailment";
   const explainRejection =
     " When you reject the script you must quote the exact offending span and state plainly what is wrong with it: which assertion is unsupported, and what the evidence does or does not say. A rejection with no specific reason is not a usable answer, because the writer cannot repair what you have not named.";
   let output: z.infer<typeof hardJudgeSchema>;
   try {
-    output = await anthropicJson({
-      model: modelNames().judge,
-      maxTokens: 2_000,
+    output = await modelJson({
+      model: judgeModelOverride?.trim() || modelNames().judge,
+      // The fail-closed judges, which are asked to name EVERY unsupported
+      // assertion and every failed beat rather than the first one. Same
+      // reasoning as above, and more output to produce.
+      maxTokens: 4_000,
       schema: hardJudgeSchema,
       system:
         (factual
-          ? "You are a fail-closed factual-entailment judge. Every factual statement, number, entity, score state, attribution and causal strength in the script must be entailed by the closed-world evidence or an explicitly licensed claim. Correlation cannot become intent. Return passed=false for any unsupported assertion and identify every failed beat."
+          ? "You are a fail-closed factual-entailment judge. Every factual statement, number, entity, score state, attribution and causal strength in the script must be entailed by the closed-world evidence or an explicitly licensed claim. Correlation cannot become intent. Return passed=false for any unsupported assertion and identify every failed beat. You judge what the script ASSERTS, not the register it asserts it in. This is broadcast prose rather than a data table: a scene, an image, a rhetorical question or a figure of speech built on a recorded fact is how this show is written and is not an unsupported claim. Judge what a listener would carry away as fact. The line is between colouring a recorded fact and asserting an unrecorded one. A side that scored at twelve, thirty-three and fifty-nine DID score at those minutes, and saying it kept answering is a reading of that record; saying it refused to let the lead settle, or chose to sit deep, or intended anything at all, asserts a state of mind the evidence does not hold. Reject the second and leave the first alone. Numbers, names, scores and their attribution are never figurative and are checked exactly as before."
           : // Scoped deliberately. On 2026-09-04 this judge failed two of six
             // scripts, and neither failure was a safety failure: one objected
             // that a joke implied Isak watched longer than he played, the other
@@ -646,21 +740,85 @@ export async function judgeCandidate(subject: JudgeSubject): Promise<HarnessResu
   const harnessNames = Object.keys(
     getPunditSpec(subject.candidate.punditId).requiredThresholds,
   ) as QualitativeHarness[];
+  // One judge runs alone before the rest, to write the shared cache.
+  //
+  // Every judge on a variant sends the same head: the evidence pack, the
+  // licensed claims, the pundit spec and the script. Only the rubric at the
+  // tail differs. That head is the whole point of the cachedContext design and
+  // it is supposed to be written once and read at a tenth of the rate by the
+  // other thirteen.
+  //
+  // Firing all fourteen at once means none of them can read it, because a
+  // cache is populated by a request that has COMPLETED. Measured on
+  // 2026-09-21: 1.2% cache hit on gpt-5.6-terra across 1,514 judge calls,
+  // against 92.2% on claude-haiku-4-5, which survived because Anthropic's
+  // explicit cache_control writes behave differently under concurrency. That
+  // one difference cost $14.91 of input against $2.86 - roughly a third of the
+  // night's entire bill - on a pack that never changed.
+  //
+  // judge-calibration.server.ts already carried this exact note about its own
+  // subjects: "The first one pays to write the shared evidence cache and the
+  // rest read it, which only happens if the first has finished before the rest
+  // start." It was never applied to the judges it calls.
+  //
+  // The cost is one judge of added latency per variant. The saving is the
+  // other thirteen reading instead of writing.
+  const [firstHard, ...restHard] = ["factual_entailment", "humour_safety_semantic"] as const;
+  const warmed = await judgeHardOne(firstHard, subject);
   const [hardJudges, independent] = await Promise.all([
-    Promise.all(
-      (["factual_entailment", "humour_safety_semantic"] as const).map((harness) =>
-        judgeHardOne(harness, subject),
-      ),
-    ),
+    Promise.all(restHard.map((harness) => judgeHardOne(harness, subject))).then((rest) => [
+      warmed,
+      ...rest,
+    ]),
     Promise.all(harnessNames.map((harness) => judgeOne(harness, subject))),
   ]);
   return [
-    ...hardJudges,
+    ...hardJudges.map((result) => advisoryOnThisBench(result, subject.judgeModelOverride)),
     ...validateQualitativeScores(
       subject.candidate.punditId,
       Object.fromEntries(independent.map((item) => [item.harness, item])),
     ),
   ];
+}
+
+/** factual_entailment, recorded rather than enforced, while an OpenAI bench is
+ *  judging.
+ *
+ *  Ruling (Krish, 2026-09-21): publish for a listening test, with this gate
+ *  advisory on this bench.
+ *
+ *  What it was blocking, 6 of 6 on every run: readings rather than
+ *  fabrications - "Manchester City had control", "an old attacking silence has
+ *  ended" - where the pack holds counts and timed goals but no timeline of
+ *  dominance. It fails the 2026-08-31 published show on the same basis, so it
+ *  is not a bar this product has ever cleared on this bench, and three
+ *  writer-side attempts moved it not at all.
+ *
+ *  What is NOT relaxed, and is the promise the homepage actually makes -
+ *  "built from checked match facts": the thirteen deterministic gates. Every
+ *  number and every name still has to resolve to a cited evidence item, the
+ *  consequence licence still refuses season-level claims, spoken still has to
+ *  equal display. Those are code, they do not have opinions, and they are
+ *  untouched.
+ *
+ *  humour_safety_semantic is deliberately excluded. It is a safety gate, not
+ *  an accuracy one, and the reading that mattered - ridicule aimed at a named
+ *  player rather than at the match - is exactly the judgement worth keeping
+ *  fail-closed.
+ *
+ *  The verdict is kept in full and prefixed, so the critique is in front of
+ *  whoever reads the variant rather than silently discarded. It expires with
+ *  the bench: point PUNDIT_JUDGE_MODEL back at Anthropic and this stops
+ *  applying, which is the only reason it is safe to ship at all. */
+export function advisoryOnThisBench(result: HarnessResult, judgeModel?: string): HarnessResult {
+  const bench = judgeModel?.trim() || process.env.PUNDIT_JUDGE_MODEL || process.env.JUDGE_MODEL || "";
+  if (result.harness !== "factual_entailment") return result;
+  if (result.passed || !/^(?:gpt|o\d)/i.test(bench)) return result;
+  return {
+    ...result,
+    passed: true,
+    failure: `ADVISORY on this bench, not blocking: ${result.failure ?? "no reason given"}`,
+  };
 }
 
 export type GeneratedPunditVariant = {
@@ -681,6 +839,10 @@ export async function generatePunditVariant(input: {
   pack: EvidencePack;
   claims: AnalysisClaim[];
   originalityCorpus?: string[];
+  /** Lines this pundit published in the last fortnight, so it can avoid them
+   *  while writing rather than be refused for them afterwards. Prevention is
+   *  free; a repair round is roughly twenty-four cents. */
+  recentlyUsedLines?: string[];
   predictionTiming?: { lockedAt: string; kickoffAt: string };
   /** Fewer repair rounds than the environment allows, never more. */
   maxAttempts?: number;

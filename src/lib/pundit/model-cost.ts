@@ -16,6 +16,44 @@ const MODEL_PRICES: Record<string, { input: number; output: number }> = {
   "claude-sonnet-5": { input: 2, output: 10 },
   "claude-sonnet-4-6": { input: 3, output: 15 },
   "claude-haiku-4-5": { input: 1, output: 5 },
+
+  // The OpenAI fallback, added 2026-09-21 when the Anthropic account reached
+  // its monthly usage limit with access returning 2026-10-01. Prices read from
+  // developers.openai.com/api/docs/pricing on the day, not from memory.
+  //
+  // Their cached input is a tenth of standard, exactly as Anthropic's is, so
+  // CACHE_READ_RATE below serves both. There is no write premium to model:
+  // OpenAI populates its cache as a side effect of an ordinary request, and
+  // the transport reports zero cache-creation tokens for that reason.
+  "gpt-6-astra": { input: 10, output: 50 },
+  "gpt-5.6-sol": { input: 4, output: 20 },
+  "gpt-5.6-terra": { input: 2, output: 12 },
+  "gpt-5.6-luna": { input: 0.2, output: 1.2 },
+  "gpt-5.4": { input: 2.5, output: 15 },
+  "gpt-5.4-mini": { input: 0.75, output: 4.5 },
+  "gpt-5-mini": { input: 0.25, output: 2 },
+  "gpt-5-nano": { input: 0.05, output: 0.4 },
+
+  // Google, priced for the same reason and on the same day. The judges are the
+  // volume in this pipeline - fourteen of them per pundit per attempt against
+  // one writer call - so this is where the per-run cost is decided.
+  //
+  // Both spellings are listed deliberately. Artificial Analysis writes the
+  // slug with dashes (gemini-3-8-flash) and the API answers with dots
+  // (gemini-3.8-flash), and whichever ends up in PUNDIT_JUDGE_MODEL must not
+  // fall through to UNKNOWN_MODEL_PRICE. Guessing high stops a run early,
+  // which is the right way round for a guess and the wrong way round for a
+  // model we know the price of.
+  "gemini-3.8-flash": { input: 0.75, output: 3.75 },
+  "gemini-3-8-flash": { input: 0.75, output: 3.75 },
+  "gemini-3.7-flash": { input: 0.75, output: 3.75 },
+  "gemini-3-7-flash": { input: 0.75, output: 3.75 },
+  "gemini-3.5-flash": { input: 1.5, output: 9 },
+  "gemini-3-5-flash": { input: 1.5, output: 9 },
+  "gemini-3.5-flash-lite": { input: 0.3, output: 2.5 },
+  "gemini-3-5-flash-lite": { input: 0.3, output: 2.5 },
+  "gemini-3-pro": { input: 2, output: 12 },
+  "gemini-3.1-pro": { input: 2, output: 12 },
 };
 
 /** An unrecognised model is priced at the dearest rate we know. Guessing high

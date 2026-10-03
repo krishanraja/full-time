@@ -176,8 +176,12 @@ describe("prose the gates once rejected wrongly", () => {
   });
 
   it("still refuses a season survival claim", () => {
-    expect(consequenceSpans("A win that all but survived relegation for them.").length).toBeGreaterThan(0);
-    expect(consequenceSpans("This was survival football, and they know it.").length).toBeGreaterThan(0);
+    expect(
+      consequenceSpans("A win that all but survived relegation for them.").length,
+    ).toBeGreaterThan(0);
+    expect(
+      consequenceSpans("This was survival football, and they know it.").length,
+    ).toBeGreaterThan(0);
     expect(
       consequenceSpans("Survival was the only thing they secured tonight.").length,
     ).toBeGreaterThan(0);
@@ -254,6 +258,124 @@ describe("prose the gates once rejected wrongly", () => {
   });
 });
 
+/** Adding a name to the pack is only half the job. The entity licence is built
+ *  from evidence values, so a name the pack knows but does not carry in a value
+ *  is refused as an invention - which is how four pundits were once failed for
+ *  naming teams the pack had handed them. */
+describe("naming the man who made the goal", () => {
+  const assisted: StructuredMatchInput = {
+    ...toulouseLille,
+    events: toulouseLille.events.map((event) =>
+      event.id === "goal-ueda" ? { ...event, assist: "Edon Zhegrova" } : event,
+    ),
+  };
+
+  it("licenses the assister once the pack carries him", () => {
+    expect(gateFailures("Edon Zhegrova made the goal that settled it.", assisted)).toEqual([]);
+  });
+
+  it("still refuses an assister the pack does not carry", () => {
+    expect(
+      gateFailures("Edon Zhegrova made the goal that settled it.", toulouseLille).join(" "),
+    ).toContain("entity_licence");
+  });
+});
+
+/** The system prompt tells the writer that saves belong to a side and never to
+ *  a player. Nothing enforces it. So the pack either makes the attribution
+ *  itself, as a derivation whose formula says what it did, or the sentence
+ *  stays unsayable. */
+describe("attributing saves to a named keeper", () => {
+  const withKeeper: StructuredMatchInput = {
+    ...toulouseLille,
+    stats: { ...toulouseLille.stats!, homeSaves: 4, awaySaves: 8 },
+    goalkeepers: {
+      home: { name: "Guillaume Restes", subbed: false },
+      away: { name: "Berke Ozer", subbed: false },
+    },
+  };
+
+  it("licenses the keeper and his figure once the pack attributes them", () => {
+    expect(gateFailures("Berke Ozer made eight saves.", withKeeper)).toEqual([]);
+  });
+
+  it("still refuses the same sentence when the keeper was substituted", () => {
+    const substituted: StructuredMatchInput = {
+      ...withKeeper,
+      goalkeepers: {
+        ...withKeeper.goalkeepers!,
+        away: { name: "Berke Ozer", subbed: true },
+      },
+    };
+    expect(gateFailures("Berke Ozer made eight saves.", substituted).join(" ")).toContain(
+      "entity_licence",
+    );
+  });
+});
+
+/** The table changes what can be said about the season, and the whole question
+ *  is how much. Krish's ruling on 2026-09-21: licence it, do not open it. */
+describe("a position in the table, once the pack carries one", () => {
+  const withTable: StructuredMatchInput = {
+    ...toulouseLille,
+    table: {
+      capturedAt: "2026-09-04T00:15:00Z",
+      home: { rank: 14, points: 4, played: 4 },
+      away: { rank: 4, points: 9, played: 4 },
+    },
+  };
+
+  /** Not a relaxation. The score-derived number licence puts every integer up
+   *  to the match total into the pack, so in a higher-scoring game this
+   *  sentence was already sayable with no table anywhere in the evidence. */
+  it("refuses a position when the pack carries no table", () => {
+    expect(gateFailures("Lille are fourth in the table.", toulouseLille).join(" ")).toContain(
+      "consequence_licence",
+    );
+  });
+
+  it("licenses the same sentence once the table is in the pack", () => {
+    expect(gateFailures("Lille are fourth in the table.", withTable)).toEqual([]);
+  });
+
+  it("licenses the gap between the two", () => {
+    expect(gateFailures("Five points separate these two.", withTable)).toEqual([]);
+  });
+
+  /** The one that matters. A table says a side is fourth. It does not say that
+   *  fourth is a European place this season, and no snapshot ever will,
+   *  because that depends on matches remaining, other clubs' fixtures and a
+   *  competition's qualification rules. */
+  it("still refuses what the table cannot say, with the table in the pack", () => {
+    for (const sentence of [
+      "This all but confirms Champions League football.",
+      "Toulouse are drifting towards relegation.",
+      "That is a title performance.",
+      "A win like that is how sides stay up.",
+    ]) {
+      expect(gateFailures(sentence, withTable).join(" ")).toContain("consequence_licence");
+    }
+  });
+
+  /** An ordinal is an ordinary football word long before it is a league
+   *  position, and three points for a win is a constant in the licence itself.
+   *  A positional gate that trips on either would refuse correct writing,
+   *  which is the fault this whole regression file exists for. */
+  it("leaves ordinary ordinals and ordinary points alone", () => {
+    expect(gateFailures("It was his fourth goal of the season.", toulouseLille)).toEqual([]);
+    expect(gateFailures("Three points for a win is the whole game.", toulouseLille)).toEqual([]);
+  });
+
+  it("says which of the two reasons applied", () => {
+    expect(gateFailures("Lille are fourth in the table.", toulouseLille).join(" ")).toContain(
+      "carries no league table",
+    );
+    expect(gateFailures("That is a title performance.", withTable).join(" ")).toContain(
+      "not what that position wins",
+    );
+  });
+});
+
 describe("prose the gates should still reject", () => {
   it("rejects a number the evidence does not carry", () => {
     const failures = gateFailures("Toulouse had thirty-one shots.", toulouseLille);
@@ -326,7 +448,10 @@ describe("names and numbers the pack itself supplies", () => {
   });
 
   it("still refuses a team the pack never mentions", () => {
-    const failures = gateFailures("This was nothing like their night against Real Madrid.", withForm);
+    const failures = gateFailures(
+      "This was nothing like their night against Real Madrid.",
+      withForm,
+    );
     expect(failures.join(" ")).toMatch(/entity_licence/);
   });
 
@@ -335,12 +460,17 @@ describe("names and numbers the pack itself supplies", () => {
       "They kept arriving at the edge of the eighteen-yard box without ever shooting.",
       "The deficit got bodies into the eighteen-yard area and left them there.",
     ]) {
-      expect(gateFailures(sentence, barcelonaRayo).join(" "), sentence).not.toMatch(/numeric_licence/);
+      expect(gateFailures(sentence, barcelonaRayo).join(" "), sentence).not.toMatch(
+        /numeric_licence/,
+      );
     }
   });
 
   it("still refuses a distance the evidence does not record", () => {
-    const failures = gateFailures("A shot from thirty yards flattered the shot chart.", barcelonaRayo);
+    const failures = gateFailures(
+      "A shot from thirty yards flattered the shot chart.",
+      barcelonaRayo,
+    );
     expect(failures.join(" ")).toMatch(/numeric_licence/);
   });
 });

@@ -19,6 +19,7 @@ import {
   type CalibrationSubjectResult,
 } from "./calibration";
 import { onOwnMeter } from "./model-cost";
+import { withConcurrency } from "./model-json.server";
 import { judgeCandidate } from "./pundit-generator.server";
 import { serviceRest } from "./service-rest.server";
 import { getPunditSpec } from "./specs";
@@ -181,6 +182,13 @@ export async function runJudgeCalibration(input: {
    *  default when a variantId is given, because a reading with no pipeline side
    *  has nothing to compare against. */
   includeStoredVariant?: boolean;
+  /** Judge with this model instead of the environment's, so one bench can be
+   *  compared against another without a redeploy between them. Calibration is
+   *  the only caller: the daily pipeline must never be judged by a model
+   *  nobody configured. */
+  judgeModel?: string;
+  /** Lower the simultaneous-call limit for this reading only. */
+  concurrency?: number;
 }): Promise<CalibrationReport> {
   const outside = (input.subjects ?? []).filter((subject) => subject.script?.trim());
   if (outside.length > MAX_SUBJECTS) {
@@ -234,12 +242,15 @@ export async function runJudgeCalibration(input: {
               outline: variant.beat_outline,
             }
           : proseCandidate(item.punditId, item.script);
-      const results = await judgeCandidate({
-        candidate,
-        pack,
-        claims,
-        proseOnly: !item.fromPipeline,
-      });
+      const results = await withConcurrency(input.concurrency, () =>
+        judgeCandidate({
+          candidate,
+          pack,
+          claims,
+          proseOnly: !item.fromPipeline,
+          ...(input.judgeModel ? { judgeModelOverride: input.judgeModel } : {}),
+        }),
+      );
       done.push(
         summariseSubject({
           label: item.label,
@@ -256,7 +267,15 @@ export async function runJudgeCalibration(input: {
     matchId: pack.matchId,
     evidencePackId: pack.id,
     claimCount: claims.length,
-    judgeModel: process.env.PUNDIT_JUDGE_MODEL ?? process.env.JUDGE_MODEL ?? "claude-sonnet-4-6",
+    // The bench that actually ran, which is the override when there is one.
+    // Reporting the environment here regardless would label a Gemini reading
+    // as an OpenAI one, and the whole point of this report is which bench
+    // produced which scores.
+    judgeModel:
+      input.judgeModel?.trim() ||
+      process.env.PUNDIT_JUDGE_MODEL ||
+      process.env.JUDGE_MODEL ||
+      "claude-sonnet-4-6",
     costUsd: Number(costUsd.toFixed(4)),
     subjects,
     verdict: calibrationVerdict(subjects),

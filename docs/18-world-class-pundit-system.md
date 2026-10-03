@@ -3,7 +3,7 @@
 - **Status:** Current implementation map
 - **Owner:** Product and engineering
 - **Purpose:** Describe what the repository implements, how Today reaches the production pipeline, and where its safety controls live.
-- **Last reviewed:** 2026-09-07
+- **Last reviewed:** 2026-10-02
 
 ## Implementation state
 
@@ -12,16 +12,14 @@ The repository implements an AI-native six-pundit production system and a player
 The current product includes:
 
 - six versioned internal `PunditSpec` records exposed publicly as six AI Pundits;
-- a Today player within the first mobile viewport;
-- coverage date, title, hook, AI Pundit picker, play or pause, seek, real-media progress, and playback failure states;
-- safe AI Pundit switching that preloads requested media, restarts at zero, preserves play or pause intent, commits after load, and keeps the old edition on failure;
+- a Today screen that shows one Premier League match at a time and never scrolls: competition and short date with earlier and later match chevrons, then a scoreboard with club crests, short club names, and the score;
+- the six AI Pundits as a rail for that match (the one novelty element), with any that made no show for it dimmed, then the AI Pundit's name and tag, play or pause, seek, real-media progress, and playback failure states;
+- safe AI Pundit and match switching as one transaction that preloads requested media, restarts at zero, preserves play or pause intent, commits after load, and keeps the old edition on failure; switching AI Pundit never changes match;
 - local and signed-in AI Pundit preference persistence after successful switching;
-- same-AI-Pundit latest fallback with the real coverage date;
-- up to three public proof cards projected from sealed evidence and licensed claim IDs;
-- recent published editions below the player;
-- a conditional settled-record entry on Today;
+- a match-first fallback: the newest Premier League match with a published show, by the requested AI Pundit when they made one, else the drop's canonical AI Pundit, else the first that did, named on the rail;
+- up to three public proof cards, shown one at a time in a **Show me why** bottom sheet, projected from sealed evidence and licensed claim IDs;
 - deterministic generated SVG avatars seeded by drop ID and AI Pundit ID;
-- three public navigation items: Today, Teams, and Settings;
+- three public navigation items: Today, Teams, and Settings, in a full-height frame where the document never scrolls;
 - a redirect from `/feed` to Today and a retained Reporter RSS endpoint;
 - immutable evidence packs, licensed claims, independent judges with written standards, bounded targeted repairs, audio checks, forecasts, settlement, per-edition publication, a per-step spend ceiling, a free preflight, a judge calibration harness, and release readiness controls.
 
@@ -34,13 +32,13 @@ flowchart TD
     O["Open Today"] --> P["Load saved AI Pundit"]
     P --> C["Request current published edition"]
     C -->|"current exists"| V["Render current edition"]
-    C -->|"current missing"| L["Offer latest approved edition for same AI Pundit"]
+    C -->|"current missing"| L["Open newest Premier League match with a show, requested AI Pundit else canonical"]
     C -->|"nothing exists"| E["Honest empty state"]
     V --> A["Play real audio"]
     L --> A
     V --> Q["Show me why"]
     Q --> R["Licensed claim + sealed evidence + boundary"]
-    A --> S["Choose another AI Pundit"]
+    A --> S["Choose another AI Pundit or match"]
     S --> T["Preload requested edition"]
     T -->|"success"| U["Commit, save, restart at zero"]
     T -->|"failure"| K["Keep old edition and offer retry"]
@@ -48,36 +46,41 @@ flowchart TD
 
 Key code:
 
-| Concern                                           | Canonical path                                                      |
-| ------------------------------------------------- | ------------------------------------------------------------------- |
-| Today route and data state                        | `src/routes/index.tsx`                                              |
-| Player, picker, proof, recent, track-record entry | `src/components/TodayShowPlayer.tsx`                                |
-| Real audio and transactional switching            | `src/lib/player-store.ts`                                           |
-| Current, latest, proof, match, and team response  | `src/lib/api/editorial-public.server.ts`                            |
-| Edition-to-player model                           | `src/lib/today-show-model.ts`                                       |
-| Public AI Pundit copy                             | `src/components/PersonalitySelector.tsx`                            |
-| Generated visual model                            | `src/components/PunditAvatar.tsx`, `src/lib/pundit/avatar-model.ts` |
-| Public APIs                                       | `src/routes/api/public`                                             |
+| Concern                                                     | Canonical path                                                      |
+| ----------------------------------------------------------- | ------------------------------------------------------------------- |
+| Today route and data state                                  | `src/routes/index.tsx`                                              |
+| Match line, scoreboard, AI Pundit rail, player, proof sheet | `src/components/TodayShowPlayer.tsx`                                |
+| Real audio and transactional switching                      | `src/lib/player-store.ts`                                           |
+| Current, latest, proof, fixture, and match list response    | `src/lib/api/editorial-public.server.ts`                            |
+| Which AI Pundit's edition a match opens on                  | `src/lib/edition-pundit.ts`                                         |
+| Premier League scope, short names, crest URLs               | `src/lib/premier-league.ts`, `src/components/ClubCrest.tsx`         |
+| Edition-to-player model                                     | `src/lib/today-show-model.ts`                                       |
+| Public AI Pundit copy                                       | `src/components/PersonalitySelector.tsx`                            |
+| Generated visual model                                      | `src/lib/pundit-cover.ts`, `src/components/PunditCover.tsx`         |
+| Public APIs                                                 | `src/routes/api/public`                                             |
 
 ## Current public response
 
-`GET /api/public/drops/today?pundit=<id>` returns:
+`GET /api/public/drops/today?pundit=<id>[&drop=<uuid>]` returns:
 
 - `coverageDate`;
 - `state`: `prelaunch`, `off_day`, `variant_unavailable`, or `published`;
-- the current `drop` and requested `variant` when published;
-- `latest`, the newest other published edition for the same AI Pundit, or failing that the most recent edition any AI Pundit published, which the player names as whose it is;
+- the current `drop`, and the requested `variant` when today's drop is the match shown and the requested AI Pundit published for it;
+- `latest`, otherwise: the edition for the newest Premier League match with a published show (or the `drop` parameter's own match, when it is still one Today can show), by the requested AI Pundit when they made one, else the drop's canonical AI Pundit, else the first that did (`src/lib/edition-pundit.ts`). The old fallback ordered by publication time and widened to any match, so switching AI Pundit could silently switch match;
 - `matchId` and `teamIds` from the sealed evidence pack;
+- `fixture`: both team names and, when the pack carries them, both scores and the competition, read from the same sealed evidence pack as the proof cards, plus both club crests from `teams.crest_url`; null rather than a half-filled fixture when either team name is missing (`fixtureFromPack`, `cb59be3`), and rendered on Today as the scoreboard. Placeholder sides "Home", "Away", and "Competition" are never rendered as a result;
 - `proofCards`, capped at three;
-- `recent`, up to four additional published editions for that AI Pundit.
+- `matches`: Premier League matches with at least one published show, newest first by coverage date, at most eight, each `{dropId, coverageDate, fixture, pundits, canonicalPundit}`, where `pundits` lists who published in the fixed six-AI-Pundit order.
+
+The `recent` field is removed. The evidence pack an edition reads is deterministic: the pack its licensed claims name, else the latest sealed pack for the drop (`editionPack`). Before, the query took `limit=1` with no order across up to four sealed packs per drop. The 2026-08-31 La Liga edition stays published in the database but no longer reaches Today.
 
 The shareable variant route applies the same proof-card projection. A proof card is omitted when a licensed claim has no referenced item in the sealed evidence.
 
 ## Generated visual model
 
-The avatar is deterministic procedural art. `punditAvatarModel` hashes `dropId:punditId`, then produces rotation, orbit, and dot values. `PunditAvatar` combines those values with one of six fixed motifs.
+Each AI Pundit's cover is deterministic procedural art. `coverArt` seeds a generator with `punditId|dropId` and draws that AI Pundit's motif on its own paper colour, reading the score and the clubs' colours (The Gaffer's board marks one O per goal). `PunditAvatar`, the earlier orbit-and-dot avatar, is no longer rendered.
 
-This gives each edition a fresh but stable abstract identity without a runtime image-generation provider. Tests verify stable output for the same seed and variation across editions and AI Pundits.
+This gives each match a fresh but stable identity without a runtime image-generation provider. `src/lib/premium-art.test.ts` verifies stable output for the same match, a new cover for a new match, each AI Pundit's paper, and that no markup is built from anything but numbers and fixed colours.
 
 ## Production pipeline
 
@@ -110,6 +113,8 @@ flowchart LR
 | Publication decision              | `promise-checks.server.ts`, `publish_daily_drop()` in migration `20260905060000` |
 | Cost, stub, preflight, calibration | `model-cost.ts`, `model-stub.server.ts`, `preflight.ts`, `judge-calibration.server.ts` |
 
+Selection and ingest are Premier League only (Ruling, Krish, 2026-09-27). `selectFeatureMatch` in `daily-orchestrator.server.ts` filters to `league_id = af_39` (`PREMIER_LEAGUE_ID` in `src/lib/premier-league.ts`), so a day without a finished Premier League match fails selection before any paid step, at zero spend. The operator `?matchId=` override still bypasses selection. The ingest (`src/routes/api/public/cron.ingest.ts`) and prediction sync (`prediction-orchestrator.server.ts`) pull the Premier League only, because enrichment takes the top twelve fixtures across every ingested league and left three of four Premier League matches unenriched on 2026-08-29. Before this, the 2026-08-31 published show was Barcelona v Rayo Vallecano (La Liga) and 2026-09-03 picked Toulouse v Lille.
+
 ## Safety switches
 
 ```text
@@ -133,15 +138,15 @@ Missing flags deny work. Checkout needs pre-launch explicitly false and both bil
 
 ### Teams
 
-The shell says Teams and keeps `/following` for compatibility. The current server function still returns all stored teams and leagues. The UI still puts teams first; since `407be64` it says that a follow does not change today's show and no longer asks for three teams. Premier-League-only availability and disabled coming-later leagues remain unimplemented.
+The shell says Teams and keeps `/following` for compatibility. `getPremierLeagueClubs` in `src/lib/api/feed.functions.ts` (which replaced `getTeamsAndLeagues`) returns the twenty clubs of the current Premier League season, with crests, on one screen; `league_id = af_39` alone returns 25, relegated clubs included. There are no league rows and no coming-later leagues, which supersedes the 2026-08-11 roadmap decision. The page says in one line that a follow is saved for later and everyone hears the same show. Follows saved before the change (other leagues' clubs, `league:` ids, and legacy ids) stay in storage and out of the count.
 
 ### Track record
 
-Today calls the settled-only receipts endpoint and shows **How did they do?** only when rows exist. The direct `/receipts` page still calls the predictions endpoint, shows search and filters, and includes open-record logic. It is unlisted in navigation but is not yet the simplified settled-only page.
+Today no longer carries the **How did they do?** entry. It was removed on 2026-09-27 and had never rendered in production, because the prediction ledger is empty and registration is disabled, so `/receipts` has no in-app entry. The direct `/receipts` page still calls the predictions endpoint, shows search and filters, and includes open-record logic. It is unlisted in navigation but is not yet the simplified settled-only page.
 
 ### Settings
 
-Settings persists AI Pundit choice, account state, notification state, disclosure, and existing billing management. Some copy retains generic pundit language and legacy seams.
+Settings is one card of rows: Your AI Pundit (which opens a picker drawer), account, the morning recap, and billing for existing Pro subscribers only. The AI disclosure required by [`05-content-safety.md`](./05-content-safety.md) and [`11-legal.md`](./11-legal.md) stays beneath it, shorter but not softer. The private-verification waitlist card, the Pro upsell priced while checkout is disabled, and six tall AI Pundit cards were cut on 2026-09-27.
 
 ## Schedules
 
@@ -149,7 +154,7 @@ Settings persists AI Pundit choice, account state, notification state, disclosur
 
 | UTC             | Endpoint                             | Responsibility                                        |
 | --------------- | ------------------------------------ | ----------------------------------------------------- |
-| 00:15           | `/api/public/cron/ingest`            | Structured-data ingest and settlement                 |
+| 00:15           | `/api/public/cron/ingest`            | Premier League ingest and settlement                  |
 | 04:45           | `/api/internal/daily-rehearsal`      | Durable six-variant rehearsal or approved publication |
 | 06:30 and 16:30 | `/api/internal/predictions-register` | Pre-kickoff registration                              |
 

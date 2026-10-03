@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Founder and design
 - **Purpose:** Govern Full Time's visual language, AI Pundit identity, public voice, copy, and generated assets.
-- **Last reviewed:** 2026-08-11
+- **Last reviewed:** 2026-10-02
 
 ## Brand idea
 
@@ -76,15 +76,17 @@ Avoid marketing filler such as `game-changing`, `next-generation`, `must-listen`
 
 Longer settings copy may use each AI Pundit's strongest joke, but it must stay legible and avoid invented tactical certainty.
 
-## Generated avatar system
+## Generated visual system
 
-Each AI Pundit needs a recognizable abstract motif, not a fake human face. The current component in `PunditAvatar.tsx` combines:
+Ruling (Krish, 2026-10-02): adopt the premium synthesis. Three pieces of procedural art carry the product's imagery. All of them are deterministic SVG built in product code from the match and the drop ID, so a match always looks the same and the next match looks different. No image model, stock photo, or player likeness is involved.
 
-- a fixed motif for the AI Pundit;
-- a seeded rotation, orbit, and dot field;
-- the daily-drop ID and AI Pundit ID as the seed.
+- **AI Pundit covers** (`src/lib/pundit-cover.ts`, `PunditCover.tsx`): a screenprint-style cover per AI Pundit, on that AI Pundit's own paper colour, with a motif that reads the match. The Reporter's cover is a printed column, The Gaffer's a tactics board with one O per goal in the scoring club's ink, The Numbers Guy a bar grid, The Romantic woven threads, The Doomer a falling line, The Wind-Up a wave. They replace the orbit avatars of `PunditAvatar.tsx`, which is no longer rendered.
+- **The match seal** (`src/lib/match-seal.ts`, `MatchSeal.tsx`): the engraved ring that holds the score on Today. A guilloche weave, like a watch dial or a banknote, in the home club's colour on the left half and the away club's on the right, around a 90-minute track that echoes the stopwatch in the mark. More goals make the weave finer, and the winner's half prints at full strength.
+- **The matchday atmosphere** (`src/lib/match-atmosphere.ts`, `MatchAtmosphere.tsx`): floodlight from each club's corner in its own colour behind the seal, a far touchline, LED boards split at halfway, and faint mown stripes. It is atmosphere, so it stays quiet and fades out before the AI Pundits.
 
-The result changes between editions and stays stable inside one edition. Describe it as a **fresh generated look** or **generated edition avatar**. Do not claim an image model produced it, that it represents a real person, or that every page view creates a new identity.
+Club colours live in `src/lib/club-colours.ts`. Lift a colour's lightness in OKLCH and keep its hue and chroma, so claret stays claret and navy stays navy on the dark ground; HSL lightening turned them pink and periwinkle. Club crests sit on a cream disc ringed in the club's colour (`CrestDisc.tsx`), and a crest that fails to load shows the club's initials, not an empty circle.
+
+Describe the covers as a **fresh generated look for each match**. Do not claim an image model produced them, that they represent a real person, or that every page view creates a new identity.
 
 ## Hero and line wrapping
 
@@ -107,36 +109,44 @@ Canonical assets live in `src/assets`:
 - `full-time-icon-and-favicon.png`: icon and favicon source;
 - `full-time-wordmark.png` and `full-time-wordmark-trim.png`: local fallbacks.
 
-Keep the mark at least 24 pixels square and the wordmark at least 16 pixels high. Do not recolor, stretch, outline, bevel, or animate the logo. Do not use club, league, broadcaster, player, or competition marks without recorded permission.
+Keep the mark at least 24 pixels square and the wordmark at least 16 pixels high. Do not recolor, stretch, outline, bevel, or animate the logo. Do not use league, broadcaster, player, or competition marks without recorded permission; name the Premier League in text, never with its logo.
+
+Club crests are the one exception. Ruling (Krish, 2026-09-27): show club crests from the provider's public imagery, accepting the trademark exposure. They come from `teams.crest_url` through `src/components/ClubCrest.tsx`, sit beside the club's name on Today and Teams, and are never recolored, cropped, or used as Full Time's own mark. [`docs/11-legal.md`](11-legal.md) records the exposure.
 
 ## Color
 
 [`src/styles.css`](../src/styles.css) is authoritative.
 
-| Token                | Value                    | Job                                   |
-| -------------------- | ------------------------ | ------------------------------------- |
-| `--background`       | `oklch(0.155 0.008 240)` | Main dark canvas                      |
-| `--card`             | `oklch(0.195 0.01 240)`  | Raised surfaces                       |
-| `--pitch-line`       | `oklch(1 0 0 / 8%)`      | Hairlines and dividers                |
-| `--foreground`       | `oklch(0.985 0.004 240)` | Primary text                          |
-| `--muted-foreground` | `oklch(0.68 0.012 240)`  | Secondary text                        |
-| `--lime`             | `oklch(0.88 0.24 138)`   | Play, focus, active state, key facts  |
-| `--lime-glow`        | `oklch(0.93 0.22 138)`   | Restrained halo                       |
-| `--ember`            | `oklch(0.72 0.2 35)`     | Genuine urgent or breaking state only |
+| Token          | Value                    | Job                                           |
+| -------------- | ------------------------ | --------------------------------------------- |
+| `--ground`     | `#1c1611`                | Warm umber ground                             |
+| `--ground-2`   | `#15110d`                | Darker ground toward the tab bar; background  |
+| `--raise`      | `#261f19`                | Cards and sheets (`--card`)                   |
+| `--ink`        | `#f1e9da`                | Cream: primary text, focus ring, active state |
+| `--ink-2`      | `#b9ac98`                | Secondary text                                |
+| `--ink-3`      | `#998c7a`                | Quiet labels and inactive tabs                |
+| `--pitch-line` | `rgb(241 233 218 / 13%)` | Hairlines and dividers                        |
+| `--lime`       | `oklch(0.88 0.24 138)`   | The mark, play and pause, and progress only   |
+| `--ember`      | `oklch(0.72 0.2 35)`     | Genuine urgent or breaking state only         |
 
-Lime is a signal, not a wallpaper.
+Lime is the logo's green and it means play. It appears on the mark, the play and pause button, and the progress fill, and nowhere else: not on buttons, tabs, selection, or links. Selection and the active tab are cream. Colour beyond that comes from the clubs and the AI Pundits' papers, never from the shell.
 
 ## Typography and layout
 
-The font stack prefers Geist for display and body copy and Geist Mono for data-like labels, then falls back to system fonts when those faces are unavailable. The current repository does not load a web-font provider. Headings use compact line height and tight tracking. Body copy stays sentence case. Dates, times, durations, and small state labels may use mono.
+Two faces, both self-hosted from the app's own origin through `@fontsource` under the SIL Open Font License:
 
-Today has one dominant object: the player. Secondary explanation sits below it. Avoid rows of marketing statistic cards above playback.
+- **Instrument Serif** for the score, club names, AI Pundit names, and headings, with italic for the quiet voice ("Pick your AI Pundit", "Show me why", the "The" in an AI Pundit's name);
+- **Schibsted Grotesk** for everything else: labels, status, times, and body copy.
+
+There is no mono face in the product shell. Body copy stays sentence case; small state labels such as READY and PLAYING may use tracked capitals.
+
+Today has one dominant object: the match, the seal that holds its score, and the player under it. Secondary explanation sits behind "Show me why". Avoid rows of marketing statistic cards above playback.
 
 Use `surface`, `hairline`, `eyebrow`, and semantic tokens. Preserve 44-pixel touch targets, visible focus, pinch zoom, reduced motion, safe areas, and readable contrast.
 
 ## Motion
 
-Motion explains state. The selected or playing state may gain a restrained lime edge. Drawers and disclosures may use short transitions. Avoid hover scale, parallax, looping decoration, bouncing icons, and animated numbers.
+Motion explains state. The selected AI Pundit's paper colour washes faintly into the lower ground. Drawers and disclosures may use short transitions. Avoid hover scale, parallax, looping decoration, bouncing icons, and animated numbers.
 
 ## Share system
 

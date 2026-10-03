@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Engineering and operations
 - **Purpose:** Explain system boundaries, data flow, trust, orchestration, and failure behavior.
-- **Last reviewed:** 2026-09-07
+- **Last reviewed:** 2026-09-27
 
 ## System view
 
@@ -32,7 +32,7 @@ The application is a TanStack Start service running on Vercel's Node runtime. Su
 
 | Context              | Responsibility                                                  | Primary code/data                                      |
 | -------------------- | --------------------------------------------------------------- | ------------------------------------------------------ |
-| Football data        | Normalize fixtures, results, events, and statistics             | `matches`, `match_events`, `match_stats`, ingest route |
+| Football data        | Normalize Premier League fixtures, results, events, and stats   | `matches`, `match_events`, `match_stats`, ingest route |
 | Editorial evidence   | Seal facts, derivations, provenance, and absent evidence        | `evidence_packs`, `analysis_claims`                    |
 | Pundit production    | Select thesis, write, judge, repair, quarantine                 | `pundit_specs`, `pundit_variants`, `harness_runs`      |
 | Narration            | Plan delivery, synthesize, verify, master, and store            | voice, lexicon, audio review, asset services           |
@@ -52,7 +52,7 @@ The application is a TanStack Start service running on Vercel's Node runtime. Su
 The rehearsal route returns `202` with a run ID. Acceptance does not mean success. The durable workflow then:
 
 1. claims the coverage date idempotently;
-2. selects the feature match and builds one evidence pack;
+2. selects the feature match from the day's finished Premier League matches and builds one evidence pack (a day without one fails here, before any paid step);
 3. generates and judges six editorial variants in parallel under a provider semaphore;
 4. persists every harness result and repair attempt;
 5. renders and verifies narration, in parallel, only for the variants that passed their harnesses;
@@ -106,9 +106,9 @@ Legacy `drops` and `episodes` support archive behavior. They are not the current
 
 ## Public Today boundary
 
-The browser requests one AI Pundit edition at a time. The response may include the current variant, a latest same-AI-Pundit fallback, match and team IDs, up to three proof cards, and recent published editions. Proof projection reads internal sealed evidence through server-only code and returns plain strings; raw provider payloads and internal evidence objects do not cross the boundary.
+The browser requests one AI Pundit edition at a time, for one match, optionally naming the match by `drop`. The response may include the current variant; a `latest` edition for the newest Premier League match with a published show, by the requested AI Pundit when they made one, else the drop's canonical AI Pundit, else the first that did; match and team IDs; a fixture (both team names and, when known, both scores and the competition) read from the same sealed evidence pack as the proof cards, plus club crest URLs from `teams.crest_url`; up to three proof cards; and `matches`, the Premier League matches with at least one published show, newest first by coverage date, each naming who published. Today renders the fixture as its scoreboard. The evidence pack an edition reads is deterministic: the one its licensed claims name, else the latest sealed. Proof projection reads internal sealed evidence through server-only code and returns plain strings; raw provider payloads and internal evidence objects do not cross the boundary.
 
-An AI Pundit switch is a media transaction. The client preloads the requested audio in a new element, commits the edition and saved preference only after readiness, then releases the previous element. A failure leaves the old edition and preference intact.
+An AI Pundit or match switch is one media transaction, and an AI Pundit switch never changes match. The client preloads the requested audio in a new element, commits the edition and saved preference only after readiness, then releases the previous element. A failure leaves the old edition and preference intact.
 
 Generated avatars are deterministic client-side SVGs seeded by daily-drop and AI Pundit IDs. They require no image provider or new durable data.
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-09-07",
+  "asOf": "2026-09-27",
   "authority": {
     "repository": "https://github.com/krishanraja/full-time",
     "branch": "main",
@@ -16,14 +16,31 @@
     "primaryAudience": "Football fans who want a playful, useful take on a match without sitting through the usual pundit noise.",
     "primaryAction": "Choose an AI Pundit and play a checked show.",
     "publicNavigation": [
-      { "label": "Today", "route": "/" },
-      { "label": "Teams", "route": "/following" },
-      { "label": "Settings", "route": "/settings" }
+      {
+        "label": "Today",
+        "route": "/"
+      },
+      {
+        "label": "Teams",
+        "route": "/following"
+      },
+      {
+        "label": "Settings",
+        "route": "/settings"
+      }
     ]
   },
   "aiPundits": [
-    { "id": "zen", "name": "The Reporter", "promise": "Calm, clear, and first with the facts." },
-    { "id": "gaffer", "name": "The Gaffer", "promise": "Spots the choices that changed the game." },
+    {
+      "id": "zen",
+      "name": "The Reporter",
+      "promise": "Calm, clear, and first with the facts."
+    },
+    {
+      "id": "gaffer",
+      "name": "The Gaffer",
+      "promise": "Spots the choices that changed the game."
+    },
     {
       "id": "stats",
       "name": "The Numbers Guy",
@@ -34,7 +51,11 @@
       "name": "The Romantic",
       "promise": "Finds the bit that made football feel magic."
     },
-    { "id": "doomer", "name": "The Doomer", "promise": "Sees the wobble before anyone else." },
+    {
+      "id": "doomer",
+      "name": "The Doomer",
+      "promise": "Sees the wobble before anyone else."
+    },
     {
       "id": "banter",
       "name": "The Wind-Up",
@@ -43,20 +64,43 @@
   ],
   "implemented": {
     "today": [
-      "The player is the first material object on the mobile Today screen.",
-      "The screen shows the coverage date, show title, hook, AI Pundit, play or pause control, and real-media progress.",
-      "The AI Pundit picker opens as an accessible bottom drawer containing all six choices.",
-      "A switch commits only after the requested edition loads. Failure keeps the previous playable edition and offers retry.",
-      "Switching while audio plays restarts the selected edition and keeps playing. Switching while paused loads it at the beginning without autoplay.",
-      "The current edition can expose up to three proof cards projected from sealed evidence and licensed claim IDs.",
-      "If today's edition is unavailable, the API returns the latest published edition for the same AI Pundit with its real coverage date, or failing that the most recent edition any AI Pundit published, and the player names who made it.",
-      "Recent published editions appear below the player when they exist.",
-      "A quiet How did they do? entry appears only when settled records exist."
+      "Today shows one Premier League match at a time and says plainly which game it is: the competition and a short date, then a scoreboard with both club crests, the clubs' short names, and the score, the winner in lime and the loser muted.",
+      "Chevrons beside the date step to an earlier or later match. GET /api/public/drops/today?pundit=<id>[&drop=<uuid>] returns matches: up to eight Premier League matches with at least one published show, newest first by coverage date, each with its fixture, crests, the AI Pundits who published for it in the fixed six-pundit order, and its canonical AI Pundit. The recent field is gone.",
+      "The six AI Pundit avatars form a rail under the scoreboard. It is the one novelty element: one match, six AI Pundits. An AI Pundit without a show for this match is dimmed, and a tap on it says \"No show from X for this match.\" The rail always names who made the show on screen.",
+      "A match opens on the requested AI Pundit's edition when they made one, else the drop's canonical AI Pundit, else the first that did (src/lib/edition-pundit.ts). Switching AI Pundit never changes the match.",
+      "Under the rail the screen shows the AI Pundit's name and tag, a play or pause control, seek, and real-media progress.",
+      "Switching AI Pundit or match is one load-before-commit transaction that keeps play or pause intent. A switch while audio plays restarts the selected edition and keeps playing; a switch while paused loads it at the beginning without autoplay. Failure keeps the previous playable edition and offers retry.",
+      "Show me why opens a bottom sheet with one proof card at a time, up to three, projected from sealed evidence and licensed claim IDs. The evidence pack is chosen deterministically: the pack the edition's licensed claims name, else the latest sealed one.",
+      "Placeholder sides (Home, Away, Competition) are never rendered as a result. A first-load failure shows an error with retry instead of an endless skeleton.",
+      "The model-written headline and dek, the More to play list of other matches, and the How did they do? entry were removed from Today on 2026-09-27. The published 2026-08-31 La Liga edition stays in the database and does not reach Today."
+    ],
+    "scope": [
+      "Full Time covers the Premier League only (Ruling, Krish, 2026-09-27). One constant, src/lib/premier-league.ts (league id af_39; team af_39 is Wolves), is read by the daily pick, the ingest, prediction sync, Teams and Today.",
+      "selectFeatureMatch (src/lib/pundit/daily-orchestrator.server.ts) picks only a finished Premier League match, so a day without one fails selection before any paid step and spends nothing. The operator ?matchId= override still bypasses selection.",
+      "The ingest (src/routes/api/public/cron.ingest.ts) and prediction sync (src/lib/pundit/prediction-orchestrator.server.ts) pull the Premier League only. Enrichment takes the top twelve fixtures across all ingested leagues and left three of four Premier League matches unenriched on 2026-08-29.",
+      "Club crests are shown from the provider's public imagery (teams.crest_url), accepting the trademark exposure (Ruling, Krish, 2026-09-27). The Premier League's own mark is not used; the competition is named in text only."
+    ],
+    "shell": [
+      "The app is one screen with no document scroll (Ruling, Krish, 2026-09-27). src/styles.css sets html and body to overflow hidden, and the app-frame utility is a 100dvh (100vh fallback) flex column that holds the header, the screen region, the mini player and the tab bar in normal flow (src/routes/__root.tsx).",
+      "The screen region (#screen) scrolls only as a last resort, for legal text or zoom. Legacy direct-URL routes (/receipts, /archive, /episode/:id, /pro, /waitlist, legal pages) were not re-laid-out and scroll inside it.",
+      "The header carries no status chip. A hard-coded Pre-launch chip that read no flag, and was false from the 2026-09-04 founder override, was removed on 2026-09-27.",
+      "The mini player appears only once a show has been started, names the match (for example Man City 5-3 Sunderland), and says Playing, Loading or Paused. Lock-screen metadata, the completion toast and the expanded player name the match instead of the old \"Full Time 0-0 The Reporter\" label.",
+      "Playwright measured zero document scroll and zero screen-region overflow on Today, Teams, Settings, and Teams with the mini player, at 412x765, 390x664, 375x548 and 1280x800."
+    ],
+    "teams": [
+      "Teams (/following) lists the twenty clubs of the current Premier League season with their crests, from getPremierLeagueClubs in src/lib/api/feed.functions.ts, which replaced getTeamsAndLeagues. The current season is read from stored matches, because league_id af_39 alone returns 25 clubs including relegated ones.",
+      "There are no league rows and no coming-later leagues. The page says a follow is saved for later and everyone hears the same show.",
+      "Follows saved before 2026-09-27 (other leagues' clubs, league: ids, legacy ids) stay in storage and are excluded from the followed count."
+    ],
+    "settings": [
+      "Settings is one card of rows: Your AI Pundit (opens a picker drawer with all six), account, the morning recap, and billing for existing Pro subscribers only.",
+      "The AI disclosure required by docs/05-content-safety.md and docs/11-legal.md sits under the card: AI Pundits write every show from checked, licensed match data, the voices are synthetic, and no copyrighted broadcast audio is used. It is shorter, not softer.",
+      "The Private verification waitlist card, the Pro upsell priced at checkout while checkout is disabled, and six tall AI Pundit cards were removed on 2026-09-27."
     ],
     "avatars": [
-      "Every AI Pundit has a distinct abstract visual motif.",
-      "The visual is generated deterministically from the daily-drop ID and AI Pundit ID, so it changes by edition without changing during one edition.",
-      "The current implementation generates SVG geometry in the browser. It does not call an image model at request time."
+      "Every AI Pundit has a screenprint-style cover on its own paper colour, generated from the drop ID, the score, and the clubs' colours (since 2026-10-02; it replaced the orbit avatar).",
+      "Today draws the match as an engraved seal in the two clubs' colours around a 90-minute track, with each club's floodlight behind it. Both are generated from the drop ID and the score, so they change by match without changing during one match.",
+      "All of it is deterministic SVG built in product code; the covers and the seal's plate and track render on the server, the seal's weave and the atmosphere in the browser. Nothing calls an image model at request time."
     ],
     "personalization": [
       "All six AI Pundits are free and selectable without an account.",
@@ -73,29 +117,31 @@
       "The 04:45 UTC daily workflow runs in publication mode and publishes every AI Pundit edition that passes the automated evidence, harness, transcript, audio, and asset checks enforced by publish_daily_drop(). An edition that falls short is withheld; the ones that passed still publish.",
       "Selected voices are the configured ELEVENLABS_VOICE values, attested by the founder on the voice_candidates row. Proper-name pronunciation is measured against the verified transcript, not a human lexicon.",
       "Since 2026-09-05 each AI Pundit runs as its own workflow step under a per-step model spend ceiling, the drop records its model spend, and a free preflight and a judge calibration harness exist for diagnosis. The judge model was moved to Haiku 4.5 in the production environment on 2026-09-06 as an unverified quality bet recorded in docs/06-ops.md.",
-      "New checkout, public forecast scores, prediction registration, evaluation runs, and legacy on-demand narration remain disabled by flags."
+      "New checkout, public forecast scores, prediction registration, evaluation runs, and legacy on-demand narration remain disabled by flags.",
+      "Since 2026-09-21 the ingest records one row per run and one row per tracked statistic per day, and reports whether a statistic that arrived yesterday is a withdrawal or a provider rename. Both readings are reported because the fixes are opposite. The two API-Football clients were replaced by one whose failure policy is an argument: the ingest fails soft so a single bad endpoint cannot cost a day of fixtures, prediction registration fails hard because an empty fixture list there would be acted on as no matches to register.",
+      "Since 2026-09-21 a script is compared against what this product has already published: its own pundit's portable lines and hooks from the previous fortnight, and the other five editions of the same day. Neither check fails a variant. The recent lines are shown to the writer before it writes, and same-day convergence is reported because it is a fact about the shared claim set rather than about six writers."
     ]
   },
   "currentGaps": [
     {
-      "surface": "Teams",
-      "truth": "The navigation label is Teams, but /following still fetches every stored team and league and puts teams before leagues. Since 2026-09-06 the page says a follow does not change today's show and no longer asks for three teams.",
-      "promiseBoundary": "Do not claim Premier-League-only beta filtering, disabled coming-later leagues, or club-driven show ordering until the route and server response implement them."
-    },
-    {
       "surface": "Track record",
-      "truth": "Today uses a settled-only endpoint to decide whether to show How did they do?, but the direct /receipts route still renders the older searchable prediction ledger and can request open predictions.",
-      "promiseBoundary": "Do not market a completed quiet settled-only track-record experience until /receipts is replaced."
+      "truth": "Today no longer carries a How did they do? entry. It was removed on 2026-09-27 and had never rendered in production, because the prediction ledger is empty and registration is disabled. /receipts now has no in-app entry, and the direct route still renders the older searchable prediction ledger and can request open predictions.",
+      "promiseBoundary": "Do not market a completed quiet settled-only track-record experience until /receipts is replaced and has an entry in the product."
     },
     {
-      "surface": "Settings",
-      "truth": "Settings is functional and warm in places, but some primary copy still says pundit rather than AI Pundit and retains legacy billing and notification seams.",
-      "promiseBoundary": "Do not describe Settings as fully reconciled to the new voice until its public copy pass ships."
+      "surface": "Legacy routes",
+      "truth": "Today, Teams and Settings fit one screen. The direct-URL routes /receipts, /archive, /episode/:id, /pro, /waitlist and the legal pages were not re-laid-out for the no-scroll frame and scroll inside the screen region.",
+      "promiseBoundary": "Say the three tabs fit one screen. Do not say every page of the app is scroll-free until those routes are re-laid-out."
     },
     {
       "surface": "Personalized shows",
-      "truth": "Team follows exist, but the current six-edition daily-drop API does not generate a private club-built playlist for each listener.",
-      "promiseBoundary": "Say preferences are saved. Do not say Full Time generates a personal show or playlist."
+      "truth": "Premier League club follows exist, but a follow does not change which match Today shows, and the current daily-drop API does not generate a private club-built playlist for each listener.",
+      "promiseBoundary": "Say preferences are saved. Do not say Full Time generates a personal show or playlist, or orders shows by the clubs a listener follows."
+    },
+    {
+      "surface": "Pipeline",
+      "truth": "Both 2026-09-21 migrations are applied to hzadscrqmyilbisexvyz and read back: ingest_runs, provider_stat_presence and source_match_estimates exist with row level security on and no public policy, standings_snapshots carries captured_on and source with the corrected daily unique constraint, and both versions are recorded. src/integrations/supabase/types.ts is regenerated from the live schema, 45 tables to 48 with none lost, and the CI type canary guards all eight named tables. What has NOT happened is a run: no ingest has executed since the tables appeared, so the league table, the drift ledger and the second expected-goals model are wired and empty rather than proven. The first evidence is the 00:15 UTC ingest. The licence basis for the provider's standings endpoint is still not recorded in release_signoffs, and release_signoffs.gate is a nine-value check constraint with no slot for a data-rights basis, so recording it needs either a gate='legal' row whose notes carry it or a migration widening the enum.",
+      "promiseBoundary": "Do not claim Full Time reads a league table, carries a second expected-goals model, or detects provider drift until a run has produced rows in those tables and they have been read back. Schema existing is not the same as the pipeline working. No published script can make a season-level or league-position claim until the evidence pack actually carries a table, because the gate refuses one without a cited table fact."
     }
   ],
   "commercialState": {
@@ -118,18 +164,26 @@
     ]
   },
   "verification": {
-    "checkedAt": "2026-09-04",
+    "checkedAt": "2026-09-21",
     "passed": [
       "Documentation contract and relative-link check",
       "TypeScript typecheck",
-      "61 tests across 20 test files",
+      "368 tests across 39 test files",
       "ESLint with zero errors and six existing fast-refresh warnings",
       "Git diff whitespace check",
       "Linux production build with the Workflow manifest verified (1 workflow, 10 application steps)",
-      "Founder override migration applied to hzadscrqmyilbisexvyz on 2026-09-04 and read back as live"
+      "pnpm audit --prod --audit-level moderate, which had been failing main before 2026-09-21",
+      "Both 2026-09-21 migrations applied to hzadscrqmyilbisexvyz and read back against information_schema and pg_class",
+      "Supabase types regenerated from the live schema: 45 tables to 48, none lost",
+      "The CI type canary loop run locally over all eight guarded tables",
+      "Every column the ingest writes to provider_stat_presence confirmed present in the live schema",
+      "The gate corpus exported and replayed: 192 verdicts across 24 variants, none skipped"
     ],
     "localLimitations": [
-      "The Windows production build emits the application bundles but the Workflow plugin registers zero steps and zero workflows under both Node 25.5.0 and the required Node 24.19.0. The manifest gate fails as designed. GitHub Actions run 31533126034 passed the production build on Ubuntu and Node 24 for merge 0933a63, so Linux CI or a matching Vercel build is the current build authority."
+      "The Windows production build emits the application bundles but the Workflow plugin registers zero steps and zero workflows under both Node 25.5.0 and the required Node 24.19.0. The manifest gate fails as designed. GitHub Actions run 31533126034 passed the production build on Ubuntu and Node 24 for merge 0933a63, so Linux CI or a matching Vercel build is the current build authority.",
+      "The skipped test is the exported gate-corpus replay. It skips because src/lib/pundit/__fixtures__/gate-corpus.json does not exist, which is honest rather than green: the suite reports that it has nothing real to replay instead of passing silently.",
+      "The gate replay reports fourteen verdicts that passed when written on 4-6 September and are refused by the gates today. None is a regression from this work, which never touches claim-lab.ts or numbers.ts; they are the tightening those weeks were spent on. Eleven are one pre-existing pattern worth fixing: the numeric check reads the components of a date in a claim thesis as unlicensed numbers, so a claim mentioning 31 August 2026 is refused for stating 2026, 08 and 31.",
+      "Whether the provider's standings endpoint is inside the paid plan was not verified: no API_FOOTBALL_KEY was available to the session that applied the migrations. No licence basis was recorded on that assumption."
     ]
   },
   "claims": {
@@ -140,12 +194,12 @@
       "Full Time discloses AI-written scripts and synthetic voices.",
       "Full Time does not use copyrighted broadcast audio or imitate a living pundit's recognizable voice or style.",
       "All six AI Pundits are free during the live beta.",
-      "Every published show passed automated evidence, harness, transcript, and audio checks."
+      "Every published show passed automated evidence, harness, transcript, and audio checks.",
+      "Full Time covers the Premier League only: the daily show, Today and Teams."
     ],
     "conditional": [
       "Daily reliability requires seven complete rehearsals and revision-bound release approval.",
       "Prediction accuracy or calibration requires a published held-out evaluation and sample context.",
-      "Premier League beta exclusivity requires the Teams response and UI restriction to ship.",
       "Personalized ordering requires exact match and team metadata plus multiple approved relevant shows."
     ],
     "prohibited": [
@@ -164,14 +218,48 @@
     "todayUi": [
       "src/routes/index.tsx",
       "src/components/TodayShowPlayer.tsx",
-      "src/lib/player-store.ts"
+      "src/lib/player-store.ts",
+      "src/lib/edition-pundit.ts",
+      "src/components/ClubCrest.tsx"
     ],
-    "publicApi": ["src/lib/api/editorial-public.server.ts", "src/routes/api/public"],
-    "aiPundits": ["src/components/PersonalitySelector.tsx", "src/lib/pundit/specs.ts"],
-    "avatars": ["src/components/PunditAvatar.tsx", "src/lib/pundit/avatar-model.ts"],
-    "teams": ["src/routes/following.tsx", "src/lib/api/feed.functions.ts"],
-    "trackRecord": ["src/routes/receipts.tsx", "src/routes/api/public/pundits.$id.receipts.ts"],
-    "navigation": ["src/components/BottomNav.tsx", "src/components/AppHeader.tsx"],
+    "publicApi": [
+      "src/lib/api/editorial-public.server.ts",
+      "src/routes/api/public"
+    ],
+    "scope": [
+      "src/lib/premier-league.ts",
+      "src/lib/pundit/daily-orchestrator.server.ts",
+      "src/routes/api/public/cron.ingest.ts",
+      "src/lib/pundit/prediction-orchestrator.server.ts"
+    ],
+    "aiPundits": [
+      "src/components/PersonalitySelector.tsx",
+      "src/lib/pundit/specs.ts"
+    ],
+    "avatars": [
+      "src/lib/pundit-cover.ts",
+      "src/lib/match-seal.ts",
+      "src/lib/match-atmosphere.ts",
+      "src/lib/club-colours.ts"
+    ],
+    "teams": [
+      "src/routes/following.tsx",
+      "src/lib/api/feed.functions.ts",
+      "src/lib/premier-league.ts"
+    ],
+    "settings": [
+      "src/routes/settings.tsx"
+    ],
+    "trackRecord": [
+      "src/routes/receipts.tsx",
+      "src/routes/api/public/pundits.$id.receipts.ts"
+    ],
+    "navigation": [
+      "src/components/BottomNav.tsx",
+      "src/components/AppHeader.tsx",
+      "src/routes/__root.tsx",
+      "src/styles.css"
+    ],
     "release": [
       "src/lib/launch-config.ts",
       "src/lib/pundit/release-readiness.server.ts",

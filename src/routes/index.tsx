@@ -1,16 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { TodayShowPlayer, type TodayEditorialResponse } from "@/components/TodayShowPlayer";
+import { TodayShowPlayer } from "@/components/TodayShowPlayer";
 import { PERSONALITIES, type PersonalityId } from "@/components/PersonalitySelector";
 import { useAuth } from "@/hooks/use-auth";
 import { VOICE_STYLE_STORAGE_KEY } from "@/lib/entitlement";
-import { currentCoverageDate } from "@/lib/london-date";
+import { editionPunditFor } from "@/lib/edition-pundit";
 import { playerStore } from "@/lib/player-store";
-import { editionEpisode } from "@/lib/today-show-model";
+import { editionEpisode, showFrom, type TodayShow } from "@/lib/today-show-model";
 import { pageSeo } from "@/lib/seo";
-import type { PublicPrediction } from "@/lib/api/editorial-public.server";
-import { settledFixture, todayFixture } from "@/fixtures/today";
+import type { PublicMatch, PublicToday } from "@/lib/api/editorial-public.server";
+import { fixtureVariant, todayFixture } from "@/fixtures/today";
 
 type HomeSearch = { pundit?: PersonalityId; drop?: string; fixture?: "today" };
 
@@ -19,33 +19,35 @@ const validPundit = (value: unknown): PersonalityId | undefined =>
     ? (value as PersonalityId)
     : undefined;
 
-function endpointFor(drop: string | undefined, pundit: PersonalityId) {
-  return drop
-    ? `/api/public/drops/${encodeURIComponent(drop)}/variants/${pundit}`
-    : `/api/public/drops/today?pundit=${pundit}`;
-}
-
-async function fetchEditorial(drop: string | undefined, pundit: PersonalityId) {
-  const response = await fetch(endpointFor(drop, pundit), {
+async function fetchToday(pundit: PersonalityId, drop: string | undefined) {
+  const query = new URLSearchParams({ pundit });
+  if (drop) query.set("drop", drop);
+  const response = await fetch(`/api/public/drops/today?${query}`, {
     signal: AbortSignal.timeout(15_000),
   });
-  if (!response.ok) {
-    if (response.status === 404) {
-      return {
-        coverageDate: currentCoverageDate(),
-        state: "variant_unavailable",
-        drop: drop ? { id: drop } : null,
-        variant: null,
-        latest: null,
-        matchId: null,
-        teamIds: [],
-        proofCards: [],
-        recent: [],
-      } satisfies TodayEditorialResponse;
-    }
-    throw new Error("We could not fetch that checked show.");
-  }
-  return (await response.json()) as TodayEditorialResponse;
+  if (!response.ok) throw new Error("We could not fetch today's show.");
+  return (await response.json()) as PublicToday;
+}
+
+/** One pundit's show about one match. A 404 means that pundit published
+ *  nothing for it, which Today prevents by only offering pundits who did. */
+async function fetchShow(drop: string, pundit: PersonalityId) {
+  const response = await fetch(`/api/public/drops/${encodeURIComponent(drop)}/variants/${pundit}`, {
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) throw new Error("We could not fetch that checked show.");
+  return (await response.json()) as PublicToday;
+}
+
+/** The show the listener last committed to on Today: switched to, stepped
+ *  to, or pressed play on. Module state, so it outlives the page: leaving for
+ *  Teams and coming back used to reopen on the server's pick while another
+ *  match kept playing, with no pause control on screen. Restored only while
+ *  the player still holds that exact show. */
+let committed: TodayShow | null = null;
+
+function pinnedShow(): TodayShow | null {
+  return committed && playerStore.get().episode?.id === committed.variant.id ? committed : null;
 }
 
 export const Route = createFileRoute("/")({
@@ -62,7 +64,7 @@ export const Route = createFileRoute("/")({
       path: "/",
       title: "Full Time - Six AI Pundits, one real match",
       description:
-        "Pick an AI Pundit and play a complete football show built from checked match facts.",
+        "Pick an AI Pundit and play a complete Premier League show built from checked match facts.",
     }),
   component: Home,
 });
@@ -72,18 +74,39 @@ function Home() {
   const queryClient = useQueryClient();
   const { session } = useAuth();
   const useFixture = search.fixture === "today";
-  const [selectedPundit, setSelectedPundit] = useState<PersonalityId>(search.pundit ?? "zen");
+  // The listener's saved pundit. Today opens each match on it when that
+  // pundit made a show, and on whoever did when they did not.
+  const [preferred, setPreferred] = useState<PersonalityId>(search.pundit ?? "zen");
   const [preferenceHydrated, setPreferenceHydrated] = useState(Boolean(search.pundit));
-  const [pendingPundit, setPendingPundit] = useState<PersonalityId | null>(null);
-  const [failedPundit, setFailedPundit] = useState<PersonalityId | null>(null);
+  // Whether `preferred` came from this device (local storage or the device
+  // cookie) rather than the "zen" default. Only a real choice is copied to a
+  // signed-in profile: copying the default overwrote a pick made on another
+  // device the first time a listener opened Today somewhere new.
+  const [preferenceFromDevice, setPreferenceFromDevice] = useState(false);
+  // What is on screen once the listener has moved: another pundit or another
+  // match. Null means "whatever the Today response opened on".
+  const [view, setViewState] = useState<TodayShow | null>(pinnedShow);
+  const setView = useCallback((show: TodayShow) => {
+    committed = show;
+    setViewState(show);
+  }, []);
+  const [pending, setPending] = useState<{ dropId: string; pundit: PersonalityId } | null>(null);
+  const [failed, setFailed] = useState<{
+    dropId: string;
+    pundit: PersonalityId;
+    remember: boolean;
+  } | null>(null);
   const [switchError, setSwitchError] = useState<string | null>(null);
   const preferenceRevision = useRef(0);
+  // The latest match list, read inside open() without re-creating it.
+  const matchesRef = useRef<PublicMatch[]>([]);
 
   useEffect(() => {
     if (search.pundit) return;
     const stored = validPundit(localStorage.getItem(VOICE_STYLE_STORAGE_KEY));
     if (stored) {
-      setSelectedPundit(stored);
+      setPreferred(stored);
+      setPreferenceFromDevice(true);
       setPreferenceHydrated(true);
       return;
     }
@@ -94,7 +117,10 @@ function Home() {
       .then((payload: { pundit?: string } | null) => {
         if (!active || revision !== preferenceRevision.current) return;
         const saved = validPundit(payload?.pundit);
-        if (saved) setSelectedPundit(saved);
+        if (saved) {
+          setPreferred(saved);
+          setPreferenceFromDevice(true);
+        }
       })
       .catch(() => undefined)
       .finally(() => {
@@ -105,32 +131,30 @@ function Home() {
     };
   }, [search.pundit]);
 
-  const editorial = useQuery<TodayEditorialResponse>({
-    queryKey: ["editorial-drop", search.drop ?? "today", selectedPundit],
-    queryFn: () => fetchEditorial(search.drop, selectedPundit),
-    retry: false,
-    staleTime: 30_000,
-    enabled: !useFixture,
-  });
+  // Keyed on the pundit the page opened with, not on later switches: a switch
+  // is a transaction below, and refetching Today under it would yank the
+  // listener back to wherever the server opens.
+  const [openingPundit, setOpeningPundit] = useState<PersonalityId | null>(null);
+  useEffect(() => {
+    if (preferenceHydrated && openingPundit === null) setOpeningPundit(preferred);
+  }, [openingPundit, preferenceHydrated, preferred]);
 
-  const settled = useQuery<PublicPrediction[]>({
-    queryKey: ["settled-pundit-record", selectedPundit],
-    queryFn: async () => {
-      const response = await fetch(`/api/public/pundits/${selectedPundit}/receipts`, {
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (!response.ok) return [];
-      return (await response.json()) as PublicPrediction[];
-    },
+  const today = useQuery<PublicToday>({
+    queryKey: ["today", search.drop ?? "latest", openingPundit],
+    queryFn: () => fetchToday(openingPundit!, search.drop),
     retry: false,
     staleTime: 60_000,
-    enabled: !useFixture,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    enabled: !useFixture && openingPundit !== null,
   });
 
   const persistPreference = useCallback(
     (pundit: PersonalityId) => {
       preferenceRevision.current += 1;
       setPreferenceHydrated(true);
+      setPreferenceFromDevice(true);
+      setPreferred(pundit);
       localStorage.setItem(VOICE_STYLE_STORAGE_KEY, pundit);
       void fetch("/api/profile/pundit", {
         method: "PUT",
@@ -145,100 +169,134 @@ function Home() {
   );
 
   useEffect(() => {
-    if (!preferenceHydrated || !session?.access_token || search.pundit) return;
+    if (!preferenceHydrated || !preferenceFromDevice || !session?.access_token || search.pundit) {
+      return;
+    }
     void fetch("/api/profile/pundit", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ pundit: selectedPundit }),
+      body: JSON.stringify({ pundit: preferred }),
     });
-  }, [preferenceHydrated, search.pundit, selectedPundit, session?.access_token]);
+  }, [preferenceFromDevice, preferenceHydrated, search.pundit, preferred, session?.access_token]);
 
-  const choosePundit = useCallback(
-    async (pundit: PersonalityId) => {
-      if (pundit === selectedPundit || pendingPundit) return;
-      setPendingPundit(pundit);
-      setFailedPundit(null);
+  /** Load the requested show before committing to it: the show on screen
+   *  stays playable until the new one's audio is ready, and play or pause
+   *  carries over. The same transaction serves a pundit switch and a match
+   *  step, so what is on screen is always what the player holds. */
+  const open = useCallback(
+    async (dropId: string, pundit: PersonalityId, remember: boolean) => {
+      if (pending) return;
+      setPending({ dropId, pundit });
+      setFailed(null);
       setSwitchError(null);
       const wasPlaying = playerStore.get().isPlaying;
       try {
         const response = useFixture
-          ? todayFixture(pundit)
+          ? fixtureVariant(dropId, pundit)
           : await queryClient.fetchQuery({
-              queryKey: ["editorial-drop", search.drop ?? "today", pundit],
-              queryFn: () => fetchEditorial(search.drop, pundit),
-              staleTime: 30_000,
+              queryKey: ["show", dropId, pundit],
+              queryFn: () => fetchShow(dropId, pundit),
+              staleTime: 5 * 60_000,
             });
-        const edition = response.variant
-          ? { coverageDate: response.coverageDate, variant: response.variant }
-          : response.latest;
-        if (!edition)
-          throw new Error(
-            `${PERSONALITIES.find((item) => item.id === pundit)?.name} does not have a checked show yet.`,
-          );
-        await playerStore.switchEpisode(editionEpisode(edition), { autoplay: wasPlaying });
-        setSelectedPundit(pundit);
-        persistPreference(pundit);
+        const found = response ? showFrom(response) : null;
+        if (!found) throw new Error("That show is not available.");
+        // The variant endpoint loses the fixture when its pack lookup fails;
+        // the match list still knows who played.
+        const next: TodayShow = found.fixture
+          ? found
+          : {
+              ...found,
+              fixture: matchesRef.current.find((match) => match.dropId === dropId)?.fixture ?? null,
+            };
+        // Already loaded: keep its place rather than restart it from 0:00.
+        if (playerStore.get().episode?.id !== next.variant.id) {
+          await playerStore.switchEpisode(editionEpisode(next, next.fixture), {
+            autoplay: wasPlaying,
+          });
+        }
+        setView(next);
+        if (remember) persistPreference(pundit);
       } catch (error) {
-        setFailedPundit(pundit);
+        setFailed({ dropId, pundit, remember });
         setSwitchError(
           error instanceof Error
-            ? `${error.message} Your old show is still here.`
-            : "That AI Pundit could not load. Your old show is still here.",
+            ? `${error.message} Your show is still here.`
+            : "That show could not load. Your show is still here.",
         );
       } finally {
-        setPendingPundit(null);
+        setPending(null);
       }
     },
-    [pendingPundit, persistPreference, queryClient, search.drop, selectedPundit, useFixture],
+    [pending, persistPreference, queryClient, setView, useFixture],
   );
 
-  const editorialData = useFixture ? todayFixture(selectedPundit) : editorial.data;
-  const settledData = useFixture ? settledFixture(selectedPundit) : (settled.data ?? []);
+  const data = useFixture ? todayFixture(preferred, search.drop) : today.data;
+  matchesRef.current = data?.matches ?? [];
 
-  if (!useFixture && (editorial.isLoading || !editorialData)) {
+  // Only when there is nothing to show. A failed background refetch keeps
+  // the last good data; replacing it with this screen took away the play
+  // control while the audio kept playing.
+  if (!useFixture && today.isError && !today.data) {
     return (
-      <main className="pb-8 pt-4" aria-label="Loading today's show">
-        <div className="mb-3 h-3 w-36 animate-pulse rounded bg-[var(--lime)]/20" />
-        <div className="surface h-[620px] animate-pulse rounded-[26px]" />
+      <main className="flex min-h-0 flex-1 flex-col justify-center py-4">
+        <h1 className="serif text-[clamp(38px,11vw,50px)] leading-[0.98] [text-wrap:balance]">
+          The show is having a wobble
+        </h1>
+        <p className="mt-4 text-[15px] leading-relaxed text-ink-2">
+          Your saved AI Pundit is safe. Try again in a moment.
+        </p>
+        <button
+          type="button"
+          onClick={() => void today.refetch()}
+          className="mt-5 min-h-11 self-start rounded-[3px] bg-foreground px-5 text-sm font-semibold text-[var(--ground-2)]"
+        >
+          Try again
+        </button>
       </main>
     );
   }
 
-  if (!useFixture && editorial.isError) {
+  if (!data) {
     return (
-      <main className="pb-8 pt-4">
-        <section className="surface rounded-[26px] border-t-2 border-t-[var(--lime)] p-5">
-          <h1 className="text-[34px] font-semibold leading-none tracking-tight [text-wrap:balance]">
-            The show is having a wobble
-          </h1>
-          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-            Your saved AI Pundit is safe. Try this page again in a moment.
-          </p>
-          <button
-            type="button"
-            onClick={() => void editorial.refetch()}
-            className="mt-5 min-h-11 rounded-full bg-[var(--lime)] px-5 text-sm font-semibold text-[var(--primary-foreground)]"
-          >
-            Try again
-          </button>
-        </section>
+      <main
+        className="flex min-h-0 flex-1 flex-col items-center justify-center gap-[clamp(16px,4dvh,40px)] py-4"
+        aria-label="Loading today's show"
+      >
+        <div className="h-[min(47vw,26.4dvh,206px)] w-[min(47vw,26.4dvh,206px)] animate-pulse rounded-full bg-white/[0.04]" />
+        <div className="grid w-full grid-cols-6 gap-[7px]">
+          {PERSONALITIES.map((item) => (
+            <div
+              key={item.id}
+              className="h-[clamp(48px,8.8dvh,68px)] animate-pulse rounded-[2px] bg-white/[0.04]"
+            />
+          ))}
+        </div>
+        <div className="h-[clamp(52px,7.6dvh,58px)] w-full animate-pulse rounded-full bg-white/[0.04]" />
       </main>
     );
   }
+
+  const show = view ?? showFrom(data);
+  const matches = data.matches;
 
   return (
     <TodayShowPlayer
-      response={editorialData!}
-      activePundit={selectedPundit}
-      pendingPundit={pendingPundit}
+      show={show}
+      matches={matches}
+      state={data.state}
+      pending={pending}
       switchError={switchError}
-      settled={settledData}
-      onChoosePundit={(pundit) => void choosePundit(pundit)}
+      onOpen={(dropId, pundit) => void open(dropId, pundit, true)}
+      onPlay={(played) => setView(played)}
+      onStep={(match: PublicMatch) => {
+        const pundit = editionPunditFor(match, preferred);
+        if (pundit) void open(match.dropId, pundit, false);
+      }}
       onRetry={() => {
-        if (failedPundit) void choosePundit(failedPundit);
+        if (failed) void open(failed.dropId, failed.pundit, failed.remember);
       }}
     />
   );

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { consequenceSpans, properNouns, spelledNumberValue, spelledNumbersIn } from "./harness";
+import {
+  consequenceSpans,
+  judgeFloors,
+  properNouns,
+  spelledNumberValue,
+  spelledNumbersIn,
+} from "./harness";
+import { getPunditSpec } from "./specs";
 
 describe("spelled numbers found in a spoken script", () => {
   it("takes a spoken decimal whole, not as its digits", () => {
@@ -105,5 +112,50 @@ describe("proper noun detection for the entity licence gate", () => {
   it("never treats a contraction of the pronoun I as a name", () => {
     const script = "In fairness to Arsenal, and I'll say it once, I'm wrong about Arsenal.";
     expect(properNouns(script)).toEqual(["Arsenal", "Arsenal"]);
+  });
+});
+
+/** The bench calibration exists because the OpenAI judges score this product's
+ *  own published script a point lower than the Claude judges that approved it.
+ *  It is a translation between instruments, so it has to vanish the moment the
+ *  instrument changes back. */
+describe("judge floors are translated per bench, never lowered permanently", () => {
+  it("keeps the declared floors on an Anthropic bench", () => {
+    const floors = judgeFloors("romantic", "claude-sonnet-4-6");
+    expect(floors.restraint).toBe(4);
+    expect(floors.probability).toBe(4);
+    expect(floors.independence).toBe(4);
+  });
+
+  it("translates the three measured dimensions on an OpenAI bench", () => {
+    const floors = judgeFloors("romantic", "gpt-5.6-terra");
+    expect(floors.restraint).toBe(3);
+    expect(floors.probability).toBe(3);
+    expect(floors.independence).toBe(3);
+  });
+
+  it("leaves every other dimension exactly where the spec put it", () => {
+    const declared = getPunditSpec("romantic").requiredThresholds;
+    const floors = judgeFloors("romantic", "gpt-5.6-terra");
+    for (const key of Object.keys(declared) as Array<keyof typeof declared>) {
+      if (["restraint", "probability", "independence"].includes(key)) continue;
+      expect(floors[key]).toBe(declared[key]);
+    }
+  });
+
+  // A calibration that could raise a floor would be a second, invisible place
+  // where the editorial bar is set.
+  it("never raises a floor above the spec", () => {
+    for (const model of ["gpt-5.6-terra", "claude-opus-4-8", "gemini-3.8-flash", ""]) {
+      const declared = getPunditSpec("zen").requiredThresholds;
+      const floors = judgeFloors("zen", model);
+      for (const key of Object.keys(declared) as Array<keyof typeof declared>) {
+        expect(floors[key]).toBeLessThanOrEqual(declared[key]);
+      }
+    }
+  });
+
+  it("does not apply to a Gemini bench, which has not been measured", () => {
+    expect(judgeFloors("romantic", "gemini-3.8-flash").restraint).toBe(4);
   });
 });
