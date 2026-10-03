@@ -4,6 +4,13 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-10-03
+
+- reconciled at `8f1c95b`: head moved from `a1df850`. One non-steward code commit landed: the Reporter RSS feed's contact email moved to the Mindmake address (`8f1c95b`, PR #75, Ruling Krish 2026-10-03). The other new commits are canon-block syncs in `AGENTS.md` (v2026.09.24.3), which the harness steward owns and this run did not touch.
+- reconciled at `8f1c95b`: `NOW.md`. "What changed recently" gained one 2026-10-03 bullet recording the contact change and the red audit step the PR merged over; head and `as_of` moved.
+- checked, unchanged: `docs/product-state.json` and the other current docs. A search of `docs/`, `README.md` and `NOW.md` found no mention of the feed's contact address, so no body claim drifted. Stamps were not bumped; the digest's stale-stamp list is every doc older than a change that none of them describes.
+- open: the `pnpm audit` failure on GHSA-ch52-4w7c-c8xp that main carries per the PR body. Not verified here; it is reported as the commit states it.
+
 ## 2026-10-02
 
 - reconciled at `a1df850`: head moved from `a2861d4`. Six non-steward commits landed: the premium visual system for Today, Teams and Settings (`2701907`, with two fix-ups `878d422` and `7b5bb65`), the TanStack Start XSS patch and the audit advisories that had turned main red (`5894eca`), and a player fix so a buffered show reads as playing (`e67fa4f`), merged as PR #74.

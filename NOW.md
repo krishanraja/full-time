@@ -1,8 +1,8 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-10-02
-head: a1df850
+as_of: 2026-10-03
+head: 8f1c95b
 lifecycle: beta
 production_url: https://fulltime.fm
 state_doc: docs/19-release-state.md
@@ -29,7 +29,7 @@ Full Time is not a Mindmake product and is not sold. It is proof. The room_face 
 
 Objection it answers: "AI-generated editorial cannot be held to a standard." Here is one held to twenty-five of them, daily, with the ledger open.
 
-## Where it is right now (as of 2026-10-02)
+## Where it is right now (as of 2026-10-03)
 
 - **A premium visual system since 2026-10-02** (`2701907`, PR #74; Ruling, Krish, 2026-10-02). Today, Teams and Settings sit on a warm umber ground with cream ink, set in two self-hosted OFL faces (Instrument Serif, Schibsted Grotesk) served from the app's own origin, with lime kept for the mark, play, pause and progress. Today's score sits in an engraved match seal woven in each club's colours with a floodlight behind it, and each AI Pundit has a generated screenprint cover in place of the orbit avatar. The visual rules are `docs/01-brand.md`; the map is `docs/18-world-class-pundit-system.md`. Not verified: physical iOS Safari and Android devices (masks, blend modes, color-mix). Phones held sideways (below 768px wide) still scroll on Today, Teams and Settings, as they did before the build; a landscape layout is proposed, not built.
 - **The TanStack Start XSS patch is in the tree, not yet read back on production** (`5894eca`). `@tanstack/react-start` 1.168.60 closes GHSA-qx66-fv34-fjm8 / CVE-2026-102989; the commit records that Vercel refused every deploy on the vulnerable 1.168.40 and that production kept serving the last build made before the block until this shipped. Whether the deploy has since gone live is a platform fact this repo cannot confirm.
@@ -50,6 +50,7 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 
 ## What changed recently
 
+- 2026-10-03 **The podcast feed's contact address moved to the Mindmake domain** (`8f1c95b`, PR #75). The Reporter RSS feed's `itunes:owner` email in `src/lib/pundit/reporter-rss.ts` now uses Krish's Mindmake address; the previous address still redirects to it. Ruling (Krish, 2026-10-03): the Mindmake address is the public contact address. The PR body is candid about its gate: it merged with verify red only at the `pnpm audit` step on GHSA-ch52-4w7c-c8xp (http-cache-semantics up to 4.2.0, via a build-time downloader under `@swc/cli`), because npm has not published the 4.2.1 the advisory names, so no pin exists and main fails the identical audit. "No gate was weakened." Local checks recorded in the PR: `tsc --noEmit` clean, 462 tests passing, production build green.
 - 2026-10-02 **The app read as a generated template, so it was rebuilt on a premium visual system** (`2701907`, `878d422`, `7b5bb65`, PR #74). The commit's own diagnosis: "a cold blue-grey ground, Geist that was declared but never loaded, lime on every control, and abstract orbit avatars." Krish ruled to adopt the premium synthesis: an engraved match seal for the score, a club-colour floodlight, a generated cover per AI Pundit, two self-hosted faces, lime only on the mark and play. Two review passes then found real defects in the first build: a floodlight that drifted off the seal when it moved without resizing, a long club name that pushed the seal off-centre and scrolled a 320px screen sideways, a horizon line that never drew because its mask had no height, and a colour accepted after parsing only its first six hex digits (the guard now takes `#RRGGBB` or falls back, and its test feeds hostile colours). The no-scroll matrix passed 30 of 30. Model spend: $0.
 - 2026-10-02 **Vercel refused every deploy of this project over a 9.3 XSS, and main's own audit was red too** (`5894eca`). Disclosed 2026-09-30, CVE-2026-102989 is an unauthenticated reflected XSS in server-function responses. Production "still serves the last build made before the block", so the live site was exposed until the patch shipped. The router moved with it because the patched start pins it exactly and two router copies break its context. Separately, `pnpm audit --prod` failed on main with 23 advisories published after main last went green on 2026-09-27; each was fixed by the patch release on the line already in use, and the audit now reports none. Model spend: $0.
 - 2026-10-02 **A show that was audibly playing read "Play", so the listener could not pause it** (`e67fa4f`). A browser fires `play`, then `waiting` while it buffers, then `playing`; the store set loading on `waiting` and never listened for `playing`, so on a phone stream the button sat under LOADING while sound came out, and tapping it called `play()` on audio already playing, which fires nothing. Found while rendering the premium build: the browser trace showed `paused=false` at 11.7 seconds while the button read Play. A new test emits `waiting` then `playing` and fails before the fix.
