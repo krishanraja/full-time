@@ -63,7 +63,7 @@ export function renderReporterFeed(rows: ReporterFeedItem[]) {
     "<itunes:type>episodic</itunes:type>",
     "<itunes:explicit>false</itunes:explicit>",
     `<itunes:image href="${DEFAULT_COVER_IMAGE_URL}" />`,
-    "<itunes:owner><itunes:name>Full Time</itunes:name><itunes:email>krish@themindmaker.ai</itunes:email></itunes:owner>",
+    "<itunes:owner><itunes:name>Full Time</itunes:name><itunes:email>krish@mindmake.co</itunes:email></itunes:owner>",
     '<itunes:category text="Sports"><itunes:category text="Soccer" /></itunes:category>',
     ...rows.map(reporterItemXml),
     "</channel>",
