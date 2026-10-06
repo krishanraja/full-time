@@ -24,6 +24,17 @@ overrides:
   "brace-expansion@>=5.0.0 <6.0.0": 5.0.12
   "piscina@>=4.0.0 <5.0.0": 4.9.4
   qs: ">=6.16.0"
+  # GHSA-ch52-4w7c-c8xp (high, 2026-09-18): max-stale handling can serve one
+  # user's cached response to another. Reached only through got>cacheable-request
+  # under @swc/cli's binary downloader. 4.3.0 is the first release after 4.2.0;
+  # 4.2.1 was never published. Pinned exactly, like the rest of this block.
+  http-cache-semantics: 4.3.0
+  # Two more found in the same audit on 2026-10-06. Both are the patch release on
+  # the line already in use. proxy-addr (critical, GHSA-jqcg-44mw-7w3h) arrives via
+  # the workflow dev UI's express; source-map-js (high, GHSA-68fv-2mgg-jv7q) via
+  # @tailwindcss/vite.
+  proxy-addr: 2.0.8
+  source-map-js: 1.2.2
   # Pinned exactly, not ">=". A range floats to the next major: devalue went to
   # 6.0.0 and js-yaml to 5.4.2, which is far more change than the advisories
   # ask for. devalue is what @workflow/core serialises durable workflow state
