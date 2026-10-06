@@ -2,7 +2,7 @@
 repo: krishanraja/full-time
 product: Full Time
 as_of: 2026-10-06
-head: c925968
+head: fa24ab3
 lifecycle: beta
 production_url: https://fulltime.fm
 state_doc: docs/19-release-state.md
