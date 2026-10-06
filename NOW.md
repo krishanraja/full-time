@@ -1,8 +1,8 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-10-03
-head: 8f1c95b
+as_of: 2026-10-06
+head: c925968
 lifecycle: beta
 production_url: https://fulltime.fm
 state_doc: docs/19-release-state.md
@@ -29,7 +29,7 @@ Full Time is not a Mindmake product and is not sold. It is proof. The room_face 
 
 Objection it answers: "AI-generated editorial cannot be held to a standard." Here is one held to twenty-five of them, daily, with the ledger open.
 
-## Where it is right now (as of 2026-10-03)
+## Where it is right now (as of 2026-10-06)
 
 - **A premium visual system since 2026-10-02** (`2701907`, PR #74; Ruling, Krish, 2026-10-02). Today, Teams and Settings sit on a warm umber ground with cream ink, set in two self-hosted OFL faces (Instrument Serif, Schibsted Grotesk) served from the app's own origin, with lime kept for the mark, play, pause and progress. Today's score sits in an engraved match seal woven in each club's colours with a floodlight behind it, and each AI Pundit has a generated screenprint cover in place of the orbit avatar. The visual rules are `docs/01-brand.md`; the map is `docs/18-world-class-pundit-system.md`. Not verified: physical iOS Safari and Android devices (masks, blend modes, color-mix). Phones held sideways (below 768px wide) still scroll on Today, Teams and Settings, as they did before the build; a landscape layout is proposed, not built.
 - **The TanStack Start XSS patch is in the tree, not yet read back on production** (`5894eca`). `@tanstack/react-start` 1.168.60 closes GHSA-qx66-fv34-fjm8 / CVE-2026-102989; the commit records that Vercel refused every deploy on the vulnerable 1.168.40 and that production kept serving the last build made before the block until this shipped. Whether the deploy has since gone live is a platform fact this repo cannot confirm.
@@ -74,12 +74,6 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 - 2026-09-06 **Building on a claim is not the failure; stopping at it is** (`b268c11`, #61). A 2.67 dollar run passed none of six; the independence judge called reproduction what the pack had handed over as truth. Also: "The factual gate was working correctly and I had it wrong."
 - 2026-09-06 **Stop paying for the same fact twice** (`fd3169c`, #60). A step hit 71 cents against a 70 cent ceiling because form and head-to-head had doubled the pack (4,993 to 9,742 characters) and every judge call re-reads it, "about a hundred and seventy times per run". Trimmed to 6,909 with the context intact.
 - 2026-09-06 **Five of six listeners saw an empty home page while a published show sat behind it** (`407be64`, #59). Per-edition publication meant the Today fallback, which only looked for the listener's own pundit, showed nothing to everyone else. It now falls back to the most recent edition anyone published and names who made it. The Teams page stopped promising a personalised feed it never built, and on-demand narration got its own flag after turning prelaunch off "silently opened a button that ... spends real model and narration money per click".
-- 2026-09-05 **Publish the pundits that passed** (`d4bc163`, #47, migration `20260905060000`). "The last full run had one variant clean and five short, and produced nothing." Nothing loosened; a neighbour's failure no longer withholds a pundit that passed, narration runs only for scripts that can publish, and the promise checks say which pundit was withheld and why. Same PR: a free preflight of everything a paid run needs, and narration rehearsal against a stored script because "eighteen variants exist and not one has an audio url".
-- 2026-09-05 **Evidence the writer can actually use** (`c0e2ed8`, `f8734fb`, `5329ec4`, `ebbc35c`, `31cabf6`, #51 to #58). Expected goals left the provider on 1 September: "Sixteen statistics arrive for every fixture and we were keeping nine of them." Shot location is now stored and the inside-box share derived. The pack gained form and head-to-head "already in the database and read by nobody". A share expressed as 0.286 became "under thirty percent" and a hard gate refused thirty; shares are now whole percent. The ingest no longer writes null over a stored statistic the provider stopped sending. The generated Supabase types were missing twenty-five tables.
-- 2026-09-05 **Cost guardrails** (`aeb8a20`, `abb6ea1`, `73a4dbf`, `a4a00b7`, #38 to #43). A per-step spend ceiling, a stub model, a repair loop that stops when the failed set does not change ("one pundit failed the same three beats on attempt one and attempt three"), per-drop cost recorded, prompt caching ordered so twelve judges share a prefix, and default repair rounds cut from six to two because "a run nobody had configured spent three times what it needed to, silently".
-- 2026-09-05 **Structural faults that cost paid runs** (`51a5c25`, `ce44014`, `f3e2f79`, `8847453`, `ae564f9`, #33 to #53). A durable run replayed stale steps, so "several runs I read as clean tests were mixtures of old and new code". `harness_runs` capped attempt at three after the generator allowed six. One unreadable judge ended a whole run. A stub-driven test now walks all six pundits through the writing path in under a second. Verify CI had been red for weeks on a dependency advisory: "CI that is always red reports nothing."
-- 2026-09-05 **Gates misreading correct scripts** (`298f244` to `000826d`, #24 to #48). "four" matched inside "twenty-four"; "two point eight three" read as an eight and a three; "per claim c4" read as an unlicensed 4; a claim that "names five players and cites five events" said four substitutions; an own goal read as the wrong team's player. Every misread is frozen in a regression corpus (`38e759f`) so the next gate change is checked for nothing.
-- 2026-09-04 **Founder launch override** (`8928687`). Readback showed the 04:45 cron returning 409 on the rehearsal flag, no voice or lexicon rows, and `release_state` never enabled, "so publish_daily_drop() could not publish". The override migration, self-seeded voices with a founder attestation, and pronunciation measured against the verified transcript made automatic publication possible.
 
 ## What is next and what is waiting on Krish
 
