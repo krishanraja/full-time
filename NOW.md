@@ -9,7 +9,7 @@ state_doc: docs/19-release-state.md
 history_log: docs/history/LOG.md
 truth_files: [docs/product-state.json]
 authority_order: [code and migrations and live readback, docs/product-state.json, docs/00-product.md, docs/18-world-class-pundit-system.md, docs/19-release-state.md, the role-specific current guide in docs/README.md, historical and proposed records never direct current work]
-steward: https://github.com/krishanraja/control-center/blob/main/docs/steward/RUNBOOK.md
+steward: https://github.com/krishanraja/ai-harness/blob/main/docs/steward/RUNBOOK.md
 never_publish: [the product name Full Time and the domain fulltime.fm, the sport (football) and any league or competition, any team or player or fixture named in this repo or its commits, the match data providers (API-Football and football-data), the voice vendor (ElevenLabs), the Supabase project id, any credential or environment variable name, the six AI Pundit names]
 ---
 # Full Time: where it is right now
