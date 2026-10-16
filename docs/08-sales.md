@@ -2,16 +2,16 @@
 
 - **Status:** Current commercial posture
 - **Owner:** Founder and business development
-- **Purpose:** Define what an agent may qualify, offer, promise, decline, and escalate before public launch.
-- **Last reviewed:** 2026-09-27
+- **Purpose:** Define what an agent may qualify, offer, promise, decline, and escalate during the pilot beta, before the December release.
+- **Last reviewed:** 2026-10-16
 
 ## Commercial truth
 
-Full Time has no approved paid offer for a new customer. All six AI Pundits are free during pre-launch, new checkout is disabled, and no public launch date or daily service level is approved.
+Full Time has no approved paid offer for a new customer. All six AI Pundits are free during the pilot beta, new checkout is disabled, and no daily service level is approved. Public release is targeted for December 2026 against a written bar ([`22-vision-and-beta.md`](./22-vision-and-beta.md)); it is a target, not a date to promise a partner.
 
 The current sellable decision is a next step, not a contract:
 
-- a fan tries the preview or joins the launch note;
+- a fan tries the beta, sends feedback to krish@fulltime.fm, or joins the launch note;
 - a potential partner agrees to a non-binding discovery call or approved demonstration;
 - a data, voice, rights, or distribution partner explores fit and permission.
 
@@ -65,7 +65,8 @@ Treat sponsorship as discovery only. Ask about audience, category, message, terr
 
 | Next step                   | Available | Conditions                                                      |
 | --------------------------- | --------- | --------------------------------------------------------------- |
-| Public preview              | Yes       | Truthful pre-launch state only                                  |
+| Public beta                 | Yes       | Truthful beta state only                                        |
+| Beta invitation             | Yes       | Free, no account; feedback to krish@fulltime.fm                 |
 | Launch note                 | Yes       | One email when release gates pass                               |
 | Private demonstration       | Yes       | Approved content and founder-approved audience                  |
 | Product or rights discovery | Yes       | Non-binding and no implied delivery                             |
@@ -80,7 +81,7 @@ Treat sponsorship as discovery only. Ask about audience, category, message, terr
 2. Explain the AI-native mechanism in one sentence.
 3. Demonstrate two AI Pundits using one checked match.
 4. Open one proof card and one evidence boundary.
-5. State pre-launch limits plainly.
+5. State beta limits plainly.
 6. Ask for one low-friction next step, normally a discovery call or data-and-rights review.
 
 Do not open on technical architecture, model providers, a feature list, or predictions.

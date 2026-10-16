@@ -3,11 +3,11 @@
 - **Status:** Current and binding
 - **Owner:** Founder, marketing, and sales
 - **Purpose:** Train autonomous agents to explain, market, qualify, and sell the product without inventing availability, proof, pricing, or rights.
-- **Last reviewed:** 2026-09-27
+- **Last reviewed:** 2026-10-16
 
 ## Start with current truth
 
-Read [`product-state.json`](./product-state.json), then [`00-product.md`](./00-product.md), [`07-marketing.md`](./07-marketing.md), [`08-sales.md`](./08-sales.md), and [`19-release-state.md`](./19-release-state.md). Code and live readback outrank prose when a volatile fact conflicts.
+Read [`product-state.json`](./product-state.json), then [`00-product.md`](./00-product.md), [`22-vision-and-beta.md`](./22-vision-and-beta.md), [`07-marketing.md`](./07-marketing.md), [`08-sales.md`](./08-sales.md), and [`19-release-state.md`](./19-release-state.md). Code and live readback outrank prose when a volatile fact conflicts.
 
 An agent must separate three states:
 
@@ -23,6 +23,8 @@ Full Time is an AI-native football audio product. One set of checked match facts
 
 This is not a human podcast made cheaply. It should feel impossible without AI.
 
+Full Time is a B2C product for football fans, in a pilot beta since 2026-10-16 with public release targeted for December 2026 (Rulings, Krish, 2026-10-16). Until the December bar in [`22-vision-and-beta.md`](./22-vision-and-beta.md) is met, listener growth means invited testers, and the one feedback channel is krish@fulltime.fm.
+
 The six AI Pundits are The Reporter, The Gaffer, The Numbers Guy, The Romantic, The Doomer, and The Wind-Up. Use those names exactly and keep the AI Pundit label on every public surface.
 
 ## Behavioural objectives
@@ -31,9 +33,9 @@ The six AI Pundits are The Reporter, The Gaffer, The Numbers Guy, The Romantic, 
 
 After seeing the message, a football fan should want to choose an AI Pundit and press play because the same match becomes six different, playful arguments without sacrificing factual discipline.
 
-### Launch-note acquisition
+### Beta feedback
 
-After seeing the pre-launch state, an interested fan should join the launch note because Full Time refuses to fake daily reliability or rush weak shows into public.
+After listening, an invited tester should answer the three beta questions at krish@fulltime.fm, or through **Send feedback** in Settings, because their answers decide whether Full Time releases in December. An interested fan who is not a tester may still join the launch note.
 
 ### Partner discovery
 
@@ -59,7 +61,7 @@ Use this order:
 2. The listener chooses the mind they fancy and can switch at any time.
 3. Important claims can show the checked match fact behind them and what that fact cannot prove.
 4. The product is playful and simple because the hard data work stays underneath.
-5. Full Time is pre-launch, free to try, and not yet a paid or guaranteed daily service.
+5. Full Time is a free beta, not yet a paid or guaranteed daily service.
 
 Accountability is supporting proof, not the lead. Mention the track record only when settled records exist or the audience asks how Full Time handles wrong calls.
 
@@ -67,9 +69,9 @@ Accountability is supporting proof, not the lead. Mention the track record only 
 
 > Full Time takes one real football match and gives it to six AI Pundits. Each one makes a complete show with its own brain, humour, and argument. Pick the one you fancy, press play, and tap Show me why when you want the checked facts underneath it.
 
-For the current pre-launch close:
+For the current beta close:
 
-> All six AI Pundits are free while we prove the daily system. Try the preview, or join the launch note for one email when it is ready.
+> All six AI Pundits are free while we prove the daily system. Have a listen, then tell us what you think at krish@fulltime.fm.
 
 ## Proof map
 
@@ -79,9 +81,9 @@ For the current pre-launch close:
 | Real playback           | `player-store.ts`, player tests              | “Progress comes from the audio, not a pretend timer.”               |
 | Safe switching          | `index.tsx`, `player-store.ts`               | “A new AI Pundit replaces the old show only after its audio loads.” |
 | Evidence cards          | `editorial-public.server.ts`, tests          | “Show me why uses sealed evidence and licensed claims.”             |
-| Fresh edition visuals   | `PunditAvatar.tsx`, `avatar-model.ts`        | “Each AI Pundit gets a fresh abstract look for each edition.”       |
+| Generated visuals       | `PunditCover.tsx`, `MatchSeal.tsx`           | “Each AI Pundit has its own cover, and each match its own seal.”    |
 | AI disclosure           | Settings and legal surfaces                  | “Scripts are AI-generated and voices are synthetic.”                |
-| Free pre-launch access  | launch config and entitlement code           | “All six AI Pundits are free during pre-launch.”                    |
+| Free beta access        | launch config and entitlement code           | “All six AI Pundits are free during the beta.”                      |
 
 Do not turn implementation into outcome proof. Code for six editions does not prove that public daily editions are reliable, loved, or commercially successful.
 
@@ -113,7 +115,7 @@ Premier League only. The 2026-09-27 ruling made this enforced across the daily p
 
 ### “How much is it?”
 
-All six AI Pundits are free during pre-launch. New checkout is disabled. No future price is approved.
+All six AI Pundits are free during the beta. New checkout is disabled. No future price is approved.
 
 ## Agent workflow
 

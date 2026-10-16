@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Product and growth
 - **Purpose:** Define the product metrics, event taxonomy, growth loops, and experiment rules.
-- **Last reviewed:** 2026-09-27
+- **Last reviewed:** 2026-10-16
 
 ## Measurement principle
 
@@ -25,6 +25,10 @@ Do not optimize opens, page views, or outrage in isolation.
 | Audio authority, naturalness, timing, listenability | Mean at least 4/5                 |
 | Proper-name pronunciation                           | At least 99% verified             |
 | Complete rehearsals                                 | Seven consecutive on-time days    |
+
+### Pilot beta
+
+The December release bar ([`22-vision-and-beta.md`](./22-vision-and-beta.md)) reads three of the implemented events below for testers only, separated by the `utm_source=beta` tag on their invite link: `listen_completed` for testers who finished a show, `play_started` for a second show within seven days, and `pundit_switch_committed` for a second AI Pundit. Answers to the three tester questions arrive by email at krish@fulltime.fm, not as events, and are counted by hand. Confirm the tag reaches PostHog before the first invite.
 
 ### Public product
 

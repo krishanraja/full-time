@@ -67,6 +67,7 @@ const currentDocs = [
   "docs/19-release-state.md",
   "docs/20-research-intake.md",
   "docs/21-go-to-market-agent.md",
+  "docs/22-vision-and-beta.md",
 ];
 
 for (const path of currentDocs) {
@@ -84,9 +85,11 @@ for (const path of currentDocs) {
   // added to the public payload; only the documents that changed carry that date.
   // 2026-09-27 is Premier League only, one match on Today, and the no-scroll frame.
   // 2026-10-02 is the premium visual system: covers, seal, atmosphere, type.
+  // 2026-10-16 is the pilot beta, the December release target and its bar, and
+  // the feedback inbox.
   requireText(
     path,
-    /\*\*Last (?:reviewed|verified):\*\* 2026-(?:0(?:8-11|9-04|9-07|9-21|9-22|9-27)|10-02)/,
+    /\*\*Last (?:reviewed|verified):\*\* 2026-(?:0(?:8-11|9-04|9-07|9-21|9-22|9-27)|10-(?:02|16))/,
     "review date is stale",
   );
 }

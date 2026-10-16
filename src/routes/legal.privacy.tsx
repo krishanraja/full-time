@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { FEEDBACK_EMAIL } from "@/lib/feedback";
 import { pageSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/legal/privacy")({
@@ -30,7 +31,15 @@ export const Route = createFileRoute("/legal/privacy")({
         they found us. Both set first-party cookies so a returning visitor counts once.
       </p>
       <p className="mt-3 text-muted-foreground">
-        Want your data deleted? Sign out and email support. We will remove your account on request.
+        If you email us feedback, we keep your email address and your message so we can read it and
+        reply.
+      </p>
+      <p className="mt-3 text-muted-foreground">
+        Want your data deleted? Sign out and email{" "}
+        <a href={`mailto:${FEEDBACK_EMAIL}`} className="underline underline-offset-4">
+          {FEEDBACK_EMAIL}
+        </a>
+        . We will remove your account on request.
       </p>
     </article>
   ),

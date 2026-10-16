@@ -3,13 +3,13 @@
 - **Status:** Current
 - **Owner:** Support and product
 - **Purpose:** Provide plain, accurate user answers, first-line diagnosis, and escalation paths.
-- **Last reviewed:** 2026-09-27
+- **Last reviewed:** 2026-10-16
 
 ## Tone
 
-Be warm, brief, and specific. Use words a ten-year-old can understand. Say **AI Pundit** everywhere. Do not defend a bad output, hide behind pre-launch, or explain internal machinery before answering the question.
+Be warm, brief, and specific. Use words a ten-year-old can understand. Say **AI Pundit** everywhere. Do not defend a bad output, hide behind the beta, or explain internal machinery before answering the question.
 
-Sign as **Full Time**. Do not promise a launch date, fix time, coverage expansion, refund, deletion completion, paid plan, or daily show without the owner and evidence needed to deliver it.
+Answer from the product inbox, krish@fulltime.fm, and sign as **Full Time**. Do not promise a release date (December 2026 is a target, not a promise), fix time, coverage expansion, refund, deletion completion, paid plan, or daily show without the owner and evidence needed to deliver it.
 
 ## Canonical answers
 
@@ -51,7 +51,7 @@ That is deliberate. Match data can show recorded events and numbers. It cannot a
 
 ### What is How did they do?
 
-It is a check on a settled AI Pundit call: what they said, what happened, and what they missed. Today shows the link only when settled records exist. The direct track-record page still uses an older prediction-ledger layout during pre-launch.
+It is a check on a settled AI Pundit call: what they said, what happened, and what they missed. Today no longer links to it (removed 2026-09-27), and the direct track-record page still uses an older prediction-ledger layout.
 
 ### Is this for betting?
 
@@ -67,7 +67,11 @@ The app saves the preference. It does not yet build a private personal show or c
 
 ### Is Full Time free?
 
-All six AI Pundits are free during pre-launch. New subscriptions are paused and no card is needed.
+All six AI Pundits are free during the beta. New subscriptions are paused and no card is needed.
+
+### How do I send feedback?
+
+Email krish@fulltime.fm, or tap **Send feedback** in Settings. It opens an email with three short questions already in it. We read every one.
 
 ### I already subscribed. How do I cancel?
 
@@ -111,6 +115,8 @@ Record the authenticated email and send the request to the privacy owner. Never 
 - **P1:** wrong fact, wrong voice, public unsupported claim, broken current edition, incorrect fallback, or settled-record integrity failure. Quarantine and respond the same day.
 - **P2:** isolated playback, switching, auth, preference, generated avatar, pronunciation, or accessibility defect. Reproduce with evidence.
 - **P3:** feature, team, league, copy, or AI Pundit feedback. Record for product review.
+
+A tester's report of a wrong score, name, or fact is P1, whatever its tone: the December release bar counts every one ([`22-vision-and-beta.md`](./22-vision-and-beta.md)). Record answers to the three beta questions for the same bar.
 
 ## Escalation
 

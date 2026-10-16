@@ -93,7 +93,8 @@
       "Follows saved before 2026-09-27 (other leagues' clubs, league: ids, legacy ids) stay in storage and are excluded from the followed count."
     ],
     "settings": [
-      "Settings is one card of rows: Your AI Pundit (opens a picker drawer with all six), account, the morning recap, and billing for existing Pro subscribers only.",
+      "Settings is one card of rows: Your AI Pundit (opens a picker drawer with all six), account, the morning recap, Send feedback, and billing for existing Pro subscribers only.",
+      "Send feedback opens an email to krish@fulltime.fm, the product inbox, with the three beta questions from docs/22-vision-and-beta.md written in (src/lib/feedback.ts, added 2026-10-16). The privacy page names the same address for deletion requests.",
       "The AI disclosure required by docs/05-content-safety.md and docs/11-legal.md sits under the card: AI Pundits write every show from checked, licensed match data, the voices are synthetic, and no copyrighted broadcast audio is used. It is shorter, not softer.",
       "The Private verification waitlist card, the Pro upsell priced at checkout while checkout is disabled, and six tall AI Pundit cards were removed on 2026-09-27."
     ],
@@ -150,6 +151,7 @@
     "existingSubscribers": "Existing subscribers may still manage billing through Settings.",
     "availableNow": [
       "Invite a person to listen to the live beta on fulltime.fm.",
+      "Invite a Premier League fan into the pilot beta with a fulltime.fm link tagged ?utm_source=beta, and ask for feedback at krish@fulltime.fm (docs/22-vision-and-beta.md).",
       "Invite a person to join the launch note.",
       "Run a private product demonstration with approved material.",
       "Hold non-binding discovery with data, voice, distribution, club, league, publisher, or sponsor partners."
@@ -159,7 +161,7 @@
       "A guaranteed daily publishing service, or a guarantee that all six AI Pundits appear on any given day (each edition publishes only on its own automated checks)",
       "A commercial sponsor package",
       "An approved white-label offer",
-      "A confirmed public launch date",
+      "A guaranteed public release date: December 2026 is the target (Ruling, Krish, 2026-10-16), and it holds only if the bar in docs/22-vision-and-beta.md is met",
       "A forecast-performance claim"
     ]
   },

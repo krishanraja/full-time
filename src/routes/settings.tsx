@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ChevronRight, X } from "lucide-react";
+import { Check, ChevronRight, Mail, X } from "lucide-react";
 import { PERSONALITIES, type PersonalityId } from "@/components/PersonalitySelector";
 import { HapticButton } from "@/components/HapticButton";
 import { PunditCover } from "@/components/PunditCover";
@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { createPortal } from "@/lib/api/billing.functions";
 import { getMyProfile } from "@/lib/api/profile.functions";
 import { VOICE_STYLE_STORAGE_KEY, effectiveVoiceStyle } from "@/lib/entitlement";
+import { FEEDBACK_MAILTO } from "@/lib/feedback";
 import { PRELAUNCH_MODE } from "@/lib/launch-config";
 import { pageSeo } from "@/lib/seo";
 import { cn } from "@/lib/utils";
@@ -146,7 +147,7 @@ function PunditRow({
 
 /**
  * Settings, on one screen: your AI Pundit, your account, the morning recap,
- * billing for existing subscribers, and how Full Time works.
+ * beta feedback, billing for existing subscribers, and how Full Time works.
  *
  * Cut on 2026-09-27 for the one-screen rule: a "Private verification / No
  * launch date" card and a waitlist link, both untrue since the live beta
@@ -296,6 +297,17 @@ function Settings() {
             />
           </HapticButton>
         </div>
+
+        {/* The beta's one feedback channel (docs/22-vision-and-beta.md): an
+            email to the product inbox with the three tester questions
+            already written in. */}
+        <a href={FEEDBACK_MAILTO} className={row}>
+          <span>
+            <span className={cn(rowLabel, "block")}>We read every one</span>
+            <span className="mt-0.5 block serif text-[19px] leading-tight">Send feedback</span>
+          </span>
+          <Mail className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+        </a>
 
         {isPro && (
           <div className={row}>

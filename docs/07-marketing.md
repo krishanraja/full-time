@@ -1,9 +1,9 @@
 # 07 - Marketing
 
-- **Status:** Current pre-launch playbook
+- **Status:** Current pilot-beta playbook
 - **Owner:** Founder and marketing
 - **Purpose:** Define the audience, argument, proof, copy, channels, and limits for marketing Full Time.
-- **Last reviewed:** 2026-09-27
+- **Last reviewed:** 2026-10-16
 
 ## The call
 
@@ -17,7 +17,7 @@ The listener benefit is choice: one match becomes six complete, playful argument
 
 After seeing a Full Time message, a football fan should choose an AI Pundit and press play because they expect a useful, fun reading of the match that feels impossible to make as a normal human show.
 
-During pre-launch, the alternative action is to join the launch note for one email when the release gates pass.
+During the pilot beta, the alternative action for an invited tester is to tell us what they think at krish@fulltime.fm, or through **Send feedback** in Settings ([`22-vision-and-beta.md`](./22-vision-and-beta.md)).
 
 ## Primary audience
 
@@ -31,7 +31,7 @@ Secondary audiences are AI-curious fans, punditry skeptics, and social fans who 
 2. Pick the one you fancy and switch whenever you like.
 3. Tap **Show me why** for the checked facts underneath a key claim.
 4. Each edition has its own generated look, argument, humour, script, and performance.
-5. The preview is free and pre-launch. Daily reliability and paid access are not available promises.
+5. It is a free beta. Daily reliability and paid access are not available promises.
 
 Accountability is a supporting trust point. Use “How did they do?” only when settled records exist. Do not lead campaigns with prediction metrics, receipts, betting-adjacent language, or an empty track-record route.
 
@@ -53,7 +53,7 @@ Never claim that Full Time replaces watching football or makes human football me
 3. Show the real player and safe switch.
 4. Open one proof card.
 5. Explain the evidence boundary in plain language.
-6. Mention pre-launch status and the next action.
+6. Say that it is a beta, and give the next action.
 
 The code paths behind approved claims are listed in [`product-state.json`](./product-state.json). No audience, retention, preference, accuracy, coverage, or revenue figure is approved yet.
 
@@ -73,7 +73,7 @@ Supporting lines:
 - “Tap Show me why when you want the fact underneath the claim.”
 - “Fresh look, fresh argument, same real match.”
 - “The data shows what happened, but not always why.”
-- “All six AI Pundits are free during pre-launch.”
+- “All six AI Pundits are free during the beta.”
 
 Calls to action:
 
@@ -81,6 +81,7 @@ Calls to action:
 - “Play today's show”
 - “Compare the shows”
 - “Show me why”
+- “Tell us what you think”
 - “Join the launch note”
 
 Avoid:
@@ -95,16 +96,17 @@ Avoid:
 - “Your personal Gary Neville”
 - “Game-changing football experience”
 
-## Pre-launch channels
+## Beta channels
 
 Rank channels by the evidence they can produce now:
 
-1. founder-led product demonstrations and listening sessions;
-2. short side-by-side AI Pundit comparisons;
-3. clips or cards that pair one playful claim with one checked fact;
-4. football and AI communities where transparent product feedback is welcome;
-5. the launch note;
-6. partner discovery with publishers, leagues, clubs, data providers, and distribution platforms.
+1. personal invitations from Krish to Premier League fans, each with a `?utm_source=beta` link;
+2. founder-led product demonstrations and listening sessions;
+3. short side-by-side AI Pundit comparisons;
+4. clips or cards that pair one playful claim with one checked fact;
+5. football and AI communities where transparent product feedback is welcome;
+6. the launch note;
+7. partner discovery with publishers, leagues, clubs, data providers, and distribution platforms.
 
 The Reporter RSS feed remains a distribution seam, but the web player is the primary product. Do not market six podcast feeds or a standalone Feed tab.
 
@@ -119,7 +121,8 @@ An autonomous marketing agent may prepare, but not publish without exact approva
 - a **Show me why** demonstration using a real approved proof card;
 - a product update explaining a shipped behavior and its evidence boundary;
 - a launch-note landing variant with one CTA;
-- a founder demo script grounded in the current preview.
+- a founder demo script grounded in the current beta;
+- a beta invite with one link and the three tester questions from [`22-vision-and-beta.md`](./22-vision-and-beta.md).
 
 Every brief must name audience, desired action, source files, claim list, and unresolved proof.
 
@@ -131,15 +134,15 @@ Do not claim:
 - a completed quiet settled-only track-record route;
 - public forecast performance;
 - daily publication reliability;
-- a public launch date;
+- a guaranteed release date (December 2026 is a target, not a promise);
 - a paid offer or future price;
 - use of club, league, broadcaster, player, or competition marks without rights.
 
-## Launch gate
+## Release gate
 
-Broad public launch activity starts only after [`19-release-state.md`](./19-release-state.md) records one revision passing editorial, voice, rights, data, forecast, rehearsal, legal, accessibility, monitoring, rollback, and human gates.
+Open marketing to football fans starts only when the December release bar in [`22-vision-and-beta.md`](./22-vision-and-beta.md) is met (Rulings, Krish, 2026-10-16). Until then, growth is invited testers only. The full launch standard in [`00-product.md`](./00-product.md) stays open work, and no material may claim its waived gates ([`19-release-state.md`](./19-release-state.md)).
 
-Until then, say **pre-launch preview**, **private verification**, or **free while we prove the daily system**. Do not manufacture urgency.
+Until then, say **beta**, **invite only for now**, or **free while we prove the daily system**. Do not manufacture urgency, and do not promise December.
 
 ## Asset acceptance
 
