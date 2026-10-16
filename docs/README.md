@@ -5,7 +5,7 @@ This handbook is the operating contract for Full Time. It serves founders, produ
 - **Status:** Current documentation index
 - **Owner:** Founder and product
 - **Purpose:** Route every reader and autonomous agent to the right source of truth.
-- **Last reviewed:** 2026-09-27
+- **Last reviewed:** 2026-10-16
 - **Production authority:** GitHub `main` plus observed behavior on the current Vercel production deployment
 
 ## Source-of-truth order
@@ -27,6 +27,7 @@ Never convert a roadmap decision into a live claim. Never convert an implemented
 | Need                          | Read first                                               | Then                                                                                   |
 | ----------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | Know where it is right now    | [`../NOW.md`](../NOW.md)                                 | [`19-release-state.md`](./19-release-state.md), [`product-state.json`](./product-state.json) |
+| Know where it is going        | [`22-vision-and-beta.md`](./22-vision-and-beta.md)       | [`12-roadmap.md`](./12-roadmap.md), [`00-product.md`](./00-product.md)                 |
 | Explain the product           | [`product-state.json`](./product-state.json)             | [`00-product.md`](./00-product.md), [`01-brand.md`](./01-brand.md)                     |
 | Change the product            | [`00-product.md`](./00-product.md)                       | [`02-developer.md`](./02-developer.md), owning code and tests                          |
 | Market the live beta          | [`21-go-to-market-agent.md`](./21-go-to-market-agent.md) | [`07-marketing.md`](./07-marketing.md), [`01-brand.md`](./01-brand.md)                 |
@@ -49,7 +50,7 @@ Never convert a roadmap decision into a live claim. Never convert an implemented
 | [`04-data-model.md`](./04-data-model.md)                               | Current                          | Schema, ownership, RLS, immutability, and migration map                                |
 | [`05-content-safety.md`](./05-content-safety.md)                       | Current and binding              | Evidence licensing, proof cards, humour safety, disclosure, and incidents              |
 | [`06-ops.md`](./06-ops.md)                                             | Current runbook                  | Schedules, rehearsals, publication, deployment, incidents, and rollback                |
-| [`07-marketing.md`](./07-marketing.md)                                 | Current pre-launch playbook      | Audience, positioning, channel rules, proof, copy, and launch discipline               |
+| [`07-marketing.md`](./07-marketing.md)                                 | Current pilot-beta playbook      | Audience, positioning, channel rules, proof, copy, and launch discipline               |
 | [`08-sales.md`](./08-sales.md)                                         | Current commercial posture       | What can be offered, qualified, promised, declined, or escalated                       |
 | [`09-growth.md`](./09-growth.md)                                       | Current                          | Product metrics, events, loops, and experiment policy                                  |
 | [`10-support.md`](./10-support.md)                                     | Current                          | Approved answers, diagnosis, current gaps, and escalation                              |
@@ -63,6 +64,7 @@ Never convert a roadmap decision into a live claim. Never convert an implemented
 | [`19-release-state.md`](./19-release-state.md)                         | Current                          | Live source, enabled state, gaps, blockers, and next operator sequence                 |
 | [`20-research-intake.md`](./20-research-intake.md)                     | Current                          | Private source intake, rights attestation, and corpus procedure                        |
 | [`21-go-to-market-agent.md`](./21-go-to-market-agent.md)               | Current and binding              | Autonomous marketing and sales briefing, proof map, objections, and action limits      |
+| [`22-vision-and-beta.md`](./22-vision-and-beta.md)                     | Current                          | Why Full Time exists, where it is going, the pilot beta, feedback, and the December release bar |
 | [`history/LOG.md`](./history/LOG.md)                                   | Append-only log                  | Dated record of reconciliations, moves, and archived documents; never describes current behavior |
 
 Number 17 remains intentionally unused.
@@ -82,6 +84,7 @@ Number 17 remains intentionally unused.
 | Settled record     | A completed AI Pundit claim showing what was said, what happened, and what was missed                   |
 | Pre-launch         | The state before 2026-09-04: preview visible while automated publication, billing, and public launch stayed disabled |
 | Live beta          | The state since the 2026-09-04 founder override: public, free, publishing per edition, external launch gates waived and open |
+| Pilot beta         | The live beta run as a B2C pilot since 2026-10-16: invited Premier League fans, feedback to krish@fulltime.fm, and a written bar for a December release ([`22-vision-and-beta.md`](./22-vision-and-beta.md)) |
 | Launch-ready       | Every revision-bound editorial, audio, operational, rights, legal, accessibility, and human gate passes |
 
 ## Documentation rules

@@ -119,7 +119,13 @@ The commit record shows steps 1 to 5 completed by 2026-09-05: the override migra
 6. Read back fulltime.fm in a private window: the show plays, `/api/public/feed.rss` lists it, and the header no longer says Pre-launch. That chip was hard-coded and read no flag, so no environment change could clear it; it was removed in code on 2026-09-27.
 7. Leave the 04:45 UTC cron to publish daily. A day whose drop fails any automated check stays unpublished and Today keeps the latest published edition.
 
+## Pilot beta and December target, 2026-10-16
+
+Three rulings (Krish, 2026-10-16), recorded in the [roadmap decision log](./12-roadmap.md): Full Time is a B2C product in a pilot beta for invited Premier League fans; public release is targeted for December 2026 against the written bar in [`22-vision-and-beta.md`](./22-vision-and-beta.md); testers send feedback to krish@fulltime.fm. Settings gained **Send feedback** and the privacy page names the inbox (`src/lib/feedback.ts`). None of this is read back on production yet. The December release claims none of the waived gates below.
+
 ## Next product sequence
+
+First, for the beta: deploy the 2026-10-16 change, read back **Send feedback** in Settings with no document scroll, confirm `?utm_source=beta` reaches PostHog, then invite the first testers. Then:
 
 1. Read back the 2026-09-27 change on the matching deployment: twenty clubs on Teams, one Premier League match on Today, and no document scroll at phone sizes.
 2. Replace `/receipts` with the quiet settled-only **How did they do?** experience and deep links, and give it an entry in the product.

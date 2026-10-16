@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Founder and product
 - **Purpose:** Define the product, its user promise, evidence boundary, and launch standard.
-- **Last reviewed:** 2026-10-02
+- **Last reviewed:** 2026-10-16
 
 ## Product in one sentence
 
@@ -12,6 +12,8 @@ Full Time turns one set of checked football facts into six complete shows, each 
 > One real match. Six AI Pundits. Pick the brain you fancy.
 
 The product should feel great because it is AI. It does not try to hide the machine or recreate a human studio. AI makes six full, genuinely different readings of one match practical. Deterministic evidence controls keep the shared facts real and show where those facts stop.
+
+Full Time is a B2C product for football fans, in a pilot beta since 2026-10-16, with public release targeted for December 2026 (Rulings, Krish, 2026-10-16). Why it exists, where it is going, the beta, and the December release bar live in [`22-vision-and-beta.md`](./22-vision-and-beta.md). This document is the contract the product keeps along the way.
 
 ## The first experience
 
@@ -32,7 +34,7 @@ The public shell has three destinations:
 
 - **Today:** one Premier League match at a time, with the match, the six AI Pundits as a rail, the player, and proof in a sheet;
 - **Teams:** the route at `/following` for following the twenty clubs of the current Premier League season;
-- **Settings:** one card of rows for AI Pundit choice, account, the morning recap, and existing billing management, with the AI disclosure beneath it.
+- **Settings:** one card of rows for AI Pundit choice, account, the morning recap, **Send feedback** (an email to krish@fulltime.fm with the three beta questions written in), and existing billing management, with the AI disclosure beneath it.
 
 The app is a completely no-scroll experience (Ruling, Krish, 2026-09-27). The document never scrolls: a full-height frame holds the header, the screen, the mini player once a show has started, and the tab bar. Legacy direct-URL routes such as `/receipts`, `/archive`, `/episode/:id`, and the legal pages were not re-laid-out and scroll inside the screen region.
 
@@ -124,9 +126,11 @@ Saved team preferences exist. They do not yet create a private show or club-buil
 
 ## Current posture
 
-Full Time is a live beta by founder override since 2026-09-04. Flags still fail closed: a missing flag denies execution.
+Full Time is a live beta by founder override since 2026-09-04, run as a pilot beta for invited Premier League fans since 2026-10-16. Flags still fail closed: a missing flag denies execution.
 
 - All six AI Pundits are free and selectable without an account.
+- Testers send feedback to krish@fulltime.fm, from Settings or directly.
+- Public release is targeted for December 2026 and waits for the bar in [`22-vision-and-beta.md`](./22-vision-and-beta.md).
 - Automated publication runs daily and publishes each AI Pundit edition that passes its checks; an edition that falls short is withheld.
 - New checkout, paid promotion, prediction registration, and public forecast scores remain disabled.
 - Existing subscribers can still manage billing.
@@ -167,3 +171,5 @@ Launch requires one exact revision to pass:
 Thresholds do not relax to rescue a date. Safe but dull output stays private.
 
 The founder override of 2026-09-04 launched the live beta before this standard was met. The standard is unchanged; the gates it names are recorded as waived and open in [`19-release-state.md`](./19-release-state.md), and the automated gates hold every published edition to the evidence, harness, and audio checks.
+
+The December 2026 release is a separate founder decision with its own written bar ([`22-vision-and-beta.md`](./22-vision-and-beta.md)): the product shows up, gets the facts right, and brings testers back. It does not claim this standard, and this standard stays the one the product is held to. The same rule applies to it: the bar does not relax to rescue the date.

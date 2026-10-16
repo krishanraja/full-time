@@ -3,11 +3,11 @@
 - **Status:** Current
 - **Owner:** Founder and product
 - **Purpose:** Show what remains, what is deliberately deferred, and which product decisions govern the work.
-- **Last reviewed:** 2026-09-27
+- **Last reviewed:** 2026-10-16
 
 ## Current objective
 
-Prove, in public, that all six AI Pundits are consistently useful, distinct, funny, evidence-grounded, and listenable. Since the founder launch override of 2026-09-04 ([`19-release-state.md`](./19-release-state.md)) that proof happens on the live beta rather than before a launch.
+Get Full Time to a December 2026 release by meeting the bar in [`22-vision-and-beta.md`](./22-vision-and-beta.md) with invited Premier League fans: a show every match morning, no wrong facts reaching a listener, and testers who come back and try a second AI Pundit (Rulings, Krish, 2026-10-16). Underneath that sits the standing objective: prove, in public, that all six AI Pundits are consistently useful, distinct, funny, evidence-grounded, and listenable. Since the founder launch override of 2026-09-04 ([`19-release-state.md`](./19-release-state.md)) that proof happens on the live beta rather than before a launch.
 
 Today and the three-tab shell are live at fulltime.fm, and the 04:45 UTC workflow publishes every AI Pundit edition that passes its automated checks (migration `20260905060000_publish_the_variants_that_passed.sql`). Premier League only Teams, a one-match Today, the no-scroll frame, and the Settings screen shipped in code on 2026-09-27 (decision log below). The immediate implementation gaps are the quiet settled-only track record, which has no in-app entry, and the language pass on metadata, legal copy, sitemap, and machine-facing docs. The external critical path, licensed inputs, forecast proof, founder-approved scripts and voices, blind listener results, seven rehearsals, and revision-bound sign-offs, was waived as a launch condition by the override and remains open work.
 
@@ -36,6 +36,7 @@ The sequence below was written before the 2026-09-04 override. Steps 2 to 6 rema
 ### 1. Finish the beta surfaces
 
 - Done 2026-09-27: Teams lists the twenty clubs of the current Premier League season, with no league row and no coming-later leagues (the three-team prompt went on 2026-09-06). Old non-Premier-League follows stay stored outside the count.
+- Done in code 2026-10-16: Settings carries **Send feedback**, an email to krish@fulltime.fm with the three beta questions written in. Next for the beta: confirm `?utm_source=beta` reaches PostHog with one test visit, then invite the first testers ([`22-vision-and-beta.md`](./22-vision-and-beta.md)).
 - Replace `/receipts` with settled-only `How did they do?` cards and optional defined detail, and give it an entry in the product again.
 - Reconcile metadata, legal copy, sitemap, and machine-facing docs to AI Pundit language. Settings was done on 2026-09-27.
 
@@ -105,6 +106,13 @@ The sequence below was written before the 2026-09-04 override. Steps 2 to 6 rema
 ## Decision log
 
 Use: **Decision - Context - Tradeoff - Reversible?** Add new entries at the top.
+
+### 2026-10-16 - A pilot beta for fans, a December target, one feedback inbox
+
+- **Decision:** Three rulings (Krish, 2026-10-16), and one fact he supplied. Full Time is a B2C product for football fans, run now as a pilot beta for invited Premier League fans; it replaces the framing in `NOW.md` that it "is not sold" and exists as proof. Public release is targeted for December 2026, with written criteria for ready. Testers send feedback through one named channel, and krish@fulltime.fm is the product inbox. [`22-vision-and-beta.md`](./22-vision-and-beta.md) carries the vision, the beta, the three tester questions, and the draft December bar; Settings carries a **Send feedback** row that opens that inbox with the questions written in (`src/lib/feedback.ts`).
+- **Context:** Asked whether the documentation described the product with vision and gave its current status, the review found that it did neither for this purpose. The docs carried a tagline and a contract but no direction; `NOW.md` still called Full Time proof that is not sold, ten days after the 2026-10-06 Control Center ruling that it is "a B2C monetisation experiment app, ready for pilot users"; December appeared nowhere, `product-state.json` listed a launch date as not available, and the app had no way for a listener to send feedback.
+- **Tradeoff:** A date brings back the schedule pressure the 2026-08-08 decision "Launch by evidence, not date" exists to stop. The bar answers it: December holds only if the bar is met, and the bar does not move to rescue the date. The release claims none of the gates the 2026-09-04 override waived. Feedback by email is low-friction and unstructured; the three questions give it a shape the bar can read. Krish confirmed the bar's numbers the same day; they change only by founder ruling.
+- **Reversible?** Yes. The date and the bar move by a new ruling recorded here. The inbox lives in one constant (`src/lib/feedback.ts`), read by Settings and the privacy page.
 
 ### 2026-09-27 - Premier League only, one match, no scroll
 

@@ -6,21 +6,27 @@ Full Time is an AI-native football audio product. It turns one set of checked ma
 
 The product is meant to feel brilliant because it is AI, not like a cheaper imitation of a human podcast. The facts stay shared and evidence-bound. The argument, humour, script, delivery, and generated edition visual change with the AI Pundit.
 
+## Where it is going
+
+Full Time is a B2C product for football fans, in a pilot beta with public release targeted for December 2026. Why it exists, where it is going, and the bar December has to clear are in [`docs/22-vision-and-beta.md`](./docs/22-vision-and-beta.md). Testers: tell us what you think at **krish@fulltime.fm**, or tap **Send feedback** in Settings.
+
 ## Current state
 
-| Surface     | Repository state at `adddf64` (2026-09-07); production last read back 2026-09-04 in `docs/19-release-state.md`                          |
+| Surface     | Repository state on 2026-10-16; production last read back 2026-09-04 in `docs/19-release-state.md`                                      |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Lifecycle   | Live beta by founder override; human review gates waived and listed in `docs/19-release-state.md`                                       |
+| Lifecycle   | Live beta by founder override since 2026-09-04, run as a pilot beta for invited fans since 2026-10-16; release targeted for December 2026 |
 | Production  | [fulltime.fm](https://fulltime.fm) serves the three-tab AI Pundit shell                                                                 |
-| Navigation  | Today, Teams, Settings                                                                                                                  |
-| Today       | Player-first show, six-AI-Pundit picker, real-media progress, same-pundit then any-pundit fallback named as whose it is, proof cards, recent shows, settled-only entry point |
+| Navigation  | Today, Teams, Settings, in a frame that never scrolls                                                                                   |
+| Today       | One Premier League match at a time: competition, date, crests, score, the six AI Pundits as a rail, the player, and Show me why proof  |
+| Teams       | The twenty clubs of the current Premier League season                                                                                  |
 | AI Pundits  | All six are free and selectable without an account                                                                                      |
-| Avatars     | Abstract SVG visuals generated from the drop and AI Pundit IDs, so each edition gets a stable fresh look                                |
+| Visuals     | A screenprint cover per AI Pundit and an engraved match seal in the two clubs' colours, generated as stable SVG                         |
+| Feedback    | Settings, **Send feedback**: an email to krish@fulltime.fm with the three beta questions written in                                     |
 | Feed        | `/feed` redirects to Today; the Reporter RSS endpoint remains available                                                                 |
 | Publication | The 04:45 UTC workflow publishes every edition that passes the automated evidence, harness and audio checks; one that falls short is withheld |
 | Billing     | New checkout is disabled; existing subscribers retain billing management                                                                |
 
-Two secondary surfaces still carry legacy behavior. Teams is the public label for `/following`, but the route has not yet enforced Premier-League-only beta filtering. Today checks settled-only records, but `/receipts` still renders the older searchable prediction ledger. These gaps are recorded in [`docs/product-state.json`](./docs/product-state.json) and must not be marketed as complete.
+One secondary surface still carries legacy behavior: `/receipts` has no in-app entry and still renders the older searchable prediction ledger. This and the other known gaps are recorded in [`docs/product-state.json`](./docs/product-state.json) and must not be marketed as complete.
 
 ## Try it locally
 
@@ -48,14 +54,12 @@ git diff --check
 
 ## What Today does
 
-1. Loads the selected AI Pundit's approved edition for the London coverage date.
-2. Falls back to that same AI Pundit's latest approved edition when today has none, and failing that to the most recent edition any AI Pundit published, naming who made it.
-3. Shows the date, title, hook, AI Pundit, play control, and real audio progress in the first mobile viewport.
-4. Lets the listener switch AI Pundits from a bottom drawer.
-5. Commits a switch and saves the preference only after the requested audio loads.
-6. Keeps the previous edition playable and offers retry when a switch fails.
-7. Reveals up to three proof cards projected from sealed evidence and licensed claim IDs.
-8. Shows recent approved editions and a quiet track-record entry only when those records exist.
+1. Opens on the newest Premier League match with a published show, or on a shared link's own match.
+2. Says which game it is: competition, date, both clubs with their crests, and the score, on one screen with no scroll.
+3. Shows the six AI Pundits for that match as a rail, dimming any that made no show for it.
+4. Plays the requested AI Pundit's edition when they made one, else the drop's canonical AI Pundit, and names who made the show.
+5. Switches AI Pundit, or steps to an earlier or later match, only after the new audio loads; a failed switch keeps the old show playable and offers retry.
+6. Opens **Show me why** proof one card at a time, up to three, from sealed evidence and licensed claim IDs.
 
 No audio autoplays on first load. Request-time AI does not write proof cards. A missing AI Pundit never silently becomes another one.
 
@@ -123,7 +127,7 @@ Pulling environments, deploying previews, and promoting production are separate 
 
 ## Documentation
 
-Start with the [documentation index](./docs/README.md). Current product questions follow this order:
+Start with the [documentation index](./docs/README.md). For why Full Time exists and where it is going, read [`docs/22-vision-and-beta.md`](./docs/22-vision-and-beta.md). Current product questions follow this order:
 
 1. [`docs/product-state.json`](./docs/product-state.json) for machine-readable shipped behavior, gaps, commercial state, and claim boundaries.
 2. [`docs/00-product.md`](./docs/00-product.md) for product doctrine.

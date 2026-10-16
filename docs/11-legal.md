@@ -3,9 +3,11 @@
 - **Status:** Current operating posture; final launch requires qualified counsel
 - **Owner:** Founder and legal
 - **Purpose:** Record data, rights, disclosure, billing, processor, and incident requirements.
-- **Last reviewed:** 2026-10-02
+- **Last reviewed:** 2026-10-16
 
 > This document is an internal operating record, not legal advice.
+
+The product inbox is krish@fulltime.fm (Ruling, Krish, 2026-10-16). The privacy page names it for deletion requests and says that a feedback email keeps the sender's address and message so we can reply (`src/routes/legal.privacy.tsx`). Open marketing in December waits on the PostHog and Google Analytics consent items below ([`22-vision-and-beta.md`](./22-vision-and-beta.md)).
 
 ## Launch rule
 
@@ -34,6 +36,7 @@ Any change to collection, retention, processors, billing, rights, or disclosure 
 | PostHog identifiers and events | Product analytics                      | Confirm project region, consent mode, and retention before launch       |
 | Google Analytics page views    | Web traffic and acquisition analytics  | Confirm consent mode and data retention setting                         |
 | Support correspondence         | Resolve requests and incidents         | Define category-specific retention before launch                        |
+| Beta feedback email            | Read and reply to tester feedback      | Keep only to read and reply; set a retention period before open marketing |
 
 Do not collect card data, contacts, microphone, camera, precise location, or cross-site profiles in the current product.
 
@@ -101,7 +104,7 @@ Disclosure appears in Settings and on relevant player or transcript surfaces. It
 
 ## Billing and consumer terms
 
-New checkout is disabled. All six AI Pundits are free during pre-launch. Existing subscriber management remains available.
+New checkout is disabled. All six AI Pundits are free during the beta. Existing subscriber management remains available.
 
 Before any paid offer:
 
