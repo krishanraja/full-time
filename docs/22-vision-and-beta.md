@@ -62,7 +62,7 @@ Release means Full Time stops being an invite-led beta and is marketed openly to
 
 December 2026 is the target. The bar decides, not the calendar: if Full Time misses the bar, the release waits and the bar stays where it is ([`00-product.md`](./00-product.md): thresholds do not relax to rescue a date).
 
-These numbers are the first draft of the bar, written on 2026-10-16. Only a ruling from Krish, recorded in the decision log, changes them.
+Krish confirmed these numbers on 2026-10-16. Only a ruling from him, recorded in the decision log, changes them.
 
 | Test                              | Bar                                                                                                          | Where to read it                                            |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |

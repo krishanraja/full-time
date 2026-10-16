@@ -10,7 +10,8 @@ describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 - added: `docs/22-vision-and-beta.md` (vision, the pilot beta, the three tester questions, the draft December bar), indexed in `docs/README.md` and held to the current-document checks in `scripts/check-documentation.mjs`, whose stamp pattern now accepts 2026-10-16.
 - reconciled: `NOW.md` ("Who it is for" now leads with the B2C pilot rather than "not sold"; the beta bullet; the 12 October feed readback replaces "no new edition since 2026-09-05"; the commercial-docs item leaves "Do not trust"), `README.md` (vision pointer; the status table and "What Today does", frozen at 2026-09-07, now describe the 2026-09-27 and 2026-10-02 product), `docs/00-product.md`, `docs/12-roadmap.md` (objective and a 2026-10-16 decision), `docs/product-state.json` (Settings rows and `commercialState`; `asOf` stays 2026-09-27 because the rest of the state was not re-reconciled), `docs/07-marketing.md`, `docs/08-sales.md`, `docs/10-support.md`, `docs/21-go-to-market-agent.md` (pre-launch wording replaced by the beta; two stale claims fixed on the way, the Today link to the track record and the abstract avatars), `docs/09-growth.md`, `docs/11-legal.md`, `docs/19-release-state.md` (body only; "Last verified" stays because nothing was read back live).
 - code: Settings gained **Send feedback** and the privacy page names the inbox, both reading `src/lib/feedback.ts`.
-- open: the December bar's numbers are a first draft for Krish to confirm; whether the RSS `itunes:owner` address moves to the product inbox; that `utm_source=beta` reaches PostHog.
+- confirmed the same day: Krish accepted the December bar's numbers as written.
+- open: whether the RSS `itunes:owner` address moves to the product inbox; that `utm_source=beta` reaches PostHog.
 
 ## 2026-10-15
 
