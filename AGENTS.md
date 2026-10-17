@@ -1,15 +1,8 @@
 # AGENTS.md
 
-Entry file for coding agents working in Full Time. Codex reads this file natively;
-Claude Code and Cursor are routed here by their own rules.
+Read `NOW.md` first.
 
-**Read `NOW.md` first.** It is the current state of this repository in one file: what
-it is, who it is for, what changed recently, what is waiting, and what not to trust.
-It is validated on every push to `main` and reconciled against the code nightly, so it
-is never more than a day behind the tree. Chronology lives in `docs/history/LOG.md`.
-
-This repository's own rules and deeper state: `docs/19-release-state.md`. They outrank the
-canon below on anything specific to this repository.
+Rules: `docs/19-release-state.md`.
 
 ## Quote the model spend, every time
 
@@ -183,3 +176,9 @@ authoritative for reading; the repository is authoritative for what is correct.
 
 **This repository's own rules:** `AGENTS.md`, `docs/19-release-state.md`
 <!-- krish-canon:end -->
+
+<!-- krish-repo-admin:start brain=cd43facd0779 sha=0cc207a2c492 -->
+## Administer this repository
+
+Use `docs/HARNESS_CONTEXT.md` for the owning workflow, source of truth and checks. Preserve the goal and accepted decisions when a revision changes one part; explain material trade-offs. Verify the downstream result. Record corrections and observed outcomes through the existing capture path. Experimental results retain their conditions; inferred requirements remain proposals.
+<!-- krish-repo-admin:end -->
