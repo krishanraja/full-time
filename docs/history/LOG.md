@@ -4,6 +4,11 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-10-18
+
+- stamped at `97018c4`: head moved from `319d324`. The new non-steward commits add `docs/NORTH_STAR.md`, sync the harness canon block in `AGENTS.md`, add `docs/HARNESS_CONTEXT.md` and its context workflow, and add one pointer line to `docs/22-vision-and-beta.md`. No source or product behaviour changed. NOW.md gained a recent-changes bullet and the North Star at the top of "Read next". No stamp was bumped: no current doc was re-read against the code.
+- not changed: the canon block in `AGENTS.md`, `docs/HARNESS_CONTEXT.md` and `docs/NORTH_STAR.md` belong to Krish and the repository-administration publisher, not the steward.
+
 ## 2026-10-16
 
 - stamped at `319d324`: head moved from `c509e62`. The three new non-steward commits are the hand reconciliation logged below (PR #80). Checked its NOW.md, `docs/19-release-state.md` and `docs/product-state.json` changes against `src/lib/feedback.ts` and `src/routes/settings.tsx`; they agree. No stamp was bumped: the older current docs were not re-read against the code.

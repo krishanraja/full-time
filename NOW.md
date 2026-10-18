@@ -1,8 +1,8 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-10-16
-head: 319d324
+as_of: 2026-10-18
+head: 97018c4
 lifecycle: beta
 production_url: https://fulltime.fm
 state_doc: docs/19-release-state.md
@@ -31,7 +31,7 @@ It is also proof, and that part survives anonymisation. The room_face buyer (`co
 
 Objection it answers: "AI-generated editorial cannot be held to a standard." Here is one held to twenty-five of them, daily, with the ledger open.
 
-## Where it is right now (as of 2026-10-16)
+## Where it is right now (as of 2026-10-18)
 
 - **Pilot beta, December target, one feedback inbox, since 2026-10-16** (Rulings, Krish, 2026-10-16; `docs/22-vision-and-beta.md`, `docs/12-roadmap.md` decision log). Testers are Premier League fans Krish invites himself, with fulltime.fm links tagged `?utm_source=beta`. Feedback goes to krish@fulltime.fm, the product inbox; Settings carries a **Send feedback** row that opens it with the three tester questions written in (`src/lib/feedback.ts`), and the privacy page now names the address for deletion requests where it previously said "email support" with no address. The December release waits on a written bar: a show every match morning, a mostly full rail, no wrong fact reaching a listener, testers who come back and try a second AI Pundit, and the analytics consent item closed. Krish confirmed the bar's numbers the same day. Not yet done: no tester has been invited, and nobody has confirmed that the `utm_source=beta` tag reaches PostHog. In code at this commit, not yet deployed or read back.
 - **A premium visual system since 2026-10-02** (`2701907`, PR #74; Ruling, Krish, 2026-10-02). Today, Teams and Settings sit on a warm umber ground with cream ink, set in two self-hosted OFL faces (Instrument Serif, Schibsted Grotesk) served from the app's own origin, with lime kept for the mark, play, pause and progress. Today's score sits in an engraved match seal woven in each club's colours with a floodlight behind it, and each AI Pundit has a generated screenprint cover in place of the orbit avatar. The visual rules are `docs/01-brand.md`; the map is `docs/18-world-class-pundit-system.md`. Not verified: physical iOS Safari and Android devices (masks, blend modes, color-mix). Phones held sideways (below 768px wide) still scroll on Today, Teams and Settings, as they did before the build; a landscape layout is proposed, not built.
@@ -53,6 +53,7 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 
 ## What changed recently
 
+- 2026-10-18 **The repo now carries a North Star and a harness canon block, and no product behaviour changed** (`387e92c`, `532a713`, `1df5794`, `210dc08`, PRs #81 and #82). `docs/NORTH_STAR.md` is an ambition Krish set that is not reached yet; `AGENTS.md` makes every session read it first, say which part the task moves, and close by noting what moved, and only Krish changes it. The canon block in `AGENTS.md` synced to release v2026.10.17.1, and `docs/HARNESS_CONTEXT.md` plus a context workflow were added for repository administration. `docs/22-vision-and-beta.md` now points to the North Star. No source, schema or product-state change. Model spend: $0.
 - 2026-10-16 **The docs described a contract, not a product, and had no room for testers** (this branch, no PR yet). Asked whether the documentation described Full Time with vision and gave its current status for beta testers, a review found a tagline and a contract but no direction; this file still called Full Time proof that "is not sold", ten days after the 2026-10-06 ruling that it is a B2C monetisation experiment ready for pilot users; December appeared nowhere and `docs/product-state.json` listed a launch date as not available; the app had no way to send feedback; the README status table was frozen at 2026-09-07; and this file said nothing had published since 5 September while the live feed carried a 12 October show. Krish ruled three things: a B2C pilot beta, a December release target with a written bar, and one feedback channel, with krish@fulltime.fm as the product inbox. `docs/22-vision-and-beta.md` is new; the four commercial docs no longer say pre-launch; Settings gained **Send feedback**. Model spend: $0.
 - 2026-10-03 **The podcast feed's contact address moved to the Mindmake domain** (`8f1c95b`, PR #75). The Reporter RSS feed's `itunes:owner` email in `src/lib/pundit/reporter-rss.ts` now uses Krish's Mindmake address; the previous address still redirects to it. Ruling (Krish, 2026-10-03): the Mindmake address is the public contact address. The PR body is candid about its gate: it merged with verify red only at the `pnpm audit` step on GHSA-ch52-4w7c-c8xp (http-cache-semantics up to 4.2.0, via a build-time downloader under `@swc/cli`), because npm has not published the 4.2.1 the advisory names, so no pin exists and main fails the identical audit. "No gate was weakened." Local checks recorded in the PR: `tsc --noEmit` clean, 462 tests passing, production build green.
 - 2026-10-02 **The app read as a generated template, so it was rebuilt on a premium visual system** (`2701907`, `878d422`, `7b5bb65`, PR #74). The commit's own diagnosis: "a cold blue-grey ground, Geist that was declared but never loaded, lime on every control, and abstract orbit avatars." Krish ruled to adopt the premium synthesis: an engraved match seal for the score, a club-colour floodlight, a generated cover per AI Pundit, two self-hosted faces, lime only on the mark and play. Two review passes then found real defects in the first build: a floodlight that drifted off the seal when it moved without resizing, a long club name that pushed the seal off-centre and scrolled a 320px screen sideways, a horizon line that never drew because its mask had no height, and a colour accepted after parsing only its first six hex digits (the guard now takes `#RRGGBB` or falls back, and its test feeds hostile colours). The no-scroll matrix passed 30 of 30. Model spend: $0.
@@ -87,15 +88,16 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 
 ## Read next
 
-1. `docs/22-vision-and-beta.md`: why Full Time exists, where it is going, the pilot beta, and the December release bar.
-2. `docs/product-state.json`: machine-readable shipped behaviour, gaps, commercial state and claim boundaries. Moves with the prose.
-3. `docs/00-product.md`: doctrine, evidence contract, launch standard.
-4. `docs/18-world-class-pundit-system.md`: what the repository implements and where.
-5. `docs/19-release-state.md`: live readback, the override, waived gates, go-live sequence.
-6. `docs/06-ops.md`: schedules, what a run costs, judge calibration, failure guide.
-7. `docs/12-roadmap.md`: remaining work and the dated decision log, including the override.
-8. `docs/README.md`: the index and authority order.
-9. `docs/13-agent-handoff.md`: how an agent starts here safely.
+1. `docs/NORTH_STAR.md`: the ambition Krish set that is not reached yet. Read it first, every session; only Krish changes it.
+2. `docs/22-vision-and-beta.md`: why Full Time exists, where it is going, the pilot beta, and the December release bar.
+3. `docs/product-state.json`: machine-readable shipped behaviour, gaps, commercial state and claim boundaries. Moves with the prose.
+4. `docs/00-product.md`: doctrine, evidence contract, launch standard.
+5. `docs/18-world-class-pundit-system.md`: what the repository implements and where.
+6. `docs/19-release-state.md`: live readback, the override, waived gates, go-live sequence.
+7. `docs/06-ops.md`: schedules, what a run costs, judge calibration, failure guide.
+8. `docs/12-roadmap.md`: remaining work and the dated decision log, including the override.
+9. `docs/README.md`: the index and authority order.
+10. `docs/13-agent-handoff.md`: how an agent starts here safely.
 
 ## Do not trust
 
