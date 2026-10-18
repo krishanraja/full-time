@@ -19,6 +19,8 @@ No human studio can make six full shows about one match before breakfast, every 
 
 ## Where it is going
 
+The North Star this direction serves is [`NORTH_STAR.md`](./NORTH_STAR.md).
+
 This is direction, not a feature list. Nothing here may be marketed until `product-state.json` records it as shipped.
 
 - **A full rail every match morning.** Today one Premier League match a day gets a show, and an AI Pundit appears only when its edition passes every check. The direction is all six, every morning after a Premier League match.
