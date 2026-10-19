@@ -274,6 +274,17 @@ test('Drive 403 returns its safe machine-readable reason and no token/body',asyn
   );
 });
 
+test('Drive accessNotConfigured compares project identity without disclosing identifiers',async()=>{
+  const req=async(url)=>url==='https://oauth2.googleapis.com/token'
+    ?{ok:true,json:async()=>({access_token:'ACCESS_TOKEN'})}
+    :{ok:false,status:403,json:async()=>({error:{errors:[{reason:'accessNotConfigured'}],
+      message:'Google Drive API has not been used in project 222222 before'}})};
+  await assert.rejects(uploadJson('test-window.json',{window:'test'},{
+    credentials:{client_id:'111111-example.apps.googleusercontent.com',client_secret:'SECRET',refresh_token:'TOKEN'},
+    folderId:'FOLDER_ID',request:req,
+  }),error=>error.message==='Drive folder preflight HTTP 403 reason=accessNotConfigured oauth_project_match=no');
+});
+
 test('Authenticated football-data registry recovers blocked FotMob and ESPN without inventing independent verification',async()=>{
   const match={id:123,utcDate:'2026-10-18T15:00:00Z',status:'FINISHED',
     homeTeam:{name:'Arsenal FC'},awayTeam:{name:'Chelsea FC'},
