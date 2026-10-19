@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/pl-evidence/**'
-      - 'tests/pl-evidence.test.mjs'
+      - 'tests/pl-evidence*.test.mjs'
       - '.github/workflows/premier-league-evidence*.yml'
   pull_request:
     paths:
@@ -26,3 +26,5 @@ jobs:
           node-version: '24'
       - name: Closed-world evidence tests (zero model calls)
         run: node --test tests/pl-evidence.test.mjs
+      - name: Real-provider scoreboard smoke (no secrets or paid models)
+        run: node --test tests/pl-evidence.live.test.mjs
