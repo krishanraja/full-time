@@ -1,4 +1,4 @@
-import { DOMAINS, leagueFixtures, espnFixtures, footballDataFixtures, ledgerItem, parseStats, parseEspnStats, matchKey, canonicalTeam, toLondonDate } from './core.mjs';
+import { DOMAINS, leagueFixtures, espnFixtures, footballDataFixtures, apiFootballFixtures, ledgerItem, parseStats, parseEspnStats, parseApiFootballStats, parseFootballDataStats, matchKey, canonicalTeam, toLondonDate } from './core.mjs';
 
 const AGENT='FullTimeEvidenceResearch/1.0 (+https://fulltime.fm; public match evidence only)';
 export async function requestText(url,{headers={},timeoutMs=8500,attempts=2}={}){
@@ -8,18 +8,28 @@ export async function requestText(url,{headers={},timeoutMs=8500,attempts=2}={})
   for(let attempt=0;attempt<attempts;attempt++){
     try{
       const r=await fetch(url,{headers:{'User-Agent':AGENT,'Accept':'application/json, application/rss+xml, text/xml, text/html;q=0.9',...headers},signal:AbortSignal.timeout(timeoutMs),redirect:'follow'});
-      if(!r.ok)throw Error(`HTTP ${r.status}`);
+      if(!r.ok){
+        const error=Error(`HTTP ${r.status}`);
+        error.retryable=r.status===429 || r.status>=500;
+        const retryAfter=Number(r.headers.get('retry-after'));
+        error.retryAfterMs=Number.isFinite(retryAfter)&&retryAfter>0?Math.min(retryAfter*1000,8000):0;
+        throw error;
+      }
       const length=Number(r.headers.get('content-length')||'0');
       if(length>3_000_000)throw Error('Response over 3MB limit');
       const content=await r.text();
       if(content.length>3_000_000)throw Error('Response over 3MB limit');
       return content;
-    }catch(e){last=e;if(attempt+1<attempts)await new Promise(resolve=>setTimeout(resolve,400*(attempt+1)));}
+    }catch(e){
+      last=e;
+      if(e.retryable===false || /^HTTP 4\d\d$/.test(e.message)&&!e.retryable)break;
+      if(attempt+1<attempts)await new Promise(resolve=>setTimeout(resolve,Math.min(8000,e.retryAfterMs||400*2**attempt)));
+    }
   }
   throw last;
 }
 export async function requestJson(url,opt={}){return JSON.parse(await requestText(url,opt));}
-export async function discoverFixtures(dates,{footballDataKey,req=requestJson}={}){
+export async function discoverFixtures(dates,{footballDataKey,apiFootballKey,req=requestJson}={}){
   const matches=[],rejected=[],errors=[],source_status=[];
   const fdataUrl=`https://api.football-data.org/v4/competitions/PL/matches?dateFrom=${dates[0]}&dateTo=${dates.at(-1)}`;
   let verified=null;
@@ -33,6 +43,25 @@ export async function discoverFixtures(dates,{footballDataKey,req=requestJson}={
       source_status.push({domain:'football-data.org',url:fdataUrl,status:'error',error:String(error.message).slice(0,120)});
     }
   }else errors.push('FOOTBALL_DATA_KEY not set; independent fixture/score reconciliation unavailable');
+
+  let primary=null;
+  if(apiFootballKey){
+    const responses=[];
+    for(const date of dates){
+      const season=Number(date.slice(5,7))<7?Number(date.slice(0,4))-1:Number(date.slice(0,4));
+      const url=`https://v3.football.api-sports.io/fixtures?league=39&season=${season}&date=${date}`;
+      try{
+        const response=await req(url,{headers:{'x-apisports-key':apiFootballKey}});
+        const parsed=apiFootballFixtures(response,[date]);
+        responses.push(...parsed.matches);rejected.push(...parsed.rejected);
+        source_status.push({date,domain:'api-football.com',url,status:'found',count:parsed.matches.length});
+      }catch(error){
+        errors.push(`API-Football fixture ${date}: ${error.message}`);
+        source_status.push({date,domain:'api-football.com',url,status:'error',error:String(error.message).slice(0,120)});
+      }
+    }
+    primary=responses;
+  }
 
   for(const date of dates){
     const fotmobUrl=`https://www.fotmob.com/api/matches?date=${date.replaceAll('-','')}`;
@@ -61,9 +90,12 @@ export async function discoverFixtures(dates,{footballDataKey,req=requestJson}={
     if(!found && !verified)errors.push(`fixture ${date}: all available primary discovery endpoints failed`);
   }
 
-  // An authenticated fixture feed is authoritative for the covered range.
+  // Compare independent authenticated sources before trusting a final score.
   // Fill only explicit finished fixtures that public feeds could not discover;
   // contradictions are refused, not resolved by preference.
+  if(primary){
+    matches.push(...primary);
+  }
   if(verified){
     const fromAuth=new Map(verified.matches.map(m=>[matchKey(m),m]));
     const accepted=[];
@@ -77,6 +109,7 @@ export async function discoverFixtures(dates,{footballDataKey,req=requestJson}={
       if(independent.score!==candidate.score){
         rejected.push({item:`${candidate.source_domain}:${key}=${candidate.score}`,reason:'sources_disagree'});
         rejected.push({item:`football-data.org:${key}=${independent.score}`,reason:'sources_disagree'});
+        errors.push(`score conflict for ${key}: ${candidate.source_domain} and football-data.org`);
       }else accepted.push(candidate);
     }
     const represented=new Set(matches.map(matchKey));
@@ -98,19 +131,39 @@ export async function discoverFixtures(dates,{footballDataKey,req=requestJson}={
       matches.splice(i,1);
     }else seen.add(key);
   }
+  if(primary && verified){
+    const primaryKeys=new Set(primary.map(matchKey));
+    for(let i=errors.length-1;i>=0;i--){
+      const key=errors[i].match(/^single-source finished fixture: (.*?);/)?.[1];
+      if(key && primaryKeys.has(key))errors.splice(i,1);
+    }
+  }
   return {matches,rejected,errors,source_status,
     independent_check:verified?'football-data.org_accessible':'unavailable'};
 }
 
-export async function collectMatchDetails(fixtures,{req=requestJson}={}){
+export async function collectMatchDetails(fixtures,{apiFootballKey,footballDataKey,req=requestJson}={}){
   const raw=[];const errors=[];const coverage=[];
   for(const fixture of fixtures){
+    if(fixture.source_domain==='api-football.com' && apiFootballKey){
+      const url=`https://v3.football.api-sports.io/fixtures/statistics?fixture=${fixture.provider_id}`;
+      try{
+        const stats=parseApiFootballStats(await req(url,{headers:{'x-apisports-key':apiFootballKey}}),fixture);
+        raw.push(...stats.raw);errors.push(...stats.errors.map(s=>`${matchKey(fixture)}: ${s}`));
+        coverage.push({match:matchKey(fixture),domain:'api-football.com',url,status:stats.errors.length?'partial':'found',items:stats.raw.length});
+      }catch(error){errors.push(`${matchKey(fixture)} API-Football details: ${error.message}`);
+        coverage.push({match:matchKey(fixture),domain:'api-football.com',url,status:'error',error:String(error.message).slice(0,120)});}
+      continue;
+    }
     if(fixture.source_domain==='football-data.org'){
-      // football-data fixture responses expose scores, not a licensed detailed
-      // match-centre statistics dataset; never manufacture missing values.
-      coverage.push({match:matchKey(fixture),domain:'football-data.org',url:fixture.fixture_source_url,
-        status:'not_available',reason:'fixture_only_no_team_stats'});
-      errors.push(`${matchKey(fixture)}: detailed match-centre statistics not collected`);
+      const url=`https://api.football-data.org/v4/matches/${fixture.provider_id}`;
+      if(!footballDataKey){coverage.push({match:matchKey(fixture),domain:'football-data.org',url,status:'not_attempted',reason:'key_unavailable'});continue;}
+      try{
+        const stats=parseFootballDataStats(await req(url,{headers:{'X-Auth-Token':footballDataKey}}),fixture);
+        raw.push(...stats.raw);errors.push(...stats.errors.map(s=>`${matchKey(fixture)}: ${s}`));
+        coverage.push({match:matchKey(fixture),domain:'football-data.org',url,status:stats.errors.length?'partial':'found',items:stats.raw.length});
+      }catch(error){errors.push(`${matchKey(fixture)} football-data details: ${error.message}`);
+        coverage.push({match:matchKey(fixture),domain:'football-data.org',url,status:'error',error:String(error.message).slice(0,120)});}
       continue;
     }
     const espn=fixture.source_domain==='espn.com';
@@ -157,6 +210,16 @@ export function exactApprovedUrl(url,domain){
     return host===domain || host.endsWith(`.${domain}`);
   }catch{return false;}
 }
+export function publisherUrl(candidate,domain){
+  try{
+    const wrapper=new URL(candidate);
+    if(exactApprovedUrl(candidate,domain))return candidate;
+    if(!['www.bing.com','bing.com'].includes(wrapper.hostname.toLowerCase()) ||
+      wrapper.pathname!=='/news/apiclick.aspx')return null;
+    const target=wrapper.searchParams.get('url');
+    return target && exactApprovedUrl(target,domain)?target:null;
+  }catch{return null;}
+}
 function teamSearchName(name){return name==='Brighton & Hove Albion'?'Brighton':name==='AFC Bournemouth'?'Bournemouth':name==='Tottenham Hotspur'?'Tottenham':name;}
 export function discoverQuery(fixture,domain){
   const q=`site:${domain} "${teamSearchName(fixture.home)}" "${teamSearchName(fixture.away)}" after:${fixture.date}`;
@@ -177,7 +240,8 @@ export async function collectNews(fixtures,{req=requestText,concurrency=6,maxQue
       const {m,domain}=capped[cursor++];const url=discoverQuery(m,domain);
       try{
         const entries=parseRss(await req(url));
-        const relevant=entries.filter(x=>exactApprovedUrl(x.url,domain)&&relevance(x,m));
+        const relevant=entries.map(x=>({...x,url:publisherUrl(x.url,domain)}))
+          .filter(x=>x.url&&relevance(x,m));
         const unique=[...new Map(relevant.map(x=>[x.url,x])).values()].slice(0,2);
         let n=0;
         for(const entry of unique){
