@@ -11,7 +11,7 @@ test('London timezone and three fully completed dates',()=>{
   assert.deepEqual(daysForRun(new Date('2026-10-20T07:00:00Z')),['2026-10-17','2026-10-18','2026-10-19']);
   assert.deepEqual(daysForRun(new Date('2026-10-19T07:00:00Z'),'2026-10-18'),['2026-10-16','2026-10-17','2026-10-18']);
 });
-test('canonical alias table does not guess',()=>{assert.equal(canonicalTeam('Man City'),'Manchester City');assert.equal(canonicalTeam('Manchester C'),null);assert.equal(canonicalTeam('Coventry'),'Coventry City');});
+test('canonical alias table does not guess',()=>{assert.equal(canonicalTeam('Man City'),'Manchester City');assert.equal(canonicalTeam('Manchester C'),null);assert.equal(canonicalTeam('Coventry'),'Coventry City');assert.equal(canonicalTeam('Sunderland AFC'),'Sunderland');});
 test('fixture final and score gates',()=>{
   assert.equal(fixtureFromFotmob(rawFixture,f.date).score,'2-1');
   assert.equal(fixtureFromFotmob({...rawFixture,status:{...rawFixture.status,finished:false}},f.date).error,'not_final');
@@ -122,6 +122,51 @@ test('existing Drive filenames fail when stored bytes differ; never overwrite', 
 });
 import { fixtureFromEspn, espnFixtures, parseEspnStats } from '../scripts/pl-evidence/core.mjs';
 import { collectMatchDetails } from '../scripts/pl-evidence/collect.mjs';
+import { apiFootballFixtures, parseApiFootballStats } from '../scripts/pl-evidence/core.mjs';
+
+test('API-Football recorded fixture and statistics structures preserve observed values',()=>{
+  const payload={errors:[],response:[{league:{id:39},fixture:{id:123,date:'2026-10-18T15:00:00Z',status:{short:'FT'}},
+    teams:{home:{name:'Arsenal'},away:{name:'Chelsea'}},goals:{home:2,away:1}}]};
+  const fixtures=apiFootballFixtures(payload,['2026-10-18']);
+  assert.equal(fixtures.matches.length,1);
+  assert.equal(fixtures.matches[0].score,'2-1');
+  const stats=parseApiFootballStats({errors:[],response:[
+    {team:{name:'Arsenal'},statistics:[{type:'Total Shots',value:14},{type:'Ball Possession',value:'54%'},{type:'expected goals',value:'1.40'}]},
+    {team:{name:'Chelsea'},statistics:[{type:'Total Shots',value:9}]}
+  ]},fixtures.matches[0]);
+  assert.equal(stats.raw.length,4);
+  assert.equal(stats.raw.find(x=>x.field==='possession').value,'54%');
+  const normalized=normalize(fixtures.matches,stats.raw);
+  assert.equal(normalized.tally.counted,3);
+  assert.equal(normalized.rejected[0].reason,'model_unnamed');
+});
+
+test('Sunderland AFC fixture is resolved without guessing a score',()=>{
+  const parsed=apiFootballFixtures({errors:[],response:[{league:{id:39},fixture:{id:124,date:'2026-10-18T13:00:00Z',status:{short:'FT'}},
+    teams:{home:{name:'AFC Bournemouth'},away:{name:'Sunderland AFC'}},goals:{home:2,away:0}}]},['2026-10-18']);
+  assert.equal(parsed.matches.length,1);
+  assert.equal(parsed.matches[0].away,'Sunderland');
+  assert.equal(parsed.matches[0].score,'2-0');
+});
+
+test('two authenticated feeds corroborate a result after public endpoints fail',async()=>{
+  const result=await discoverFixtures(['2026-10-18'],{
+    apiFootballKey:'API_KEY',footballDataKey:'DATA_KEY',
+    req:async(url)=>{
+      if(url.includes('football-data.org'))return {matches:[{id:123,utcDate:'2026-10-18T15:00:00Z',status:'FINISHED',homeTeam:{name:'Arsenal FC'},awayTeam:{name:'Chelsea FC'},score:{fullTime:{home:2,away:1}}}]};
+      if(url.includes('api-sports.io'))return {errors:[],response:[{league:{id:39},fixture:{id:777,date:'2026-10-18T15:00:00Z',status:{short:'FT'}},teams:{home:{name:'Arsenal'},away:{name:'Chelsea'}},goals:{home:2,away:1}}]};
+      throw Error('HTTP 403');
+    },
+  });
+  assert.equal(result.matches.length,1);
+  assert.equal(result.matches[0].source_domain,'api-football.com');
+  assert.ok(!result.errors.some(x=>x.includes('single-source')));
+  const detail=await collectMatchDetails(result.matches,{apiFootballKey:'API_KEY',req:async()=>({errors:[],response:[
+    {team:{name:'Arsenal'},statistics:[{type:'Total Shots',value:14}]},
+    {team:{name:'Chelsea'},statistics:[{type:'Total Shots',value:9}]}
+  ]})});
+  assert.equal(detail.raw.length,2);
+});
 
 const espnFixture = {
   id:'1234567', date:'2026-10-18T15:00:00Z', status:{type:{completed:true}},

@@ -25,6 +25,7 @@ export const ALIASES = Object.freeze({
   'Man Utd':'Manchester United','Newcastle':'Newcastle United',
   'Nottm Forest':'Nottingham Forest','Nottingham':'Nottingham Forest',
   'Spurs':'Tottenham Hotspur','Tottenham':'Tottenham Hotspur',
+  'Sunderland AFC':'Sunderland',
   'Hull City AFC':'Hull City','Ipswich Town FC':'Ipswich Town',
   'Brighton & Hove Albion FC':'Brighton & Hove Albion',
   'Wolverhampton':'Wolverhampton Wanderers',
@@ -46,6 +47,7 @@ export const COUNTED_FIELDS = new Set([
 export const ESTIMATE_FIELDS = new Set(['xg','xt','win_probability','shot_quality','rating']);
 export const STAT_FIELDS = new Map([
   ['shots','shots'],['total shots','shots'],['shots on target','shots_on_target'],
+  ['shots on goal','shots_on_target'],
   ['blocked shots','blocked_shots'],['corners','corners'],['corner kicks','corners'],
   ['fouls','fouls'],['fouls committed','fouls'],['offsides','offsides'],
   ['saves','saves'],['goalkeeper saves','saves'],['ball possession','possession'],
@@ -199,6 +201,56 @@ export function footballDataFixtures(payload,dates,known=CLUBS_2026){
       fixture_source_url:url,provider_url:url});
   }
   return {matches,rejected};
+}
+
+/** The same authenticated provider and league ID used by the production ingest. */
+export function apiFootballFixtures(payload,dates,known=CLUBS_2026){
+  if(!Array.isArray(payload?.response) || (payload.errors && Object.keys(payload.errors).length))
+    throw Error('Invalid API-Football fixture schema or provider error');
+  const matches=[],rejected=[];
+  for(const row of payload.response){
+    if(row.league?.id!==39 || row.fixture?.status?.short!=='FT')continue;
+    const date=toLondonDate(row.fixture.date);
+    if(!dates.includes(date))continue;
+    const home=canonicalTeam(row.teams?.home?.name,known);
+    const away=canonicalTeam(row.teams?.away?.name,known);
+    const id=Number(row.fixture?.id);
+    if(!home||!away||home===away||!Number.isSafeInteger(id)){
+      rejected.push({item:`api-football:${date}:${row.fixture?.id??'unknown'}`,reason:'team_unresolved'});continue;
+    }
+    const h=row.goals?.home,a=row.goals?.away;
+    if(!Number.isInteger(h)||!Number.isInteger(a)||h<0||a<0){
+      rejected.push({item:`api-football:${date}:${id}`,reason:'score_missing'});continue;
+    }
+    matches.push({date,home,away,score:`${h}-${a}`,provider_id:id,
+      source_domain:'api-football.com',fixture_source_url:`https://v3.football.api-sports.io/fixtures?id=${id}`,
+      provider_url:`https://v3.football.api-sports.io/fixtures?id=${id}`});
+  }
+  return {matches,rejected};
+}
+
+export function parseApiFootballStats(payload,match){
+  if(!Array.isArray(payload?.response) || (payload.errors && Object.keys(payload.errors).length))
+    throw Error('Invalid API-Football statistics schema or provider error');
+  const raw=[],errors=[];let ordinal=0;
+  for(const team of payload.response){
+    const name=canonicalTeam(team.team?.name);
+    const side=name===match.home?'home':name===match.away?'away':null;
+    if(!side){errors.push('api_football_stat_team_unresolved');continue;}
+    for(const stat of team.statistics??[]){
+      const field=STAT_FIELDS.get(String(stat.type??'').trim().toLowerCase());
+      if(!field || stat.value===null || stat.value===undefined)continue;
+      const displayed=String(stat.value).trim();
+      if(!/^\d+(?:\.\d+)?%?$/.test(displayed))continue;
+      raw.push(ledgerItem(match,'api-football.com',++ordinal,{kind:field==='xg'?'estimate':'counted',
+        field,value:displayed.endsWith('%')?displayed:Number(displayed),side,
+        model:field==='xg'?null:undefined,text:`${stat.type}: ${displayed}`,
+        source_url:`https://v3.football.api-sports.io/fixtures/statistics?fixture=${match.provider_id}`,
+        provenance:'match_center'}));
+    }
+  }
+  if(!raw.length)errors.push('api_football_match_stats_empty');
+  return {raw,errors};
 }
 
 const ESPN_COUNTED = new Map(Object.entries({

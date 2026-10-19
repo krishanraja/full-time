@@ -16,8 +16,9 @@ async function main(){
   await mkdir(base,{recursive:true});
   const rawFile=`premier-league-raw-${days[0]}-to-${days[2]}.json`;
   const finalFile=`premier-league-normalised-${days[0]}-to-${days[2]}.json`;
-  const problems=[];let fixtures=[],fixturesRejected=[],source_status=[],statsItems=[],newsItems=[];
+  const problems=[],warnings=[];let fixtures=[],fixturesRejected=[],source_status=[],statsItems=[],newsItems=[],newsCoverage=[];
   const footballDataKey=process.env.FOOTBALL_DATA_KEY||'';
+  const apiFootballKey=process.env.API_FOOTBALL_KEY||'';
   if(arg('--fixtures')){
     const fixtureInput=JSON.parse(await readFile(resolve(arg('--fixtures')),'utf8'));
     fixtures=fixtureInput.matches;
@@ -25,11 +26,13 @@ async function main(){
     source_status=fixtureInput.source_status||[];
     problems.push('Fixture override in use: external fixture coverage not verified');
   }else{
-    const fx=await discoverFixtures(days,{footballDataKey});
+    const fx=await discoverFixtures(days,{footballDataKey,apiFootballKey});
     fixtures=fx.matches;fixturesRejected=fx.rejected;source_status=fx.source_status;
     problems.push(...fx.errors);
   }
   if(!fixtures.length)problems.push('No complete fixtures verified; cannot treat empty output as no games');
+  if(fixturesRejected.some(x=>['team_unresolved','score_missing'].includes(x.reason)))
+    problems.push(`Finished fixture records rejected: ${fixturesRejected.filter(x=>['team_unresolved','score_missing'].includes(x.reason)).length}; fixture completeness unverified`);
   const scores=fixtures.flatMap(f=>['home','away'].map((side,i)=>ledgerItem(f,f.source_domain||'fotmob.com',1000+i,{
     kind:'counted',field:'goals',value:Number(f.score.split('-')[i]),side,
     text:`Final score ${f.score}; ${side} goals ${f.score.split('-')[i]}`,
@@ -38,17 +41,17 @@ async function main(){
   })));
   let coverage=[];
   if(!arg('--fixtures')){
-    const detailed=await collectMatchDetails(fixtures);
-    statsItems=detailed.raw;coverage.push(...detailed.coverage);problems.push(...detailed.errors);
+    const detailed=await collectMatchDetails(fixtures,{apiFootballKey});
+    statsItems=detailed.raw;coverage.push(...detailed.coverage);warnings.push(...detailed.errors);
     const news=await collectNews(fixtures,{maxQueries:Number(process.env.FT_MAX_NEWS_QUERIES||350),concurrency:6});
-    newsItems=news.raw;coverage.push(...news.coverage);
-    if(news.errors.length)problems.push(`News discovery errors: ${news.errors.length} (see source_status)`);
+    newsItems=news.raw;newsCoverage=news.coverage;coverage.push(...news.coverage);
+    if(news.errors.length)warnings.push(`News discovery errors: ${news.errors.length} (see source_status)`);
   }
   const items=[...scores,...statsItems,...newsItems];
   const allSourceStatus=[...source_status,...coverage];
   // Never imply that source coverage is complete just because no article was found.
   const expectedDiscovery=fixtures.length*(DOMAINS.length-1);
-  const attemptedDiscovery=coverage.filter(x=>x.domain!=='fotmob.com'&&x.status!=='not_attempted').length;
+  const attemptedDiscovery=newsCoverage.filter(x=>x.status!=='not_attempted').length;
   if(!arg('--fixtures') && attemptedDiscovery!==expectedDiscovery)problems.push(`Source discovery only attempted ${attemptedDiscovery}/${expectedDiscovery} fixture-domain pairs`);
   const targetFolder=process.env.FT_DRIVE_FOLDER_ID||'1g1ZmO3PtsC54XudqxL7DlajkD9Nrzfcp';
   let credentials=null;
@@ -64,7 +67,7 @@ async function main(){
       'ESPN is an auxiliary fixture/match-centre fallback, not one of the thirty approved opinion domains.',
       'External fixture verification (if enabled) is metadata, not classified editorial evidence.'],
   };
-  const manifest={domains:DOMAINS,source_status:allSourceStatus,fixture_source:'fotmob.com_with_espn_fallback',
+  const manifest={domains:DOMAINS,source_status:allSourceStatus,fixture_source:apiFootballKey?'api-football.com_with_public_fallback':'public_with_football-data_registry',
     independent_crosscheck:footballDataKey?'football-data.org_attempted':'not_configured',
     expected_finished_fixtures:fixtures.length,discovered_finished_fixtures:fixtures.length};
   const normal=normalize(fixtures,items,fixturesRejected,{
@@ -73,7 +76,7 @@ async function main(){
   const rawPath=join(base,rawFile),finalPath=join(base,finalFile);
   await save(rawPath,raw);await save(finalPath,normal);
   let uploaded=[];
-  if(credentials){
+  if(credentials && !problems.length){
     try{
       uploaded.push(await uploadJson(rawFile,raw,{credentials,folderId:targetFolder}));
       // Upload normalised output last, after raw archive exists and validates.
@@ -87,7 +90,7 @@ async function main(){
   }
   const receipt={window,run_status:problems.length?'partial':'complete',fixtures:fixtures.length,
     tally:normal.tally,raw_file:rawFile,normalised_file:finalFile,drive_files:uploaded,
-    errors:problems,source_queries:{expected:expectedDiscovery,attempted:attemptedDiscovery}};
+    errors:problems,warnings,source_queries:{expected:expectedDiscovery,attempted:attemptedDiscovery}};
   await save(join(base,'receipt.json'),receipt);
   const summary=`### Premier League evidence ${window}\n\nStatus: **${receipt.run_status}** · fixtures: ${fixtures.length}\n\nCounted ${normal.tally.counted}, models ${normal.tally.estimates}, derived ${normal.tally.derived}, shadow ${normal.tally.shadow}, refused ${normal.tally.refused}, rejected ${normal.tally.rejected}.\n\nDrive files: ${uploaded.map(x=>x.url||x.id).join(', ')||'none'}\n\nErrors: ${problems.length?problems.slice(0,15).join('; '):'none'}\n`;
   if(process.env.GITHUB_STEP_SUMMARY)await writeFile(process.env.GITHUB_STEP_SUMMARY,summary,{flag:'a'});

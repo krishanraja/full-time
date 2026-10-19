@@ -38,6 +38,7 @@ jobs:
           GOOGLE_DRIVE_OAUTH_JSON: ${{ secrets.GOOGLE_DRIVE_OAUTH_JSON }}
           GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
           FOOTBALL_DATA_KEY: ${{ secrets.FOOTBALL_DATA_KEY }}
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
           FT_DRIVE_FOLDER_ID: '1g1ZmO3PtsC54XudqxL7DlajkD9Nrzfcp'
           FT_MAX_NEWS_QUERIES: '350'
           DATE_IN: ${{ inputs.end_date }}
