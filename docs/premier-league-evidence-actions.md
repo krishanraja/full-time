@@ -58,3 +58,6 @@ GitHub → Actions → **Premier League - independent evidence intake** → Run 
 ## Cutover from ChatGPT scheduling
 
 Leave the existing ChatGPT automation enabled until the new GitHub workflow has completed **at least one fully verified scheduled/dispatch run**, including Google Drive readbacks. Then disable the old scheduled automation to avoid duplicated requests and windows. Until then, GitHub is a staged replacement, not a live one.
+## Founder scope ruling
+
+Ruling (Krish, 2026-10-19): this is not being treated as a commercial source-reuse product; do not require sources to be cited publicly. Private source identifiers remain solely for rejecting contradictions and verifying the ingestion contract.
