@@ -15,7 +15,7 @@ Destination: `Non API Data inputs` in Google Drive, folder ID `1g1ZmO3PtsC54Xudq
 - `premier-league-raw-START-to-END.json`: fixtures, source-status matrix, exact small raw excerpts and match statistics with source IDs; **private operator data**.
 - `premier-league-normalised-START-to-END.json`: five strictly licensed buckets, refused/rejected items, tallies, run status; still **internal-only**, not publisher input.
 
-A third `receipt.json` in every Actions run artifact records the window, counted items, rejected items, upload IDs, errors and source-query coverage. GitHub Actions retains the three local JSON artifacts for 30 days if upload fails. Failed/unavailable inputs produce `partial`, never a fabricated `complete`.
+A third `receipt.json` in every Actions run artifact records the window, counted items, rejected items, upload IDs, Drive folder preflight, errors and source-query coverage. The Drive preflight is read-only and runs even when collection is partial, so the credential and folder can be diagnosed without uploading incomplete evidence. GitHub Actions retains the three local JSON artifacts for 30 days if upload fails. Failed/unavailable inputs produce `partial`, never a fabricated `complete`.
 
 Retries never overwrite a differing JSON file for the same window. If file contents match, SHA-256 readback confirms the existing file. If they differ, the job fails with a mismatch and a GitHub artifact for comparison.
 

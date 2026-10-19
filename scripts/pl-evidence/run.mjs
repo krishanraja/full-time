@@ -3,7 +3,7 @@ import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { daysForRun, DOMAINS, normalize, ledgerItem, matchKey, validate } from './core.mjs';
 import { discoverFixtures, collectMatchDetails, collectNews } from './collect.mjs';
-import { uploadJson } from './drive.mjs';
+import { uploadJson, checkDriveFolder } from './drive.mjs';
 
 function arg(flag){const pos=process.argv.indexOf(flag);return pos<0?null:process.argv[pos+1];}
 function shortError(error){return String(error?.message||error).slice(0,180);}
@@ -76,6 +76,11 @@ async function main(){
   const rawPath=join(base,rawFile),finalPath=join(base,finalFile);
   await save(rawPath,raw);await save(finalPath,normal);
   let uploaded=[];
+  let drivePreflight={status:'not_attempted'};
+  if(credentials){
+    try{drivePreflight=await checkDriveFolder(credentials,targetFolder);}
+    catch(error){drivePreflight={status:'error',error:shortError(error)};problems.push(`Google Drive preflight failed: ${shortError(error)}`);}
+  }
   if(credentials && !problems.length){
     try{
       uploaded.push(await uploadJson(rawFile,raw,{credentials,folderId:targetFolder}));
@@ -90,7 +95,8 @@ async function main(){
   }
   const receipt={window,run_status:problems.length?'partial':'complete',fixtures:fixtures.length,
     tally:normal.tally,raw_file:rawFile,normalised_file:finalFile,drive_files:uploaded,
-    errors:problems,warnings,source_queries:{expected:expectedDiscovery,attempted:attemptedDiscovery}};
+    errors:problems,warnings,drive_preflight:drivePreflight,
+    source_queries:{expected:expectedDiscovery,attempted:attemptedDiscovery}};
   await save(join(base,'receipt.json'),receipt);
   const summary=`### Premier League evidence ${window}\n\nStatus: **${receipt.run_status}** · fixtures: ${fixtures.length}\n\nCounted ${normal.tally.counted}, models ${normal.tally.estimates}, derived ${normal.tally.derived}, shadow ${normal.tally.shadow}, refused ${normal.tally.refused}, rejected ${normal.tally.rejected}.\n\nDrive files: ${uploaded.map(x=>x.url||x.id).join(', ')||'none'}\n\nErrors: ${problems.length?problems.slice(0,15).join('; '):'none'}\n`;
   if(process.env.GITHUB_STEP_SUMMARY)await writeFile(process.env.GITHUB_STEP_SUMMARY,summary,{flag:'a'});
