@@ -15,6 +15,6 @@ test('ESPN live scoreboard can enumerate finished Premier League fixtures', {tim
   for(const f of fixtures.matches){
     assert.equal(f.date,date);
     assert.equal(f.source_domain,'espn.com');
-    assert.match(f.score,/^\\d+-\\d+$/);
+    assert.match(f.score,/^\d+-\d+$/);
   }
 });
