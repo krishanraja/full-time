@@ -41,7 +41,7 @@ async function main(){
   })));
   let coverage=[];
   if(!arg('--fixtures')){
-    const detailed=await collectMatchDetails(fixtures,{apiFootballKey});
+    const detailed=await collectMatchDetails(fixtures,{apiFootballKey,footballDataKey});
     statsItems=detailed.raw;coverage.push(...detailed.coverage);warnings.push(...detailed.errors);
     const news=await collectNews(fixtures,{maxQueries:Number(process.env.FT_MAX_NEWS_QUERIES||350),concurrency:6});
     newsItems=news.raw;newsCoverage=news.coverage;coverage.push(...news.coverage);

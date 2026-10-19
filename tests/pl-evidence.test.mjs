@@ -122,7 +122,7 @@ test('existing Drive filenames fail when stored bytes differ; never overwrite', 
 });
 import { fixtureFromEspn, espnFixtures, parseEspnStats } from '../scripts/pl-evidence/core.mjs';
 import { collectMatchDetails } from '../scripts/pl-evidence/collect.mjs';
-import { apiFootballFixtures, parseApiFootballStats } from '../scripts/pl-evidence/core.mjs';
+import { apiFootballFixtures, parseApiFootballStats, parseFootballDataStats } from '../scripts/pl-evidence/core.mjs';
 
 test('API-Football recorded fixture and statistics structures preserve observed values',()=>{
   const payload={errors:[],response:[{league:{id:39},fixture:{id:123,date:'2026-10-18T15:00:00Z',status:{short:'FT'}},
@@ -147,6 +147,23 @@ test('Sunderland AFC fixture is resolved without guessing a score',()=>{
   assert.equal(parsed.matches.length,1);
   assert.equal(parsed.matches[0].away,'Sunderland');
   assert.equal(parsed.matches[0].score,'2-0');
+});
+
+test('football-data match detail accepts only present observed statistics',async()=>{
+  const fixture={...f,provider_id:456,source_domain:'football-data.org'};
+  const detail={id:456,status:'FINISHED',utcDate:'2026-10-18T15:00:00Z',
+    homeTeam:{name:'Arsenal FC',statistics:{shots:14,shots_on_goal:6,ball_possession:55,red_cards:null}},
+    awayTeam:{name:'Chelsea FC',statistics:{shots:8,shots_on_goal:3,ball_possession:45}},
+    score:{fullTime:{home:2,away:1}}};
+  const parsed=parseFootballDataStats(detail,fixture);
+  assert.equal(parsed.raw.length,6);
+  assert.equal(parsed.raw.find(x=>x.field==='possession'&&x.side==='home').value,'55%');
+  assert.ok(!parsed.raw.some(x=>x.field==='red_cards'));
+  const collected=await collectMatchDetails([fixture],{footballDataKey:'KEY',req:async(url,opt)=>{
+    assert.ok(url.endsWith('/matches/456'));assert.equal(opt.headers['X-Auth-Token'],'KEY');return detail;
+  }});
+  assert.equal(collected.raw.length,6);
+  assert.equal(normalize([fixture],collected.raw).tally.counted,6);
 });
 
 test('two authenticated feeds corroborate a result after public endpoints fail',async()=>{
@@ -265,5 +282,5 @@ test('Authenticated football-data registry recovers blocked FotMob and ESPN with
   assert.ok(res.source_status.some(e=>e.domain==='espn.com'&&e.status==='error'));
   const detail=await collectMatchDetails(res.matches,{req:async()=>{throw Error('not allowed')}});
   assert.equal(detail.raw.length,0);
-  assert.equal(detail.coverage[0].status,'not_available');
+  assert.equal(detail.coverage[0].status,'not_attempted');
 });

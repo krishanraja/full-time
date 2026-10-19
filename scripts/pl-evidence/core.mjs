@@ -253,6 +253,37 @@ export function parseApiFootballStats(payload,match){
   return {raw,errors};
 }
 
+const FOOTBALL_DATA_STATS = new Map([
+  ['corner_kicks','corners'],['offsides','offsides'],['fouls','fouls'],
+  ['ball_possession','possession'],['saves','saves'],['shots','shots'],
+  ['shots_on_goal','shots_on_target'],['yellow_cards','yellow_cards'],
+  ['red_cards','red_cards'],
+]);
+/** Parse only statistics explicitly present in a football-data.org match detail. */
+export function parseFootballDataStats(detail,match){
+  if(detail?.status!=='FINISHED' || toLondonDate(detail.utcDate)!==match.date)
+    throw Error('football-data detail is not the completed requested match');
+  const home=canonicalTeam(detail.homeTeam?.name),away=canonicalTeam(detail.awayTeam?.name);
+  if(home!==match.home || away!==match.away ||
+    `${detail.score?.fullTime?.home}-${detail.score?.fullTime?.away}`!==match.score)
+    throw Error('football-data detail fixture or score mismatch');
+  const raw=[];let ordinal=0;
+  for(const [side,team] of [['home',detail.homeTeam],['away',detail.awayTeam]]){
+    const stats=team.statistics;
+    if(!stats || typeof stats!=='object')continue;
+    for(const [sourceField,field] of FOOTBALL_DATA_STATS){
+      const value=stats[sourceField];
+      if(!Number.isFinite(value) || value<0)continue;
+      raw.push(ledgerItem(match,'football-data.org',++ordinal,{kind:'counted',field,
+        value:field==='possession'?`${value}%`:value,side,
+        text:`${sourceField}: ${value}${field==='possession'?'%':''}`,
+        source_url:`https://api.football-data.org/v4/matches/${match.provider_id}`,
+        provenance:'match_center'}));
+    }
+  }
+  return {raw,errors:raw.length?[]:['football_data_match_stats_unavailable']};
+}
+
 const ESPN_COUNTED = new Map(Object.entries({
   shots:'shots',totalshots:'shots',shotsontarget:'shots_on_target',
   shotsongoal:'shots_on_target',blockedshots:'blocked_shots',

@@ -1,4 +1,4 @@
-import { DOMAINS, leagueFixtures, espnFixtures, footballDataFixtures, apiFootballFixtures, ledgerItem, parseStats, parseEspnStats, parseApiFootballStats, matchKey, canonicalTeam, toLondonDate } from './core.mjs';
+import { DOMAINS, leagueFixtures, espnFixtures, footballDataFixtures, apiFootballFixtures, ledgerItem, parseStats, parseEspnStats, parseApiFootballStats, parseFootballDataStats, matchKey, canonicalTeam, toLondonDate } from './core.mjs';
 
 const AGENT='FullTimeEvidenceResearch/1.0 (+https://fulltime.fm; public match evidence only)';
 export async function requestText(url,{headers={},timeoutMs=8500,attempts=2}={}){
@@ -142,7 +142,7 @@ export async function discoverFixtures(dates,{footballDataKey,apiFootballKey,req
     independent_check:verified?'football-data.org_accessible':'unavailable'};
 }
 
-export async function collectMatchDetails(fixtures,{apiFootballKey,req=requestJson}={}){
+export async function collectMatchDetails(fixtures,{apiFootballKey,footballDataKey,req=requestJson}={}){
   const raw=[];const errors=[];const coverage=[];
   for(const fixture of fixtures){
     if(fixture.source_domain==='api-football.com' && apiFootballKey){
@@ -156,11 +156,14 @@ export async function collectMatchDetails(fixtures,{apiFootballKey,req=requestJs
       continue;
     }
     if(fixture.source_domain==='football-data.org'){
-      // football-data fixture responses expose scores, not a licensed detailed
-      // match-centre statistics dataset; never manufacture missing values.
-      coverage.push({match:matchKey(fixture),domain:'football-data.org',url:fixture.fixture_source_url,
-        status:'not_available',reason:'fixture_only_no_team_stats'});
-      errors.push(`${matchKey(fixture)}: detailed match-centre statistics not collected`);
+      const url=`https://api.football-data.org/v4/matches/${fixture.provider_id}`;
+      if(!footballDataKey){coverage.push({match:matchKey(fixture),domain:'football-data.org',url,status:'not_attempted',reason:'key_unavailable'});continue;}
+      try{
+        const stats=parseFootballDataStats(await req(url,{headers:{'X-Auth-Token':footballDataKey}}),fixture);
+        raw.push(...stats.raw);errors.push(...stats.errors.map(s=>`${matchKey(fixture)}: ${s}`));
+        coverage.push({match:matchKey(fixture),domain:'football-data.org',url,status:stats.errors.length?'partial':'found',items:stats.raw.length});
+      }catch(error){errors.push(`${matchKey(fixture)} football-data details: ${error.message}`);
+        coverage.push({match:matchKey(fixture),domain:'football-data.org',url,status:'error',error:String(error.message).slice(0,120)});}
       continue;
     }
     const espn=fixture.source_domain==='espn.com';
