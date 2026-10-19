@@ -1,0 +1,62 @@
+name: Premier League - independent evidence intake
+
+# This ONLY produces an audited JSON research input. It cannot publish shows,
+# modify Supabase, or trigger Full Time's production/rehearsal workflows.
+on:
+  schedule:
+    - cron: '0 8 * * 0,2,4'
+      timezone: 'Europe/London'
+  workflow_dispatch:
+    inputs:
+      end_date:
+        description: 'Last included UK calendar date, YYYY-MM-DD (default: yesterday)'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: premier-league-evidence-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  intake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate evidence contract (no network or paid models)
+        run: node --test tests/pl-evidence.test.mjs
+      - name: Collect and validate Premier League evidence
+        id: collect
+        continue-on-error: true
+        env:
+          GOOGLE_DRIVE_OAUTH_JSON: ${{ secrets.GOOGLE_DRIVE_OAUTH_JSON }}
+          GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON }}
+          FOOTBALL_DATA_KEY: ${{ secrets.FOOTBALL_DATA_KEY }}
+          FT_DRIVE_FOLDER_ID: '1g1ZmO3PtsC54XudqxL7DlajkD9Nrzfcp'
+          FT_MAX_NEWS_QUERIES: '350'
+          DATE_IN: ${{ inputs.end_date }}
+        run: |
+          if [ -n "$DATE_IN" ]; then
+            node scripts/pl-evidence/run.mjs --end "$DATE_IN" --out pl-evidence-output
+          else
+            node scripts/pl-evidence/run.mjs --out pl-evidence-output
+          fi
+      - name: Preserve both JSON files and receipt even if partial
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: premier-league-evidence-${{ github.run_id }}
+          path: pl-evidence-output/*.json
+          retention-days: 30
+          if-no-files-found: error
+      - name: Fail if collection, validation or delivery was incomplete
+        if: steps.collect.outcome != 'success'
+        run: |
+          echo '::error::Premier League evidence was incomplete. Read the artifact receipt and job summary.'
+          exit 1
