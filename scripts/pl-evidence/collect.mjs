@@ -87,7 +87,7 @@ export async function discoverFixtures(dates,{footballDataKey,req=requestJson}={
         errors.push(`single-source finished fixture: ${key}; no independent public result available`);
       }
     }
-    matches.push();matches.length=0;matches.push(...accepted);
+    matches.length=0;matches.push(...accepted);
   }
 
   const seen=new Set();
@@ -105,6 +105,14 @@ export async function discoverFixtures(dates,{footballDataKey,req=requestJson}={
 export async function collectMatchDetails(fixtures,{req=requestJson}={}){
   const raw=[];const errors=[];const coverage=[];
   for(const fixture of fixtures){
+    if(fixture.source_domain==='football-data.org'){
+      // football-data fixture responses expose scores, not a licensed detailed
+      // match-centre statistics dataset; never manufacture missing values.
+      coverage.push({match:matchKey(fixture),domain:'football-data.org',url:fixture.fixture_source_url,
+        status:'not_available',reason:'fixture_only_no_team_stats'});
+      errors.push(`${matchKey(fixture)}: detailed match-centre statistics not collected`);
+      continue;
+    }
     const espn=fixture.source_domain==='espn.com';
     const domain=espn?'espn.com':'fotmob.com';
     const url=espn
