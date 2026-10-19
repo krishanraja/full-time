@@ -5,7 +5,7 @@ This handbook is the operating contract for Full Time. It serves founders, produ
 - **Status:** Current documentation index
 - **Owner:** Founder and product
 - **Purpose:** Route every reader and autonomous agent to the right source of truth.
-- **Last reviewed:** 2026-10-16
+- **Last reviewed:** 2026-10-19
 - **Production authority:** GitHub `main` plus observed behavior on the current Vercel production deployment
 
 ## Source-of-truth order
@@ -65,6 +65,7 @@ Never convert a roadmap decision into a live claim. Never convert an implemented
 | [`20-research-intake.md`](./20-research-intake.md)                     | Current                          | Private source intake, rights attestation, and corpus procedure                        |
 | [`21-go-to-market-agent.md`](./21-go-to-market-agent.md)               | Current and binding              | Autonomous marketing and sales briefing, proof map, objections, and action limits      |
 | [`22-vision-and-beta.md`](./22-vision-and-beta.md)                     | Current                          | Why Full Time exists, where it is going, the pilot beta, feedback, and the December release bar |
+| [`premier-league-evidence-actions.md`](./premier-league-evidence-actions.md) | Current, internal only | Scheduled private evidence intake to Drive: cadence, secrets by name, failure modes, cutover |
 | [`history/LOG.md`](./history/LOG.md)                                   | Append-only log                  | Dated record of reconciliations, moves, and archived documents; never describes current behavior |
 
 Number 17 remains intentionally unused.

@@ -4,6 +4,12 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-10-19
+
+- reconciled at `5aa7788`: head moved from `97018c4`. Checked the new evidence-intake workflows, `scripts/pl-evidence/` and `docs/premier-league-evidence-actions.md` against NOW.md; added a "What changed recently" bullet, a Read next entry and a never_publish entry for the Drive folder. `docs/premier-league-evidence-actions.md` indexed in `docs/README.md`.
+- reconciled at `5aa7788`: the 2026-10-19 legal-names bullet said "this branch"; it now cites `784cbcb`, PR #84.
+- not changed: the canon block in `AGENTS.md` (synced by PR #83) belongs to the canon sync, not the steward.
+
 ## 2026-10-18
 
 - stamped at `97018c4`: head moved from `319d324`. The new non-steward commits add `docs/NORTH_STAR.md`, sync the harness canon block in `AGENTS.md`, add `docs/HARNESS_CONTEXT.md` and its context workflow, and add one pointer line to `docs/22-vision-and-beta.md`. No source or product behaviour changed. NOW.md gained a recent-changes bullet and the North Star at the top of "Read next". No stamp was bumped: no current doc was re-read against the code.
