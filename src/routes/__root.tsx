@@ -15,6 +15,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BottomNav } from "../components/BottomNav";
 import { AppHeader } from "../components/AppHeader";
+import { SiteFooter } from "../components/CompanyNote";
 import { MiniPlayer } from "../components/MiniPlayer";
 import { CompletionToast } from "../components/CompletionToast";
 import { supabase } from "@/integrations/supabase/client";
@@ -213,6 +214,8 @@ function RootComponent() {
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const wideLayout = pathname === "/receipts";
+  // The three tabs fit one screen and never scroll, so they carry no footer.
+  const oneScreenTab = pathname === "/" || pathname === "/following" || pathname === "/settings";
 
   useEffect(() => {
     if (!hasClientSupabaseConfig()) return;
@@ -252,6 +255,7 @@ function RootComponent() {
               }`}
             >
               <Outlet />
+              {!oneScreenTab && <SiteFooter />}
             </div>
           </div>
           {pathname !== "/" && <MiniPlayer />}

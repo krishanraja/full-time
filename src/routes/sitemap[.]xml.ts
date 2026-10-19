@@ -19,6 +19,11 @@ import type { Database } from "@/integrations/supabase/types";
 // outgrows it the next step is a sitemap index, not a bigger number.
 const EPISODE_LIMIT = 5000;
 
+// The date the static pages were last edited. Every <loc> carries a lastmod;
+// a page with no newer signal falls back to this. Change it in the commit
+// that edits /waitlist, /pro, /receipts or the legal pages.
+const STATIC_PAGES_LASTMOD = "2026-10-19";
+
 type EpisodeRow = { id: string; published_at: string };
 
 function escapeXml(input: string): string {
@@ -40,11 +45,9 @@ function urlXml(path: string, lastmod: string | null): string {
   return [
     "<url>",
     `<loc>${escapeXml(`${SITE_URL}${path}`)}</loc>`,
-    lastmod ? `<lastmod>${lastmod}</lastmod>` : "",
+    `<lastmod>${lastmod ?? STATIC_PAGES_LASTMOD}</lastmod>`,
     "</url>",
-  ]
-    .filter(Boolean)
-    .join("");
+  ].join("");
 }
 
 export const Route = createFileRoute("/sitemap.xml")({
@@ -79,7 +82,7 @@ export const Route = createFileRoute("/sitemap.xml")({
 
         // The home and archive surfaces both re-render whenever a new episode
         // publishes, so the newest episode's date is their honest lastmod.
-        // /waitlist is static copy, so it gets no lastmod rather than a guess.
+        // Static pages (/waitlist, /pro, /receipts, legal) take STATIC_PAGES_LASTMOD.
         const newestEpisodeDate = rows[0] ? lastmodDate(rows[0].published_at) : null;
 
         const xml = [
@@ -91,9 +94,10 @@ export const Route = createFileRoute("/sitemap.xml")({
           // /pro is a truthful pre-launch and existing-subscriber page. New
           // checkout remains disabled.
           urlXml("/pro", null),
-          // Static copy, no lastmod rather than a guess. Listed because
-          // legal pages are a trust signal engines look for, not because
-          // they are traffic. /settings, /following and /auth are
+          // Public and indexable, though Today no longer links to it.
+          urlXml("/receipts", null),
+          // Static copy. Listed because legal pages are a trust signal
+          // engines look for, not because they are traffic. /settings, /following and /auth are
           // deliberately absent: they are noindex or personalised.
           urlXml("/legal/privacy", null),
           urlXml("/legal/terms", null),

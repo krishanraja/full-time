@@ -5,6 +5,7 @@ import { Check, ChevronRight, Mail, X } from "lucide-react";
 import { PERSONALITIES, type PersonalityId } from "@/components/PersonalitySelector";
 import { HapticButton } from "@/components/HapticButton";
 import { PunditCover } from "@/components/PunditCover";
+import { CompanyNote } from "@/components/CompanyNote";
 import {
   Drawer,
   DrawerContent,
@@ -352,6 +353,7 @@ function Settings() {
           AI Pundits write every show from checked, licensed match data. The voices are synthetic.
           We use no copyrighted broadcast audio.
         </p>
+        <CompanyNote className="mt-1.5" />
       </section>
     </div>
   );
