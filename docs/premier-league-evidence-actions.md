@@ -21,7 +21,7 @@ Retries never overwrite a differing JSON file for the same window. If file conte
 
 ## Coverage strategy and boundaries
 
-1. **Fixtures:** FotMob's published Premier League match centre fixture metadata for each date, cross-checked with football-data.org when its key is available. No apparent result, unresolved club or score disagreement is accepted as a match claim. Official league pages remain a useful manual source when a fixture feed is unavailable. The 2026/27 20-team registry is pinned inside `core.mjs` and must be updated only when official season membership changes.
+1. **Fixtures:** FotMob's published Premier League match centre fixture metadata for each date, with a separate ESPN scoreboard fallback if FotMob is unavailable (including HTTP 404). Both feeds require explicitly completed games and exact team/score/date resolution. The independent football-data.org verification needs `FOOTBALL_DATA_KEY`; without it, report partial rather than inventing verification. ESPN is an auxiliary match-centre source for fixture and directly reported statistics, **not** a thirty-first editorial-opinion domain. Do not turn any outside-provider estimate into a counted fact. The 2026/27 20-team registry is pinned inside `core.mjs` and must change only when official season membership changes.
 2. **Counted facts:** FotMob match-centre stats, using exact reported numbers. Final home/away goal totals are counted from checked final scores. No inferred zeros.
 3. **Model numbers:** only with an explicit attributable model name. An unlabeled xG value goes to `rejected` with `model_unnamed`; that is intentional.
 4. **Opinion:** Bing News RSS results filtered by the **exact publisher hostname** and both teams. Snippets are logged as snippets, not treated as full stories. Only explicitly recognised team observations enter shadow-signals. Everything else is refused/rejected. No open-ended LLM interpretation is allowed.
@@ -61,3 +61,13 @@ Leave the existing ChatGPT automation enabled until the new GitHub workflow has 
 ## Founder scope ruling
 
 Ruling (Krish, 2026-10-19): this is not being treated as a commercial source-reuse product; do not require sources to be cited publicly. Private source identifiers remain solely for rejecting contradictions and verifying the ingestion contract.
+
+## Live-run troubleshooting (2026-10-19)
+
+Observed workflow run [39249219149](https://github.com/krishanraja/full-time/actions/runs/39249219149): FotMob daily fixture requests returned HTTP 404 on all three dates; `FOOTBALL_DATA_KEY` was absent; Drive listed the target folder with HTTP 403. The original checks correctly withheld a fabricated success and retained three JSON artifacts, but the job had no alternative fixture discovery and collapsed Google 403 into an unhelpful generic message.
+
+The fallback fetches ESPN scoreboard results if FotMob fails, records its own provenance and fetches ESPN's explicit team statistics when available; it never passes ESPN identifiers to FotMob. A Google Drive error is now reported with the HTTP status and Google's machine-readable `reason`, without logging OAuth tokens or the raw response body. The upload preflight checks that the destination is a folder with create permission.
+
+**If Drive still returns 403:** inspect the reason in the run receipt. `insufficientPermissions` / `ACCESS_TOKEN_SCOPE_INSUFFICIENT` means the saved refresh token lacks Drive access: regenerate it with `https://www.googleapis.com/auth/drive` in OAuth Playground while using your own OAuth client, then replace `GOOGLE_DRIVE_OAUTH_JSON` in Actions secrets. `accessNotConfigured` means enable Google Drive API on the Cloud project owning the OAuth client. `insufficientFilePermissions` means grant the signed-in account edit rights on the target folder. Do not expose the token itself in logs or PRs.
+
+The independent score-verification gate remains intentionally blocking when `FOOTBALL_DATA_KEY` is missing, regardless of fallback success. Both data and delivery must pass in a live Actions run before disabling the old ChatGPT schedule.
