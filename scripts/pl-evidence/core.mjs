@@ -171,6 +171,36 @@ export function espnFixtures(payload,date,known=CLUBS_2026){
   return {matches,rejected};
 }
 
+
+/** An authenticated football-data.org response is an auxiliary fixture registry.
+ * Do not invent detailed match statistics from its schedule payload. */
+export function footballDataFixtures(payload,dates,known=CLUBS_2026){
+  if(!Array.isArray(payload?.matches))throw Error('Invalid football-data match-list schema');
+  const matches=[],rejected=[];
+  for(const raw of payload.matches){
+    if(raw.status!=='FINISHED')continue;
+    const date=toLondonDate(raw.utcDate);
+    if(!dates.includes(date))continue;
+    const home=canonicalTeam(raw.homeTeam?.name || raw.homeTeam?.shortName,known);
+    const away=canonicalTeam(raw.awayTeam?.name || raw.awayTeam?.shortName,known);
+    const id=String(raw.id??'');
+    if(!home||!away||home===away){
+      rejected.push({item:`football-data.org:${date}:${id}`,reason:'team_unresolved'});
+      continue;
+    }
+    const h=raw.score?.fullTime?.home, a=raw.score?.fullTime?.away;
+    if(!Number.isInteger(h)||!Number.isInteger(a)||h<0||a<0){
+      rejected.push({item:`football-data.org:${date}:${id}`,reason:'score_missing'});
+      continue;
+    }
+    const url=`https://api.football-data.org/v4/competitions/PL/matches?dateFrom=${dates[0]}&dateTo=${dates.at(-1)}`;
+    matches.push({date,home,away,score:`${h}-${a}`,
+      provider_id:id,source_domain:'football-data.org',
+      fixture_source_url:url,provider_url:url});
+  }
+  return {matches,rejected};
+}
+
 const ESPN_COUNTED = new Map(Object.entries({
   shots:'shots',totalshots:'shots',shotsontarget:'shots_on_target',
   shotsongoal:'shots_on_target',blockedshots:'blocked_shots',
