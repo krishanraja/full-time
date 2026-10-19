@@ -1,4 +1,4 @@
-import { DOMAINS, leagueFixtures, ledgerItem, parseStats, matchKey, canonicalTeam, toLondonDate } from './core.mjs';
+import { DOMAINS, leagueFixtures, espnFixtures, ledgerItem, parseStats, parseEspnStats, matchKey, canonicalTeam, toLondonDate } from './core.mjs';
 
 const AGENT='FullTimeEvidenceResearch/1.0 (+https://fulltime.fm; public match evidence only)';
 export async function requestText(url,{headers={},timeoutMs=8500,attempts=2}={}){
@@ -22,13 +22,27 @@ export async function requestJson(url,opt={}){return JSON.parse(await requestTex
 export async function discoverFixtures(dates,{footballDataKey,req=requestJson}={}){
   const matches=[];const rejected=[];const errors=[];const source_status=[];
   for(const date of dates){
-    const url=`https://www.fotmob.com/api/matches?date=${date.replaceAll('-','')}`;
+    const fotmobUrl=`https://www.fotmob.com/api/matches?date=${date.replaceAll('-','')}`;
     try{
-      const x=leagueFixtures(await req(url),date);
-      matches.push(...x.matches);
+      const x=leagueFixtures(await req(fotmobUrl),date);
+      matches.push(...x.matches.map(m=>({...m,source_domain:'fotmob.com',fixture_source_url:fotmobUrl})));
       rejected.push(...x.rejected);
-      source_status.push({date,domain:'fotmob.com',url,status:'found',count:x.matches.length});
-    }catch(error){errors.push(`fixture ${date}: ${error.message}`);source_status.push({date,domain:'fotmob.com',url,status:'error'});}
+      source_status.push({date,domain:'fotmob.com',url:fotmobUrl,status:'found',count:x.matches.length});
+    }catch(error){
+      source_status.push({date,domain:'fotmob.com',url:fotmobUrl,status:'error',error:String(error.message).slice(0,120)});
+      // ESPN scoreboard is independent of FotMob and has an explicit FT marker.
+      // It is an auxiliary fixture/match-centre source, not an editorial domain.
+      const espnUrl=`https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=${date.replaceAll('-','')}`;
+      try{
+        const x=espnFixtures(await req(espnUrl),date);
+        matches.push(...x.matches);
+        rejected.push(...x.rejected);
+        source_status.push({date,domain:'espn.com',url:espnUrl,status:'found',count:x.matches.length,fallback_for:'fotmob.com'});
+      }catch(fallbackError){
+        errors.push(`fixture ${date}: FotMob ${error.message}; ESPN fallback ${fallbackError.message}`);
+        source_status.push({date,domain:'espn.com',url:espnUrl,status:'error',error:String(fallbackError.message).slice(0,120)});
+      }
+    }
   }
   // football-data.org crosscheck is a metadata verification, not a classified non-API source.
   // A disagreement is rejected rather than resolved or overruled.
@@ -39,6 +53,17 @@ export async function discoverFixtures(dates,{footballDataKey,req=requestJson}={
       const data=await req(url,{headers:{'X-Auth-Token':footballDataKey}});
       if(!Array.isArray(data.matches))throw Error('Invalid football-data result schema');
       const fdata=data.matches.filter(x=>x.status==='FINISHED');
+      // A fixture missing from the discovered set is a coverage failure,
+      // never evidence that the match was not played.
+      for(const item of fdata){
+        const home=canonicalTeam(item.homeTeam?.name) ?? canonicalTeam(item.homeTeam?.shortName);
+        const away=canonicalTeam(item.awayTeam?.name) ?? canonicalTeam(item.awayTeam?.shortName);
+        const date=toLondonDate(item.utcDate);
+        if(date && dates.includes(date) && home && away &&
+          !matches.some(m=>m.date===date && m.home===home && m.away===away)){
+          errors.push(`fixture absent from primary discovery: ${date}|${home}|${away}`);
+        }
+      }
       const accepted=[];
       for(const match of matches){
         const others=fdata.filter(x=>{
@@ -70,17 +95,24 @@ export async function discoverFixtures(dates,{footballDataKey,req=requestJson}={
   }
   return {matches,rejected,errors,source_status,independent_check};
 }
-export async function collectFotmobDetails(fixtures,{req=requestJson}={}){
+export async function collectMatchDetails(fixtures,{req=requestJson}={}){
   const raw=[];const errors=[];const coverage=[];
   for(const fixture of fixtures){
-    const url=`https://www.fotmob.com/api/matchDetails?matchId=${fixture.provider_id}`;
+    const espn=fixture.source_domain==='espn.com';
+    const domain=espn?'espn.com':'fotmob.com';
+    const url=espn
+      ?`https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/summary?event=${fixture.provider_id}`
+      :`https://www.fotmob.com/api/matchDetails?matchId=${fixture.provider_id}`;
     try{
       const data=await req(url);
-      const stats=parseStats(data,fixture);
+      const stats=espn?parseEspnStats(data,fixture):parseStats(data,fixture);
       raw.push(...stats.raw);
       errors.push(...stats.errors.map(s=>`${matchKey(fixture)}: ${s}`));
-      coverage.push({match:matchKey(fixture),domain:'fotmob.com',url,status:stats.errors.length?'partial':'found',items:stats.raw.length});
-    }catch(error){errors.push(`${matchKey(fixture)} FotMob details: ${error.message}`);coverage.push({match:matchKey(fixture),domain:'fotmob.com',url,status:'error'});}
+      coverage.push({match:matchKey(fixture),domain,url,status:stats.errors.length?'partial':'found',items:stats.raw.length});
+    }catch(error){
+      errors.push(`${matchKey(fixture)} ${domain} details: ${error.message}`);
+      coverage.push({match:matchKey(fixture),domain,url,status:'error',error:String(error.message).slice(0,120)});
+    }
   }
   return {raw,errors,coverage};
 }
