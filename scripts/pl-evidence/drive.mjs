@@ -4,6 +4,19 @@ const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 const base64url = (data) => Buffer.from(data).toString('base64url');
 const digest = (value) => createHash('sha256').update(value).digest('hex');
 
+/** Google emits a machine-readable reason inside most 403 responses.
+ * Never log the full body: it can contain user identifiers or resource IDs. */
+async function driveFailure(operation,response){
+  let reason='unspecified';
+  try{
+    const data=await response.json();
+    reason=String(data?.error?.errors?.[0]?.reason || data?.error?.status || 'unspecified')
+      .replace(/[^A-Za-z0-9_.-]/g,'_').slice(0,80);
+  }catch{/* no parseable error body */}
+  return new Error(`${operation} HTTP ${response.status} reason=${reason}`);
+}
+
+
 /** Accept either an OAuth user refresh token (preferred for My Drive) or a
  * service account key (appropriate for Shared Drives with folder access).
  * Credentials come exclusively from GitHub Actions secrets, never the repo. */
@@ -59,10 +72,20 @@ export async function uploadJson(name, value, { credentials, folderId, request =
   const token = await driveToken(credentials, request);
   const auth = { Authorization: `Bearer ${token}` };
   const fields = 'id,name,mimeType,parents,size,webViewLink';
+  // Fail early on missing folder access; otherwise a scope or ACL problem
+  // looks identical to a transient upload failure.
+  const folderResponse=await request(
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(folderId)}?fields=id,mimeType,capabilities(canAddChildren)&supportsAllDrives=true`,
+    {headers:auth},
+  );
+  if(!folderResponse.ok)throw await driveFailure('Drive folder preflight',folderResponse);
+  const folder=await folderResponse.json();
+  if(folder.mimeType!=='application/vnd.google-apps.folder')throw Error('Drive destination is not a folder');
+  if(folder.capabilities?.canAddChildren===false)throw Error('Drive destination has no file-creation permission');
   const searchQuery = `name = '${name.replaceAll("'", "\\'")}' and '${folderId}' in parents and trashed = false`;
   const listUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(searchQuery)}&fields=nextPageToken,files(${fields})&supportsAllDrives=true&includeItemsFromAllDrives=true`;
   const listing = await request(listUrl, { headers: auth });
-  if (!listing.ok) throw Error(`Drive destination inspection HTTP ${listing.status}`);
+  if (!listing.ok) throw await driveFailure('Drive destination inspection',listing);
   const found = await listing.json();
   if (found.nextPageToken) throw Error('Drive destination listing paginated; refusing uncertain duplicate state');
   if ((found.files ?? []).length > 1) throw Error(`Multiple existing Drive files named ${name}; refusing overwrite`);
@@ -77,14 +100,14 @@ export async function uploadJson(name, value, { credentials, folderId, request =
       headers: { ...auth, 'Content-Type': `multipart/related; boundary=${boundary}` },
       body,
     });
-    if (!uploaded.ok) throw Error(`Drive file creation failed HTTP ${uploaded.status}`);
+    if (!uploaded.ok) throw await driveFailure('Drive file creation',uploaded);
     file = await uploaded.json();
   }
   if (file.mimeType !== 'application/json' || !file.parents?.includes(folderId)) {
     throw Error('Drive file metadata mismatch');
   }
   const get = await request(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(file.id)}?alt=media&supportsAllDrives=true`, { headers: auth });
-  if (!get.ok) throw Error(`Drive readback HTTP ${get.status}`);
+  if (!get.ok) throw await driveFailure('Drive readback',get);
   const content = await get.text();
   if (digest(content) !== digest(json)) throw Error('Drive readback content/hash mismatch (existing filename conflict or upload damage)');
   return { id: file.id, name: file.name, url: file.webViewLink || null, bytes: Buffer.byteLength(content), sha256: digest(content) };

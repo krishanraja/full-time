@@ -2,7 +2,7 @@
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { daysForRun, DOMAINS, normalize, ledgerItem, matchKey, validate } from './core.mjs';
-import { discoverFixtures, collectFotmobDetails, collectNews } from './collect.mjs';
+import { discoverFixtures, collectMatchDetails, collectNews } from './collect.mjs';
 import { uploadJson } from './drive.mjs';
 
 function arg(flag){const pos=process.argv.indexOf(flag);return pos<0?null:process.argv[pos+1];}
@@ -30,15 +30,15 @@ async function main(){
     problems.push(...fx.errors);
   }
   if(!fixtures.length)problems.push('No complete fixtures verified; cannot treat empty output as no games');
-  const scores=fixtures.flatMap(f=>['home','away'].map((side,i)=>ledgerItem(f,'fotmob.com',1000+i,{
+  const scores=fixtures.flatMap(f=>['home','away'].map((side,i)=>ledgerItem(f,f.source_domain||'fotmob.com',1000+i,{
     kind:'counted',field:'goals',value:Number(f.score.split('-')[i]),side,
     text:`Final score ${f.score}; ${side} goals ${f.score.split('-')[i]}`,
-    source_url:`https://www.fotmob.com/api/matches?date=${f.date.replaceAll('-','')}`,
+    source_url:f.fixture_source_url||`https://www.fotmob.com/api/matches?date=${f.date.replaceAll('-','')}`,
     provenance:'match_center',
   })));
   let coverage=[];
   if(!arg('--fixtures')){
-    const detailed=await collectFotmobDetails(fixtures);
+    const detailed=await collectMatchDetails(fixtures);
     statsItems=detailed.raw;coverage.push(...detailed.coverage);problems.push(...detailed.errors);
     const news=await collectNews(fixtures,{maxQueries:Number(process.env.FT_MAX_NEWS_QUERIES||350),concurrency:6});
     newsItems=news.raw;coverage.push(...news.coverage);
@@ -57,13 +57,14 @@ async function main(){
     if (rawCredentials) credentials=JSON.parse(rawCredentials);
   } catch { problems.push('Google Drive authentication secret is invalid JSON'); }
   if(!credentials)problems.push('Google Drive OAuth or service-account secret unavailable: GitHub artifacts only');
-  const raw={schema_version:1,window,created_at:new Date().toISOString(),fixtures,
+  const raw={schema_version:1,window,fixtures,
     fixture_rejections:fixturesRejected,source_status:allSourceStatus,items,
     notes:['Raw RSS excerpts are headlines/descriptions only, never full-page commentary.',
       'Missing or blocked domains are not represented as evidence.',
-      'External fixture verification (if enabled) is metadata, not non-API classified evidence.'],
+      'ESPN is an auxiliary fixture/match-centre fallback, not one of the thirty approved opinion domains.',
+      'External fixture verification (if enabled) is metadata, not classified editorial evidence.'],
   };
-  const manifest={domains:DOMAINS,source_status:allSourceStatus,fixture_source:'fotmob.com',
+  const manifest={domains:DOMAINS,source_status:allSourceStatus,fixture_source:'fotmob.com_with_espn_fallback',
     independent_crosscheck:footballDataKey?'football-data.org_attempted':'not_configured',
     expected_finished_fixtures:fixtures.length,discovered_finished_fixtures:fixtures.length};
   const normal=normalize(fixtures,items,fixturesRejected,{

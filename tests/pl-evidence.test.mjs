@@ -88,6 +88,7 @@ test('Drive OAuth secret produces bearer token, then verifies JSON bytes before 
       return {ok:true,json:async()=>({access_token:'BEARER'})};
     }
     assert.equal(options.headers.Authorization,'Bearer BEARER');
+    if(url.includes('/drive/v3/files/FOLDER_ID?'))return {ok:true,json:async()=>({id:'FOLDER_ID',mimeType:'application/vnd.google-apps.folder',capabilities:{canAddChildren:true}})};
     if(url.includes('/drive/v3/files?q='))return {ok:true,json:async()=>({files:[]})};
     if(url.includes('/upload/drive/v3/files')){
       stored=options.body.split('\r\nContent-Type: application/json\r\n\r\n')[1].split('\r\n--')[0];
@@ -109,6 +110,7 @@ test('existing Drive filenames fail when stored bytes differ; never overwrite', 
   let invokedPost=false;
   const req=async (url,options={})=>{
     if(url==='https://oauth2.googleapis.com/token')return {ok:true,json:async()=>({access_token:'BEARER'})};
+    if(url.includes('/drive/v3/files/FOLDER_ID?'))return {ok:true,json:async()=>({id:'FOLDER_ID',mimeType:'application/vnd.google-apps.folder',capabilities:{canAddChildren:true}})};
     if(url.includes('/drive/v3/files?q='))return {ok:true,json:async()=>({files:[{id:'OLD',name:'test-window.json',mimeType:'application/json',parents:['FOLDER_ID']}]})};
     if(url.includes('/drive/v3/files/OLD?'))return {ok:true,text:async()=>'{"stale":true}\n'};
     if(options.method==='POST')invokedPost=true;
@@ -117,4 +119,106 @@ test('existing Drive filenames fail when stored bytes differ; never overwrite', 
   await assert.rejects(uploadJson('test-window.json',{window:'fresh'},
     {credentials:{client_id:'ID',client_secret:'SECRET',refresh_token:'TOKEN'},folderId:'FOLDER_ID',request:req}),/mismatch/);
   assert.equal(invokedPost,false);
+});
+import { fixtureFromEspn, espnFixtures, parseEspnStats } from '../scripts/pl-evidence/core.mjs';
+import { collectMatchDetails } from '../scripts/pl-evidence/collect.mjs';
+
+const espnFixture = {
+  id:'1234567', date:'2026-10-18T15:00:00Z', status:{type:{completed:true}},
+  competitions:[{competitors:[
+    {homeAway:'away',team:{displayName:'Chelsea'},score:'1'},
+    {homeAway:'home',team:{displayName:'Arsenal'},score:'2'},
+  ]}],
+};
+test('ESPN auxiliary scoreboard confirms completed date, sides and exact score',()=>{
+  const match=fixtureFromEspn(espnFixture,'2026-10-18');
+  assert.equal(match.home,'Arsenal'); assert.equal(match.away,'Chelsea');
+  assert.equal(match.score,'2-1'); assert.equal(match.source_domain,'espn.com');
+  assert.equal(espnFixtures({events:[espnFixture]},'2026-10-18').matches.length,1);
+  assert.equal(fixtureFromEspn({...espnFixture,status:{type:{completed:false}}},'2026-10-18').error,'not_final');
+  assert.equal(fixtureFromEspn({...espnFixture,competitions:[{competitors:[]}]},'2026-10-18').error,'team_unresolved');
+  assert.throws(()=>espnFixtures({events:null},'2026-10-18'),/schema/);
+});
+test('FotMob HTTP 404 falls back to ESPN with source manifest, not a fictional FotMob result',async()=>{
+  const found=await discoverFixtures(['2026-10-18'],{
+    req:async url=>{
+      if(url.includes('fotmob.com'))throw Error('HTTP 404');
+      if(url.includes('site.api.espn.com'))return {events:[espnFixture]};
+      throw Error('unexpected request');
+    },
+  });
+  assert.equal(found.matches.length,1);
+  assert.equal(found.matches[0].source_domain,'espn.com');
+  assert.ok(found.source_status.some(x=>x.domain==='fotmob.com' && x.status==='error'));
+  assert.ok(found.source_status.some(x=>x.domain==='espn.com' && x.status==='found'));
+  assert.ok(found.errors.includes('FOOTBALL_DATA_KEY not set; independent fixture/score reconciliation unavailable'));
+  assert.ok(!found.errors.some(x=>x.includes('HTTP 404')));
+});
+test('ESPN boxscore maps only literal reported statistics to the correct side',async()=>{
+  const fixture=fixtureFromEspn(espnFixture,'2026-10-18');
+  const detail={boxscore:{teams:[
+    {team:{displayName:'Arsenal'},statistics:[
+      {name:'totalShots',displayValue:'14'},
+      {name:'possessionPct',displayValue:'53%'},
+      {name:'expectedGoals',displayValue:'1.4'},
+    ]},
+    {team:{displayName:'Chelsea'},statistics:[
+      {name:'totalShots',displayValue:'8'},
+    ]},
+  ]}};
+  const parsed=parseEspnStats(detail,fixture);
+  assert.equal(parsed.errors.length,0);
+  assert.equal(parsed.raw.length,3);
+  assert.equal(parsed.raw.filter(x=>x.side==='home').length,2);
+  assert.ok(parsed.raw.some(x=>x.field==='possession'&&x.value==='53%'));
+  assert.ok(!parsed.raw.some(x=>x.field==='xg'));
+  const fetched=await collectMatchDetails([fixture],{req:async url=>{
+    assert.ok(url.includes('summary?event=1234567'));return detail;
+  }});
+  assert.equal(fetched.raw.length,3);
+  assert.equal(fetched.coverage[0].domain,'espn.com');
+});
+test('Drive 403 returns its safe machine-readable reason and no token/body',async()=>{
+  const req=async (url,options={})=>{
+    if(url==='https://oauth2.googleapis.com/token')return {ok:true,json:async()=>({access_token:'SECRET_ACCESS_TOKEN'})};
+    if(url.includes('/drive/v3/files/FOLDER_ID?'))return {
+      ok:false,status:403,
+      json:async()=>({error:{errors:[{reason:'insufficientPermissions',message:'sensitive account contents'}]}}),
+    };
+    throw Error('Unexpected call');
+  };
+  await assert.rejects(
+    uploadJson('test-window.json',{window:'2026-10-18'},{
+      credentials:{client_id:'ID',client_secret:'SECRET',refresh_token:'TOKEN'},
+      folderId:'FOLDER_ID',request:req,
+    }),
+    e=>e.message==='Drive folder preflight HTTP 403 reason=insufficientPermissions',
+  );
+});
+
+test('Authenticated football-data registry recovers blocked FotMob and ESPN without inventing independent verification',async()=>{
+  const match={id:123,utcDate:'2026-10-18T15:00:00Z',status:'FINISHED',
+    homeTeam:{name:'Arsenal FC'},awayTeam:{name:'Chelsea FC'},
+    score:{fullTime:{home:2,away:1}}};
+  const res=await discoverFixtures(['2026-10-18'],{
+    footballDataKey:'PRESENT',
+    req:async(url,options)=>{
+      if(url.includes('football-data.org')){
+        assert.equal(options.headers['X-Auth-Token'],'PRESENT');
+        return {matches:[match]};
+      }
+      if(url.includes('fotmob.com'))throw Error('HTTP 404');
+      if(url.includes('espn.com'))throw Error('HTTP 403');
+      throw Error('Unexpected endpoint');
+    },
+  });
+  assert.equal(res.matches.length,1);
+  assert.equal(res.matches[0].source_domain,'football-data.org');
+  assert.equal(res.matches[0].score,'2-1');
+  assert.ok(res.errors.some(e=>e.includes('single-source finished fixture')));
+  assert.ok(res.source_status.some(e=>e.domain==='fotmob.com'&&e.status==='error'));
+  assert.ok(res.source_status.some(e=>e.domain==='espn.com'&&e.status==='error'));
+  const detail=await collectMatchDetails(res.matches,{req:async()=>{throw Error('not allowed')}});
+  assert.equal(detail.raw.length,0);
+  assert.equal(detail.coverage[0].status,'not_available');
 });

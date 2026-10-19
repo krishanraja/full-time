@@ -125,6 +125,120 @@ export function leagueFixtures(payload,date,known=CLUBS_2026){
   }
   return {matches:out,rejected};
 }
+
+/** Auxiliary fixture fallback. ESPN is only used for explicitly recorded
+ * scoreboard results and match-centre statistics when FotMob is unavailable;
+ * it is not counted among the 30 approved editorial/commentary domains. */
+export function fixtureFromEspn(event, requestedDate, known=CLUBS_2026) {
+  if (!event || typeof event!=='object') return {error:'fixture_missing'};
+  const competitors=event.competitions?.[0]?.competitors;
+  if (!Array.isArray(competitors)) return {error:'team_unresolved'};
+  const sides=new Map(competitors.map(c=>[c.homeAway,c]));
+  const h=sides.get('home'),a=sides.get('away');
+  const home=canonicalTeam(h?.team?.displayName || h?.team?.name || '',known);
+  const away=canonicalTeam(a?.team?.displayName || a?.team?.name || '',known);
+  if (!home || !away || home===away) return {error:'team_unresolved'};
+  const date=toLondonDate(event.date);
+  if(date!==requestedDate) return {error:'date_mismatch'};
+  if(event.status?.type?.completed!==true) return {error:'not_final'};
+  function score(value){
+    const raw=String(value??'');
+    if(!/^\d+$/.test(raw))return null;
+    const n=Number(raw);
+    return Number.isSafeInteger(n)?n:null;
+  }
+  const homeScore=score(h?.score),awayScore=score(a?.score);
+  if(homeScore===null || awayScore===null) return {error:'score_missing'};
+  if(!/^\d+$/.test(String(event.id??'')))return {error:'provider_id_missing'};
+  return {date,home,away,score:`${homeScore}-${awayScore}`,
+    provider_id:String(event.id),source_domain:'espn.com',
+    provider_url:`https://www.espn.com/soccer/match/_/gameId/${event.id}`,
+    fixture_source_url:`https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=${requestedDate.replaceAll('-','')}`};
+}
+export function espnFixtures(payload,date,known=CLUBS_2026){
+  if(!Array.isArray(payload?.events))throw Error('Invalid ESPN scoreboard schema');
+  const matches=[],rejected=[];
+  for(const event of payload.events){
+    const f=fixtureFromEspn(event,date,known);
+    if(f.error){
+      if(!['not_final','date_mismatch'].includes(f.error)) rejected.push({
+        item:`espn:${date}:${event?.id??'unknown'}`,reason:f.error,
+      });
+      continue;
+    }
+    matches.push(f);
+  }
+  return {matches,rejected};
+}
+
+
+/** An authenticated football-data.org response is an auxiliary fixture registry.
+ * Do not invent detailed match statistics from its schedule payload. */
+export function footballDataFixtures(payload,dates,known=CLUBS_2026){
+  if(!Array.isArray(payload?.matches))throw Error('Invalid football-data match-list schema');
+  const matches=[],rejected=[];
+  for(const raw of payload.matches){
+    if(raw.status!=='FINISHED')continue;
+    const date=toLondonDate(raw.utcDate);
+    if(!dates.includes(date))continue;
+    const home=canonicalTeam(raw.homeTeam?.name || raw.homeTeam?.shortName,known);
+    const away=canonicalTeam(raw.awayTeam?.name || raw.awayTeam?.shortName,known);
+    const id=String(raw.id??'');
+    if(!home||!away||home===away){
+      rejected.push({item:`football-data.org:${date}:${id}`,reason:'team_unresolved'});
+      continue;
+    }
+    const h=raw.score?.fullTime?.home, a=raw.score?.fullTime?.away;
+    if(!Number.isInteger(h)||!Number.isInteger(a)||h<0||a<0){
+      rejected.push({item:`football-data.org:${date}:${id}`,reason:'score_missing'});
+      continue;
+    }
+    const url=`https://api.football-data.org/v4/competitions/PL/matches?dateFrom=${dates[0]}&dateTo=${dates.at(-1)}`;
+    matches.push({date,home,away,score:`${h}-${a}`,
+      provider_id:id,source_domain:'football-data.org',
+      fixture_source_url:url,provider_url:url});
+  }
+  return {matches,rejected};
+}
+
+const ESPN_COUNTED = new Map(Object.entries({
+  shots:'shots',totalshots:'shots',shotsontarget:'shots_on_target',
+  shotsongoal:'shots_on_target',blockedshots:'blocked_shots',
+  corners:'corners',cornerkicks:'corners',fouls:'fouls',
+  foulscommitted:'fouls',totalfouls:'fouls',offside:'offsides',
+  offsides:'offsides',totaloffsides:'offsides',saves:'saves',
+  goalkeepersaves:'saves',possession:'possession',
+  possessionpct:'possession',ballpossession:'possession',
+  yellowcards:'yellow_cards',redcards:'red_cards',
+}));
+/** No numerical inference: only literal reported team stats and exact sides. */
+export function parseEspnStats(detail,match){
+  const teams=detail?.boxscore?.teams;
+  if(!Array.isArray(teams))return {raw:[],errors:['espn_match_stats_unavailable']};
+  const raw=[],errors=[];
+  let n=0;
+  for(const t of teams){
+    const name=canonicalTeam(t.team?.displayName || t.team?.name || '');
+    const side=name===match.home?'home':name===match.away?'away':null;
+    if(!side){errors.push('espn_stat_team_unresolved');continue;}
+    for(const stat of t.statistics??[]){
+      const name=String(stat.name??stat.label??'').toLowerCase().replace(/[^a-z]/g,'');
+      const field=ESPN_COUNTED.get(name);
+      if(!field)continue;
+      const displayed=String(stat.displayValue??'').trim();
+      if(!/^\d+(?:\.\d+)?%?$/.test(displayed))continue;
+      const value=displayed.endsWith('%')?displayed:Number(displayed);
+      raw.push(ledgerItem(match,'espn.com',++n,{
+        kind:'counted',field,value,side,text:`${stat.name}: ${displayed}`,
+        source_url:`https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/summary?event=${match.provider_id}`,
+        provenance:'match_center',
+      }));
+    }
+  }
+  if(!raw.length)errors.push('espn_match_stats_empty');
+  return {raw,errors};
+}
+
 export function itemId(match,domain,ordinal) {
   return `${match.date}|${match.home}|${match.away}|${domain}|${String(ordinal).padStart(4,'0')}`;
 }
