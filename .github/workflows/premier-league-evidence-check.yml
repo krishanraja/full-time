@@ -1,0 +1,28 @@
+name: Premier League evidence - contract tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/pl-evidence/**'
+      - 'tests/pl-evidence.test.mjs'
+      - '.github/workflows/premier-league-evidence*.yml'
+  pull_request:
+    paths:
+      - 'scripts/pl-evidence/**'
+      - 'tests/pl-evidence.test.mjs'
+      - '.github/workflows/premier-league-evidence*.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Closed-world evidence tests (zero model calls)
+        run: node --test tests/pl-evidence.test.mjs
