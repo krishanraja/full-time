@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { FEEDBACK_EMAIL } from "@/lib/feedback";
 import { pageSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/legal/terms")({
@@ -18,7 +19,12 @@ export const Route = createFileRoute("/legal/terms")({
       </Link>
       <div className="eyebrow mt-4">Legal</div>
       <h1 className="mt-2 text-[28px] font-semibold leading-tight tracking-tight">Terms</h1>
+      <p className="mt-1 text-xs text-muted-foreground">Last updated: 19 October 2026</p>
       <p className="mt-4 text-muted-foreground">
+        Full Time is operated by Mindmaker LLC, a United States company, and Mindmaker Ltd, a United
+        Kingdom company (together, "Mindmaker", "we", "us").
+      </p>
+      <p className="mt-3 text-muted-foreground">
         Full Time is a pre-launch service that makes AI Pundit football shows from checked
         structured match data. Scripts are AI-generated and voices are synthetic. We do not use
         copyrighted broadcast audio or imitate a living pundit.
@@ -30,6 +36,13 @@ export const Route = createFileRoute("/legal/terms")({
       </p>
       <p className="mt-3 text-muted-foreground">
         Service is provided as-is. We may change or stop it at any time.
+      </p>
+      <p className="mt-3 text-muted-foreground">
+        Questions about these terms? Email{" "}
+        <a href={`mailto:${FEEDBACK_EMAIL}`} className="underline underline-offset-4">
+          {FEEDBACK_EMAIL}
+        </a>
+        .
       </p>
     </article>
   ),

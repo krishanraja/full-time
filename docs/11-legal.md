@@ -42,7 +42,7 @@ Do not collect card data, contacts, microphone, camera, precise location, or cro
 
 ## Privacy actions before launch
 
-- document controller identity and contact route;
+- document controller identity and contact route (named on 2026-10-19: the privacy page says Mindmaker LLC and Mindmaker Ltd are responsible and gives krish@fulltime.fm; no controller split, company numbers or registered addresses are published yet);
 - confirm UK/EU legal bases and consent behavior with counsel;
 - configure and record PostHog region, retention, cookie behavior, and opt-out;
 - configure and record Google Analytics consent mode, retention, and cookie behavior (tag `G-W2QL8RKFJ1`, loaded on every page since 2026-09-27);
