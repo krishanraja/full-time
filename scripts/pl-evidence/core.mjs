@@ -268,6 +268,7 @@ export function parseFootballDataStats(detail,match){
     `${detail.score?.fullTime?.home}-${detail.score?.fullTime?.away}`!==match.score)
     throw Error('football-data detail fixture or score mismatch');
   const raw=[];let ordinal=0;
+  const source_url=`https://api.football-data.org/v4/matches/${match.provider_id}`;
   for(const [side,team] of [['home',detail.homeTeam],['away',detail.awayTeam]]){
     const stats=team.statistics;
     if(!stats || typeof stats!=='object')continue;
@@ -277,11 +278,31 @@ export function parseFootballDataStats(detail,match){
       raw.push(ledgerItem(match,'football-data.org',++ordinal,{kind:'counted',field,
         value:field==='possession'?`${value}%`:value,side,
         text:`${sourceField}: ${value}${field==='possession'?'%':''}`,
-        source_url:`https://api.football-data.org/v4/matches/${match.provider_id}`,
+        source_url,
         provenance:'match_center'}));
     }
   }
-  return {raw,errors:raw.length?[]:['football_data_match_stats_unavailable']};
+  function addEvent(field,value,side,eventKey,text,minute){
+    if(typeof value!=='string' || !value.trim() || !side)return;
+    raw.push(ledgerItem(match,'football-data.org',++ordinal,{kind:'counted',field,value:value.trim(),side,
+      event_key:eventKey,event_minute:Number.isInteger(minute)?minute:null,text,source_url,provenance:'match_center'}));
+  }
+  for(const goal of detail.goals??[]){
+    const team=canonicalTeam(goal.team?.name);
+    const side=team===home?'home':team===away?'away':null;
+    const key=`goal:${goal.minute}:${goal.injuryTime??0}:${goal.score?.home}-${goal.score?.away}`;
+    addEvent('scorer',goal.scorer?.name,side,key,`Goal by ${goal.scorer?.name} at ${goal.minute}`,goal.minute);
+    addEvent('assists',goal.assist?.name,side,key,`Assist by ${goal.assist?.name} at ${goal.minute}`,goal.minute);
+  }
+  for(const booking of detail.bookings??[]){
+    const team=canonicalTeam(booking.team?.name);
+    const side=team===home?'home':team===away?'away':null;
+    const field=booking.card==='YELLOW'?'yellow_cards':booking.card==='RED'?'red_cards':null;
+    if(field)addEvent(field,booking.player?.name,side,
+      `booking:${booking.minute}:${booking.card}:${booking.player?.id??booking.player?.name}`,
+      `${booking.card} card for ${booking.player?.name} at ${booking.minute}`,booking.minute);
+  }
+  return {raw,errors:raw.length?[]:['football_data_match_detail_unavailable']};
 }
 
 const ESPN_COUNTED = new Map(Object.entries({
@@ -397,7 +418,7 @@ export function normalize(fixtures,rawItems,initialRejected=[],metadata={}){
     if(!knownKeys.has(item.match)){refuseItem(item,'match_unresolved');continue;}
     const m=grouped.get(item.match);
     if(item.kind==='counted' && COUNTED_FIELDS.has(item.field) && ['home','away'].includes(item.side) && item.value!==null && item.value!==undefined){
-      const key=`${item.match}|${item.field}|${item.side}`;
+      const key=`${item.match}|${item.field}|${item.side}|${item.event_key??'aggregate'}`;
       if(!snapshot.has(key)) snapshot.set(key,[]);
       snapshot.get(key).push(item);
       m.counted.push({match:item.match,field:item.field,value:item.value,side:item.side,source_item:item.id});

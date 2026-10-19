@@ -166,6 +166,22 @@ test('football-data match detail accepts only present observed statistics',async
   assert.equal(normalize([fixture],collected.raw).tally.counted,6);
 });
 
+test('football-data events keep two goals distinct and preserve assists and bookings',()=>{
+  const fixture={...f,provider_id:456,source_domain:'football-data.org'};
+  const detail={status:'FINISHED',utcDate:'2026-10-18T15:00:00Z',
+    homeTeam:{name:'Arsenal FC'},awayTeam:{name:'Chelsea FC'},score:{fullTime:{home:2,away:1}},
+    goals:[
+      {minute:12,team:{name:'Arsenal FC'},scorer:{name:'Player One'},assist:{name:'Player Two'},score:{home:1,away:0}},
+      {minute:66,team:{name:'Arsenal FC'},scorer:{name:'Player Three'},assist:null,score:{home:2,away:0}},
+    ],bookings:[{minute:70,team:{name:'Chelsea FC'},player:{id:9,name:'Player Four'},card:'YELLOW'}]};
+  const raw=parseFootballDataStats(detail,fixture).raw;
+  assert.equal(raw.length,4);
+  const out=normalize([fixture],raw);
+  assert.equal(out.tally.counted,4);
+  assert.equal(out.matches[0].counted.filter(x=>x.field==='scorer').length,2);
+  assert.equal(out.tally.rejected,0);
+});
+
 test('two authenticated feeds corroborate a result after public endpoints fail',async()=>{
   const result=await discoverFixtures(['2026-10-18'],{
     apiFootballKey:'API_KEY',footballDataKey:'DATA_KEY',
