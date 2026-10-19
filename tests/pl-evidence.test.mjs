@@ -195,3 +195,30 @@ test('Drive 403 returns its safe machine-readable reason and no token/body',asyn
     e=>e.message==='Drive folder preflight HTTP 403 reason=insufficientPermissions',
   );
 });
+
+test('Authenticated football-data registry recovers blocked FotMob and ESPN without inventing independent verification',async()=>{
+  const match={id:123,utcDate:'2026-10-18T15:00:00Z',status:'FINISHED',
+    homeTeam:{name:'Arsenal FC'},awayTeam:{name:'Chelsea FC'},
+    score:{fullTime:{home:2,away:1}}};
+  const res=await discoverFixtures(['2026-10-18'],{
+    footballDataKey:'PRESENT',
+    req:async(url,options)=>{
+      if(url.includes('football-data.org')){
+        assert.equal(options.headers['X-Auth-Token'],'PRESENT');
+        return {matches:[match]};
+      }
+      if(url.includes('fotmob.com'))throw Error('HTTP 404');
+      if(url.includes('espn.com'))throw Error('HTTP 403');
+      throw Error('Unexpected endpoint');
+    },
+  });
+  assert.equal(res.matches.length,1);
+  assert.equal(res.matches[0].source_domain,'football-data.org');
+  assert.equal(res.matches[0].score,'2-1');
+  assert.ok(res.errors.some(e=>e.includes('single-source finished fixture')));
+  assert.ok(res.source_status.some(e=>e.domain==='fotmob.com'&&e.status==='error'));
+  assert.ok(res.source_status.some(e=>e.domain==='espn.com'&&e.status==='error'));
+  const detail=await collectMatchDetails(res.matches,{req:async()=>{throw Error('not allowed')}});
+  assert.equal(detail.raw.length,0);
+  assert.equal(detail.coverage[0].status,'not_available');
+});
