@@ -210,6 +210,16 @@ export function exactApprovedUrl(url,domain){
     return host===domain || host.endsWith(`.${domain}`);
   }catch{return false;}
 }
+export function publisherUrl(candidate,domain){
+  try{
+    const wrapper=new URL(candidate);
+    if(exactApprovedUrl(candidate,domain))return candidate;
+    if(!['www.bing.com','bing.com'].includes(wrapper.hostname.toLowerCase()) ||
+      wrapper.pathname!=='/news/apiclick.aspx')return null;
+    const target=wrapper.searchParams.get('url');
+    return target && exactApprovedUrl(target,domain)?target:null;
+  }catch{return null;}
+}
 function teamSearchName(name){return name==='Brighton & Hove Albion'?'Brighton':name==='AFC Bournemouth'?'Bournemouth':name==='Tottenham Hotspur'?'Tottenham':name;}
 export function discoverQuery(fixture,domain){
   const q=`site:${domain} "${teamSearchName(fixture.home)}" "${teamSearchName(fixture.away)}" after:${fixture.date}`;
@@ -230,7 +240,8 @@ export async function collectNews(fixtures,{req=requestText,concurrency=6,maxQue
       const {m,domain}=capped[cursor++];const url=discoverQuery(m,domain);
       try{
         const entries=parseRss(await req(url));
-        const relevant=entries.filter(x=>exactApprovedUrl(x.url,domain)&&relevance(x,m));
+        const relevant=entries.map(x=>({...x,url:publisherUrl(x.url,domain)}))
+          .filter(x=>x.url&&relevance(x,m));
         const unique=[...new Map(relevant.map(x=>[x.url,x])).values()].slice(0,2);
         let n=0;
         for(const entry of unique){

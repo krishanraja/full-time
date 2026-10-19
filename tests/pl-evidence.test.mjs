@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { daysForRun,canonicalTeam,fixtureFromFotmob,leagueFixtures,normalize,ledgerItem,matchKey,parseStats,validate,DOMAINS } from '../scripts/pl-evidence/core.mjs';
-import { parseRss,exactApprovedUrl,discoverQuery } from '../scripts/pl-evidence/collect.mjs';
+import { parseRss,exactApprovedUrl,publisherUrl,discoverQuery } from '../scripts/pl-evidence/collect.mjs';
 const f={date:'2026-10-18',home:'Arsenal',away:'Chelsea',score:'2-1',provider_id:42};
 const rawFixture={id:42,home:{name:'Arsenal',score:2},away:{name:'Chelsea',score:1},status:{utcTime:'2026-10-18T15:00:00Z',finished:true}};
 const raw=(ordinal,entry)=>ledgerItem(f,'fotmob.com',ordinal,entry);
@@ -55,6 +55,10 @@ test('RSS extraction preserves publisher link; redirects and unrelated host not 
   assert.equal(parseRss(xml)[0].description,'A late winner & comeback');
   assert.equal(exactApprovedUrl(parseRss(xml)[0].url,'talksport.com'),true);
   assert.equal(exactApprovedUrl('https://talksport.com.evil.example/p','talksport.com'),false);
+  const wrapped='http://www.bing.com/news/apiclick.aspx?url='+encodeURIComponent('https://www.bbc.com/sport/football/live/123');
+  assert.equal(publisherUrl(wrapped,'bbc.com'),'https://www.bbc.com/sport/football/live/123');
+  assert.equal(publisherUrl(wrapped,'theguardian.com'),null);
+  assert.equal(publisherUrl('https://evil.example/?url=https%3A%2F%2Fwww.bbc.com%2Fsport','bbc.com'),null);
   assert.ok(discoverQuery(f,'talksport.com').startsWith('https://www.bing.com/'));
 });
 
