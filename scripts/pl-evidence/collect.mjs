@@ -1,4 +1,4 @@
-import { DOMAINS, leagueFixtures, espnFixtures, ledgerItem, parseStats, parseEspnStats, matchKey, canonicalTeam, toLondonDate } from './core.mjs';
+import { DOMAINS, leagueFixtures, espnFixtures, footballDataFixtures, ledgerItem, parseStats, parseEspnStats, matchKey, canonicalTeam, toLondonDate } from './core.mjs';
 
 const AGENT='FullTimeEvidenceResearch/1.0 (+https://fulltime.fm; public match evidence only)';
 export async function requestText(url,{headers={},timeoutMs=8500,attempts=2}={}){
@@ -20,81 +20,88 @@ export async function requestText(url,{headers={},timeoutMs=8500,attempts=2}={})
 }
 export async function requestJson(url,opt={}){return JSON.parse(await requestText(url,opt));}
 export async function discoverFixtures(dates,{footballDataKey,req=requestJson}={}){
-  const matches=[];const rejected=[];const errors=[];const source_status=[];
+  const matches=[],rejected=[],errors=[],source_status=[];
+  const fdataUrl=`https://api.football-data.org/v4/competitions/PL/matches?dateFrom=${dates[0]}&dateTo=${dates.at(-1)}`;
+  let verified=null;
+  if(footballDataKey){
+    try{
+      verified=footballDataFixtures(await req(fdataUrl,{headers:{'X-Auth-Token':footballDataKey}}),dates);
+      rejected.push(...verified.rejected);
+      source_status.push({domain:'football-data.org',url:fdataUrl,status:'found',count:verified.matches.length});
+    }catch(error){
+      errors.push(`football-data fixture feed: ${error.message}`);
+      source_status.push({domain:'football-data.org',url:fdataUrl,status:'error',error:String(error.message).slice(0,120)});
+    }
+  }else errors.push('FOOTBALL_DATA_KEY not set; independent fixture/score reconciliation unavailable');
+
   for(const date of dates){
     const fotmobUrl=`https://www.fotmob.com/api/matches?date=${date.replaceAll('-','')}`;
+    let found=false;
     try{
       const x=leagueFixtures(await req(fotmobUrl),date);
       matches.push(...x.matches.map(m=>({...m,source_domain:'fotmob.com',fixture_source_url:fotmobUrl})));
       rejected.push(...x.rejected);
       source_status.push({date,domain:'fotmob.com',url:fotmobUrl,status:'found',count:x.matches.length});
+      found=true;
     }catch(error){
       source_status.push({date,domain:'fotmob.com',url:fotmobUrl,status:'error',error:String(error.message).slice(0,120)});
-      // ESPN scoreboard is independent of FotMob and has an explicit FT marker.
-      // It is an auxiliary fixture/match-centre source, not an editorial domain.
+    }
+    if(!found){
       const espnUrl=`https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=${date.replaceAll('-','')}`;
       try{
         const x=espnFixtures(await req(espnUrl),date);
         matches.push(...x.matches);
         rejected.push(...x.rejected);
         source_status.push({date,domain:'espn.com',url:espnUrl,status:'found',count:x.matches.length,fallback_for:'fotmob.com'});
-      }catch(fallbackError){
-        errors.push(`fixture ${date}: FotMob ${error.message}; ESPN fallback ${fallbackError.message}`);
-        source_status.push({date,domain:'espn.com',url:espnUrl,status:'error',error:String(fallbackError.message).slice(0,120)});
+        found=true;
+      }catch(error){
+        source_status.push({date,domain:'espn.com',url:espnUrl,status:'error',error:String(error.message).slice(0,120)});
       }
     }
+    if(!found && !verified)errors.push(`fixture ${date}: all available primary discovery endpoints failed`);
   }
-  // football-data.org crosscheck is a metadata verification, not a classified non-API source.
-  // A disagreement is rejected rather than resolved or overruled.
-  let independent_check='unavailable';
-  if(footballDataKey){
-    try{
-      const url=`https://api.football-data.org/v4/competitions/PL/matches?dateFrom=${dates[0]}&dateTo=${dates.at(-1)}`;
-      const data=await req(url,{headers:{'X-Auth-Token':footballDataKey}});
-      if(!Array.isArray(data.matches))throw Error('Invalid football-data result schema');
-      const fdata=data.matches.filter(x=>x.status==='FINISHED');
-      // A fixture missing from the discovered set is a coverage failure,
-      // never evidence that the match was not played.
-      for(const item of fdata){
-        const home=canonicalTeam(item.homeTeam?.name) ?? canonicalTeam(item.homeTeam?.shortName);
-        const away=canonicalTeam(item.awayTeam?.name) ?? canonicalTeam(item.awayTeam?.shortName);
-        const date=toLondonDate(item.utcDate);
-        if(date && dates.includes(date) && home && away &&
-          !matches.some(m=>m.date===date && m.home===home && m.away===away)){
-          errors.push(`fixture absent from primary discovery: ${date}|${home}|${away}`);
-        }
+
+  // An authenticated fixture feed is authoritative for the covered range.
+  // Fill only explicit finished fixtures that public feeds could not discover;
+  // contradictions are refused, not resolved by preference.
+  if(verified){
+    const fromAuth=new Map(verified.matches.map(m=>[matchKey(m),m]));
+    const accepted=[];
+    for(const candidate of matches){
+      const key=matchKey(candidate),independent=fromAuth.get(key);
+      if(!independent){
+        errors.push(`independent score unverified for ${key}`);
+        accepted.push(candidate);
+        continue;
       }
-      const accepted=[];
-      for(const match of matches){
-        const others=fdata.filter(x=>{
-          const home=canonicalTeam(x.homeTeam?.name) ?? canonicalTeam(x.homeTeam?.shortName);
-          const away=canonicalTeam(x.awayTeam?.name) ?? canonicalTeam(x.awayTeam?.shortName);
-          return toLondonDate(x.utcDate)===match.date && home===match.home && away===match.away;
-        });
-        if(others.length!==1){
-          errors.push(`independent score unverified for ${matchKey(match)}`);
-          accepted.push(match);
-          continue;
-        }
-        const h=others[0].score?.fullTime?.home,a=others[0].score?.fullTime?.away;
-        if(!Number.isInteger(h)||!Number.isInteger(a)){errors.push(`independent score missing for ${matchKey(match)}`);accepted.push(match);continue;}
-        const otherScore=`${h}-${a}`;
-        if(otherScore!==match.score){
-          rejected.push({item:`fotmob:${matchKey(match)}=${match.score}`,reason:'sources_disagree'});
-          rejected.push({item:`football-data.org:${matchKey(match)}=${otherScore}`,reason:'sources_disagree'});
-        }else accepted.push(match);
+      if(independent.score!==candidate.score){
+        rejected.push({item:`${candidate.source_domain}:${key}=${candidate.score}`,reason:'sources_disagree'});
+        rejected.push({item:`football-data.org:${key}=${independent.score}`,reason:'sources_disagree'});
+      }else accepted.push(candidate);
+    }
+    const represented=new Set(matches.map(matchKey));
+    for(const match of verified.matches){
+      const key=matchKey(match);
+      if(!represented.has(key)){
+        accepted.push(match);
+        errors.push(`single-source finished fixture: ${key}; no independent public result available`);
       }
-      matches.length=0;matches.push(...accepted.filter(m=>!rejected.some(r=>r.reason==='sources_disagree' && r.item.includes(matchKey(m)))));
-      independent_check='attempted';
-    }catch(error){errors.push(`independent check unavailable: ${error.message}`);}
-  }else errors.push('FOOTBALL_DATA_KEY not set; independent fixture/score reconciliation unavailable');
-  const ids=new Set();
-  for(const m of [...matches]){
-    if(ids.has(matchKey(m))){rejected.push({item:`fotmob:${matchKey(m)}`,reason:'duplicate_fixture'});matches.splice(matches.indexOf(m),1);}
-    ids.add(matchKey(m));
+    }
+    matches.push();matches.length=0;matches.push(...accepted);
   }
-  return {matches,rejected,errors,source_status,independent_check};
+
+  const seen=new Set();
+  for(let i=matches.length-1;i>=0;i--){
+    const key=matchKey(matches[i]);
+    if(seen.has(key)){
+      rejected.push({item:`${matches[i].source_domain}:${key}`,reason:'duplicate_fixture'});
+      matches.splice(i,1);
+    }else seen.add(key);
+  }
+  return {matches,rejected,errors,source_status,
+    independent_check:verified?'football-data.org_accessible':'unavailable'};
 }
+
 export async function collectMatchDetails(fixtures,{req=requestJson}={}){
   const raw=[];const errors=[];const coverage=[];
   for(const fixture of fixtures){
