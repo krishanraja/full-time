@@ -4,6 +4,11 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-10-20
+
+- reconciled at `c8d4437`: head moved from `5aa7788`. The four new commits (PRs #88 to #91) make evidence intake replayable, add the authenticated read-only product route, and record the production activation. Checked against `docs/premier-league-evidence-actions.md` and the diff; NOW.md gained a "What changed recently" bullet and the next-step line now waits on a real scheduled trigger.
+- not changed: no `Last verified` stamp was bumped. The stale-stamp list in the digest is every current doc older than today's code, and none was re-read against the new evidence code. `docs/product-state.json` and its pinned `asOf` were not touched.
+
 ## 2026-10-19
 
 - reconciled at `5aa7788`: head moved from `97018c4`. Checked the new evidence-intake workflows, `scripts/pl-evidence/` and `docs/premier-league-evidence-actions.md` against NOW.md; added a "What changed recently" bullet, a Read next entry and a never_publish entry for the Drive folder. `docs/premier-league-evidence-actions.md` indexed in `docs/README.md`.
