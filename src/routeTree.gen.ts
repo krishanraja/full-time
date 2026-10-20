@@ -26,6 +26,7 @@ import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as ApiInternalDailyRehearsalRouteImport } from './routes/api/internal/daily-rehearsal'
 import { Route as ApiInternalEvaluationCorpusRouteImport } from './routes/api/internal/evaluation-corpus'
 import { Route as ApiInternalEvaluationRunRouteImport } from './routes/api/internal/evaluation-run'
+import { Route as ApiInternalEvidenceIntakeRouteImport } from './routes/api/internal/evidence-intake'
 import { Route as ApiInternalForecastTrainRouteImport } from './routes/api/internal/forecast-train'
 import { Route as ApiInternalJudgeCalibrationRouteImport } from './routes/api/internal/judge-calibration'
 import { Route as ApiInternalPredictionsRegisterRouteImport } from './routes/api/internal/predictions-register'
@@ -131,6 +132,12 @@ const ApiInternalEvaluationRunRoute =
   ApiInternalEvaluationRunRouteImport.update({
     id: '/api/internal/evaluation-run',
     path: '/api/internal/evaluation-run',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiInternalEvidenceIntakeRoute =
+  ApiInternalEvidenceIntakeRouteImport.update({
+    id: '/api/internal/evidence-intake',
+    path: '/api/internal/evidence-intake',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiInternalForecastTrainRoute =
@@ -250,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/api/internal/daily-rehearsal': typeof ApiInternalDailyRehearsalRoute
   '/api/internal/evaluation-corpus': typeof ApiInternalEvaluationCorpusRoute
   '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
+  '/api/internal/evidence-intake': typeof ApiInternalEvidenceIntakeRoute
   '/api/internal/forecast-train': typeof ApiInternalForecastTrainRoute
   '/api/internal/judge-calibration': typeof ApiInternalJudgeCalibrationRoute
   '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
@@ -287,6 +295,7 @@ export interface FileRoutesByTo {
   '/api/internal/daily-rehearsal': typeof ApiInternalDailyRehearsalRoute
   '/api/internal/evaluation-corpus': typeof ApiInternalEvaluationCorpusRoute
   '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
+  '/api/internal/evidence-intake': typeof ApiInternalEvidenceIntakeRoute
   '/api/internal/forecast-train': typeof ApiInternalForecastTrainRoute
   '/api/internal/judge-calibration': typeof ApiInternalJudgeCalibrationRoute
   '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
@@ -325,6 +334,7 @@ export interface FileRoutesById {
   '/api/internal/daily-rehearsal': typeof ApiInternalDailyRehearsalRoute
   '/api/internal/evaluation-corpus': typeof ApiInternalEvaluationCorpusRoute
   '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
+  '/api/internal/evidence-intake': typeof ApiInternalEvidenceIntakeRoute
   '/api/internal/forecast-train': typeof ApiInternalForecastTrainRoute
   '/api/internal/judge-calibration': typeof ApiInternalJudgeCalibrationRoute
   '/api/internal/predictions-register': typeof ApiInternalPredictionsRegisterRoute
@@ -364,6 +374,7 @@ export interface FileRouteTypes {
     | '/api/internal/daily-rehearsal'
     | '/api/internal/evaluation-corpus'
     | '/api/internal/evaluation-run'
+    | '/api/internal/evidence-intake'
     | '/api/internal/forecast-train'
     | '/api/internal/judge-calibration'
     | '/api/internal/predictions-register'
@@ -401,6 +412,7 @@ export interface FileRouteTypes {
     | '/api/internal/daily-rehearsal'
     | '/api/internal/evaluation-corpus'
     | '/api/internal/evaluation-run'
+    | '/api/internal/evidence-intake'
     | '/api/internal/forecast-train'
     | '/api/internal/judge-calibration'
     | '/api/internal/predictions-register'
@@ -438,6 +450,7 @@ export interface FileRouteTypes {
     | '/api/internal/daily-rehearsal'
     | '/api/internal/evaluation-corpus'
     | '/api/internal/evaluation-run'
+    | '/api/internal/evidence-intake'
     | '/api/internal/forecast-train'
     | '/api/internal/judge-calibration'
     | '/api/internal/predictions-register'
@@ -476,6 +489,7 @@ export interface RootRouteChildren {
   ApiInternalDailyRehearsalRoute: typeof ApiInternalDailyRehearsalRoute
   ApiInternalEvaluationCorpusRoute: typeof ApiInternalEvaluationCorpusRoute
   ApiInternalEvaluationRunRoute: typeof ApiInternalEvaluationRunRoute
+  ApiInternalEvidenceIntakeRoute: typeof ApiInternalEvidenceIntakeRoute
   ApiInternalForecastTrainRoute: typeof ApiInternalForecastTrainRoute
   ApiInternalJudgeCalibrationRoute: typeof ApiInternalJudgeCalibrationRoute
   ApiInternalPredictionsRegisterRoute: typeof ApiInternalPredictionsRegisterRoute
@@ -613,6 +627,13 @@ declare module '@tanstack/react-router' {
       path: '/api/internal/evaluation-run'
       fullPath: '/api/internal/evaluation-run'
       preLoaderRoute: typeof ApiInternalEvaluationRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/evidence-intake': {
+      id: '/api/internal/evidence-intake'
+      path: '/api/internal/evidence-intake'
+      fullPath: '/api/internal/evidence-intake'
+      preLoaderRoute: typeof ApiInternalEvidenceIntakeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/internal/forecast-train': {
@@ -775,6 +796,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalDailyRehearsalRoute: ApiInternalDailyRehearsalRoute,
   ApiInternalEvaluationCorpusRoute: ApiInternalEvaluationCorpusRoute,
   ApiInternalEvaluationRunRoute: ApiInternalEvaluationRunRoute,
+  ApiInternalEvidenceIntakeRoute: ApiInternalEvidenceIntakeRoute,
   ApiInternalForecastTrainRoute: ApiInternalForecastTrainRoute,
   ApiInternalJudgeCalibrationRoute: ApiInternalJudgeCalibrationRoute,
   ApiInternalPredictionsRegisterRoute: ApiInternalPredictionsRegisterRoute,

@@ -26,6 +26,6 @@ jobs:
         with:
           node-version: '24'
       - name: Closed-world evidence tests (zero model calls)
-        run: node --test tests/pl-evidence.test.mjs tests/pl-evidence-reliability.test.mjs
+        run: node --test tests/pl-evidence.test.mjs tests/pl-evidence-reliability.test.mjs tests/pl-evidence-runtime-handoff.test.mjs
       - name: Real-provider scoreboard smoke (no secrets or paid models)
         run: node --test tests/pl-evidence.live.test.mjs
