@@ -7,6 +7,7 @@ import { loadSealedEvidence } from "../src/lib/pundit/judge-calibration.server";
 import { serviceRest } from "../src/lib/pundit/service-rest.server";
 import { runHardGates, publicationDecision } from "../src/lib/pundit/harness";
 import { onOwnMeter } from "../src/lib/pundit/model-cost";
+import { remainingRecoveryBudget } from "../src/lib/pundit/recovery-budget";
 import { judgeCandidate } from "../src/lib/pundit/pundit-generator.server";
 import { persistEditorialRehearsal } from "../src/lib/pundit/editorial-repository.server";
 import { loadRightsClearedOriginalityCorpus } from "../src/lib/pundit/research-originality.server";
@@ -24,6 +25,7 @@ const manifest = JSON.parse(await readFile(file, "utf8")) as {
   matchId: string;
   coverageDate: string;
   originalScriptSha256: string;
+  maxReviewPasses?: number;
   candidate: PunditVariantCandidate;
 };
 const { candidate, dropId, coverageDate } = manifest;
@@ -92,6 +94,11 @@ try {
   if (hard.some((item) => !item.passed)) throw Error("Free publication gates refused the repair.");
   // An INSERT with a unique key, rather than the retrying claim RPC, means a
   // failed paid review cannot silently be dispatched a second time.
+  const priorRecoveries = await serviceRest<Parameters<typeof remainingRecoveryBudget>[0]>(
+    `editorial_runs?idempotency_key=like.${encodeURIComponent(`approved-recovery:${dropId}:%`)}&select=status,promise_checks`,
+  );
+  const remainingUsd = remainingRecoveryBudget(priorRecoveries, manifest.maxReviewPasses);
+  report.remainingModelBudgetBeforeUsd = remainingUsd;
   const runs = await serviceRest<Array<{ id: string }>>("editorial_runs", {
     method: "POST",
     prefer: "return=representation",
@@ -108,7 +115,7 @@ try {
   });
   runId = runs[0]?.id;
   if (!runId) throw Error("Recovery was not claimed.");
-  const judged = await onOwnMeter(1, () => judgeCandidate({ candidate, pack, claims }));
+  const judged = await onOwnMeter(remainingUsd, () => judgeCandidate({ candidate, pack, claims }));
   report.costUsd = judged.costUsd;
   report.editorialChecks = judged.result;
   const results = [...hard, ...judged.result];
