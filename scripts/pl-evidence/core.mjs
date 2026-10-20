@@ -253,6 +253,36 @@ export function parseApiFootballStats(payload,match){
   return {raw,errors};
 }
 
+export function parseApiFootballEvents(payload,match){
+  if(!Array.isArray(payload?.response) || (payload.errors && Object.keys(payload.errors).length))throw Error('Invalid API-Football events schema or provider error');
+  const raw=[],errors=[];
+  for(const [index,event] of payload.response.entries()){
+    const name=canonicalTeam(event.team?.name);
+    const side=name===match.home?'home':name===match.away?'away':null;
+    if(!side){errors.push('api_football_event_team_unresolved');continue;}
+    const minute=event.time?.elapsed;
+    if(!Number.isInteger(minute)||minute<0){errors.push('api_football_event_time_invalid');continue;}
+    const eventKey=`${event.type}:${minute}:${event.time?.extra??0}:${event.player?.id??index}:${index}`;
+    const add=(field,value,offset)=>{
+      if(typeof value!=='string'||!value.trim())return;
+      raw.push(ledgerItem(match,'api-football.com',50000+index*3+offset,{kind:'counted',field,value,side,
+        event_key:eventKey,event_minute:minute,event_detail:event.detail??null,
+        text:`${event.type} (${event.detail??'unspecified'}) at ${minute}: ${value}`,
+        source_url:`https://v3.football.api-sports.io/fixtures/events?fixture=${match.provider_id}`,provenance:'match_center'}));
+    };
+    if(event.type==='Goal' && ['Normal Goal','Own Goal','Penalty'].includes(event.detail)){
+      add('scorer',event.player?.name,0);
+      if(event.detail==='Normal Goal')add('assists',event.assist?.name,1);
+    }else if(event.type==='Card'){
+      if(event.detail==='Yellow Card')add('yellow_cards',event.player?.name,0);
+      if(['Red Card','Second Yellow card'].includes(event.detail))add('red_cards',event.player?.name,0);
+    }else if(event.type==='subst' && event.player?.name && event.assist?.name){
+      add('substitutions',`${event.player.name} -> ${event.assist.name}`,0);
+    }
+  }
+  return {raw,errors};
+}
+
 const FOOTBALL_DATA_STATS = new Map([
   ['corner_kicks','corners'],['offsides','offsides'],['fouls','fouls'],
   ['ball_possession','possession'],['saves','saves'],['shots','shots'],

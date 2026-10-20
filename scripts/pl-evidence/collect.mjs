@@ -1,4 +1,4 @@
-import { DOMAINS, leagueFixtures, espnFixtures, footballDataFixtures, apiFootballFixtures, ledgerItem, parseStats, parseEspnStats, parseApiFootballStats, parseFootballDataStats, matchKey, canonicalTeam, toLondonDate } from './core.mjs';
+import { DOMAINS, leagueFixtures, espnFixtures, footballDataFixtures, apiFootballFixtures, ledgerItem, parseStats, parseEspnStats, parseApiFootballStats, parseApiFootballEvents, parseFootballDataStats, matchKey, canonicalTeam, toLondonDate } from './core.mjs';
 
 const AGENT='FullTimeEvidenceResearch/1.0 (+https://fulltime.fm; public match evidence only)';
 export async function requestText(url,{headers={},timeoutMs=8500,attempts=2}={}){
@@ -64,6 +64,8 @@ export async function discoverFixtures(dates,{footballDataKey,apiFootballKey,req
   }
 
   for(const date of dates){
+    // Authenticated providers are the normal route. Public endpoints are recovery only.
+    if (primary && verified && !errors.length) break;
     const fotmobUrl=`https://www.fotmob.com/api/matches?date=${date.replaceAll('-','')}`;
     let found=false;
     try{
@@ -96,6 +98,7 @@ export async function discoverFixtures(dates,{footballDataKey,apiFootballKey,req
   if(primary){
     matches.push(...primary);
   }
+  const conflictingKeys=new Set();
   if(verified){
     const fromAuth=new Map(verified.matches.map(m=>[matchKey(m),m]));
     const accepted=[];
@@ -107,6 +110,7 @@ export async function discoverFixtures(dates,{footballDataKey,apiFootballKey,req
         continue;
       }
       if(independent.score!==candidate.score){
+        conflictingKeys.add(key);
         rejected.push({item:`${candidate.source_domain}:${key}=${candidate.score}`,reason:'sources_disagree'});
         rejected.push({item:`football-data.org:${key}=${independent.score}`,reason:'sources_disagree'});
         errors.push(`score conflict for ${key}: ${candidate.source_domain} and football-data.org`);
@@ -123,6 +127,10 @@ export async function discoverFixtures(dates,{footballDataKey,apiFootballKey,req
     matches.length=0;matches.push(...accepted);
   }
 
+  // A disagreement poisons the whole fixture, including an agreeing third feed.
+  for(const key of conflictingKeys){
+    for(let i=matches.length-1;i>=0;i--)if(matchKey(matches[i])===key)matches.splice(i,1);
+  }
   const seen=new Set();
   for(let i=matches.length-1;i>=0;i--){
     const key=matchKey(matches[i]);
@@ -138,7 +146,13 @@ export async function discoverFixtures(dates,{footballDataKey,apiFootballKey,req
       if(key && primaryKeys.has(key))errors.splice(i,1);
     }
   }
-  return {matches,rejected,errors,source_status,
+  const expected=verified?.matches.map(matchKey).sort()??null;
+  const acceptedKeys=new Set(matches.map(matchKey));
+  if(expected?.some(key=>!acceptedKeys.has(key)))errors.push('Independent registry fixtures missing from accepted collection');
+  const verification=matches.map(m=>({match:matchKey(m),score:m.score,
+    providers:[...new Set([m.source_domain,...(verified?.matches.some(v=>matchKey(v)===matchKey(m)&&v.score===m.score)?['football-data.org']:[])])].sort()}));
+  return {matches:matches.sort((a,b)=>matchKey(a).localeCompare(matchKey(b))),rejected,errors,source_status,
+    expected_fixture_keys:expected,verification,
     independent_check:verified?'football-data.org_accessible':'unavailable'};
 }
 
@@ -153,6 +167,13 @@ export async function collectMatchDetails(fixtures,{apiFootballKey,footballDataK
         coverage.push({match:matchKey(fixture),domain:'api-football.com',url,status:stats.errors.length?'partial':'found',items:stats.raw.length});
       }catch(error){errors.push(`${matchKey(fixture)} API-Football details: ${error.message}`);
         coverage.push({match:matchKey(fixture),domain:'api-football.com',url,status:'error',error:String(error.message).slice(0,120)});}
+      const eventUrl=`https://v3.football.api-sports.io/fixtures/events?fixture=${fixture.provider_id}`;
+      try{
+        const events=parseApiFootballEvents(await req(eventUrl,{headers:{'x-apisports-key':apiFootballKey}}),fixture);
+        raw.push(...events.raw);errors.push(...events.errors);
+        coverage.push({match:matchKey(fixture),domain:'api-football.com',url:eventUrl,status:events.errors.length?'partial':'found',items:events.raw.length});
+      }catch(error){errors.push(`${matchKey(fixture)} API-Football events: ${error.message}`);
+        coverage.push({match:matchKey(fixture),domain:'api-football.com',url:eventUrl,status:'error',error:String(error.message).slice(0,120)});}
       continue;
     }
     if(fixture.source_domain==='football-data.org'){
@@ -222,7 +243,8 @@ export function publisherUrl(candidate,domain){
 }
 function teamSearchName(name){return name==='Brighton & Hove Albion'?'Brighton':name==='AFC Bournemouth'?'Bournemouth':name==='Tottenham Hotspur'?'Tottenham':name;}
 export function discoverQuery(fixture,domain){
-  const q=`site:${domain} "${teamSearchName(fixture.home)}" "${teamSearchName(fixture.away)}" after:${fixture.date}`;
+  const until=new Date(`${fixture.date}T12:00:00Z`);until.setUTCDate(until.getUTCDate()+3);
+  const q=`site:${domain} "${teamSearchName(fixture.home)}" "${teamSearchName(fixture.away)}" after:${fixture.date} before:${until.toISOString().slice(0,10)}`;
   return `https://www.bing.com/news/search?q=${encodeURIComponent(q)}&format=rss`;
 }
 function relevance(item,fixture){
@@ -248,7 +270,8 @@ export async function collectNews(fixtures,{req=requestText,concurrency=6,maxQue
           // RSS metadata is evidence only of the publisher's short headline/description.
           // Full article claims are NEVER inferred from a discovery snippet.
           const date=entry.pubDate?new Date(entry.pubDate):null;
-          if(date && !Number.isNaN(date.getTime()) && date < new Date(m.date+'T00:00:00Z'))continue;
+          const latest=new Date(m.date+'T00:00:00Z');latest.setUTCDate(latest.getUTCDate()+3);
+          if(!date || Number.isNaN(date.getTime()) || date < new Date(m.date+'T00:00:00Z') || date>=latest)continue;
           const text=`${entry.title}. ${entry.description}`.slice(0,300);
           raw.push(ledgerItem(m,domain,++n,{kind:'text',text,source_url:entry.url,
             provenance:'rss_snippet',published_at:date&&!Number.isNaN(date.getTime())?date.toISOString():null}));

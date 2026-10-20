@@ -1,6 +1,8 @@
 import type { EvidenceItem, EvidencePack } from "./types";
 
 export type StructuredMatchInput = {
+  /** Validated independent counted measurements, with private raw-ledger lineage. */
+  intakeEvidence?: { facts: EvidenceItem[]; unavailable: string[] };
   match: {
     id: string;
     homeTeam: string;
@@ -829,6 +831,24 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     );
   }
 
+  // Intake can fill an absent counted fact, never arbitrate a disagreement.
+  for (const item of input.intakeEvidence?.facts ?? []) {
+    if (
+      item.kind !== "fact" ||
+      !/^stats\.(home|away)_(shots|sot|possession|corners|saves|blocked|shots_inside_box|shots_outside_box)$/.test(
+        item.id,
+      ) ||
+      typeof item.value !== "number" ||
+      !Number.isFinite(item.value) ||
+      item.value < 0 ||
+      !item.provenance.startsWith("snapshot:")
+    )
+      throw new Error("Invalid independent intake fact");
+    const existing = facts.find((fact) => fact.id === item.id);
+    if (existing && existing.value !== item.value)
+      throw new Error(`Independent evidence conflicts with product fact: ${item.id}`);
+    if (!existing) facts.push(item);
+  }
   return {
     id: `${match.id}:evidence:v${version}`,
     matchId: match.id,
@@ -836,7 +856,7 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     createdAt: new Date().toISOString(),
     facts,
     derivations,
-    unavailableEvidence,
+    unavailableEvidence: [...unavailableEvidence, ...(input.intakeEvidence?.unavailable ?? [])],
   };
 }
 
