@@ -1,0 +1,31 @@
+name: Evidence runtime - encrypted operator handoff
+on:
+  workflow_dispatch:
+    inputs:
+      recipient_key:
+        description: 'Ephemeral RSA public SPKI key (base64); private key stays in operator memory'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  seal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Seal credential for the approved operator runtime
+        env:
+          RECIPIENT_PUBLIC_KEY: ${{ inputs.recipient_key }}
+          GOOGLE_DRIVE_OAUTH_JSON: ${{ secrets.GOOGLE_DRIVE_OAUTH_JSON }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: node scripts/pl-evidence/seal-runtime.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sealed-runtime-${{ github.run_id }}
+          path: sealed-runtime.json
+          retention-days: 1
+          if-no-files-found: error

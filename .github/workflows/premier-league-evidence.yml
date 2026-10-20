@@ -51,6 +51,12 @@ jobs:
       - name: Verify collected snapshot through the product evidence-pack builder
         if: steps.collect.outcome == 'success'
         run: node scripts/pl-evidence/verify-product.mjs --out pl-evidence-output
+      - name: Verify the live product consumes the exact snapshot (read-only, no model calls)
+        if: steps.collect.outcome == 'success'
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          FULL_TIME_URL: ${{ secrets.FULL_TIME_URL }}
+        run: node scripts/pl-evidence/verify-live.mjs --out pl-evidence-output
       - name: Preserve both JSON files and receipt even if partial
         if: always()
         uses: actions/upload-artifact@v4
