@@ -114,7 +114,7 @@ async function loadDropId(input: { dropId?: string; variantId?: string }): Promi
 /** The pack and claims a paid run already sealed. Reading them back is free,
  *  and reusing them is what makes the two sides of the comparison face the
  *  same evidence rather than two different readings of the same match. */
-async function loadSealedEvidence(
+export async function loadSealedEvidence(
   dropId: string,
 ): Promise<{ pack: EvidencePack; claims: AnalysisClaim[] }> {
   const packs = await serviceRest<StoredPack[]>(

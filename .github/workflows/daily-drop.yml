@@ -12,9 +12,13 @@ on:
       attempts:
         description: "Repair rounds per pundit (default 2). 1 halves the cost of a diagnostic run; it can only lower the environment's ceiling, never raise it"
         required: false
+      recoveryCandidate:
+        description: "Reviewed recovery manifest under scripts/editorial-recovery/. One judging pass; no writer or claim generation."
+        required: false
 
 jobs:
   drop:
+    if: ${{ !inputs.recoveryCandidate }}
     runs-on: ubuntu-latest
     steps:
       - name: Trigger daily drop
@@ -39,3 +43,37 @@ jobs:
           DATE_IN: ${{ inputs.date }}
           MATCH_IN: ${{ inputs.matchId }}
           ATTEMPTS_IN: ${{ inputs.attempts }}
+  recover:
+    if: ${{ inputs.recoveryCandidate }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: single-editorial-recovery
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Recover the reviewed single edition
+        run: npx --yes tsx@4.20.6 scripts/recover-editorial.ts
+        env:
+          RECOVERY_CANDIDATE: ${{ inputs.recoveryCandidate }}
+          SUPABASE_URL: https://hzadscrqmyilbisexvyz.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          FULL_TIME_URL: ${{ secrets.FULL_TIME_URL }}
+          PUNDIT_JUDGE_MODEL: gpt-5.6-terra
+          PUNDIT_MAX_STEP_COST_USD: "1"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: single-editorial-recovery
+          path: recovery-report.json
+          if-no-files-found: ignore
