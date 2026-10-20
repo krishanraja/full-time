@@ -20,6 +20,17 @@ Every successful collection also runs `verify-product.mjs`, exercising actual co
 
 The earlier troubleshooting record below is historical. Run 39263887474 delivered nine fixtures after the malformed OAuth JSON was replaced; the v2 live result must be read from its own receipt and commit, not inferred from that earlier run.
 
+### Verified v2 execution, 20 October 2026
+
+- [Collection 39402187542](https://github.com/krishanraja/full-time/actions/runs/39402187542): 16-18 October, nine completed matches independently corroborated by API-Football and football-data.org. 350 counted facts/events, zero attributed model estimates, zero derived items, zero shadow signals, one refused item, ten rejections. Optional source failures are not hidden: 261/261 news queries attempted, nine found pairs across six domains, 139 without relevant coverage, 113 errors. RSS snippets remain snippets; no complete-article retrieval is claimed.
+- [Replay 39402310007](https://github.com/krishanraja/full-time/actions/runs/39402310007): the same committed raw/normalised bytes were fetched and verified; `replayed: true`. No collection or duplicate archive creation was needed.
+- Drive readbacks: [raw](https://drive.google.com/file/d/17AElWsMJUFafp56vAWH7vCWaHtEKED-O/view), [normalised](https://drive.google.com/file/d/1niASeAwfnAwj8hVygYsh0lUPfyNb1PVl/view), [commit](https://drive.google.com/file/d/1icL270g4uZjoVLDRlUNoQmU5EJU99DCf/view). Raw SHA-256 `e995b50fba2eee354e97561393aeaffbee12419af7fd31078376aa5170fabc18`; normalised `6c68ef22fad6ec4cd18dfb39eaa44c91126624eb380a477bbc745f55bee17181`. Downloaded Actions files independently matched these hashes.
+- Actual collected snapshot through actual product builder: nine fixtures, 108 accepted counted measurements, zero shadow signals or unnamed estimates imported. No product database writes or paid models were used.
+- [App CI 39402226692](https://github.com/krishanraja/full-time/actions/runs/39402226692): dependency audit, typecheck, 469 tests passing with two existing corpus skips, lint (zero errors, six existing warnings), full Linux production build and repository guards passed. Thirty separate ingestion/recovery/product-boundary tests passed. Vercel preview built successfully. The local Windows Vite build succeeded; its existing ffmpeg packaging step expects a Linux binary name and failed locally, so the passing Linux build is the packaging proof.
+- Release boundary: changes are in PR #88. Production configuration inspection of the Vercel project for `fulltime.fm` found no intake enable flag, Drive OAuth JSON or folder variable. The product consumer is implemented and tested, not activated in production. Merge and secure server configuration/activation need founder approval. The existing backup automation was not disabled.
+
+Observed model API spend: $0. No model API is called by collection, normalisation, delivery, recovery or contract verification.
+
 ## Cadence, destination, outputs
 
 Workflow: `.github/workflows/premier-league-evidence.yml`, Sunday, Tuesday and Thursday at **08:00 Europe/London**, including seasonal daylight-saving changes. The three **fully completed UK dates ending yesterday** are processed; a manual `workflow_dispatch` can specify `end_date` (inclusive).

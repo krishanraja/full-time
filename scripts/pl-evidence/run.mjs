@@ -29,7 +29,12 @@ async function main(){
     if(previous){
       await save(join(base,rawFile),previous.raw);await save(join(base,finalFile),previous.normal);
       await save(join(base,names.commit),previous.commit);
-      const receipt={...previous.commit,replayed:true,validation:'raw ledger reproduced; both Drive hashes verified',commit_sha256:previous.commit_sha256};
+      const discovery=previous.raw.source_status.filter(s=>s.url?.startsWith('https://www.bing.com/news/'));
+      const unavailable=previous.raw.source_status.filter(s=>['error','blocked','partial'].includes(s.status));
+      const receipt={...previous.commit,replayed:true,tally:previous.normal.tally,
+        source_queries:{expected:previous.raw.fixtures.length*(DOMAINS.length-1),attempted:discovery.length},
+        warnings:unavailable.length?[`${unavailable.length} archived source errors/partial responses (see raw source_status)`]:[],errors:[],
+        validation:'raw ledger reproduced; both Drive hashes verified',commit_sha256:previous.commit_sha256};
       await save(join(base,'receipt.json'),receipt);
       console.log(JSON.stringify(receipt,null,2));
       if(process.env.GITHUB_STEP_SUMMARY)await writeFile(process.env.GITHUB_STEP_SUMMARY,`### Verified archive replay\n\n${window}: ${previous.raw.fixtures.length} fixtures. Both JSON hashes and product intake contract passed.\n`,{flag:'a'});
