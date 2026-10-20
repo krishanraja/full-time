@@ -120,5 +120,6 @@
   "dropId": "519f3f12-1f7d-411a-9021-9f128ffd8496",
   "coverageDate": "2026-10-19",
   "originalScriptSha256": "844efbd0da9412a997dfa2d56cdb7cfe737fba38085c5e74a68a4cc224d5bc7e",
-  "matchId": "af_1557436"
+  "matchId": "af_1557436",
+  "maxReviewPasses": 3
 }
