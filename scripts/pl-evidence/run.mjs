@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { daysForRun, DOMAINS, normalize, ledgerItem, matchKey, validate } from './core.mjs';
 import { discoverFixtures, collectMatchDetails, collectNews } from './collect.mjs';
 import { uploadJson, checkDriveFolder } from './drive.mjs';
+import { snapshotNames,readSnapshot,recoverSnapshot,sealSnapshot,validateSnapshot } from './snapshot.mjs';
 
 function arg(flag){const pos=process.argv.indexOf(flag);return pos<0?null:process.argv[pos+1];}
 function shortError(error){return String(error?.message||error).slice(0,180);}
@@ -14,9 +15,28 @@ async function main(){
   const window=`${days[0]} to ${days[2]}`;
   const base=resolve(arg('--out')||'pl-evidence-output');
   await mkdir(base,{recursive:true});
-  const rawFile=`premier-league-raw-${days[0]}-to-${days[2]}.json`;
-  const finalFile=`premier-league-normalised-${days[0]}-to-${days[2]}.json`;
+  const names=snapshotNames(days[2]);
+  const rawFile=names.raw,finalFile=names.normal;
   const problems=[],warnings=[];let fixtures=[],fixturesRejected=[],source_status=[],statsItems=[],newsItems=[],newsCoverage=[];
+  const targetFolder=process.env.FT_DRIVE_FOLDER_ID||'1g1ZmO3PtsC54XudqxL7DlajkD9Nrzfcp';
+  let credentials=null;
+  try {
+    const value=process.env.GOOGLE_DRIVE_OAUTH_JSON || process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON;
+    if(value)credentials=JSON.parse(value);
+  }catch{problems.push('Google Drive authentication secret is invalid JSON');}
+  if(credentials && !arg('--fixtures')){
+    const previous=await recoverSnapshot(days[2],{credentials,folderId:targetFolder});
+    if(previous){
+      await save(join(base,rawFile),previous.raw);await save(join(base,finalFile),previous.normal);
+      await save(join(base,names.commit),previous.commit);
+      const receipt={...previous.commit,replayed:true,validation:'raw ledger reproduced; both Drive hashes verified',commit_sha256:previous.commit_sha256};
+      await save(join(base,'receipt.json'),receipt);
+      console.log(JSON.stringify(receipt,null,2));
+      if(process.env.GITHUB_STEP_SUMMARY)await writeFile(process.env.GITHUB_STEP_SUMMARY,`### Verified archive replay\n\n${window}: ${previous.raw.fixtures.length} fixtures. Both JSON hashes and product intake contract passed.\n`,{flag:'a'});
+      return;
+    }
+  }
+  let expectedFixtureKeys=null,verification=[];
   const footballDataKey=process.env.FOOTBALL_DATA_KEY||'';
   const apiFootballKey=process.env.API_FOOTBALL_KEY||'';
   if(arg('--fixtures')){
@@ -28,9 +48,10 @@ async function main(){
   }else{
     const fx=await discoverFixtures(days,{footballDataKey,apiFootballKey});
     fixtures=fx.matches;fixturesRejected=fx.rejected;source_status=fx.source_status;
+    expectedFixtureKeys=fx.expected_fixture_keys;verification=fx.verification;
     problems.push(...fx.errors);
   }
-  if(!fixtures.length)problems.push('No complete fixtures verified; cannot treat empty output as no games');
+  if(!fixtures.length && !(expectedFixtureKeys?.length===0 && source_status.filter(s=>s.domain==='api-football.com'&&s.status==='found').length===days.length))problems.push('No complete fixtures verified; cannot treat empty output as no games');
   if(fixturesRejected.some(x=>['team_unresolved','score_missing'].includes(x.reason)))
     problems.push(`Finished fixture records rejected: ${fixturesRejected.filter(x=>['team_unresolved','score_missing'].includes(x.reason)).length}; fixture completeness unverified`);
   const scores=fixtures.flatMap(f=>['home','away'].map((side,i)=>ledgerItem(f,f.source_domain||'fotmob.com',1000+i,{
@@ -53,14 +74,10 @@ async function main(){
   const expectedDiscovery=fixtures.length*(DOMAINS.length-1);
   const attemptedDiscovery=newsCoverage.filter(x=>x.status!=='not_attempted').length;
   if(!arg('--fixtures') && attemptedDiscovery!==expectedDiscovery)problems.push(`Source discovery only attempted ${attemptedDiscovery}/${expectedDiscovery} fixture-domain pairs`);
-  const targetFolder=process.env.FT_DRIVE_FOLDER_ID||'1g1ZmO3PtsC54XudqxL7DlajkD9Nrzfcp';
-  let credentials=null;
-  try {
-    const rawCredentials=process.env.GOOGLE_DRIVE_OAUTH_JSON || process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON;
-    if (rawCredentials) credentials=JSON.parse(rawCredentials);
-  } catch { problems.push('Google Drive authentication secret is invalid JSON'); }
   if(!credentials)problems.push('Google Drive OAuth or service-account secret unavailable: GitHub artifacts only');
-  const raw={schema_version:1,window,fixtures,
+  items.sort((a,b)=>a.id.localeCompare(b.id));
+  allSourceStatus.sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  const raw={schema_version:2,window,fixtures,
     fixture_rejections:fixturesRejected,source_status:allSourceStatus,items,
     notes:['Raw RSS excerpts are headlines/descriptions only, never full-page commentary.',
       'Missing or blocked domains are not represented as evidence.',
@@ -69,7 +86,9 @@ async function main(){
   };
   const manifest={domains:DOMAINS,source_status:allSourceStatus,fixture_source:apiFootballKey?'api-football.com_with_public_fallback':'public_with_football-data_registry',
     independent_crosscheck:footballDataKey?'football-data.org_attempted':'not_configured',
-    expected_finished_fixtures:fixtures.length,discovered_finished_fixtures:fixtures.length};
+    expected_fixture_keys:expectedFixtureKeys,verification,
+    expected_finished_fixtures:expectedFixtureKeys?.length??null,discovered_finished_fixtures:fixtures.length};
+  raw.evidence_manifest=manifest;
   const normal=normalize(fixtures,items,fixturesRejected,{
     window,evidence_manifest:manifest,run_status:problems.length?'partial':'complete',run_errors:problems,
   });
@@ -83,16 +102,25 @@ async function main(){
   }
   if(credentials && !problems.length){
     try{
+      validateSnapshot(raw,normal);
       uploaded.push(await uploadJson(rawFile,raw,{credentials,folderId:targetFolder}));
       // Upload normalised output last, after raw archive exists and validates.
       validate(normal,items);
       uploaded.push(await uploadJson(finalFile,normal,{credentials,folderId:targetFolder}));
+      const commit=sealSnapshot(raw,normal);
+      // The commit is the only readiness marker the product can consume.
+      uploaded.push(await uploadJson(names.commit,commit,{credentials,folderId:targetFolder}));
+      const readback=await readSnapshot(days[2],{credentials,folderId:targetFolder});
+      if(!readback)throw Error('Committed snapshot unavailable after delivery');
+      await save(join(base,names.commit),commit);
     }catch(error){
       problems.push(`Google Drive delivery failed: ${shortError(error)}`);
       normal.run_status='partial';normal.run_errors=problems;
       await save(finalPath,normal);
     }
   }
+  normal.run_status=problems.length?'partial':'complete';normal.run_errors=problems;
+  await save(finalPath,normal);
   const receipt={window,run_status:problems.length?'partial':'complete',fixtures:fixtures.length,
     tally:normal.tally,raw_file:rawFile,normalised_file:finalFile,drive_files:uploaded,
     errors:problems,warnings,drive_preflight:drivePreflight,
@@ -103,4 +131,9 @@ async function main(){
   console.log(JSON.stringify(receipt,null,2));
   if(problems.length)process.exitCode=1;
 }
-main().catch(e=>{console.error(`Evidence pipeline fatal error: ${shortError(e)}`);process.exitCode=1;});
+main().catch(async e=>{
+  const receipt={run_status:'failed',errors:[shortError(e)]};
+  const base=resolve(arg('--out')||'pl-evidence-output');
+  await mkdir(base,{recursive:true});await save(join(base,'receipt.json'),receipt);
+  console.error(`Evidence pipeline fatal error: ${shortError(e)}`);process.exitCode=1;
+});

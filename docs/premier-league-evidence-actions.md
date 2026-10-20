@@ -1,10 +1,24 @@
 # Premier League evidence — scheduled non-API research intake
 
-**Scope:** an independent private research-data intake for Full Time. It does not publish programmes, run AI writers, create public citations, touch Supabase, or trigger any product workflow. The research is not assumed to have commercial reuse rights. No public or writer-facing citation requirement is imposed.
+**Scope:** a private evidence intake with an opt-in, read-only product adapter. Intake does not publish programmes, run AI writers, create public citations, write Supabase, or trigger product workflows. The research is not assumed to have commercial reuse rights. No public or writer-facing citation requirement is imposed.
 
 ## Why
 
-Full Time's North Star requires **every fact checked**. A reproducible, closed-world evidence ledger makes that requirement testable without converting editorial opinion into match facts. URLs, source IDs and minimal excerpts exist **inside the private raw ledger only** to detect contradictions and audit ingestion; listeners and writers receive no citations or shadow-signals through this workflow. The two output JSON files are **not wired to product publication**. A future integration requires separate tests and permission.
+Full Time's North Star requires **every fact checked**. A reproducible, closed-world evidence ledger makes that requirement testable without converting editorial opinion into match facts. URLs, source IDs and minimal excerpts remain private operator evidence. The product adapter admits only an allowlist of counted numerical measurements into the existing evidence-pack builder. Shadow signals, refused claims, unnamed estimates and news snippets never cross that boundary. Activation is separate from implementation and requires approved production configuration.
+
+## V2 delivery and product contract
+
+The current implementation writes `premier-league-raw-v2-START-to-END.json` and `premier-league-normalised-v2-START-to-END.json`, followed by `premier-league-commit-START-to-END.json`. Earlier non-versioned archives remain historical and are not product inputs. The commit is the readiness marker and contains the exact SHA-256 of each JSON file. Every read reproduces normalisation from the raw ledger, compares independent fixture identities and score confirmations, and verifies both hashes. A verified no-game window is legitimate only when both authenticated feeds enumerate no completed matches; an unexplained empty collection fails.
+
+Reruns read the original committed snapshot instead of repeating mutable news discovery. If delivery was interrupted after the raw file, `recoverSnapshot` reconstructs the same normalised bytes from its embedded manifest, completes delivery and reads the result back. A hash conflict, duplicate filename, inaccessible archive or invalid commit stops recovery. No conflicting archive is overwritten. A shared concurrency group serializes evidence writers across branches.
+
+The source of truth is the committed Drive snapshot. `scripts/pl-evidence/snapshot.mjs` is the shared producer/consumer validator. `src/lib/pundit/evidence-intake.server.ts` reads it for the exact product match; `structured-match.server.ts` attaches the validated measurements; `buildEvidencePack` adds absent facts with raw-ledger lineage, deduplicates agreement and refuses a conflicting existing fact before paid generation. The adapter is off unless `FT_EVIDENCE_INTAKE_ENABLED=true`. The server also requires `GOOGLE_DRIVE_OAUTH_JSON` and `FT_DRIVE_FOLDER_ID`, securely injected into the chosen deployment. GitHub repository secrets are not automatically Vercel environment variables. Never copy them into source or chat.
+
+The three-day Sunday/Tuesday/Thursday cadence is retained. A match can precede its first scheduled snapshot. In that case the product records independent evidence as unavailable and retains its existing checked-data path; it never describes absent supplemental evidence as verified. A corrupt or disagreeing snapshot fails closed. This cadence does not promise supplementary evidence before every daily show. No writer, publication flag, billing setting or database row is changed by intake.
+
+Every successful collection also runs `verify-product.mjs`, exercising actual collected values through the real product evidence-pack builder and saving `product-contract-verification.json`. This is a contract rehearsal, not proof of deployed activation or live publication. Production activation needs matching deployment, server credential availability and an authenticated readback before it can be called live. Rollback is to set `FT_EVIDENCE_INTAKE_ENABLED=false` and restore the prior approved deployment if necessary; committed evidence stays recoverable.
+
+The earlier troubleshooting record below is historical. Run 39263887474 delivered nine fixtures after the malformed OAuth JSON was replaced; the v2 live result must be read from its own receipt and commit, not inferred from that earlier run.
 
 ## Cadence, destination, outputs
 
@@ -48,7 +62,7 @@ Collection is Node 24 built-ins, HTML/RSS parsing and HTTP requests, no LLM call
 
 ```bash
 # Deterministic tests; no credentials, network or model calls
-node --test tests/pl-evidence.test.mjs
+node --test tests/pl-evidence.test.mjs tests/pl-evidence-reliability.test.mjs
 
 # Live one-off intake; writes artifacts even if external/Drive gates fail
 node scripts/pl-evidence/run.mjs --end 2026-10-18 --out ./pl-evidence-output

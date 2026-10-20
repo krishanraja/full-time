@@ -1,5 +1,6 @@
 import { londonDate } from "@/lib/london-date";
 import type { PriorMatch, PriorMeeting, StructuredMatchInput } from "./evidence";
+import { loadIntakeEvidence } from "./evidence-intake.server";
 
 type MatchRow = {
   id: string;
@@ -338,6 +339,7 @@ export async function loadStructuredMatch(matchId: string) {
       awayXg: nullableNumber(estimate.away_xg),
     })),
   };
+  input.intakeEvidence = await loadIntakeEvidence(input.match);
   const entities = [
     row.home?.name,
     row.away?.name,

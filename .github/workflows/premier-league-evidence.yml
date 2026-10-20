@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: premier-league-evidence-${{ github.ref }}
+  group: premier-league-evidence-drive-writer
   cancel-in-progress: false
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
         with:
           node-version: '24'
       - name: Validate evidence contract (no network or paid models)
-        run: node --test tests/pl-evidence.test.mjs
+        run: node --test tests/pl-evidence.test.mjs tests/pl-evidence-reliability.test.mjs
       - name: Collect and validate Premier League evidence
         id: collect
         continue-on-error: true
@@ -48,6 +48,9 @@ jobs:
           else
             node scripts/pl-evidence/run.mjs --out pl-evidence-output
           fi
+      - name: Verify collected snapshot through the product evidence-pack builder
+        if: steps.collect.outcome == 'success'
+        run: node scripts/pl-evidence/verify-product.mjs --out pl-evidence-output
       - name: Preserve both JSON files and receipt even if partial
         if: always()
         uses: actions/upload-artifact@v4

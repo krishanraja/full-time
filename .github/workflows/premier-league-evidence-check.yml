@@ -10,7 +10,8 @@ on:
   pull_request:
     paths:
       - 'scripts/pl-evidence/**'
-      - 'tests/pl-evidence.test.mjs'
+      - 'tests/pl-evidence*.test.mjs'
+      - 'src/lib/pundit/evidence-intake*'
       - '.github/workflows/premier-league-evidence*.yml'
 
 permissions:
@@ -25,6 +26,6 @@ jobs:
         with:
           node-version: '24'
       - name: Closed-world evidence tests (zero model calls)
-        run: node --test tests/pl-evidence.test.mjs
+        run: node --test tests/pl-evidence.test.mjs tests/pl-evidence-reliability.test.mjs
       - name: Real-provider scoreboard smoke (no secrets or paid models)
         run: node --test tests/pl-evidence.live.test.mjs

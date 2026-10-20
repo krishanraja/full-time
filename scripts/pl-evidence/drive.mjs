@@ -3,6 +3,46 @@ import { createHash, createSign } from 'node:crypto';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 const base64url = (data) => Buffer.from(data).toString('base64url');
 const digest = (value) => createHash('sha256').update(value).digest('hex');
+export const jsonHash = value => digest(`${JSON.stringify(value,null,2)}\n`);
+
+// Retry only safe reads/token exchanges. A timed-out creation is reconciled by
+// filename on the next run rather than blindly creating a second Drive file.
+export async function driveRequest(url, options={}) {
+  const safe = !options.method || options.method==='GET' || url==='https://oauth2.googleapis.com/token';
+  for(let attempt=0;;attempt++){
+    try {
+      const response=await fetch(url,{...options,signal:AbortSignal.timeout(15000)});
+      if(safe && (response.status===429 || response.status>=500) && attempt<2){
+        const seconds=Number(response.headers.get('retry-after'));
+        await response.body?.cancel();
+        await new Promise(r=>setTimeout(r,Math.min(8000,seconds>0?seconds*1000:500*2**attempt)));
+        continue;
+      }
+      return response;
+    }catch(error){
+      if(!safe || attempt>=2)throw Error('Drive request timed out or transport unavailable');
+      await new Promise(r=>setTimeout(r,500*2**attempt));
+    }
+  }
+}
+
+export async function readJsonFile(name,{credentials,folderId,request=driveRequest}={}){
+  if(!/^[-a-z0-9]+\.json$/i.test(name) || !folderId)throw Error('Invalid archive lookup');
+  const token=await driveToken(credentials,request),headers={Authorization:`Bearer ${token}`};
+  const q=`name = '${name}' and '${folderId.replaceAll("'","\\'")}' in parents and trashed = false`;
+  const response=await request(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=nextPageToken,files(id,mimeType,parents)&supportsAllDrives=true&includeItemsFromAllDrives=true`,{headers});
+  if(!response.ok)throw await driveFailure('Drive snapshot lookup',response);
+  const listing=await response.json();
+  if(listing.nextPageToken || !Array.isArray(listing.files) || listing.files.length>1)throw Error('Ambiguous Drive snapshot');
+  if(!listing.files.length)return null;
+  const file=listing.files[0];
+  if(file.mimeType!=='application/json' || !file.parents?.includes(folderId))throw Error('Invalid snapshot metadata');
+  const media=await request(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(file.id)}?alt=media&supportsAllDrives=true`,{headers});
+  if(!media.ok)throw await driveFailure('Drive snapshot readback',media);
+  const text=await media.text();
+  if(Buffer.byteLength(text)>10000000)throw Error('Snapshot exceeds 10MB limit');
+  return {value:JSON.parse(text),sha256:digest(text),id:file.id};
+}
 
 /** Google emits a machine-readable reason inside most 403 responses.
  * Never log the full body: it can contain user identifiers or resource IDs. */
@@ -30,7 +70,7 @@ async function driveFailure(operation,response,oauthClientId){
 /** Accept either an OAuth user refresh token (preferred for My Drive) or a
  * service account key (appropriate for Shared Drives with folder access).
  * Credentials come exclusively from GitHub Actions secrets, never the repo. */
-export async function driveToken(credentials, request = fetch) {
+export async function driveToken(credentials, request = driveRequest) {
   if (credentials?.refresh_token && credentials?.client_id && credentials?.client_secret) {
     const response = await request('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -73,7 +113,7 @@ export async function driveToken(credentials, request = fetch) {
 }
 
 /** Read-only access check, safe to run even when collection is incomplete. */
-export async function checkDriveFolder(credentials, folderId, request = fetch) {
+export async function checkDriveFolder(credentials, folderId, request = driveRequest) {
   if (!folderId) throw Error('Drive destination folder must be configured');
   const token = await driveToken(credentials, request);
   const response = await request(
@@ -89,7 +129,7 @@ export async function checkDriveFolder(credentials, folderId, request = fetch) {
 
 /** Create a non-destructive immutable archive file, or verify an exact retry.
  * Hash-based readback guards against silent mismatches and partial deliveries. */
-export async function uploadJson(name, value, { credentials, folderId, request = fetch } = {}) {
+export async function uploadJson(name, value, { credentials, folderId, request = driveRequest } = {}) {
   if (!/^[-a-z0-9]+\.json$/i.test(name)) throw Error('Unsafe JSON filename');
   if (!folderId) throw Error('Drive destination folder must be configured');
   const json = `${JSON.stringify(value, null, 2)}\n`;
