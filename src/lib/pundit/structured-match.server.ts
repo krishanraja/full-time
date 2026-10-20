@@ -78,7 +78,7 @@ const FORM_MATCHES = 3;
  *  inside the window simply has less form, which is the honest answer. */
 const FORM_WINDOW_DAYS = 60;
 
-export async function loadStructuredMatch(matchId: string) {
+export async function loadStructuredMatch(matchId: string, options: { evidenceEnd?: string } = {}) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [{ data: match, error: matchError }, { data: events }, { data: stats }, { data: context }] =
     await Promise.all([
@@ -339,7 +339,7 @@ export async function loadStructuredMatch(matchId: string) {
       awayXg: nullableNumber(estimate.away_xg),
     })),
   };
-  input.intakeEvidence = await loadIntakeEvidence(input.match);
+  input.intakeEvidence = await loadIntakeEvidence(input.match, { end: options.evidenceEnd });
   const entities = [
     row.home?.name,
     row.away?.name,

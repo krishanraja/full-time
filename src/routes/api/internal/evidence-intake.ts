@@ -5,18 +5,22 @@ export async function handleEvidenceIntake({ request }: { request: Request }) {
   const headers = { "Cache-Control": "no-store" };
   if (!isCronAuthorized(request)) return new Response("Unauthorized", { status: 401, headers });
   const matchId = new URL(request.url).searchParams.get("matchId");
+  const evidenceEnd = new URL(request.url).searchParams.get("end") ?? undefined;
+  if (evidenceEnd && !/^\d{4}-\d{2}-\d{2}$/.test(evidenceEnd))
+    return Response.json({ error: "Invalid snapshot end date" }, { status: 400, headers });
   if (!matchId || !/^af_\d+$/.test(matchId))
     return Response.json({ error: "Exact matchId required" }, { status: 400, headers });
   if (process.env.FT_EVIDENCE_INTAKE_ENABLED !== "true")
     return Response.json({ status: "disabled" }, { status: 409, headers });
   try {
-    const [{ loadStructuredMatch }, { buildEvidencePack }] = await Promise.all([
+    const [{ loadStructuredMatch }, { buildEvidencePack, intakeConflicts }] = await Promise.all([
       import("@/lib/pundit/structured-match.server"),
       import("@/lib/pundit/evidence"),
     ]);
     // The production match loader and pack builder, with no model, persistence,
-    // narration or publication. A conflict returns failure before generation.
-    const { input, coverageDate } = await loadStructuredMatch(matchId);
+    // narration or publication. Optional measurement conflicts are withheld
+    // with their dependent derivations; identity/score conflicts still fail.
+    const { input, coverageDate } = await loadStructuredMatch(matchId, { evidenceEnd });
     const pack = buildEvidencePack(input);
     const intake = input.intakeEvidence;
     if (!intake || intake.unavailable.length)
@@ -24,13 +28,18 @@ export async function handleEvidenceIntake({ request }: { request: Request }) {
         { status: "unavailable", matchId, coverageDate, warnings: intake?.unavailable ?? [] },
         { status: 409, headers },
       );
+    const conflicts = intakeConflicts(input);
     const facts = intake.facts.map((item) => ({
       id: item.id,
       value: item.value,
       provenance: item.provenance,
       consumed: pack.facts.some((fact) => fact.id === item.id && fact.value === item.value),
+      withheld:
+        conflicts.some((conflict) => conflict.id === item.id) &&
+        !pack.facts.some((fact) => fact.id === item.id) &&
+        !pack.derivations.some((fact) => fact.provenance.split(",").includes(item.id)),
     }));
-    if (!facts.length || facts.some((fact) => !fact.consumed))
+    if (!facts.length || facts.some((fact) => !fact.consumed && !fact.withheld))
       throw new Error("No intake measurements consumed");
     return Response.json(
       {
@@ -39,7 +48,12 @@ export async function handleEvidenceIntake({ request }: { request: Request }) {
         coverageDate,
         score: `${input.match.homeScore}-${input.match.awayScore}`,
         facts,
-        counts: { intake: facts.length, consumed: facts.filter((fact) => fact.consumed).length },
+        counts: {
+          intake: facts.length,
+          consumed: facts.filter((fact) => fact.consumed).length,
+          withheld: facts.filter((fact) => fact.withheld).length,
+        },
+        conflicts,
         sideEffects: { databaseWrites: false, modelCalls: 0, published: false },
       },
       { headers },
