@@ -55,7 +55,7 @@ it("reports actual production loader facts consumed by the real pack builder", a
   expect(response.status).toBe(200);
   expect(response.headers.get("Cache-Control")).toBe("no-store");
   const body = await response.json();
-  expect(body.counts).toEqual({ intake: 1, consumed: 1 });
+  expect(body.counts).toEqual({ intake: 1, consumed: 1, withheld: 0 });
   expect(body.sideEffects.modelCalls).toBe(0);
 });
 it("keeps conflicts fail-closed and returns only a safe error category", async () => {

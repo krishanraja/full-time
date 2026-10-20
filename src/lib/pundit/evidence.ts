@@ -350,8 +350,46 @@ function scoreProgression(
     });
 }
 
+const intakeStatKeys: Record<string, keyof NonNullable<StructuredMatchInput["stats"]>> = {
+  "stats.home_shots": "homeShots",
+  "stats.away_shots": "awayShots",
+  "stats.home_sot": "homeShotsOnTarget",
+  "stats.away_sot": "awayShotsOnTarget",
+  "stats.home_possession": "homePossession",
+  "stats.away_possession": "awayPossession",
+  "stats.home_corners": "homeCorners",
+  "stats.away_corners": "awayCorners",
+  "stats.home_saves": "homeSaves",
+  "stats.away_saves": "awaySaves",
+  "stats.home_blocked": "homeBlocked",
+  "stats.away_blocked": "awayBlocked",
+};
+export function intakeConflicts(input: StructuredMatchInput) {
+  return (input.intakeEvidence?.facts ?? []).flatMap((item) => {
+    const key = intakeStatKeys[item.id];
+    const existing = key && input.stats?.[key];
+    return typeof existing === "number" && existing !== item.value
+      ? [
+          {
+            id: item.id,
+            reason: "sources_disagree" as const,
+            product: { value: existing, source: input.stats!.source },
+            snapshot: { value: item.value, source: item.source },
+          },
+        ]
+      : [];
+  });
+}
+
 export function buildEvidencePack(input: StructuredMatchInput, version = 1): EvidencePack {
-  const { match, stats } = input;
+  const { match } = input;
+  const stats = input.stats ? { ...input.stats } : undefined;
+  const conflicts = intakeConflicts(input);
+  const withheld = new Set(conflicts.map((item) => item.id));
+  // Remove both disagreeing observations before any arithmetic. Dependent
+  // derivations remain absent because their counted inputs are unavailable.
+  for (const item of conflicts)
+    if (stats) Object.assign(stats, { [intakeStatKeys[item.id]]: null });
   const facts: EvidenceItem[] = [
     fact("match.home_team", "Home team", match.homeTeam, match.source, "matches.home_team_id"),
     fact("match.away_team", "Away team", match.awayTeam, match.source, "matches.away_team_id"),
@@ -844,6 +882,7 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
       !item.provenance.startsWith("snapshot:")
     )
       throw new Error("Invalid independent intake fact");
+    if (withheld.has(item.id)) continue;
     const existing = facts.find((fact) => fact.id === item.id);
     if (existing && existing.value !== item.value)
       throw new Error(`Independent evidence conflicts with product fact: ${item.id}`);
@@ -856,7 +895,14 @@ export function buildEvidencePack(input: StructuredMatchInput, version = 1): Evi
     createdAt: new Date().toISOString(),
     facts,
     derivations,
-    unavailableEvidence: [...unavailableEvidence, ...(input.intakeEvidence?.unavailable ?? [])],
+    unavailableEvidence: [
+      ...unavailableEvidence,
+      ...(input.intakeEvidence?.unavailable ?? []),
+      ...conflicts.map(
+        (item) =>
+          `sources_disagree:${item.id}; both observations and dependent derivations withheld`,
+      ),
+    ],
   };
 }
 

@@ -5,9 +5,20 @@ import { discoverFixtures } from '../scripts/pl-evidence/collect.mjs';
 import { productFacts,validateSnapshot,sealSnapshot,readSnapshot,recoverSnapshot,snapshotNames } from '../scripts/pl-evidence/snapshot.mjs';
 import { uploadJson } from '../scripts/pl-evidence/drive.mjs';
 import { buildEvidencePack } from '../src/lib/pundit/evidence.ts';
+import { spawnSync } from 'node:child_process';
+import { mkdtemp,readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const f={date:'2026-10-18',home:'Arsenal',away:'Chelsea',score:'2-1',provider_id:42,source_domain:'api-football.com'};
 const productMatch={id:'af_42',kickoffAt:'2026-10-18T15:00:00Z',homeTeam:'Arsenal',awayTeam:'Chelsea',homeScore:2,awayScore:1,source:'test',competition:'Premier League'};
+test('a future calendar window cannot be reported as a completed no-game result',async()=>{
+  const out=await mkdtemp(join(tmpdir(),'evidence-future-test-'));
+  const result=spawnSync(process.execPath,['scripts/pl-evidence/run.mjs','--end','2099-01-01','--out',out],{encoding:'utf8'});
+  assert.equal(result.status,1);
+  const receipt=JSON.parse(await readFile(join(out,'receipt.json'),'utf8'));
+  assert.match(receipt.errors[0],/fully completed London/);
+});
 function bundle(){
   const items=[ledgerItem(f,'api-football.com',1,{kind:'counted',field:'shots',value:13,side:'home'}),
     ledgerItem(f,'bbc.com',2,{kind:'text',text:'Arsenal came from behind to beat Chelsea'}),
@@ -37,11 +48,15 @@ test('recorded event shapes preserve named goals, assists and cards without infe
   assert.equal(validateSnapshot(b.raw,b.normal),true);
   assert.equal(productFacts(b.raw,b.normal,productMatch).length,1);
 });
-test('product rejects mismatched score and conflicting existing statistic',()=>{
+test('product rejects mismatched score and withholds both conflicting statistics and their derivations',()=>{
   const {raw,normal}=bundle();
   assert.throws(()=>productFacts(raw,normal,{...productMatch,homeScore:3}),/score disagrees/);
   const facts=productFacts(raw,normal,productMatch);
-  assert.throws(()=>buildEvidencePack({match:productMatch,events:[],stats:{homeShots:14,source:'database'},intakeEvidence:{facts,unavailable:[]}}),/conflicts/);
+  const conflicting=buildEvidencePack({match:productMatch,events:[],stats:{homeShots:14,awayShots:8,source:'database'},intakeEvidence:{facts,unavailable:[]}});
+  assert.ok(!conflicting.facts.some(f=>f.id==='stats.home_shots'));
+  assert.ok(!conflicting.derivations.some(f=>f.provenance.split(',').includes('stats.home_shots')));
+  assert.ok(conflicting.unavailableEvidence.some(s=>s.includes('sources_disagree:stats.home_shots')));
+  assert.ok(conflicting.facts.some(f=>f.id==='stats.away_shots'&&f.value===8));
   const pack=buildEvidencePack({match:productMatch,events:[],stats:{homeShots:13,source:'database'},intakeEvidence:{facts,unavailable:[]}});
   assert.equal(pack.facts.filter(f=>f.id==='stats.home_shots').length,1);
 });

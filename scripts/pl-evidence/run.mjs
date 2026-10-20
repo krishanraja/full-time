@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { daysForRun, DOMAINS, normalize, ledgerItem, matchKey, validate } from './core.mjs';
+import { daysForRun, toLondonDate, DOMAINS, normalize, ledgerItem, matchKey, validate } from './core.mjs';
 import { discoverFixtures, collectMatchDetails, collectNews } from './collect.mjs';
 import { uploadJson, checkDriveFolder } from './drive.mjs';
 import { snapshotNames,readSnapshot,recoverSnapshot,sealSnapshot,validateSnapshot } from './snapshot.mjs';
@@ -12,6 +12,7 @@ async function save(path,json){await writeFile(path,JSON.stringify(json,null,2)+
 async function main(){
   const end=arg('--end');
   const days=daysForRun(new Date(),end);
+  if(days[2]>=toLondonDate(new Date()))throw Error('Evidence window must contain fully completed London calendar days');
   const window=`${days[0]} to ${days[2]}`;
   const base=resolve(arg('--out')||'pl-evidence-output');
   await mkdir(base,{recursive:true});

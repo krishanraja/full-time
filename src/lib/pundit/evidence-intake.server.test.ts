@@ -42,7 +42,7 @@ describe("configured product intake boundary", () => {
     vi.mocked(productFacts).mockReturnValue([]);
     expect(await loadIntakeEvidence(match)).toEqual({ facts: [], unavailable: [] });
     expect(readSnapshot).toHaveBeenCalledWith(
-      "2026-10-18",
+      "2026-10-20",
       expect.objectContaining({ folderId: "TEST_FOLDER" }),
     );
     expect(productFacts).toHaveBeenCalledWith({}, {}, match);
@@ -53,10 +53,16 @@ describe("configured product intake boundary", () => {
     const result = await loadIntakeEvidence(match);
     expect(result.unavailable).toHaveLength(1);
     expect(vi.mocked(readSnapshot).mock.calls.map((c) => c[0])).toEqual([
-      "2026-10-18",
-      "2026-10-19",
       "2026-10-20",
+      "2026-10-19",
+      "2026-10-18",
     ]);
+  });
+  it("can pin the exact historical window without changing ordinary latest-window selection", async () => {
+    enable();
+    vi.mocked(readSnapshot).mockResolvedValue(null);
+    await loadIntakeEvidence(match, { end: "2026-10-18" });
+    expect(vi.mocked(readSnapshot).mock.calls.map((c) => c[0])).toEqual(["2026-10-18"]);
   });
   it("fails before generation on corrupted archive or missing configuration", async () => {
     enable();

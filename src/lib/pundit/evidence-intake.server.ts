@@ -4,7 +4,10 @@ import type { StructuredMatchInput } from "./evidence";
 
 /** Read-only, opt-in. No persistence, publishing, or model calls. A configured
  * but invalid snapshot fails closed before any writer can receive its facts. */
-export async function loadIntakeEvidence(match: StructuredMatchInput["match"]): Promise<{
+export async function loadIntakeEvidence(
+  match: StructuredMatchInput["match"],
+  options: { end?: string } = {},
+): Promise<{
   facts: import("./types").EvidenceItem[];
   unavailable: string[];
 }> {
@@ -20,12 +23,15 @@ export async function loadIntakeEvidence(match: StructuredMatchInput["match"]): 
     throw new Error("Evidence intake credentials are invalid JSON");
   }
   const date = londonDate(new Date(match.kickoffAt));
-  // A match can belong to up to three scheduled windows. Prefer the first
-  // available sealed window so subsequent overlapping runs cannot replace it.
-  for (let offset = 0; offset < 3; offset++) {
+  // Use the newest sealed covering window. A diagnostic can pin one exact
+  // archived window; earlier published packs remain sealed and unchanged.
+  for (const offset of options.end ? [0] : [2, 1, 0]) {
     const end = new Date(`${date}T12:00:00Z`);
     end.setUTCDate(end.getUTCDate() + offset);
-    const snapshot = await readSnapshot(end.toISOString().slice(0, 10), { credentials, folderId });
+    const snapshot = await readSnapshot(options.end ?? end.toISOString().slice(0, 10), {
+      credentials,
+      folderId,
+    });
     if (snapshot)
       return { facts: productFacts(snapshot.raw, snapshot.normal, match), unavailable: [] };
   }
