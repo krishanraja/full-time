@@ -14,12 +14,16 @@ import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as FollowingRouteImport } from './routes/following'
+import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as ProRouteImport } from './routes/pro'
 import { Route as ReceiptsRouteImport } from './routes/receipts'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as WaitlistRouteImport } from './routes/waitlist'
+import { Route as AnswersIndexRouteImport } from './routes/answers.index'
+import { Route as AnswersSlugRouteImport } from './routes/answers.$slug'
+import { Route as AnswersFeedDotxmlRouteImport } from './routes/answers.feed[.]xml'
 import { Route as EpisodeIdRouteImport } from './routes/episode.$id'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
@@ -71,6 +75,11 @@ const FollowingRoute = FollowingRouteImport.update({
   path: '/following',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
+  id: '/llms-full.txt',
+  path: '/llms-full.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
   id: '/llms.txt',
   path: '/llms.txt',
@@ -99,6 +108,21 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const WaitlistRoute = WaitlistRouteImport.update({
   id: '/waitlist',
   path: '/waitlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnswersIndexRoute = AnswersIndexRouteImport.update({
+  id: '/answers/',
+  path: '/answers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnswersSlugRoute = AnswersSlugRouteImport.update({
+  id: '/answers/$slug',
+  path: '/answers/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnswersFeedDotxmlRoute = AnswersFeedDotxmlRouteImport.update({
+  id: '/answers/feed.xml',
+  path: '/answers/feed.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EpisodeIdRoute = EpisodeIdRouteImport.update({
@@ -245,15 +269,19 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/feed': typeof FeedRoute
   '/following': typeof FollowingRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/pro': typeof ProRoute
   '/receipts': typeof ReceiptsRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/waitlist': typeof WaitlistRoute
+  '/answers/$slug': typeof AnswersSlugRoute
+  '/answers/feed.xml': typeof AnswersFeedDotxmlRoute
   '/episode/$id': typeof EpisodeIdRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/answers/': typeof AnswersIndexRoute
   '/api/internal/daily-rehearsal': typeof ApiInternalDailyRehearsalRoute
   '/api/internal/evaluation-corpus': typeof ApiInternalEvaluationCorpusRoute
   '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
@@ -283,15 +311,19 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/feed': typeof FeedRoute
   '/following': typeof FollowingRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/pro': typeof ProRoute
   '/receipts': typeof ReceiptsRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/waitlist': typeof WaitlistRoute
+  '/answers/$slug': typeof AnswersSlugRoute
+  '/answers/feed.xml': typeof AnswersFeedDotxmlRoute
   '/episode/$id': typeof EpisodeIdRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/answers': typeof AnswersIndexRoute
   '/api/internal/daily-rehearsal': typeof ApiInternalDailyRehearsalRoute
   '/api/internal/evaluation-corpus': typeof ApiInternalEvaluationCorpusRoute
   '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
@@ -322,15 +354,19 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/feed': typeof FeedRoute
   '/following': typeof FollowingRoute
+  '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/pro': typeof ProRoute
   '/receipts': typeof ReceiptsRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/waitlist': typeof WaitlistRoute
+  '/answers/$slug': typeof AnswersSlugRoute
+  '/answers/feed.xml': typeof AnswersFeedDotxmlRoute
   '/episode/$id': typeof EpisodeIdRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/answers/': typeof AnswersIndexRoute
   '/api/internal/daily-rehearsal': typeof ApiInternalDailyRehearsalRoute
   '/api/internal/evaluation-corpus': typeof ApiInternalEvaluationCorpusRoute
   '/api/internal/evaluation-run': typeof ApiInternalEvaluationRunRoute
@@ -362,15 +398,19 @@ export interface FileRouteTypes {
     | '/auth'
     | '/feed'
     | '/following'
+    | '/llms-full.txt'
     | '/llms.txt'
     | '/pro'
     | '/receipts'
     | '/settings'
     | '/sitemap.xml'
     | '/waitlist'
+    | '/answers/$slug'
+    | '/answers/feed.xml'
     | '/episode/$id'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/answers/'
     | '/api/internal/daily-rehearsal'
     | '/api/internal/evaluation-corpus'
     | '/api/internal/evaluation-run'
@@ -400,15 +440,19 @@ export interface FileRouteTypes {
     | '/auth'
     | '/feed'
     | '/following'
+    | '/llms-full.txt'
     | '/llms.txt'
     | '/pro'
     | '/receipts'
     | '/settings'
     | '/sitemap.xml'
     | '/waitlist'
+    | '/answers/$slug'
+    | '/answers/feed.xml'
     | '/episode/$id'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/answers'
     | '/api/internal/daily-rehearsal'
     | '/api/internal/evaluation-corpus'
     | '/api/internal/evaluation-run'
@@ -438,15 +482,19 @@ export interface FileRouteTypes {
     | '/auth'
     | '/feed'
     | '/following'
+    | '/llms-full.txt'
     | '/llms.txt'
     | '/pro'
     | '/receipts'
     | '/settings'
     | '/sitemap.xml'
     | '/waitlist'
+    | '/answers/$slug'
+    | '/answers/feed.xml'
     | '/episode/$id'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/answers/'
     | '/api/internal/daily-rehearsal'
     | '/api/internal/evaluation-corpus'
     | '/api/internal/evaluation-run'
@@ -477,15 +525,19 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   FeedRoute: typeof FeedRoute
   FollowingRoute: typeof FollowingRoute
+  LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   ProRoute: typeof ProRoute
   ReceiptsRoute: typeof ReceiptsRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WaitlistRoute: typeof WaitlistRoute
+  AnswersSlugRoute: typeof AnswersSlugRoute
+  AnswersFeedDotxmlRoute: typeof AnswersFeedDotxmlRoute
   EpisodeIdRoute: typeof EpisodeIdRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
   LegalTermsRoute: typeof LegalTermsRoute
+  AnswersIndexRoute: typeof AnswersIndexRoute
   ApiInternalDailyRehearsalRoute: typeof ApiInternalDailyRehearsalRoute
   ApiInternalEvaluationCorpusRoute: typeof ApiInternalEvaluationCorpusRoute
   ApiInternalEvaluationRunRoute: typeof ApiInternalEvaluationRunRoute
@@ -545,6 +597,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FollowingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/llms-full.txt': {
+      id: '/llms-full.txt'
+      path: '/llms-full.txt'
+      fullPath: '/llms-full.txt'
+      preLoaderRoute: typeof LlmsFullDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/llms.txt': {
       id: '/llms.txt'
       path: '/llms.txt'
@@ -585,6 +644,27 @@ declare module '@tanstack/react-router' {
       path: '/waitlist'
       fullPath: '/waitlist'
       preLoaderRoute: typeof WaitlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/answers/': {
+      id: '/answers/'
+      path: '/answers'
+      fullPath: '/answers/'
+      preLoaderRoute: typeof AnswersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/answers/$slug': {
+      id: '/answers/$slug'
+      path: '/answers/$slug'
+      fullPath: '/answers/$slug'
+      preLoaderRoute: typeof AnswersSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/answers/feed.xml': {
+      id: '/answers/feed.xml'
+      path: '/answers/feed.xml'
+      fullPath: '/answers/feed.xml'
+      preLoaderRoute: typeof AnswersFeedDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/episode/$id': {
@@ -784,15 +864,19 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   FeedRoute: FeedRoute,
   FollowingRoute: FollowingRoute,
+  LlmsFullDottxtRoute: LlmsFullDottxtRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
   ProRoute: ProRoute,
   ReceiptsRoute: ReceiptsRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WaitlistRoute: WaitlistRoute,
+  AnswersSlugRoute: AnswersSlugRoute,
+  AnswersFeedDotxmlRoute: AnswersFeedDotxmlRoute,
   EpisodeIdRoute: EpisodeIdRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
   LegalTermsRoute: LegalTermsRoute,
+  AnswersIndexRoute: AnswersIndexRoute,
   ApiInternalDailyRehearsalRoute: ApiInternalDailyRehearsalRoute,
   ApiInternalEvaluationCorpusRoute: ApiInternalEvaluationCorpusRoute,
   ApiInternalEvaluationRunRoute: ApiInternalEvaluationRunRoute,

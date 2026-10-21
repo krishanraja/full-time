@@ -20,7 +20,7 @@ import { MiniPlayer } from "../components/MiniPlayer";
 import { CompletionToast } from "../components/CompletionToast";
 import { supabase } from "@/integrations/supabase/client";
 import { hasClientSupabaseConfig } from "@/lib/supabase-availability";
-import { SITE_URL, DEFAULT_COVER_IMAGE_URL } from "@/lib/site-url";
+import { SITE_URL, DEFAULT_COVER_IMAGE_URL, LOGO_URL, SOCIAL_IMAGE } from "@/lib/site-url";
 import { ldJson } from "@/lib/seo";
 import { GOOGLE_TAG_INIT, GOOGLE_TAG_SRC } from "@/lib/google-tag";
 
@@ -42,12 +42,17 @@ function siteJsonLd() {
         "@id": `${SITE_URL}/#organization`,
         name: "Full Time",
         url: SITE_URL,
+        email: "krish@fulltime.fm",
         logo: {
           "@type": "ImageObject",
-          url: DEFAULT_COVER_IMAGE_URL,
+          url: LOGO_URL,
           width: 512,
           height: 512,
         },
+        image: SOCIAL_IMAGE.url,
+        // The company note on every scrolling page and in the terms
+        // (src/components/CompanyNote.tsx, Ruling Krish 2026-10-19).
+        parentOrganization: { "@type": "Organization", name: "Mindmaker LLC" },
       },
       {
         "@type": "WebSite",
@@ -55,7 +60,7 @@ function siteJsonLd() {
         name: "Full Time",
         url: SITE_URL,
         description: SITE_DESCRIPTION,
-        inLanguage: "en",
+        inLanguage: "en-GB",
         publisher: { "@id": `${SITE_URL}/#organization` },
       },
       {
@@ -64,7 +69,7 @@ function siteJsonLd() {
         name: "Full Time",
         url: SITE_URL,
         description: SITE_DESCRIPTION,
-        inLanguage: "en",
+        inLanguage: "en-GB",
         webFeed: `${SITE_URL}/api/public/feed.rss`,
         image: DEFAULT_COVER_IMAGE_URL,
         publisher: { "@id": `${SITE_URL}/#organization` },
@@ -128,7 +133,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
-      { name: "theme-color", content: "#0a0a0c" },
+      // The app's umber ground (--ground-2 in styles.css), matching the manifest.
+      { name: "theme-color", content: "#15110d" },
       { title: SITE_NAME_TITLE },
       { name: "description", content: SITE_DESCRIPTION },
       { property: "og:title", content: SITE_NAME_TITLE },
@@ -137,18 +143,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:site_name", content: "Full Time" },
       { property: "og:locale", content: "en_GB" },
       { property: "og:url", content: SITE_URL },
-      // The cover art is square (512x512), so `summary` is the honest card
-      // type: declaring summary_large_image would make X centre-crop the
-      // logo into a letterbox. Upgrading to a bespoke 1200x630 card is a
-      // design task, tracked in _STATE.md, not something to fake here.
-      { name: "twitter:card", content: "summary" },
+      // A real 1200x630 card (public/og-card.png, from the brand mark and
+      // wordmark by scripts/generate-brand-images.mjs), so the large card is
+      // honest: nothing gets centre-cropped. Routes override title,
+      // description and URL through pageSeo(); the image is inherited.
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: SITE_NAME_TITLE },
       { name: "twitter:description", content: SITE_DESCRIPTION },
-      { property: "og:image", content: DEFAULT_COVER_IMAGE_URL },
-      { property: "og:image:width", content: "512" },
-      { property: "og:image:height", content: "512" },
-      { property: "og:image:alt", content: "Full Time" },
-      { name: "twitter:image", content: DEFAULT_COVER_IMAGE_URL },
+      { property: "og:image", content: SOCIAL_IMAGE.url },
+      { property: "og:image:type", content: "image/png" },
+      { property: "og:image:width", content: String(SOCIAL_IMAGE.width) },
+      { property: "og:image:height", content: String(SOCIAL_IMAGE.height) },
+      { property: "og:image:alt", content: SOCIAL_IMAGE.alt },
+      { name: "twitter:image", content: SOCIAL_IMAGE.url },
+      { name: "twitter:image:alt", content: SOCIAL_IMAGE.alt },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "apple-mobile-web-app-title", content: "Full Time" },
@@ -162,8 +170,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "icon", href: "/icon-192.png", type: "image/png" },
-      { rel: "apple-touch-icon", href: "/icon-192.png" },
+      // Favicons from scripts/generate-brand-images.mjs. The SVG is the
+      // simplified mark on the umber tile, legible on light and dark tabs;
+      // the .ico is for browsers and crawlers that ask for /favicon.ico.
+      { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { rel: "icon", href: "/favicon-16.png", type: "image/png", sizes: "16x16" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
       // Podcast/feed autodiscovery. This is how Apple Podcasts, Spotify and
       // every feed reader find the show from the site alone.
       {
@@ -171,6 +185,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         type: "application/rss+xml",
         title: "Full Time - AI Pundit football shows",
         href: `${SITE_URL}/api/public/feed.rss`,
+      },
+      // The answer hub's Atom feed. Discovery for feed readers and crawlers;
+      // the hub itself is deliberately not in the app's navigation.
+      {
+        rel: "alternate",
+        type: "application/atom+xml",
+        title: "Answers about Full Time",
+        href: `${SITE_URL}/answers/feed.xml`,
       },
     ],
     scripts: [
@@ -214,6 +236,8 @@ function RootComponent() {
   const router = useRouter();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const wideLayout = pathname === "/receipts";
+  // The answer hub is reading copy, so it gets a comfortable measure.
+  const readingLayout = pathname === "/answers" || pathname.startsWith("/answers/");
   // The three tabs fit one screen and never scroll, so they carry no footer.
   const oneScreenTab = pathname === "/" || pathname === "/following" || pathname === "/settings";
 
@@ -251,7 +275,7 @@ function RootComponent() {
           >
             <div
               className={`mx-auto flex w-full flex-1 flex-col px-4 ${
-                wideLayout ? "max-w-5xl" : "max-w-md"
+                wideLayout ? "max-w-5xl" : readingLayout ? "max-w-2xl" : "max-w-md"
               }`}
             >
               <Outlet />

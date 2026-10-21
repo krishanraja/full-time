@@ -1,0 +1,94 @@
+{
+  "about": "Question candidates for the answer hub. The weekly brief (.github/workflows/answers-weekly.yml) lists the first open ones. Each must be answerable from a named repository source; mark status 'published' with the slug once a post ships, or 'dropped' with a reason. See docs/23-answer-hub.md.",
+  "questions": [
+    {
+      "question": "Why did I get an older Full Time show instead of today's?",
+      "why": "A support answer people already need; explains the fallback and real dates.",
+      "sources": ["docs/10-support.md", "docs/00-product.md"],
+      "status": "open"
+    },
+    {
+      "question": "What is a Show me why card?",
+      "why": "Names the product's proof feature; answer engines need a citable definition.",
+      "sources": ["docs/00-product.md", "docs/05-content-safety.md"],
+      "status": "open"
+    },
+    {
+      "question": "What happens to an AI Pundit show that fails its checks?",
+      "why": "Explains per-edition publication and withheld editions in plain words.",
+      "sources": ["docs/19-release-state.md", "docs/00-product.md"],
+      "status": "open"
+    },
+    {
+      "question": "Does Full Time use real commentary or broadcast audio?",
+      "why": "A trust question about AI audio; the disclosure answers it directly.",
+      "sources": ["docs/10-support.md", "src/routes/legal.terms.tsx"],
+      "status": "open"
+    },
+    {
+      "question": "Can I install Full Time on my phone?",
+      "why": "Practical how-to with a short, stable answer.",
+      "sources": ["docs/10-support.md"],
+      "status": "open"
+    },
+    {
+      "question": "Does following a team change what I hear on Full Time?",
+      "why": "Sets the honest boundary: follows are saved, personal shows are not built yet.",
+      "sources": ["docs/00-product.md", "docs/10-support.md"],
+      "status": "open"
+    },
+    {
+      "question": "Who makes Full Time?",
+      "why": "Entity question answer engines ask; the company note and terms answer it.",
+      "sources": ["src/components/CompanyNote.tsx", "src/routes/legal.terms.tsx"],
+      "status": "open"
+    },
+    {
+      "question": "How do I report a wrong fact in a Full Time show?",
+      "why": "Turns the feedback inbox and the wrong-fact priority into a clear path.",
+      "sources": ["docs/10-support.md", "src/lib/feedback.ts"],
+      "status": "open"
+    },
+    {
+      "question": "Why does each AI Pundit have a different cover picture for every match?",
+      "why": "Explains the generated covers without overclaiming an image model.",
+      "sources": ["docs/01-brand.md"],
+      "status": "open"
+    },
+    {
+      "question": "What is Full Time?",
+      "why": "Seed post.",
+      "sources": ["docs/00-product.md"],
+      "status": "published",
+      "slug": "what-is-full-time"
+    },
+    {
+      "question": "Who are the six AI Pundits on Full Time?",
+      "why": "Seed post.",
+      "sources": ["docs/01-brand.md", "src/components/PersonalitySelector.tsx"],
+      "status": "published",
+      "slug": "who-are-the-six-ai-pundits"
+    },
+    {
+      "question": "How does Full Time check the facts in an AI football show?",
+      "why": "Seed post.",
+      "sources": ["docs/19-release-state.md", "src/lib/pundit/dimensions.ts"],
+      "status": "published",
+      "slug": "how-does-full-time-check-the-facts"
+    },
+    {
+      "question": "What can football match data prove, and what can it not?",
+      "why": "Seed post.",
+      "sources": ["docs/00-product.md"],
+      "status": "published",
+      "slug": "what-can-football-match-data-prove"
+    },
+    {
+      "question": "Is Full Time free, and which leagues does it cover?",
+      "why": "Seed post.",
+      "sources": ["docs/10-support.md", "docs/00-product.md"],
+      "status": "published",
+      "slug": "is-full-time-free"
+    }
+  ]
+}

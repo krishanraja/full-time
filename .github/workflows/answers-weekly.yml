@@ -1,0 +1,54 @@
+# Weekly answer-hub brief.
+#
+# Opens one GitHub issue a week, "Answer hub brief: week of <Monday>", with the
+# checklist and the next open questions from src/content/answers/backlog.json.
+# It reads committed files with plain Node: no model call, no API credits, no
+# deploy, no database. Model spend per run: $0.
+#
+# It never writes a post. A person (or an agent they direct) writes the post
+# from the brief, under docs/23-answer-hub.md.
+
+name: answers-weekly
+
+on:
+  schedule:
+    # Mondays 07:13 UTC, off the hour so it does not queue behind the :00 rush.
+    - cron: "13 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: answers-weekly
+  cancel-in-progress: false
+
+jobs:
+  brief:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Build the brief
+        id: brief
+        run: |
+          title="$(node scripts/answers-weekly-brief.mjs --title)"
+          node scripts/answers-weekly-brief.mjs > brief.md
+          echo "title=$title" >> "$GITHUB_OUTPUT"
+
+      - name: Open the issue once per week
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: ${{ steps.brief.outputs.title }}
+        run: |
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state all --search "\"$TITLE\" in:title" --json title --jq '.[].title')"
+          if printf '%s\n' "$existing" | grep -Fxq "$TITLE"; then
+            echo "Issue already exists: $TITLE"
+            exit 0
+          fi
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body-file brief.md

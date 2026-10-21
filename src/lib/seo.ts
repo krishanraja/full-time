@@ -14,7 +14,7 @@
 // `max-image-preview:large` are what let Google AI Overviews and the other
 // answer engines quote a full passage rather than a truncated fragment.
 
-import { SITE_URL, DEFAULT_COVER_IMAGE_URL } from "./site-url";
+import { SITE_URL, SOCIAL_IMAGE } from "./site-url";
 
 // TanStack Router turns a `script:ld+json` entry in the head `meta` array
 // into a real <script type="application/ld+json"> in the server-rendered
@@ -44,9 +44,12 @@ type PageSeoInput = {
   path: string;
   title: string;
   description: string;
-  /** Absolute image URL. Defaults to the square app/cover art. */
+  /** Absolute image URL. Defaults to the 1200x630 social card. */
   image?: string;
   imageAlt?: string;
+  /** Pixel size of a custom image, when known. The default card's is known. */
+  imageWidth?: number;
+  imageHeight?: number;
   type?: "website" | "article";
   /** Set for account-only or personalised surfaces. */
   noindex?: boolean;
@@ -57,12 +60,19 @@ export function pageSeo({
   path,
   title,
   description,
-  image = DEFAULT_COVER_IMAGE_URL,
-  imageAlt = "Full Time",
+  image = SOCIAL_IMAGE.url,
+  imageAlt = SOCIAL_IMAGE.alt,
+  imageWidth,
+  imageHeight,
   type = "website",
   noindex = false,
 }: PageSeoInput) {
   const url = absoluteUrl(path);
+  // The root declares the default card's 1200x630. A page with its own image
+  // restates the size when it knows it; the pipeline's share cards are also
+  // 1200x630 (share-card.server.ts), so the inherited size stays true for them.
+  const width = image === SOCIAL_IMAGE.url ? SOCIAL_IMAGE.width : imageWidth;
+  const height = image === SOCIAL_IMAGE.url ? SOCIAL_IMAGE.height : imageHeight;
 
   return {
     meta: [
@@ -75,9 +85,16 @@ export function pageSeo({
       { property: "og:url", content: url },
       { property: "og:image", content: image },
       { property: "og:image:alt", content: imageAlt },
+      ...(width && height
+        ? [
+            { property: "og:image:width", content: String(width) },
+            { property: "og:image:height", content: String(height) },
+          ]
+        : []),
       { name: "twitter:title", content: title },
       { name: "twitter:description", content: description },
       { name: "twitter:image", content: image },
+      { name: "twitter:image:alt", content: imageAlt },
     ],
     links: [{ rel: "canonical", href: url }],
   };
