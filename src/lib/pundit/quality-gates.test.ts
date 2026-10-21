@@ -3,6 +3,32 @@ import { evaluateAudioQuality } from "./audio-quality";
 import { EVALUATION_SCENARIOS, validateEvaluationManifest } from "./evaluation";
 
 describe("launch evaluation gates", () => {
+  it("admits a four-minute Reporter while preserving other duration and safety gates", () => {
+    const metrics = {
+      integratedLufs: -16,
+      truePeakDb: -1.2,
+      durationSec: 240,
+      speakingRateWpm: 150,
+      pauseVariationMs: 120,
+      dynamicRangeDb: 4,
+      properNamesVerified: 10,
+      properNamesTotal: 10,
+      transcriptVerified: true,
+      numbersVerified: true,
+      performanceProfileVerified: true,
+      clippedWords: false,
+      repeatedPhrases: false,
+      misplacedEmphasis: false,
+      monotone: false,
+      overactedPunchlines: false,
+      synthesisArtifacts: false,
+    };
+    expect(evaluateAudioQuality(metrics, "zen").passed).toBe(true);
+    expect(evaluateAudioQuality(metrics, "gaffer").passed).toBe(false);
+    expect(evaluateAudioQuality({ ...metrics, durationSec: 179 }, "zen").passed).toBe(false);
+    expect(evaluateAudioQuality({ ...metrics, durationSec: 361 }, "zen").passed).toBe(false);
+    expect(evaluateAudioQuality({ ...metrics, numbersVerified: false }, "zen").passed).toBe(false);
+  });
   it("requires exactly 60 matches and produces 360 scripts", () => {
     const matches = Array.from({ length: 60 }, (_, index) => ({
       matchId: `match-${index}`,

@@ -63,6 +63,7 @@ export async function producePunditVariant(input: {
   variantId: string;
   generated: GeneratedPunditVariant;
   entities: readonly string[];
+  maxNarrationTakes?: number;
 }) {
   const candidate = input.generated.candidate;
   const existing = await serviceRest<ExistingProducedVariant[]>(
@@ -113,6 +114,7 @@ export async function producePunditVariant(input: {
       {
         punditId: candidate.punditId,
         performancePlan: candidate.performancePlan,
+        maxTakes: input.maxNarrationTakes,
         voiceId: pronunciation.providerVoiceRef,
         pronunciationDictionaryLocators: pronunciation.locators,
       },
@@ -147,7 +149,7 @@ export async function producePunditVariant(input: {
       synthesisArtifacts:
         narration.fidelity.wer > 0.05 || !pronunciation.performanceChecks.synthesisArtifacts,
     };
-    const quality = evaluateAudioQuality(metrics);
+    const quality = evaluateAudioQuality(metrics, candidate.punditId);
     const identityVerified = spokenIdentity(narration.spokenScript, candidate.displayScript);
     if (!identityVerified)
       quality.failures.push("Spoken and display scripts are not semantically identical.");

@@ -16,6 +16,7 @@ async function handle({ request }: { request: Request }) {
     variantId: string;
     generated: unknown;
     entities: string[];
+    maxNarrationTakes?: number;
   };
   try {
     input = (await request.json()) as typeof input;
@@ -27,10 +28,12 @@ async function handle({ request }: { request: Request }) {
   // production half is rehearsed against a script already paid for.
   if (input?.variantId && !input.generated) {
     try {
-      const { rehydrateVariantForProduction } = await import(
-        "@/lib/pundit/variant-rehydrate.server"
-      );
-      input = await rehydrateVariantForProduction(input.variantId);
+      const { rehydrateVariantForProduction } =
+        await import("@/lib/pundit/variant-rehydrate.server");
+      input = {
+        ...(await rehydrateVariantForProduction(input.variantId)),
+        maxNarrationTakes: input.maxNarrationTakes,
+      };
     } catch (error) {
       return Response.json(
         { error: error instanceof Error ? error.message : String(error) },
@@ -54,6 +57,7 @@ async function handle({ request }: { request: Request }) {
       variantId: input.variantId,
       generated: input.generated as Parameters<typeof producePunditVariant>[0]["generated"],
       entities: Array.isArray(input.entities) ? input.entities : [],
+      maxNarrationTakes: input.maxNarrationTakes,
     });
     console.log(
       JSON.stringify({

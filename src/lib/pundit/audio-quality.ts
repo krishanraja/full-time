@@ -1,3 +1,6 @@
+import { spokenDurationRange } from "./spoken-length";
+import type { PunditId } from "./types";
+
 export type AudioQualityMetrics = {
   integratedLufs: number;
   truePeakDb: number;
@@ -44,7 +47,7 @@ export type AudioQualityMetrics = {
  *  is the mistake being corrected here. */
 export const MIN_DYNAMIC_RANGE_DB = 2.5;
 
-export function evaluateAudioQuality(metrics: AudioQualityMetrics) {
+export function evaluateAudioQuality(metrics: AudioQualityMetrics, punditId?: PunditId) {
   const failures: string[] = [];
   if (Math.abs(metrics.integratedLufs - -16) > 1) failures.push("Loudness must be -16 LUFS +/-1.");
   if (metrics.truePeakDb > -1) failures.push("True peak must not exceed -1 dBTP.");
@@ -55,8 +58,13 @@ export function evaluateAudioQuality(metrics: AudioQualityMetrics) {
   if (metrics.dynamicRangeDb < MIN_DYNAMIC_RANGE_DB) {
     failures.push("Delivery dynamic range is too narrow.");
   }
-  if (metrics.durationSec < 300 || metrics.durationSec > 480) {
-    failures.push("Narration must run for five to eight minutes.");
+  const duration = spokenDurationRange(punditId);
+  if (metrics.durationSec < duration.min || metrics.durationSec > duration.max) {
+    failures.push(
+      punditId === "zen"
+        ? "Reporter narration must run for three to six minutes."
+        : "Narration must run for five to eight minutes.",
+    );
   }
   const pronunciationRate =
     metrics.properNamesTotal === 0 ? 1 : metrics.properNamesVerified / metrics.properNamesTotal;

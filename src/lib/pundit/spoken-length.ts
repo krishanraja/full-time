@@ -5,3 +5,7 @@ import type { PunditId } from "./types";
 export function spokenWordRange(punditId: PunditId) {
   return punditId === "zen" ? { min: 550, max: 800 } : { min: 750, max: 1100 };
 }
+
+export function spokenDurationRange(punditId?: PunditId) {
+  return punditId === "zen" ? { min: 180, max: 360 } : { min: 300, max: 480 };
+}
