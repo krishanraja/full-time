@@ -11,6 +11,14 @@ import {
   tagsAllowlisted,
 } from "./narration.server";
 import type { PerformanceBeat } from "@/lib/pundit/types";
+import { narrationTakeLimit } from "./narration.server";
+
+it("can lower technical-recovery takes without raising the three-take ceiling", () => {
+  expect(narrationTakeLimit(2)).toBe(2);
+  expect(narrationTakeLimit(99)).toBe(3);
+  expect(narrationTakeLimit(0)).toBe(1);
+  expect(narrationTakeLimit()).toBe(3);
+});
 
 const script = "North FC had 15 shots. The result was 1-2. That is the warning.";
 const plan: PerformanceBeat[] = [

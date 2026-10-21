@@ -637,7 +637,14 @@ export type NarrationResult = {
   fidelity: { wer: number; numbers: boolean; transcript: string };
 };
 
+export function narrationTakeLimit(requested?: number) {
+  return requested !== undefined && Number.isFinite(requested)
+    ? Math.min(3, Math.max(1, Math.floor(requested)))
+    : 3;
+}
+
 export type NarrationOptions = {
+  maxTakes?: number;
   punditId?: PunditId;
   performancePlan?: readonly PerformanceBeat[];
   voiceCandidate?: "A" | "B" | "selected";
@@ -684,7 +691,10 @@ export async function narrate(
   }
 
   const seed = crc32(matchId) % 4_294_967_295;
-  const ladder = ["eleven_v3", "eleven_v3", "eleven_multilingual_v2"];
+  const ladder = ["eleven_v3", "eleven_v3", "eleven_multilingual_v2"].slice(
+    0,
+    narrationTakeLimit(options.maxTakes),
+  );
   let lastErr: unknown;
 
   for (const modelId of ladder) {

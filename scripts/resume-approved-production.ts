@@ -77,7 +77,10 @@ try {
         prefer: "return=minimal",
         body: { status: "approved" },
       });
-    report.production = await runtime("/api/internal/produce-variant", { variantId: id });
+    report.production = await runtime("/api/internal/produce-variant", {
+      variantId: id,
+      maxNarrationTakes: 2,
+    });
     if (!(report.production as { passed: boolean }).passed)
       throw Error("Audio production refused the edition.");
     report.publication = await runtime(`/api/internal/publish-drop?dropId=${manifest.dropId}`, {});
