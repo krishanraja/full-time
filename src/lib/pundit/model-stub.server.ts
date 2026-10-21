@@ -70,23 +70,28 @@ const BEAT_NAMES = [
   "close",
 ] as const;
 
-/** The spoken-length gate wants 750 to 1100 words across ten beats, so each beat
+/** The spoken-length gate has a persona-specific range across ten beats, so each beat
  *  is trimmed to a fixed count that lands the whole script in the middle of the
  *  band. Only the two team names appear and no digits at all, so the entity and
  *  numeric licences have nothing to object to. */
-const WORDS_PER_BEAT = 85;
-
-function stubBeatText(beat: string, homeTeam: string, awayTeam: string): string {
+function stubBeatText(
+  beat: string,
+  homeTeam: string,
+  awayTeam: string,
+  wordsPerBeat: number,
+): string {
   const sentence =
     `This is placeholder narration for the ${beat} beat, written by the stub model so the pipeline can run without calling a real one. ` +
     `${homeTeam} and ${awayTeam} are named here because both appear in the evidence pack. ` +
     `No claim is made about either side, and no quantity is asserted, because the point of this text is to exercise the machinery rather than to say anything. `;
-  const words = sentence.repeat(3).split(/\s+/).filter(Boolean).slice(0, WORDS_PER_BEAT);
+  const words = sentence.repeat(3).split(/\s+/).filter(Boolean).slice(0, wordsPerBeat);
   return `${words.join(" ").replace(/[.,]$/, "")}.`;
 }
 
 function stubDraft(cachedContext: readonly unknown[], user: string) {
   const { homeTeam, awayTeam } = licensedMaterial(cachedContext);
+  const range = JSON.parse(user).outputContract?.words ?? [750, 1100];
+  const wordsPerBeat = Math.floor((range[0] + range[1]) / 20);
   // The writer is handed short claim references; echo the first one back so the
   // thesis points at something that exists.
   const claimRef = /"(c\d+)"/.exec(user)?.[1] ?? "c1";
@@ -101,7 +106,7 @@ function stubDraft(cachedContext: readonly unknown[], user: string) {
     },
     beats: BEAT_NAMES.map((name) => ({
       name,
-      text: stubBeatText(name, homeTeam, awayTeam),
+      text: stubBeatText(name, homeTeam, awayTeam, wordsPerBeat),
       intent: "setup",
       pace: "measured",
       energy: 3,

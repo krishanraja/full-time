@@ -26,6 +26,8 @@ const manifest = JSON.parse(await readFile(file, "utf8")) as {
   coverageDate: string;
   originalScriptSha256: string;
   maxReviewPasses?: number;
+  totalReviewBudgetUsd?: number;
+  maxPassCostUsd?: number;
   candidate: PunditVariantCandidate;
 };
 const { candidate, dropId, coverageDate } = manifest;
@@ -41,7 +43,7 @@ const report: Record<string, unknown> = {
   dropId,
   matchId: manifest.matchId,
   punditId: candidate.punditId,
-  approvedModelCapUsd: 1,
+  approvedModelCapUsd: manifest.totalReviewBudgetUsd ?? 1,
   published: false,
 };
 let runId: string | undefined;
@@ -61,6 +63,29 @@ async function runtime(path: string, body?: unknown) {
   return result;
 }
 try {
+  if (process.env.API_FOOTBALL_KEY) {
+    const headers = { "x-apisports-key": process.env.API_FOOTBALL_KEY };
+    const statusResponse = await fetch("https://v3.football.api-sports.io/status", {
+      headers,
+      signal: AbortSignal.timeout(15_000),
+    });
+    const status = await statusResponse.json();
+    const fixtureResponse = await fetch("https://v3.football.api-sports.io/fixtures?id=1557436", {
+      headers,
+      signal: AbortSignal.timeout(15_000),
+    });
+    const fixture = await fixtureResponse.json();
+    // No account/profile fields or credential values enter the receipt.
+    report.apiFootball = {
+      plan: status.response?.subscription?.plan,
+      active: status.response?.subscription?.active,
+      requests: status.response?.requests,
+      fixtureHttp: fixtureResponse.status,
+      fixtureAvailable: fixture.response?.[0]?.fixture?.id === 1557436,
+      fixtureSeason: fixture.response?.[0]?.league?.season,
+      dailyRemaining: fixtureResponse.headers.get("x-ratelimit-requests-remaining"),
+    };
+  }
   const drops = await serviceRest<Array<{ status: string; generation_cost_usd: number }>>(
     `daily_drops?id=eq.${dropId}&select=status,generation_cost_usd`,
   );
@@ -97,7 +122,14 @@ try {
   const priorRecoveries = await serviceRest<Parameters<typeof remainingRecoveryBudget>[0]>(
     `editorial_runs?idempotency_key=like.${encodeURIComponent(`approved-recovery:${dropId}:%`)}&select=status,promise_checks`,
   );
-  const remainingUsd = remainingRecoveryBudget(priorRecoveries, manifest.maxReviewPasses);
+  const remainingUsd = Math.min(
+    manifest.maxPassCostUsd ?? 1,
+    remainingRecoveryBudget(
+      priorRecoveries,
+      manifest.maxReviewPasses,
+      manifest.totalReviewBudgetUsd,
+    ),
+  );
   report.remainingModelBudgetBeforeUsd = remainingUsd;
   const runs = await serviceRest<Array<{ id: string }>>("editorial_runs", {
     method: "POST",

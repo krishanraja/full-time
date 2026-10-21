@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { remainingRecoveryBudget } from "./recovery-budget";
 describe("cumulative recovery approval", () => {
+  it("bounds the separately approved fourth review to its additional allowance", () => {
+    const prior = [0.277912, 0.281648, 0.282804].map((costUsd) => ({
+      status: "quarantined",
+      promise_checks: { costUsd },
+    }));
+    expect(remainingRecoveryBudget(prior, 4, 1.192364)).toBeCloseTo(0.35);
+    expect(() => remainingRecoveryBudget(prior, 3, 1.192364)).toThrow(/passes exhausted/);
+  });
   it("counts the first failed review against the same dollar", () => {
     expect(
       remainingRecoveryBudget(

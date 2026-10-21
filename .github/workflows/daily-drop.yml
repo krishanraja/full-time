@@ -67,6 +67,7 @@ jobs:
           SUPABASE_URL: https://hzadscrqmyilbisexvyz.supabase.co
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           FULL_TIME_URL: ${{ secrets.FULL_TIME_URL }}
           PUNDIT_JUDGE_MODEL: gpt-5.6-terra
