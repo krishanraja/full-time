@@ -314,7 +314,21 @@ function taggedBeatIndexes(punditId: PunditId, plan: readonly PerformanceBeat[])
     }
     sinceTag += beat.text.length;
   }
-  return indexes;
+  // Concise scripts can change intent across several very short beats. Keep
+  // the opening/close and distribute the allowed tags across those changes,
+  // rather than emitting more tags than narrate's existing safety rail allows.
+  const budget = Math.max(
+    4,
+    Math.ceil(plan.reduce((sum, beat) => sum + speakNumbers(beat.text).length, 0) / 500),
+  );
+  if (indexes.size <= budget) return indexes;
+  const ordered = [...indexes].sort((a, b) => a - b);
+  return new Set(
+    Array.from(
+      { length: budget },
+      (_, index) => ordered[Math.round((index * (ordered.length - 1)) / (budget - 1))],
+    ),
+  );
 }
 
 export function applyPerformanceCadence(

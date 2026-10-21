@@ -44,7 +44,8 @@ describe("persona narration plans", () => {
   it("splits full-length narration below the provider limit at safe boundaries", () => {
     const long = Array.from(
       { length: 100 },
-      (_, index) => `[thoughtful] Sentence ${index} contains enough approved words to test chunking.`,
+      (_, index) =>
+        `[thoughtful] Sentence ${index} contains enough approved words to test chunking.`,
     ).join(" ");
     const chunks = chunkSpokenForTts(long, 800);
     expect(chunks.length).toBeGreaterThan(1);
@@ -91,6 +92,33 @@ describe("narration capacity gate", () => {
  *  header that records untagged delivery at 1.9, and quarantined a script that
  *  had passed all twenty-five editorial harnesses. */
 describe("delivery tags scale with the length of the script", () => {
+  it("keeps a concise ten-beat Reporter inside the unchanged tag rail", () => {
+    const intents = [
+      "setup",
+      "explanation",
+      "evidence",
+      "pivot",
+      "verdict",
+      "pivot",
+      "punchline",
+      "punchline",
+      "prediction",
+      "receipt",
+    ] as const;
+    const compact = intents.map((intent, index) => ({
+      text: `Part ${index} ${"word ".repeat(index === 2 || index === 3 || index === 4 ? 5 : 95)}`.trim(),
+      intent,
+      pace: "measured" as const,
+      energy: 3 as const,
+    }));
+    const text = compact.map((beat) => beat.text).join(" ");
+    const spoken = applyPerformanceCadence(text, "zen", compact);
+    expect(tagBudgetOk(spoken)).toBe(true);
+    expect(tagsAllowlisted(spoken)).toBe(true);
+    expect(spokenIdentity(spoken, text)).toBe(true);
+    expect(spoken.startsWith("[measured]")).toBe(true);
+    expect(spoken).toContain("[warmer]");
+  });
   // The shape that produced 2.1 LU: ten beats, 5,060 characters, 382 seconds.
   const longPlan: PerformanceBeat[] = (
     [

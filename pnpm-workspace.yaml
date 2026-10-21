@@ -13,6 +13,8 @@ supportedArchitectures:
     - current
     - x64
 overrides:
+  # Security patch for the launch-editor advisories published on 20 October.
+  vite: 8.2.4
   "@babel/core@": 7.29.7
   "@vercel/routing-utils@6.4.1>path-to-regexp": 6.3.0
   "@workflow/core@4.8.1>nanoid": 5.1.16

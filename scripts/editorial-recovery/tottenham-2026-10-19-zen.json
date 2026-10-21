@@ -1,0 +1,127 @@
+{
+  "candidate": {
+    "punditId": "zen",
+    "specVersion": 1,
+    "thesis": {
+      "punditId": "zen",
+      "headline": "Tottenham found the target, not complete control",
+      "judgment": "Tottenham’s decisive advantage was the accuracy of their shooting rather than superior access to dangerous areas.",
+      "selectedClaimIds": [
+        "f01cc42d-901f-49b3-9127-fef95b8bf1a2",
+        "14a5d046-f319-2f60-337a-6d3973bd7657",
+        "f2dccdf9-cdf3-a58b-8e77-526c0172e203"
+      ],
+      "rejectedClaimIds": ["d2f208fe-0156-1a39-a008-ca23b9cb349a"],
+      "counterpoint": "The expected-goals totals were close, while the final goal only widened a lead Tottenham already held.",
+      "changeMyMind": "Post-shot expected goals showing Coventry ahead would outweigh the shots-on-target distinction."
+    },
+    "outline": {
+      "hook": "Tottenham have a win to report, against a recent comparison that favoured Coventry. Tottenham’s available previous three results were a draw at Manchester United and home defeats by Aston Villa and Newcastle. Coventry’s included wins over Newcastle and Nottingham Forest, alongside a defeat by Hull City. That was one point against six before this meeting. Useful context for Tottenham’s three-one win; less useful for anyone treating the form guide as the result in advance. The question now is what, beyond the score, earned Tottenham that reversal.",
+      "match_story": "James Maddison opened the scoring in the fourteenth minute, assisted by Mohammed Kudus. Jack Rudoni brought Coventry level in the forty-ninth, from Brandon Thomas-Asante’s assist. Omar Marmoush put Tottenham ahead again in the fifty-eighth, assisted by Andrew Robertson. That was the goal which established the winning lead. Ben Davies supplied the final goal from Dominic Solanke’s assist in added time. Remove that late Davies goal while holding the other recorded goals fixed, and Tottenham still win two-one. It widened the result; it did not turn a draw into a victory.",
+      "evidence": "Tottenham led shots sixteen to twelve, but Coventry led inside-box attempts eleven to ten.",
+      "explanation": "Tottenham’s six outside-box attempts against Coventry’s one created the larger total.",
+      "judgment": "Tottenham’s edge was accuracy, five shots on target to one, not superior recorded access to the box; without shot-level data, that is as far as the evidence goes.",
+      "counterpoint": "The strongest objection is expected goals. Tottenham recorded 0.9 against Coventry’s 0.79, a difference of 0.11. That is close, and it is a reason to resist describing the result as comprehensive attacking superiority. Possession was much further apart, sixty-six percent to thirty-four, while corners and blocked shots were both four-four. These figures sit alongside the accuracy advantage rather than cancelling it. The final score was a wider margin than the 0.11 xG edge. The late goal makes that caution particularly relevant to how the result is remembered.",
+      "humour": "One accurate Coventry shot, one Coventry goal, and no Tottenham save. An admirably short report; a rather incomplete goalkeeper review. Without shot placement or recorded positioning, zero saves cannot establish poor goalkeeping. Coventry recorded two saves at the other end. These are outcomes of the attempts that reached the goal, rather than a verdict on everything the goalkeepers did. The same care that separates shot volume from accuracy also stops an empty column becoming an individual performance rating.",
+      "portable_line": "A shot count can look busy while the goalmouth remains on reduced opening hours.",
+      "prediction_or_receipt": "For Tottenham’s next Premier League match, the call is that they are more likely than not to score. That is a modest prediction, not a promise of another win or another three goals. It can be checked directly against whether Tottenham score in that next match. In the available recent record they scored against Manchester United and Aston Villa, but not against Newcastle. The next opponent, venue and squad availability are not provided here. Those missing details limit confidence; they do not make the prediction immune to a failed outcome.",
+      "close": "The immediate consequence is clear enough in the table. After seven matches, Tottenham and Coventry both have six points, with Tottenham sixteenth and Coventry seventeenth. A win against Coventry has not yet put Tottenham on a different points total from them. The next league match will test the scoring call; a sustained improvement cannot be established from this result alone. For today, the reporting distinction is worth keeping: Tottenham’s result was convincing in its margin, while the evidence supporting it was more selective."
+    },
+    "displayScript": "Tottenham have a win to report, against a recent comparison that favoured Coventry. Tottenham’s available previous three results were a draw at Manchester United and home defeats by Aston Villa and Newcastle. Coventry’s included wins over Newcastle and Nottingham Forest, alongside a defeat by Hull City. That was one point against six before this meeting. Useful context for Tottenham’s three-one win; less useful for anyone treating the form guide as the result in advance. The question now is what, beyond the score, earned Tottenham that reversal. James Maddison opened the scoring in the fourteenth minute, assisted by Mohammed Kudus. Jack Rudoni brought Coventry level in the forty-ninth, from Brandon Thomas-Asante’s assist. Omar Marmoush put Tottenham ahead again in the fifty-eighth, assisted by Andrew Robertson. That was the goal which established the winning lead. Ben Davies supplied the final goal from Dominic Solanke’s assist in added time. Remove that late Davies goal while holding the other recorded goals fixed, and Tottenham still win two-one. It widened the result; it did not turn a draw into a victory. Tottenham led shots sixteen to twelve, but Coventry led inside-box attempts eleven to ten. Tottenham’s six outside-box attempts against Coventry’s one created the larger total. Tottenham’s edge was accuracy, five shots on target to one, not superior recorded access to the box; without shot-level data, that is as far as the evidence goes. The strongest objection is expected goals. Tottenham recorded 0.9 against Coventry’s 0.79, a difference of 0.11. That is close, and it is a reason to resist describing the result as comprehensive attacking superiority. Possession was much further apart, sixty-six percent to thirty-four, while corners and blocked shots were both four-four. These figures sit alongside the accuracy advantage rather than cancelling it. The final score was a wider margin than the 0.11 xG edge. The late goal makes that caution particularly relevant to how the result is remembered. One accurate Coventry shot, one Coventry goal, and no Tottenham save. An admirably short report; a rather incomplete goalkeeper review. Without shot placement or recorded positioning, zero saves cannot establish poor goalkeeping. Coventry recorded two saves at the other end. These are outcomes of the attempts that reached the goal, rather than a verdict on everything the goalkeepers did. The same care that separates shot volume from accuracy also stops an empty column becoming an individual performance rating. A shot count can look busy while the goalmouth remains on reduced opening hours. For Tottenham’s next Premier League match, the call is that they are more likely than not to score. That is a modest prediction, not a promise of another win or another three goals. It can be checked directly against whether Tottenham score in that next match. In the available recent record they scored against Manchester United and Aston Villa, but not against Newcastle. The next opponent, venue and squad availability are not provided here. Those missing details limit confidence; they do not make the prediction immune to a failed outcome. The immediate consequence is clear enough in the table. After seven matches, Tottenham and Coventry both have six points, with Tottenham sixteenth and Coventry seventeenth. A win against Coventry has not yet put Tottenham on a different points total from them. The next league match will test the scoring call; a sustained improvement cannot be established from this result alone. For today, the reporting distinction is worth keeping: Tottenham’s result was convincing in its margin, while the evidence supporting it was more selective.",
+    "spokenScript": "Tottenham have a win to report, against a recent comparison that favoured Coventry. Tottenham’s available previous three results were a draw at Manchester United and home defeats by Aston Villa and Newcastle. Coventry’s included wins over Newcastle and Nottingham Forest, alongside a defeat by Hull City. That was one point against six before this meeting. Useful context for Tottenham’s three-one win; less useful for anyone treating the form guide as the result in advance. The question now is what, beyond the score, earned Tottenham that reversal. James Maddison opened the scoring in the fourteenth minute, assisted by Mohammed Kudus. Jack Rudoni brought Coventry level in the forty-ninth, from Brandon Thomas-Asante’s assist. Omar Marmoush put Tottenham ahead again in the fifty-eighth, assisted by Andrew Robertson. That was the goal which established the winning lead. Ben Davies supplied the final goal from Dominic Solanke’s assist in added time. Remove that late Davies goal while holding the other recorded goals fixed, and Tottenham still win two-one. It widened the result; it did not turn a draw into a victory. Tottenham led shots sixteen to twelve, but Coventry led inside-box attempts eleven to ten. Tottenham’s six outside-box attempts against Coventry’s one created the larger total. Tottenham’s edge was accuracy, five shots on target to one, not superior recorded access to the box; without shot-level data, that is as far as the evidence goes. The strongest objection is expected goals. Tottenham recorded 0.9 against Coventry’s 0.79, a difference of 0.11. That is close, and it is a reason to resist describing the result as comprehensive attacking superiority. Possession was much further apart, sixty-six percent to thirty-four, while corners and blocked shots were both four-four. These figures sit alongside the accuracy advantage rather than cancelling it. The final score was a wider margin than the 0.11 xG edge. The late goal makes that caution particularly relevant to how the result is remembered. One accurate Coventry shot, one Coventry goal, and no Tottenham save. An admirably short report; a rather incomplete goalkeeper review. Without shot placement or recorded positioning, zero saves cannot establish poor goalkeeping. Coventry recorded two saves at the other end. These are outcomes of the attempts that reached the goal, rather than a verdict on everything the goalkeepers did. The same care that separates shot volume from accuracy also stops an empty column becoming an individual performance rating. A shot count can look busy while the goalmouth remains on reduced opening hours. For Tottenham’s next Premier League match, the call is that they are more likely than not to score. That is a modest prediction, not a promise of another win or another three goals. It can be checked directly against whether Tottenham score in that next match. In the available recent record they scored against Manchester United and Aston Villa, but not against Newcastle. The next opponent, venue and squad availability are not provided here. Those missing details limit confidence; they do not make the prediction immune to a failed outcome. The immediate consequence is clear enough in the table. After seven matches, Tottenham and Coventry both have six points, with Tottenham sixteenth and Coventry seventeenth. A win against Coventry has not yet put Tottenham on a different points total from them. The next league match will test the scoring call; a sustained improvement cannot be established from this result alone. For today, the reporting distinction is worth keeping: Tottenham’s result was convincing in its margin, while the evidence supporting it was more selective.",
+    "performancePlan": [
+      {
+        "text": "Tottenham have a win to report, against a recent comparison that favoured Coventry. Tottenham’s available previous three results were a draw at Manchester United and home defeats by Aston Villa and Newcastle. Coventry’s included wins over Newcastle and Nottingham Forest, alongside a defeat by Hull City. That was one point against six before this meeting. Useful context for Tottenham’s three-one win; less useful for anyone treating the form guide as the result in advance. The question now is what, beyond the score, earned Tottenham that reversal.",
+        "intent": "setup",
+        "pace": "measured",
+        "energy": 3,
+        "emphasis": [],
+        "direction": "Composed and direct. Do not add spoken words."
+      },
+      {
+        "text": "James Maddison opened the scoring in the fourteenth minute, assisted by Mohammed Kudus. Jack Rudoni brought Coventry level in the forty-ninth, from Brandon Thomas-Asante’s assist. Omar Marmoush put Tottenham ahead again in the fifty-eighth, assisted by Andrew Robertson. That was the goal which established the winning lead. Ben Davies supplied the final goal from Dominic Solanke’s assist in added time. Remove that late Davies goal while holding the other recorded goals fixed, and Tottenham still win two-one. It widened the result; it did not turn a draw into a victory.",
+        "intent": "evidence",
+        "pace": "brisk",
+        "energy": 3,
+        "emphasis": [],
+        "direction": "Composed and direct. Do not add spoken words."
+      },
+      {
+        "text": "Tottenham led shots sixteen to twelve, but Coventry led inside-box attempts eleven to ten.",
+        "intent": "evidence",
+        "pace": "measured",
+        "energy": 3,
+        "emphasis": [],
+        "direction": "Composed and direct. Do not add spoken words."
+      },
+      {
+        "text": "Tottenham’s six outside-box attempts against Coventry’s one created the larger total.",
+        "intent": "explanation",
+        "pace": "measured",
+        "energy": 3,
+        "emphasis": [],
+        "direction": "Composed and direct. Do not add spoken words."
+      },
+      {
+        "text": "Tottenham’s edge was accuracy, five shots on target to one, not superior recorded access to the box; without shot-level data, that is as far as the evidence goes.",
+        "intent": "verdict",
+        "pace": "slow",
+        "energy": 4,
+        "emphasis": [],
+        "direction": "Composed and direct. Do not add spoken words."
+      },
+      {
+        "text": "The strongest objection is expected goals. Tottenham recorded 0.9 against Coventry’s 0.79, a difference of 0.11. That is close, and it is a reason to resist describing the result as comprehensive attacking superiority. Possession was much further apart, sixty-six percent to thirty-four, while corners and blocked shots were both four-four. These figures sit alongside the accuracy advantage rather than cancelling it. The final score was a wider margin than the 0.11 xG edge. The late goal makes that caution particularly relevant to how the result is remembered.",
+        "intent": "pivot",
+        "pace": "measured",
+        "energy": 3,
+        "emphasis": [],
+        "direction": "Composed and direct. Do not add spoken words."
+      },
+      {
+        "text": "One accurate Coventry shot, one Coventry goal, and no Tottenham save. An admirably short report; a rather incomplete goalkeeper review. Without shot placement or recorded positioning, zero saves cannot establish poor goalkeeping. Coventry recorded two saves at the other end. These are outcomes of the attempts that reached the goal, rather than a verdict on everything the goalkeepers did. The same care that separates shot volume from accuracy also stops an empty column becoming an individual performance rating.",
+        "intent": "punchline",
+        "pace": "measured",
+        "energy": 3,
+        "emphasis": [],
+        "direction": "Composed and direct. Do not add spoken words."
+      },
+      {
+        "text": "A shot count can look busy while the goalmouth remains on reduced opening hours.",
+        "intent": "punchline",
+        "pace": "slow",
+        "energy": 3,
+        "emphasis": ["reduced opening hours"],
+        "direction": "Dry delivery, then let the line stand."
+      },
+      {
+        "text": "For Tottenham’s next Premier League match, the call is that they are more likely than not to score. That is a modest prediction, not a promise of another win or another three goals. It can be checked directly against whether Tottenham score in that next match. In the available recent record they scored against Manchester United and Aston Villa, but not against Newcastle. The next opponent, venue and squad availability are not provided here. Those missing details limit confidence; they do not make the prediction immune to a failed outcome.",
+        "intent": "prediction",
+        "pace": "measured",
+        "energy": 3,
+        "emphasis": [],
+        "direction": "Composed and direct. Do not add spoken words."
+      },
+      {
+        "text": "The immediate consequence is clear enough in the table. After seven matches, Tottenham and Coventry both have six points, with Tottenham sixteenth and Coventry seventeenth. A win against Coventry has not yet put Tottenham on a different points total from them. The next league match will test the scoring call; a sustained improvement cannot be established from this result alone. For today, the reporting distinction is worth keeping: Tottenham’s result was convincing in its margin, while the evidence supporting it was more selective.",
+        "intent": "receipt",
+        "pace": "slow",
+        "energy": 2,
+        "emphasis": [],
+        "direction": "Composed and direct. Do not add spoken words."
+      }
+    ],
+    "claimIds": [
+      "f01cc42d-901f-49b3-9127-fef95b8bf1a2",
+      "14a5d046-f319-2f60-337a-6d3973bd7657",
+      "f2dccdf9-cdf3-a58b-8e77-526c0172e203"
+    ]
+  },
+  "dropId": "519f3f12-1f7d-411a-9021-9f128ffd8496",
+  "coverageDate": "2026-10-19",
+  "originalScriptSha256": "844efbd0da9412a997dfa2d56cdb7cfe737fba38085c5e74a68a4cc224d5bc7e",
+  "matchId": "af_1557436",
+  "maxReviewPasses": 4,
+  "totalReviewBudgetUsd": 1.192364,
+  "maxPassCostUsd": 0.35
+}

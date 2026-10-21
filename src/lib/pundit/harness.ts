@@ -8,6 +8,7 @@ import {
   spelledNumberValue,
 } from "./numbers";
 import { getPunditSpec } from "./specs";
+import { spokenWordRange } from "./spoken-length";
 import type {
   AnalysisClaim,
   EvidencePack,
@@ -311,6 +312,7 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
     candidate.displayScript,
   );
   const wordCount = candidate.displayScript.trim().split(/\s+/).filter(Boolean).length;
+  const length = spokenWordRange(candidate.punditId);
   const genericSpan = GENERIC_FOOTBALL_LANGUAGE.find((pattern) =>
     pattern.test(candidate.displayScript),
   );
@@ -437,20 +439,20 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
     ),
     result(
       "spoken_length",
-      wordCount >= 750 && wordCount <= 1100,
-      wordCount >= 750 && wordCount <= 1100
+      wordCount >= length.min && wordCount <= length.max,
+      wordCount >= length.min && wordCount <= length.max
         ? undefined
-        : wordCount < 750
-          ? `Script is ${wordCount} words; required range is 750-1100. Add at least ${
-              750 - wordCount
+        : wordCount < length.min
+          ? `Script is ${wordCount} words; required range is ${length.min}-${length.max}. Add at least ${
+              length.min - wordCount
             } more words by developing the existing beats (roughly ${Math.ceil(
-              (750 - wordCount) / 10,
+              (length.min - wordCount) / 10,
             )} per beat). Deepen the reasoning already present; introduce no new facts, numbers or names.`
-          : `Script is ${wordCount} words; required range is 750-1100. Cut at least ${
-              wordCount - 1100
+          : `Script is ${wordCount} words; required range is ${length.min}-${length.max}. Cut at least ${
+              wordCount - length.max
             } words without dropping any beat.`,
       undefined,
-      wordCount >= 750 && wordCount <= 1100
+      wordCount >= length.min && wordCount <= length.max
         ? undefined
         : (Object.keys(candidate.outline) as Array<keyof typeof candidate.outline>),
     ),
