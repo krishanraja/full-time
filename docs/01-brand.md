@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Founder and design
 - **Purpose:** Govern Full Time's visual language, AI Pundit identity, public voice, copy, and generated assets.
-- **Last reviewed:** 2026-10-02
+- **Last reviewed:** 2026-10-21
 
 ## Brand idea
 
@@ -108,6 +108,8 @@ Canonical assets live in `src/assets`:
 - `full-time-wordmark.png.asset.json`: CDN pointer for the white wordmark;
 - `full-time-icon-and-favicon.png`: icon and favicon source;
 - `full-time-wordmark.png` and `full-time-wordmark-trim.png`: local fallbacks.
+
+Every favicon, app icon and the social card in `public/` is generated from those two local PNGs by `scripts/generate-brand-images.mjs`, never hand-exported, and `src/lib/brand-assets.test.ts` checks each file is the size its declarations claim. The favicon (`favicon.svg`, `favicon.ico`, 16 and 32 pixel PNGs) is the mark's arc, pin and eyes on a rounded tile of the umber ground, simplified so it reads at 16 pixels on light and dark browser chrome. `apple-touch-icon.png` and `icon-maskable-512.png` put the full mark on the umber ground; `icon-192.png` and `icon-512.png` keep it transparent, because the header draws `/icon-192.png`. `og-card.png` is the 1200x630 Open Graph and X card: the mark, the wordmark, and "One real match. Six AI Pundits." in Instrument Serif. `podcast-cover.png` is the original 2000-pixel mark for the RSS cover.
 
 Keep the mark at least 24 pixels square and the wordmark at least 16 pixels high. Do not recolor, stretch, outline, bevel, or animate the logo. Do not use league, broadcaster, player, or competition marks without recorded permission; name the Premier League in text, never with its logo.
 

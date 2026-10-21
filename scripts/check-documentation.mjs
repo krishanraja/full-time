@@ -68,6 +68,7 @@ const currentDocs = [
   "docs/20-research-intake.md",
   "docs/21-go-to-market-agent.md",
   "docs/22-vision-and-beta.md",
+  "docs/23-answer-hub.md",
 ];
 
 for (const path of currentDocs) {
@@ -87,9 +88,10 @@ for (const path of currentDocs) {
   // 2026-10-02 is the premium visual system: covers, seal, atmosphere, type.
   // 2026-10-16 is the pilot beta, the December release target and its bar, and
   // the feedback inbox.
+  // 2026-10-21 is the answer hub, the favicon set and the social card.
   requireText(
     path,
-    /\*\*Last (?:reviewed|verified):\*\* 2026-(?:0(?:8-11|9-04|9-07|9-21|9-22|9-27)|10-(?:02|16))/,
+    /\*\*Last (?:reviewed|verified):\*\* 2026-(?:0(?:8-11|9-04|9-07|9-21|9-22|9-27)|10-(?:02|16|21))/,
     "review date is stale",
   );
 }

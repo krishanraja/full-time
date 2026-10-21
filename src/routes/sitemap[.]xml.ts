@@ -12,6 +12,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { SITE_URL } from "@/lib/site-url";
+import { answerSitemapEntries } from "@/lib/answers";
 import type { Database } from "@/integrations/supabase/types";
 
 // Sitemaps.org caps a single file at 50,000 URLs. There are 8 episodes today,
@@ -59,26 +60,38 @@ export const Route = createFileRoute("/sitemap.xml")({
         // has no business holding an RLS bypass. Same client shape as
         // feed.functions.ts's publicClient(). Imported inside the handler so
         // supabase-js never lands in the client bundle.
-        const { createClient } = await import("@supabase/supabase-js");
-        const sb = createClient<Database>(
-          process.env.SUPABASE_URL!,
-          process.env.SUPABASE_PUBLISHABLE_KEY!,
-          { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
-        );
+        // A missing database config or a thrown client error degrades to the
+        // static half too, so the committed answer pages are always listed.
+        const rows: EpisodeRow[] = await (async () => {
+          try {
+            const { createClient } = await import("@supabase/supabase-js");
+            const sb = createClient<Database>(
+              process.env.SUPABASE_URL!,
+              process.env.SUPABASE_PUBLISHABLE_KEY!,
+              { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
+            );
 
-        const { data, error } = await sb
-          .from("episodes")
-          .select("id, published_at")
-          .eq("status", "published")
-          .not("audio_url", "is", null)
-          .order("published_at", { ascending: false })
-          .limit(EPISODE_LIMIT);
+            const { data, error } = await sb
+              .from("episodes")
+              .select("id, published_at")
+              .eq("status", "published")
+              .not("audio_url", "is", null)
+              .order("published_at", { ascending: false })
+              .limit(EPISODE_LIMIT);
 
-        // Degrade rather than 500: a sitemap listing only the static routes is
-        // still a valid, useful sitemap, whereas an error page teaches the
-        // crawler the URL is broken.
-        const rows = error ? [] : ((data ?? []) as EpisodeRow[]);
-        if (error) console.error("[sitemap] episode query failed:", error.message);
+            // Degrade rather than 500: a sitemap listing only the static routes is
+            // still a valid, useful sitemap, whereas an error page teaches the
+            // crawler the URL is broken.
+            if (error) console.error("[sitemap] episode query failed:", error.message);
+            return error ? [] : ((data ?? []) as EpisodeRow[]);
+          } catch (err) {
+            console.error(
+              "[sitemap] episode query threw:",
+              err instanceof Error ? err.message : err,
+            );
+            return [];
+          }
+        })();
 
         // The home and archive surfaces both re-render whenever a new episode
         // publishes, so the newest episode's date is their honest lastmod.
@@ -101,6 +114,9 @@ export const Route = createFileRoute("/sitemap.xml")({
           // deliberately absent: they are noindex or personalised.
           urlXml("/legal/privacy", null),
           urlXml("/legal/terms", null),
+          // The answer hub: unlinked from the app's navigation, so the sitemap
+          // is one of the ways it is found. lastmod is each post's dateModified.
+          ...answerSitemapEntries().map((entry) => urlXml(entry.path, entry.lastmod)),
           ...rows.map((row) => urlXml(`/episode/${row.id}`, lastmodDate(row.published_at))),
           "</urlset>",
         ].join("");

@@ -1,16 +1,25 @@
 {
+  "id": "/",
   "name": "Full Time",
   "short_name": "Full Time",
-  "description": "Daily 60-second AI-narrated football recaps. Tap once, listen on the move.",
+  "description": "One real match. Six AI Pundits. Pick the brain you fancy.",
+  "lang": "en-GB",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0b0d0c",
-  "theme_color": "#0b0d0c",
+  "background_color": "#15110d",
+  "theme_color": "#15110d",
   "orientation": "portrait",
+  "categories": ["sports", "entertainment", "music"],
   "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

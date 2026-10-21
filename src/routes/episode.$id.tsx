@@ -10,7 +10,7 @@ import { useState } from "react";
 import { AudioCard } from "@/components/AudioCard";
 import { HapticButton } from "@/components/HapticButton";
 import { getEpisode, type FeedEpisode } from "@/lib/api/feed.functions";
-import { SITE_URL, DEFAULT_COVER_IMAGE_URL } from "@/lib/site-url";
+import { SITE_URL, SOCIAL_IMAGE } from "@/lib/site-url";
 import { pageSeo, ldJson } from "@/lib/seo";
 import type { Episode } from "@/data/mockEpisodes";
 
@@ -100,8 +100,8 @@ export const Route = createFileRoute("/episode/$id")({
     const path = `/episode/${ep.id}`;
     const url = `${SITE_URL}${path}`;
     // og_image_url is NULL on every episode today (nothing generates it
-    // yet); fall back to the app icon so the share card is never blank.
-    const image = ep.ogImageUrl ?? DEFAULT_COVER_IMAGE_URL;
+    // yet); fall back to the 1200x630 brand card so the share card is never blank.
+    const image = ep.ogImageUrl ?? SOCIAL_IMAGE.url;
 
     const seo = pageSeo({
       path,

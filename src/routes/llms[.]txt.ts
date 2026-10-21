@@ -6,12 +6,15 @@
 // feed[.]rss.ts: TanStack Router's file-based routing turns a bare "." into
 // a "/" path segment, and the convention requires the literal /llms.txt.
 //
-// Current product truth is written explicitly below. Episode entries come
+// Current product truth lives in src/lib/llms.ts, shared with /llms-full.txt;
+// the answer-hub lines come from the committed post files. Episode entries come
 // from real legacy `episodes` rows under the same public filters as the
 // sitemap, so the file never advertises a fabricated page.
 
 import { createFileRoute } from "@tanstack/react-router";
 import { SITE_URL } from "@/lib/site-url";
+import { answersLlmsLines } from "@/lib/answers";
+import { LLMS_NOTES, LLMS_ORIENTATION } from "@/lib/llms";
 import type { Database } from "@/integrations/supabase/types";
 
 // Enough for an agent to understand the shape and recency of the catalogue.
@@ -52,52 +55,45 @@ export const Route = createFileRoute("/llms.txt")({
         // Publishable key under RLS, not the service role: a crawler-facing
         // endpoint has no business holding an RLS bypass. Same shape as the
         // sitemap handler and feed.functions.ts's publicClient().
-        const { createClient } = await import("@supabase/supabase-js");
-        const sb = createClient<Database>(
-          process.env.SUPABASE_URL!,
-          process.env.SUPABASE_PUBLISHABLE_KEY!,
-          { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
-        );
+        // A missing database config or a thrown client error degrades to the
+        // static half too, so the committed answer pages are always listed.
+        const rows: Row[] = await (async () => {
+          try {
+            const { createClient } = await import("@supabase/supabase-js");
+            const sb = createClient<Database>(
+              process.env.SUPABASE_URL!,
+              process.env.SUPABASE_PUBLISHABLE_KEY!,
+              { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
+            );
 
-        const { data, error } = await sb
-          .from("episodes")
-          .select(
-            "id, hook, published_at, matches!inner(home_score, away_score, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name))",
-          )
-          .eq("status", "published")
-          .not("audio_url", "is", null)
-          .order("published_at", { ascending: false })
-          .limit(EPISODE_LIMIT);
+            const { data, error } = await sb
+              .from("episodes")
+              .select(
+                "id, hook, published_at, matches!inner(home_score, away_score, leagues:league_id(name), home:home_team_id(name), away:away_team_id(name))",
+              )
+              .eq("status", "published")
+              .not("audio_url", "is", null)
+              .order("published_at", { ascending: false })
+              .limit(EPISODE_LIMIT);
 
-        // Degrade rather than 500: the orientation half of this file is
-        // still useful with an empty episode list, whereas an error page
-        // teaches the agent the URL is broken.
-        const rows = error ? [] : ((data ?? []) as unknown as Row[]);
-        if (error) console.error("[llms.txt] episode query failed:", error.message);
+            // Degrade rather than 500: the orientation half of this file is
+            // still useful with an empty episode list, whereas an error page
+            // teaches the agent the URL is broken.
+            if (error) console.error("[llms.txt] episode query failed:", error.message);
+            return error ? [] : ((data ?? []) as unknown as Row[]);
+          } catch (err) {
+            console.error(
+              "[llms.txt] episode query threw:",
+              err instanceof Error ? err.message : err,
+            );
+            return [];
+          }
+        })();
 
         const body = [
-          "# Full Time",
+          ...LLMS_ORIENTATION,
           "",
-          "> One real football match. Six AI Pundits. Pick the brain you fancy.",
-          "",
-          "Full Time is an AI-native football audio product in pre-launch. One set of checked",
-          "match facts can produce six complete shows, each with a different AI Pundit,",
-          "argument, humour system, script, synthetic performance and generated edition look.",
-          "Important claims may include a Show me why card with the supporting match fact and",
-          "a boundary explaining what that fact cannot prove.",
-          "",
-          `Canonical origin: ${SITE_URL}`,
-          "Language: en. Publisher: Full Time. Lifecycle: pre-launch.",
-          "",
-          "## Key surfaces",
-          "",
-          `- [Today](${SITE_URL}/): one Premier League match, its six AI Pundits and the player.`,
-          `- [Teams](${SITE_URL}/following): the twenty Premier League clubs of the current season, saved for later.`,
-          `- [Settings](${SITE_URL}/settings): AI Pundit choice, optional account, morning recap and disclosure.`,
-          `- [Archive](${SITE_URL}/archive): labelled legacy archive and demo material; new generation is paused in pre-launch.`,
-          `- [Reporter RSS feed](${SITE_URL}/api/public/feed.rss): the retained canonical Reporter distribution feed.`,
-          `- [Sitemap](${SITE_URL}/sitemap.xml): every indexable URL.`,
-          `- [Launch note](${SITE_URL}/waitlist): one email when the release gates pass.`,
+          ...answersLlmsLines(),
           "",
           "## Recent legacy episodes",
           "",
@@ -105,16 +101,7 @@ export const Route = createFileRoute("/llms.txt")({
             ? rows.map(episodeLine).join("\n")
             : "No published episodes with audio right now.",
           "",
-          "## Notes for agents",
-          "",
-          "- Call all six public products AI Pundits on every surface.",
-          "- Full Time is not a human podcast imitation and not a betting product.",
-          "- All six AI Pundits are free during pre-launch; new checkout is disabled.",
-          "- Do not claim a public launch date, daily reliability, forecast performance, personal show generation or Big Five coverage.",
-          "- Full Time covers the Premier League only: the daily show, Today and Teams (the twenty clubs of the current season). Do not claim other leagues.",
-          "- Today has no track-record entry; the direct receipts page still has a legacy ledger interface.",
-          "- Scores, team names and competitions on legacy episode pages come from match data, not narration.",
-          "- Personalised surfaces are noindex and carry no public editorial catalogue.",
+          ...LLMS_NOTES,
           "",
         ].join("\n");
 

@@ -65,6 +65,7 @@ Never convert a roadmap decision into a live claim. Never convert an implemented
 | [`20-research-intake.md`](./20-research-intake.md)                     | Current                          | Private source intake, rights attestation, and corpus procedure                        |
 | [`21-go-to-market-agent.md`](./21-go-to-market-agent.md)               | Current and binding              | Autonomous marketing and sales briefing, proof map, objections, and action limits      |
 | [`22-vision-and-beta.md`](./22-vision-and-beta.md)                     | Current                          | Why Full Time exists, where it is going, the pilot beta, feedback, and the December release bar |
+| [`23-answer-hub.md`](./23-answer-hub.md)                               | Current                          | The `/answers` hub: quality bar, question sourcing, weekly brief, and how to add a post |
 | [`premier-league-evidence-actions.md`](./premier-league-evidence-actions.md) | Current, internal only | Scheduled private evidence intake to Drive: cadence, secrets by name, failure modes, cutover |
 | [`history/LOG.md`](./history/LOG.md)                                   | Append-only log                  | Dated record of reconciliations, moves, and archived documents; never describes current behavior |
 

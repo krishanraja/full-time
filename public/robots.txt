@@ -1,12 +1,16 @@
 # Full Time - https://fulltime.fm
-# Daily AI-narrated football recaps. The recaps, transcripts and the podcast
-# feed are public, published data and we want them read, quoted and cited.
+# AI Pundit football shows built from checked match facts. The pages, the
+# answers at /answers, the transcripts and the podcast feed are public,
+# published material and we want them read, quoted and cited.
 #
 # Two groups below. The first is the default for every crawler. The second
 # names the answer engines explicitly: a named group REPLACES the wildcard
 # group for that agent, so the rules are repeated in full rather than
 # inherited. Naming them is the point, because several of these default to
 # "no permission granted" unless a site opts in by name.
+#
+# Every visitor, human or crawler, is served the same HTML. Nothing on this
+# site varies by user agent.
 
 User-agent: *
 Allow: /
@@ -19,26 +23,46 @@ Disallow: /following
 Disallow: /api/
 
 # --- Answer engines and AI crawlers: explicitly welcome ---
+# OpenAI
 User-agent: GPTBot
 User-agent: OAI-SearchBot
 User-agent: ChatGPT-User
+# Anthropic
 User-agent: ClaudeBot
 User-agent: Claude-User
 User-agent: Claude-SearchBot
+User-agent: anthropic-ai
+# Perplexity
 User-agent: PerplexityBot
 User-agent: Perplexity-User
+# Google (Gemini and Vertex grounding)
 User-agent: Google-Extended
+User-agent: Google-CloudVertexBot
+# Apple
 User-agent: Applebot
 User-agent: Applebot-Extended
+# Meta
 User-agent: meta-externalagent
+User-agent: meta-externalfetcher
+User-agent: FacebookBot
+# Amazon
 User-agent: Amazonbot
+# Microsoft Copilot answers come from Bingbot, covered by the wildcard group.
+# DuckDuckGo
+User-agent: DuckAssistBot
+# Mistral
+User-agent: MistralAI-User
+# Others
 User-agent: Bytespider
 User-agent: CCBot
 User-agent: cohere-ai
+User-agent: cohere-training-data-crawler
 User-agent: YouBot
 User-agent: Diffbot
 User-agent: Timpibot
 User-agent: omgili
+User-agent: PhindBot
+User-agent: KagiBot
 Allow: /
 Allow: /api/public/feed.rss
 Disallow: /settings

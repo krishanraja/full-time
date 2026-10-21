@@ -3,7 +3,7 @@
 - **Status:** Current
 - **Owner:** Engineering
 - **Purpose:** Explain TanStack Start file routing and identify the exact public, compatibility, crawler, and operator surfaces.
-- **Last reviewed:** 2026-09-27
+- **Last reviewed:** 2026-10-21
 
 TanStack Start generates routes from files in this directory. Do not create `src/pages`, `app`, or a second root layout. [`__root.tsx`](./__root.tsx) owns the document shell, the no-scroll frame, Today/Teams/Settings navigation, providers, shared player, and error boundaries. Never edit generated `routeTree.gen.ts`.
 
@@ -16,6 +16,7 @@ TanStack Start generates routes from files in this directory. Do not create `src
 | `feed[.]rss.ts`    | `/feed.rss`                       |
 | `llms[.]txt.ts`    | `/llms.txt`                       |
 | `sitemap[.]xml.ts` | `/sitemap.xml`                    |
+| `answers.index.tsx`| `/answers/` (served at `/answers`)|
 | `files/$.tsx`      | `/files/*`, read from `_splat`    |
 | `_layout.tsx`      | Pathless layout with `<Outlet />` |
 | `__root.tsx`       | Global document and shell         |
@@ -49,6 +50,8 @@ The app is a completely no-scroll experience (Ruling, Krish, 2026-09-27). The do
 | `/pro`           | `pro.tsx`           | Existing subscriber management; no new checkout during the live beta                             |
 | `/legal/privacy` | `legal.privacy.tsx` | Public privacy notice                                                                            |
 | `/legal/terms`   | `legal.terms.tsx`   | Public terms notice                                                                              |
+| `/answers`       | `answers.index.tsx` | Answer hub index; public and indexable, deliberately not in the shell navigation ([`docs/23-answer-hub.md`](../../docs/23-answer-hub.md)) |
+| `/answers/:slug` | `answers.$slug.tsx` | One answer-hub post from `src/content/answers/posts/<slug>.ts`, with Article, FAQPage and BreadcrumbList JSON-LD |
 
 ## Crawler and distribution routes
 
@@ -56,7 +59,9 @@ The app is a completely no-scroll experience (Ruling, Krish, 2026-09-27). The do
 | ---------------------- | -------------------------- | ----------------------------------------------------------------------- |
 | `/api/public/feed.rss` | `api/public/feed[.]rss.ts` | Canonical Reporter RSS feed                                             |
 | `/llms.txt`            | `llms[.]txt.ts`            | Machine-facing AI-native product orientation and recent legacy episodes |
-| `/sitemap.xml`         | `sitemap[.]xml.ts`         | Public indexable routes and published legacy episode pages              |
+| `/sitemap.xml`         | `sitemap[.]xml.ts`         | Public indexable routes, the answer hub, and published legacy episode pages |
+| `/llms-full.txt`       | `llms-full[.]txt.ts`       | `llms.txt` orientation plus every answer-hub post in full; static       |
+| `/answers/feed.xml`    | `answers.feed[.]xml.ts`    | Atom feed of the answer hub, newest first; static                       |
 | `/robots.txt`          | `public/robots.txt`        | Crawler rules and sitemap pointer                                       |
 
 ## Public AI Pundit API
