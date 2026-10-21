@@ -15,10 +15,13 @@ on:
       recoveryCandidate:
         description: "Reviewed recovery manifest under scripts/editorial-recovery/. One judging pass; no writer or claim generation."
         required: false
+      productionVariant:
+        description: "Resume audio for a stored variant whose editorial checks already passed. No model review."
+        required: false
 
 jobs:
   drop:
-    if: ${{ !inputs.recoveryCandidate }}
+    if: ${{ !inputs.recoveryCandidate && !inputs.productionVariant }}
     runs-on: ubuntu-latest
     steps:
       - name: Trigger daily drop
@@ -44,7 +47,7 @@ jobs:
           MATCH_IN: ${{ inputs.matchId }}
           ATTEMPTS_IN: ${{ inputs.attempts }}
   recover:
-    if: ${{ inputs.recoveryCandidate }}
+    if: ${{ inputs.recoveryCandidate || inputs.productionVariant }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     concurrency:
@@ -61,8 +64,14 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Recover the reviewed single edition
-        run: npx --yes tsx@4.20.6 scripts/recover-editorial.ts
+        run: |
+          if [ -n "${PRODUCTION_VARIANT:-}" ]; then
+            npx --yes tsx@4.20.6 scripts/resume-approved-production.ts
+          else
+            npx --yes tsx@4.20.6 scripts/recover-editorial.ts
+          fi
         env:
+          PRODUCTION_VARIANT: ${{ inputs.productionVariant }}
           RECOVERY_CANDIDATE: ${{ inputs.recoveryCandidate }}
           SUPABASE_URL: https://hzadscrqmyilbisexvyz.supabase.co
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

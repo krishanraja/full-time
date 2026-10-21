@@ -48,7 +48,7 @@ Ruling (Krish, 2026-09-21): licence it, do not open it.
 2. The claim laboratory licenses candidate analysis.
 3. Each pundit selects a thesis and states what would change its mind.
 4. A ten-beat outline separates story, evidence, judgment, counterpoint, humour, and prediction.
-5. The writer realizes the approved outline in 750 to 1,100 spoken words.
+5. The writer realizes the approved outline in 550 to 800 spoken words for The Reporter, or 750 to 1,100 for the other personas. Krish approved the concise Reporter format on 21 October 2026; factual, editorial, audio and publication checks still apply.
 6. Hard gates and independent qualitative harnesses review the same candidate.
 7. Only failed beats may change, for a bounded number of rounds (`PUNDIT_MAX_ATTEMPTS`, default two, ceiling ten); the loop stops early when a round changes the prose without changing the verdict.
 8. Persistent safe-but-forgettable output is quarantined.
