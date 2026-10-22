@@ -18,7 +18,7 @@ export const DIMENSION_STANDARDS: Record<QualitativeHarness, string> = {
   insight:
     "A non-obvious inference this match's own numbers support. A football truism (conversion beats volume, early goals settle games) is not an insight however well phrased, and neither is a standard mechanism applied to any match. Raising a possibility and then retreating from it without committing is not an insight either: name what you think is happening and say what would change your mind.",
   clarity:
-    "A listener resolves every image the first time they hear it, with no rewinding. A metaphor whose parts cannot be mapped onto the football (who is holding whom, and what does that stand for) costs more than it gives. Prefer the concrete.",
+    "A listener resolves every image the first time they hear it, with no rewinding. A metaphor whose parts cannot be mapped onto the football (who is holding whom, and what does that stand for) costs more than it gives. Prefer the concrete. Assess spoken language, not polished report prose: contractions and short fragments are welcome, while repeated methodology caveats interrupt the listen. Do not mistake formal wording for clarity.",
   judgment:
     "One defensible editorial call, made in your own voice, with the reason attached. Surveying both sides and declining to choose is not judgment.",
   outcome_separation:

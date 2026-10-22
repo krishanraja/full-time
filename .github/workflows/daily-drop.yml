@@ -3,6 +3,18 @@ name: Full Time - Manual Daily Drop Recovery
 on:
   workflow_dispatch:
     inputs:
+      recordingAction:
+        description: "inspect or publish the already approved Reporter recording"
+        required: false
+      recordingManifest:
+        description: "Base64 frozen approved recording manifest"
+        required: false
+      reviewSubject:
+        description: "One approved Reporter listening review, base64 sealed evidence and candidate. No publication or narration."
+        required: false
+      reviewScriptSha:
+        description: "SHA-256 of the exact approved listening-review display script"
+        required: false
       date:
         description: "YYYY-MM-DD coverage date (default: yesterday, London time)"
         required: false
@@ -21,7 +33,7 @@ on:
 
 jobs:
   drop:
-    if: ${{ !inputs.recoveryCandidate && !inputs.productionVariant }}
+    if: ${{ !inputs.recoveryCandidate && !inputs.productionVariant && !inputs.reviewSubject && !inputs.recordingAction }}
     runs-on: ubuntu-latest
     steps:
       - name: Trigger daily drop
@@ -47,7 +59,7 @@ jobs:
           MATCH_IN: ${{ inputs.matchId }}
           ATTEMPTS_IN: ${{ inputs.attempts }}
   recover:
-    if: ${{ inputs.recoveryCandidate || inputs.productionVariant }}
+    if: ${{ (inputs.recoveryCandidate || inputs.productionVariant) && !inputs.reviewSubject && !inputs.recordingAction }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     concurrency:
@@ -87,3 +99,63 @@ jobs:
           name: single-editorial-recovery
           path: recovery-report.json
           if-no-files-found: ignore
+  listening-review:
+    if: ${{ inputs.reviewSubject && !inputs.recoveryCandidate && !inputs.productionVariant && !inputs.recordingAction }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    concurrency:
+      group: reporter-listening-review-once
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Review only, no retries, no production credentials
+        run: npx --yes tsx@4.20.6 scripts/review-listening-candidate.ts
+        env:
+          REVIEW_SUBJECT: ${{ inputs.reviewSubject }}
+          REVIEW_SCRIPT_SHA: ${{ inputs.reviewScriptSha }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PUNDIT_JUDGE_MODEL: gpt-5.6-terra
+          PUNDIT_MAX_STEP_COST_USD: "0.5"
+          PUNDIT_MODEL_CONCURRENCY: "1"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reporter-listening-review
+          path: listening-review-report.json
+          if-no-files-found: error
+
+  recording:
+    if: ${{ inputs.recordingAction }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    concurrency:
+      group: reporter-existing-recording-publication
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Import only the recording Krish approved
+        run: npx --yes tsx@4.20.6 scripts/publish-approved-recording.ts
+        env:
+          APPROVED_RECORDING_MANIFEST: ${{ inputs.recordingManifest }}
+          SUPABASE_URL: https://hzadscrqmyilbisexvyz.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: approved-recording-publication
+          path: approved-recording-*.json
+          retention-days: 30

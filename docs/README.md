@@ -24,6 +24,8 @@ Never convert a roadmap decision into a live claim. Never convert an implemented
 
 ## Read by task
 
+For scripts, voice performance and growth audio selection, read the [spoken production and listening standard](./24-listening-standard.md). It distinguishes an implementation candidate, an approved audition and a full-length listening verdict.
+
 | Need                          | Read first                                               | Then                                                                                   |
 | ----------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | Know where it is right now    | [`../NOW.md`](../NOW.md)                                 | [`19-release-state.md`](./19-release-state.md), [`product-state.json`](./product-state.json) |

@@ -1,6 +1,7 @@
 import type { ReporterFeedItem } from "@/lib/api/editorial-public.server";
 import { renderReporterFeed } from "./reporter-rss";
 import { serviceRest } from "./service-rest.server";
+import { spokenDurationRange } from "./spoken-length";
 import { PUNDIT_IDS, type PunditId } from "./types";
 
 export type VariantRow = {
@@ -150,7 +151,8 @@ export function decidePublication(input: {
     if (variant.audio_quality?.passed !== true) reasons.push("audio quality");
     if ((variant.pronunciation_rate ?? 0) < 0.99) reasons.push("pronunciation");
     const seconds = variant.audio_duration_sec ?? 0;
-    if (seconds < 300 || seconds > 480) reasons.push(`duration ${seconds}s`);
+    const duration = spokenDurationRange(variant.pundit_id);
+    if (seconds < duration.min || seconds > duration.max) reasons.push(`duration ${seconds}s`);
     if (!variant.audio_url) reasons.push("no audio");
     if (!variant.share_image_url) reasons.push("no share card");
     if (!variant.transcript?.trim()) reasons.push("no transcript");
@@ -259,7 +261,9 @@ export async function runDropPromiseChecks(input: {
     );
   } else {
     // The feed carries the Reporter alone, so a day it is withheld adds no item.
-    checks.push(check("rss", true, "The Reporter is not publishing today, so the feed is unchanged."));
+    checks.push(
+      check("rss", true, "The Reporter is not publishing today, so the feed is unchanged."),
+    );
   }
 
   const fetcher = input.fetcher ?? fetch;

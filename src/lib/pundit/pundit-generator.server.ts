@@ -11,6 +11,7 @@ import {
 } from "./harness";
 import { getPunditSpec, PUNDIT_SPECS } from "./specs";
 import { spokenWordRange } from "./spoken-length";
+import { LISTENING_STANDARD_VERSION, spokenStyleBrief } from "./spoken-style";
 import { sha256Hex } from "./hash";
 import { maxSourceSimilarity } from "./research-originality";
 import { loadRightsClearedOriginalityCorpus } from "./research-originality.server";
@@ -466,6 +467,8 @@ async function writeDraft(input: {
         ? "A registered pre-kickoff prediction exists; you may set predictionClaimId to its licensed prediction claim."
         : "No prediction was registered before kickoff. Omit predictionClaimId. The prediction_or_receipt beat gives a conditional expectation for the next match without a formal prediction.",
       outputContract: {
+        listeningStandardVersion: LISTENING_STANDARD_VERSION,
+        spokenDelivery: spokenStyleBrief(input.punditId),
         thesis: {
           headline: "string",
           judgment: "string",
@@ -490,7 +493,10 @@ async function writeDraft(input: {
         },
         beatNames,
         beatTextRule:
-          "Spoken prose only. No claim ids, no evidence ids, no confidence numbers, no bracketed references.",
+          "Spoken prose only. No claim ids, no evidence ids, no confidence numbers, no bracketed references. " +
+          (input.punditId === "zen"
+            ? "Write for the ear: contractions, direct address used sparingly, ordinary football language and varied sentence lengths. Open with a contestable take, not a formal introduction. Earn opinion with specific facts. Natural slang is welcome when it belongs; never sprinkle catchphrases or fake eyewitness detail. Keep uncertainty concise and local to the claim it qualifies. Do not read a methodology note aloud. The listener should hear a person making a case, not a report being recited."
+            : "Follow the persona's own spoken register and cadence."),
         words: [wordRange.min, wordRange.max],
         wordsPerBeat: `Distribute ${wordRange.min}-${wordRange.max} words across distinct beats; no repeated argument or padding`,
         requiredHumourBeats: "two to four when earned; no quota joke",
