@@ -1,0 +1,36 @@
+name: Publish approved existing Reporter recording
+on:
+  workflow_dispatch:
+    inputs:
+      manifest:
+        description: Base64 approved recording manifest; empty means read-only inspection
+        required: false
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    concurrency:
+      group: reporter-existing-recording-publication
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Import only the recording Krish approved
+        run: npx --yes tsx@4.20.6 scripts/publish-approved-recording.ts
+        env:
+          APPROVED_RECORDING_MANIFEST: ${{ inputs.manifest }}
+          SUPABASE_URL: https://hzadscrqmyilbisexvyz.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: approved-recording-publication
+          path: approved-recording-*.json
+          retention-days: 30
