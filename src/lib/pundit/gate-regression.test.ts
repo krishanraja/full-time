@@ -181,6 +181,7 @@ describe("prose the gates once rejected wrongly", () => {
           minute: 14,
           team: "Tottenham",
           player: "Example Player",
+          source: "fixture-provider",
         },
       ],
     };
