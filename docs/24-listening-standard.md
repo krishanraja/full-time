@@ -1,6 +1,6 @@
 # Spoken production and listening standard
 
-Status: implementation candidate; deployment and a full-length listening verdict remain pending.
+Status: full Reporter B take approved by Krish on 22 October 2026. Publication has separate asset, database and live playback verification.
 
 Ruling (Krish, 2026-10-22): Reporter audition B is closer. Use its pace and delivery for the full edition, with more natural and opinionated writing. Quote cost before generation. Apply the learning to full-time and growth-fulltime.
 
@@ -12,7 +12,7 @@ Facts, numbers, names, scope and source disagreements still pass their existing 
 
 `src/lib/pundit/spoken-style.ts` is the executable writing brief used by the generator. Reporter spec version 2 carries the revised persona. The clarity judge also assesses prose as speech. The Reporter measured rate range is 175 to 210 words per minute; the working centre is near 192, the selected audition's approximate rate. Names and numbers must remain clear. Other personas retain their existing audio gates until their auditions establish their own ranges.
 
-The Reporter reference uses the audition's contemporary conversational voice, speech model and placed delivery directions. The existing production narrator does not yet reproduce that reference: its configured voice and model ladder must be explicitly aligned and verified before the remake can be described as production-ready. Never silently fall back to a slower model or voice and call it the approved performance.
+The Reporter reference uses the audition's contemporary conversational voice, speech model and placed delivery directions. The existing production narrator does not yet reproduce that reference: its configured voice and model ladder must be explicitly aligned and verified before future automated runs can claim to reproduce B. The approved remake imports the exact existing ElevenLabs v4 / Joe recording and never re-narrates it during publication. Never silently fall back to a slower model or voice and call it the approved performance.
 
 A loudness-range measurement is a warning signal, not an intonation or enjoyment detector. Automated editorial and audio success does not imply human listening approval. Record those outcomes separately. Listen to the entire candidate before selecting growth excerpts.
 
@@ -20,7 +20,7 @@ A loudness-range measurement is a warning signal, not an intonation or enjoyment
 
 | AI Pundit | Argument and delivery | Next proof |
 |---|---|---|
-| Reporter | Brisk, animated, opinionated, wry confidence; clear contrast rather than recital | Full-length remake using B as reference, then human listening verdict |
+| Reporter | Brisk, animated, opinionated, wry confidence; clear contrast rather than recital | Full-length B remake approved by Krish on 22 October; retain that exact recording |
 | Gaffer | Clipped and candid; a defensible call on recorded decisions, occasional incredulity | Short audition on a decision with sufficient evidence |
 | Numbers Guy | Curious and animated; explain the surprising implication, slow locally for a difficult number | Short audition that makes a numerical contrast easy to follow |
 | Romantic | Emotional rise and fall; earn the feeling through recorded moments, avoid constant poetry | Short audition with a genuine turning point |
@@ -41,3 +41,7 @@ Do not give every persona the Reporter's speed or argument. Audition the other f
 ## Scope of the candidate
 
 No new model or narration call is authorised by this document. Other-pundit generation, marketing spend, video generation, publication and release decisions require their own existing approval path. This candidate changes neither the North Star nor the growth release, channel, consent and minimum-four-pundit rail gates.
+
+## Importing an approved recording
+
+The manual workflow has a separate recording job that receives no writer, judge or narration credentials. It checks the frozen script and original audio hashes, masters loudness without changing words or pace, uploads content-addressed assets and checks their stored bytes. It stages assets only. Published variants remain immutable to normal app operations. An explicitly approved replacement needs an atomic database transaction with an exact old-asset lease, preserved backup and restoration of the immutability trigger before commit. Existing deep links and unrelated pundits must remain intact.
