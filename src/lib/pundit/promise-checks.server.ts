@@ -261,7 +261,9 @@ export async function runDropPromiseChecks(input: {
     );
   } else {
     // The feed carries the Reporter alone, so a day it is withheld adds no item.
-    checks.push(check("rss", true, "The Reporter is not publishing today, so the feed is unchanged."));
+    checks.push(
+      check("rss", true, "The Reporter is not publishing today, so the feed is unchanged."),
+    );
   }
 
   const fetcher = input.fetcher ?? fetch;

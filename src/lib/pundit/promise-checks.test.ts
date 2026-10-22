@@ -56,14 +56,23 @@ const passing = (name: string) => (checks: ReturnType<typeof decide>["checks"]) 
 
 describe("deciding which pundits publish", () => {
   it("accepts a concise Reporter without shortening other pundits", () => {
-    expect(decide([ready("zen", { audio_duration_sec: 199 })], allPassed("v-zen")).publishable).toHaveLength(1);
-    expect(decide([ready("zen", { audio_duration_sec: 179 })], allPassed("v-zen")).publishable).toHaveLength(0);
-    expect(decide([ready("gaffer", { audio_duration_sec: 199 })], allPassed("v-gaffer")).publishable).toHaveLength(0);
+    expect(
+      decide([ready("zen", { audio_duration_sec: 199 })], allPassed("v-zen")).publishable,
+    ).toHaveLength(1);
+    expect(
+      decide([ready("zen", { audio_duration_sec: 179 })], allPassed("v-zen")).publishable,
+    ).toHaveLength(0);
+    expect(
+      decide([ready("gaffer", { audio_duration_sec: 199 })], allPassed("v-gaffer")).publishable,
+    ).toHaveLength(0);
   });
   it("publishes the one that passed and withholds the rest, with reasons", () => {
     const romantic = ready("romantic");
     const gaffer = ready("gaffer", { id: "v-gaffer", audio_quality: { passed: false } });
-    const result = decide([romantic, gaffer], [...allPassed("v-romantic"), ...allPassed("v-gaffer")]);
+    const result = decide(
+      [romantic, gaffer],
+      [...allPassed("v-romantic"), ...allPassed("v-gaffer")],
+    );
 
     expect(result.publishable.map((v) => v.pundit_id)).toEqual(["romantic"]);
     expect(result.withheld.join(" ")).toContain("gaffer: audio quality");
@@ -145,10 +154,7 @@ describe("deciding which pundits publish", () => {
   it("refuses the same pundit twice in one drop", () => {
     const first = ready("zen");
     const second = ready("zen", { id: "v-zen-2", audio_url: "https://cdn/other.mp3" });
-    const result = decide(
-      [first, second],
-      [...allPassed("v-zen"), ...allPassed("v-zen-2")],
-    );
+    const result = decide([first, second], [...allPassed("v-zen"), ...allPassed("v-zen-2")]);
     expect(passing("pundit_identity")(result.checks)).toBe(false);
   });
 
