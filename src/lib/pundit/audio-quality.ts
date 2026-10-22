@@ -1,4 +1,5 @@
 import { spokenDurationRange } from "./spoken-length";
+import { spokenRateRange } from "./spoken-style";
 import type { PunditId } from "./types";
 
 export type AudioQualityMetrics = {
@@ -21,7 +22,8 @@ export type AudioQualityMetrics = {
   synthesisArtifacts: boolean;
 };
 
-/** The loudness range below which a narration is a machine reading a page.
+/** A narrow-loudness-range warning derived from historical audio measurements.
+ * This is not an intonation detector or proof of an enjoyable performance.
  *
  *  This gate exists to separate two populations that have both been measured
  *  on real narrations, and the number belongs between them rather than above
@@ -51,7 +53,8 @@ export function evaluateAudioQuality(metrics: AudioQualityMetrics, punditId?: Pu
   const failures: string[] = [];
   if (Math.abs(metrics.integratedLufs - -16) > 1) failures.push("Loudness must be -16 LUFS +/-1.");
   if (metrics.truePeakDb > -1) failures.push("True peak must not exceed -1 dBTP.");
-  if (metrics.speakingRateWpm < 110 || metrics.speakingRateWpm > 190) {
+  const rate = spokenRateRange(punditId);
+  if (metrics.speakingRateWpm < rate.min || metrics.speakingRateWpm > rate.max) {
     failures.push("Speaking rate falls outside the full-length listenability range.");
   }
   if (metrics.pauseVariationMs < 80) failures.push("Pause distribution is too uniform.");

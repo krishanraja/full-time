@@ -187,6 +187,14 @@ function licensedScriptValues(pack: EvidencePack, candidate: PunditVariantCandid
     for (let count = 0; count <= homeScore + awayScore; count++) numbers.add(count);
   }
   for (const constant of FOOTBALL_CONSTANTS) numbers.add(constant);
+  // A fixed speech alias identifies the same club; it is not a blanket licence
+  // for nicknames or a second source of match facts.
+  const teams = pack.facts.filter((item) =>
+    ["match.home_team", "match.away_team"].includes(item.id),
+  );
+  if (teams.some((item) => /^(?:Tottenham|Tottenham Hotspur)$/i.test(String(item.value)))) {
+    entities.add("Spurs");
+  }
   return { numbers, entities };
 }
 

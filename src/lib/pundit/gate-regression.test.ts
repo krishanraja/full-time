@@ -162,6 +162,32 @@ function gateFailures(sentence: string, matchInput: StructuredMatchInput): strin
 }
 
 describe("prose the gates once rejected wrongly", () => {
+  it("licenses Spurs only when Tottenham is a participating team", () => {
+    const text = "The point for Spurs is clear.";
+    expect(
+      gateFailures(text, toulouseLille).some((failure) => failure.startsWith("entity_licence:")),
+    ).toBe(true);
+    const match = { ...toulouseLille, match: { ...toulouseLille.match, homeTeam: "Tottenham" } };
+    expect(gateFailures(text, match).some((failure) => failure.startsWith("entity_licence:"))).toBe(
+      false,
+    );
+    const incidental = {
+      ...toulouseLille,
+      events: [
+        ...toulouseLille.events,
+        {
+          id: "alias-test",
+          type: "goal" as const,
+          minute: 14,
+          team: "Tottenham",
+          player: "Example Player",
+        },
+      ],
+    };
+    expect(
+      gateFailures(text, incidental).some((failure) => failure.startsWith("entity_licence:")),
+    ).toBe(true);
+  });
   // The Numbers pundit, 2026-09-04, one harness from a published show:
   // "Liverpool didn't survive pressure, they survived optimism." A side
   // survives a corner and a spell of pressure long before it survives a

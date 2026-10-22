@@ -8,7 +8,7 @@ describe("launch evaluation gates", () => {
       integratedLufs: -16,
       truePeakDb: -1.2,
       durationSec: 240,
-      speakingRateWpm: 150,
+      speakingRateWpm: 192,
       pauseVariationMs: 120,
       dynamicRangeDb: 4,
       properNamesVerified: 10,
@@ -24,6 +24,8 @@ describe("launch evaluation gates", () => {
       synthesisArtifacts: false,
     };
     expect(evaluateAudioQuality(metrics, "zen").passed).toBe(true);
+    expect(evaluateAudioQuality({ ...metrics, speakingRateWpm: 119 }, "zen").passed).toBe(false);
+    expect(evaluateAudioQuality({ ...metrics, speakingRateWpm: 211 }, "zen").passed).toBe(false);
     expect(evaluateAudioQuality(metrics, "gaffer").passed).toBe(false);
     expect(evaluateAudioQuality({ ...metrics, durationSec: 179 }, "zen").passed).toBe(false);
     expect(evaluateAudioQuality({ ...metrics, durationSec: 361 }, "zen").passed).toBe(false);
