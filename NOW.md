@@ -1,7 +1,7 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-10-22
+as_of: 2026-10-23
 head: 859d98b
 lifecycle: beta
 production_url: https://fulltime.fm
@@ -31,7 +31,9 @@ It is also proof, and that part survives anonymisation. The room_face buyer (`co
 
 Objection it answers: "AI-generated editorial cannot be held to a standard." Here is one held to twenty-five of them, daily, with the ledger open.
 
-## Where it is right now (as of 2026-10-22)
+## Where it is right now (as of 2026-10-23)
+
+<!-- north-star-state {"week_of": "2026-10-26", "week_target": 10, "current": 0, "current_as_of": "2026-10-23", "current_source": "Supabase FullTime listens table (0 rows)", "urgency": 4, "urgency_reason": "at 0% of this week's target"} --> **North Star number: U4, far behind.** Listeners who come back within the same week: 0, against 10 this week, on the way to 10,000 by 31 May 2027. A bold swing every day; work that does not move the number waits.
 
 - **Evidence intake v2 activated and production-verified (2026-10-20):** PRs #88-90 merged; the Vercel adapter is enabled with sensitive server-only Drive credentials. Normal scheduled-window execution 39407984999 verified ten matches, 394 counted facts/events, both Drive hashes and the actual deployed match loader: 116 measurements consumed and four disputed observations withheld with their dependent calculations. No model calls, publication or database writes. Runtime proof, historical replay, schedule and rollback are in `docs/premier-league-evidence-actions.md`. Future intake runs also verify the live product; the existing backup schedule remains enabled.
 
@@ -55,6 +57,7 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 
 ## What changed recently
 
+- 2026-10-23 **The North Star now has a number, a weekly ladder and an urgency rating, so every session knows how far behind it is and how hard to push.** Ruling (Krish, 2026-10-23): every repository chases one aggressive number on a weekly ladder, and urgency U1 to U5 sets its intensity. The number and ladder are in `docs/NORTH_STAR.md`; where it stands is the first line under "Where it is right now". Contract: ai-harness `contract/north-star-metric.md`.
 - 2026-10-22 **The Reporter now writes to be heard, and a listening standard separates "passed the gates" from "sounds right"** (`df5c42a` to `23810d3`, PR #95; `docs/24-listening-standard.md`). Ruling (Krish, 2026-10-22): "use audition B pace and delivery, make writing more natural and opinionated, quote before generation, and carry the standard into both product and growth." `src/lib/pundit/spoken-style.ts` is now the writing brief the generator uses, Reporter spec version 2 carries the revised persona, the clarity judge also assesses prose as speech, and the Reporter's accepted pace is 175 to 210 words per minute. A review-only path (`review-listening-candidate.ts`) runs with a reserved budget and no request retries, and a request guard has a test. The failure it answers: automated editorial and audio success had been read as listening approval, and the standard says they are recorded separately, with loudness range a warning signal, not an enjoyment detector. The full Reporter B take was approved by Krish on 22 October and is imported as the exact existing recording by `publish-approved-recording.ts` in a separate job with no writer, judge or narration credentials. Not verified: the production narrator does not yet reproduce B, and the replacement of the live edition needs its own approved operation and a persisted readback, so nothing here is on production.
 - 2026-10-21 **A public answer hub and a true-size brand set exist in the tree, not yet read back on production** (`c499a0a`, PR #94; Ruling, Krish, 2026-10-21 for the concise Reporter below). Fans and answer engines can only start the morning with Full Time if a search or an assistant can find and cite it, and the commit's own count of the problem: favicon-16, favicon-32, icon-192, icon-512 and the touch icon "were five copies of one 2000x2000 PNG (145 KB each), so a tab downloaded 145 KB for 16 pixels and the manifest declared sizes the files lacked." Each is now its true size, a 1200x630 social card and a maskable icon were added, and the podcast cover keeps the original mark. `/answers` and `/answers/<slug>` serve five seed posts written only from this repository's docs and code, server-rendered identically for every visitor with no user-agent branch, with Article, FAQPage and BreadcrumbList data, an Atom feed, entries in the sitemap, `llms.txt` and a new `llms-full.txt`, and a Monday brief workflow. The hub is deliberately not linked from the app's navigation, because the one-screen rule outranks it, and tests enforce that. The commit records 529 tests passing, a dev-server readback only, and "Not deployed or read back on production. Model spend: $0." The bar, sourcing and cadence are `docs/23-answer-hub.md`.
 - 2026-10-21 **A concise Reporter edition was enabled, and one reviewed script was recovered without rewriting it or spending again** (`864a8fa`, `322fd11`, PRs #92 and #93). Ruling (Krish, 2026-10-21): "enable the shorter Reporter format and run one final review within USD 0.35, then narrate, publish and verify the Spurs edition if it passes. Other personas and factual/audio/publication gates remain unchanged." The change counts every recovery review against one approved dollar budget, bounds delivery tags for the shorter narration, and aligns the audio duration gate with the approved concise length (`src/lib/pundit/spoken-length.ts`, `src/lib/pundit/audio-quality.ts`). Not observed in this repo: whether that edition passed and published; that is a database and production fact.
@@ -86,6 +89,7 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 - Next: the 00:15 UTC ingest against the two 2026-09-21 migrations is the first evidence for the league table, the drift ledger and the second expected-goals opinion; nothing about them is proven until it runs (`docs/product-state.json`, `currentGaps.Pipeline`).
 - Waiting on Krish: the licence basis for the standings endpoint is still unrecorded in `release_signoffs`, and that table's gate check constraint has no slot for a data-rights basis; recording it needs either a `gate='legal'` row whose notes carry it or a migration widening the enum (`docs/product-state.json`, `currentGaps.Pipeline`).
 - Waiting on Krish: whether the OpenAI judge floor translation and the `factual_entailment` advisory posture should extend past 2026-10-01 if the OpenAI bench keeps judging, or were only ever meant to bridge the Anthropic cap. The code already expires both the moment `PUNDIT_JUDGE_MODEL` points back at Anthropic; nothing forces that switch to happen on schedule.
+- North Star check (2026-10-23): holds.
 
 ## Read next
 
