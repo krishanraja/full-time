@@ -4,6 +4,12 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-10-23
+
+- rolled from NOW.md: bullets more than 30 days old (the steward's window):
+  - 2026-09-22 **The public payload named a match by team IDs and had no score at all** (`cb59be3`). "A show about Manchester City beating Sunderland five-three opened with a headline, a dek and no fixture." The sealed evidence pack already carries both team names and both scores as first-class facts, the same facts the writer is refused for misnaming, so `fixtureFromPack` reads them at no extra query. It returns nothing rather than a half-filled fixture, because a scoreboard naming one team is worse than none, and a nil-nil score survives since zero is a real result rather than an absent one. This is the data half only; where it renders, and the no-scroll question it raises, goes to Krish as a rendered artifact before it ships.
+  - 2026-09-22 **A concurrent judge fan-out was starving its own cache, and a run now remembers what it cost** (`2294b4b`). Measured from 1,682 logged calls totalling $38.86: judges 53% of spend across 1,514 calls, writer 42% across 152, claim lab 4% across 16. Firing all fourteen judges on a variant at once meant none of them could read the shared evidence-pack cache the others were still writing, because a cache is populated by a request that has completed; split by provider, `gpt-5.6-terra` cache-hit only 1.2% of calls against `claude-haiku-4-5`'s 92.2%, costing $14.91 of input where $2.86 would have done. One judge now runs alone first to warm it. `editorial_runs.promise_checks.spend` now records the total, the per-pundit cost and attempts, and which pundits were written but never narrated, on every run, so answering "what did that cost" no longer means reconstructing it from log lines that age out of the window. AGENTS.md gained the measured table and a cheapest-first order of instruments: of a session's roughly $70, about $48 bought no information a $0.32 calibration reading or a free database read could not have bought first.
+
 ## 2026-10-22
 
 - reconciled at `859d98b`: head moved from `f3391c0`. The new commits (PR #95) add the spoken-writing brief, the review-only path and the existing-recording import. Checked against `docs/24-listening-standard.md` and the diff summary; NOW.md gained a "What changed recently" bullet and a Read next entry.
