@@ -127,10 +127,10 @@ it.
 Before this, nothing in the database held a cost. Answering "what did that
 run cost" meant reconstructing it from log lines that age out of the window.
 
-<!-- krish-canon:start release=v2026.10.22.1 sha=802d127142cf rendered=2026-10-23 -->
+<!-- krish-canon:start release=v2026.10.24.1 sha=21ffc3ecc00d rendered=2026-10-24 -->
 ## Krish canon
 
-Rendered from `krishanraja/ai-harness` at release v2026.10.22.1. Nothing inside these
+Rendered from `krishanraja/ai-harness` at release v2026.10.24.1. Nothing inside these
 markers is hand-maintained: an edit here is detected and proposed back to the canon,
 never silently overwritten, and never lost. This sync preserves all other text.
 Separately approved repository administration owns only its declared regions and context file.
