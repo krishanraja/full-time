@@ -111,7 +111,8 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 - Next: the 00:15 UTC ingest against the two 2026-09-21 migrations is the first evidence for the league table, the drift ledger and the second expected-goals opinion; nothing about them is proven until it runs (`docs/product-state.json`, `currentGaps.Pipeline`).
 - Waiting on Krish: the licence basis for the standings endpoint is still unrecorded in `release_signoffs`, and that table's gate check constraint has no slot for a data-rights basis; recording it needs either a `gate='legal'` row whose notes carry it or a migration widening the enum (`docs/product-state.json`, `currentGaps.Pipeline`).
 - Waiting on Krish: whether the OpenAI judge floor translation and the `factual_entailment` advisory posture should extend past 2026-10-01 if the OpenAI bench keeps judging, or were only ever meant to bridge the Anthropic cap. The code already expires both the moment `PUNDIT_JUDGE_MODEL` points back at Anthropic; nothing forces that switch to happen on schedule.
-- North Star check (2026-10-26): holds. This work improves consistency of the six performances that must earn the morning ritual; it does not prove new listener retention or approve any new recording. Next: short controlled product auditions under separate generation approval, preserving Reporter B and comparing all non-target profiles.
+- Next for the personality core: prepare short controlled product auditions under separate generation approval, preserving Reporter B and comparing all non-target profiles. This work improves consistency of the six performances that must earn the morning ritual; it does not prove new listener retention or approve any new recording.
+- North Star check (2026-10-26): holds.
 
 ## Read next
 
