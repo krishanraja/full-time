@@ -224,20 +224,14 @@
       "src/lib/edition-pundit.ts",
       "src/components/ClubCrest.tsx"
     ],
-    "publicApi": [
-      "src/lib/api/editorial-public.server.ts",
-      "src/routes/api/public"
-    ],
+    "publicApi": ["src/lib/api/editorial-public.server.ts", "src/routes/api/public"],
     "scope": [
       "src/lib/premier-league.ts",
       "src/lib/pundit/daily-orchestrator.server.ts",
       "src/routes/api/public/cron.ingest.ts",
       "src/lib/pundit/prediction-orchestrator.server.ts"
     ],
-    "aiPundits": [
-      "src/components/PersonalitySelector.tsx",
-      "src/lib/pundit/specs.ts"
-    ],
+    "aiPundits": ["src/components/PersonalitySelector.tsx", "src/lib/pundit/specs.ts"],
     "avatars": [
       "src/lib/pundit-cover.ts",
       "src/lib/match-seal.ts",
@@ -249,13 +243,8 @@
       "src/lib/api/feed.functions.ts",
       "src/lib/premier-league.ts"
     ],
-    "settings": [
-      "src/routes/settings.tsx"
-    ],
-    "trackRecord": [
-      "src/routes/receipts.tsx",
-      "src/routes/api/public/pundits.$id.receipts.ts"
-    ],
+    "settings": ["src/routes/settings.tsx"],
+    "trackRecord": ["src/routes/receipts.tsx", "src/routes/api/public/pundits.$id.receipts.ts"],
     "navigation": [
       "src/components/BottomNav.tsx",
       "src/components/AppHeader.tsx",
@@ -267,5 +256,23 @@
       "src/lib/pundit/release-readiness.server.ts",
       "docs/19-release-state.md"
     ]
+  },
+  "personalitySystem": {
+    "asOf": "2026-10-26",
+    "implementation": "product-owned versioned profiles and shared direction",
+    "release": "src/lib/pundit/personality/release.json",
+    "guide": "docs/25-personality-system.md",
+    "consumers": [
+      "writer",
+      "qualitative judges",
+      "performance planner",
+      "narration",
+      "growth pinned export"
+    ],
+    "storedProvenance": "existing harness_runs personality_baseline metadata",
+    "freshNarration": "holds missing or mismatched script baseline; existing audio reuse preserved",
+    "humanListening": "Reporter B reference remains approved; five other product voices need auditions",
+    "deployed": "not yet verified for this change",
+    "newGeneration": "not run; no new audio approved"
   }
 }

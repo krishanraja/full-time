@@ -18,8 +18,11 @@ overrides:
   "@babel/core@": 7.29.7
   "@vercel/routing-utils@6.4.1>path-to-regexp": 6.3.0
   "@workflow/core@4.8.1>nanoid": 5.1.16
-  "@workflow/world-local@4.2.4>undici": 7.29.1
-  "@workflow/world-vercel@4.6.2>undici": 7.29.1
+  "@workflow/world-local@4.2.4>undici": 7.30.1
+  "@workflow/world-vercel@4.6.2>undici": 7.30.1
+  # 26 October audit: fixed collection bounds, compressed-body and HTTP parser advisories.
+  zod: 4.6.6
+  "body-parser@>=2.0.0 <2.4.0": 2.4.0
   # Advisories published after 2026-09-27 turned the prod audit red on main.
   # Each is the patch release on the line already in use, pinned exactly.
   "brace-expansion@>=2.0.0 <3.0.0": 2.1.7

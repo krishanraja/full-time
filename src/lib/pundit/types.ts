@@ -173,6 +173,9 @@ export type PunditSpec = {
 };
 
 export type PunditVariantCandidate = {
+  /** Exact product-owned identity/direction used by the writer. Legacy stored
+   * candidates can lack this, but cannot start new narration without it. */
+  personalityBaseline?: import("./personality/registry").PersonalityBaselineRef;
   punditId: PunditId;
   specVersion: number;
   thesis: PunditThesis;

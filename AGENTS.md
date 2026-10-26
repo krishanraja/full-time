@@ -16,6 +16,17 @@ Read `NOW.md` first.
 
 Rules: `docs/19-release-state.md`.
 
+## Pundit personality and creative continuity
+
+Read `docs/25-personality-system.md` before changing persona, tone, humour or
+voice code. Product core profiles and shared policy are versioned under
+`src/lib/pundit/personality/`; the registry is their one runtime owner. Run
+`pnpm run personas:check` before generation. Preserve existing version files,
+approved recordings and the other characters when revising one component.
+Growth imports pinned product identity and owns ad-only execution; do not turn
+an ad's dialogue, aggression or fictional claims into product-wide facts or
+voice approval. Technical checks and owner listening judgments remain separate.
+
 ## Quote the model spend, every time
 
 **Ruling (Krish, 2026-09-21): state what a task costs in API credits, before running it

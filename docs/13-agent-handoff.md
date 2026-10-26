@@ -68,7 +68,7 @@ Full Time is an AI-native football audio product in live beta by founder overrid
 | Teams                             | `following.tsx`, `feed.functions.ts`, `follow-store.ts`, `premier-league.ts`             |
 | Track record                      | `receipts.tsx`, public predictions and receipts routes                                   |
 | Evidence or claims                | `src/lib/pundit/evidence.ts`, `claim-lab.ts`                                             |
-| AI Pundit behavior                | `src/lib/pundit/specs.ts`                                                                |
+| AI Pundit behavior                | `src/lib/pundit/personality/registry.ts`, versioned profiles, `25-personality-system.md` |
 | Scripts or judges                 | `pundit-generator.server.ts`, `harness.ts`, `dimensions.ts`                              |
 | Narration or pronunciation        | `performance.ts`, `narration.server.ts`, `pronunciation.server.ts`                       |
 | Rehearsal or publication          | `src/workflows/daily-pundit.ts`, `daily-pundit.steps.ts`, `daily-orchestrator.server.ts` |

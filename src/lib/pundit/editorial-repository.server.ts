@@ -164,7 +164,19 @@ async function persistVariant(dropId: string, generated: GeneratedPunditVariant)
     prefer: "return=minimal",
   });
   for (const run of generated.attemptResults) {
-    await persistHarnesses(rows[0].id, run.results, run.attempt);
+    const baseline = candidate.personalityBaseline;
+    const results = baseline
+      ? [
+          ...run.results,
+          {
+            harness: "personality_baseline",
+            hardGate: true,
+            passed: true,
+            evidenceSpan: JSON.stringify(baseline),
+          },
+        ]
+      : run.results;
+    await persistHarnesses(rows[0].id, results, run.attempt);
   }
   return rows[0].id;
 }

@@ -117,6 +117,8 @@ describe("the writing and judging path, end to end and free", () => {
     const variant = await generatePunditVariant({ punditId, pack, claims });
 
     expect(variant.candidate.punditId).toBe(punditId);
+    expect(variant.candidate.personalityBaseline?.profileId).toBe(punditId);
+    expect(variant.candidate.personalityBaseline?.profileSha256).toHaveLength(64);
     expect(variant.candidate.displayScript.length).toBeGreaterThan(0);
     expect(variant.candidate.performancePlan.length).toBe(10);
     expect(variant.attempts).toBeGreaterThanOrEqual(1);
@@ -216,7 +218,9 @@ describe("the probability instruction and the numeric gate agreeing", () => {
     // Home and away: one pundit gave Ipswich Liverpool's possession figure.
     expect(source).toContain("says home or away and name the team that id belongs to");
     // Restraint: the judges rejected five of six for restating one point.
-    expect(source).toContain("State your central point in full in the judgment beat and nowhere else");
+    expect(source).toContain(
+      "State your central point in full in the judgment beat and nowhere else",
+    );
   });
 });
 
@@ -237,7 +241,9 @@ describe("writing a subset of the pundits", () => {
     expect(workflow).toContain("punditIds?: PunditId[]");
     // The subset is filtered from the canonical list rather than trusted, so an
     // unknown id cannot introduce a pundit that has no spec.
-    expect(workflow).toContain("PUNDIT_IDS.filter((punditId) => input.punditIds!.includes(punditId))");
+    expect(workflow).toContain(
+      "PUNDIT_IDS.filter((punditId) => input.punditIds!.includes(punditId))",
+    );
     expect(route).toContain('url.searchParams.get("pundits")');
   });
 

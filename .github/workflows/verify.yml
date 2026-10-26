@@ -48,6 +48,17 @@ jobs:
       - name: Unit and gate tests
         run: pnpm test
 
+      - name: Pundit personality release integrity
+        env:
+          PERSONALITY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$PERSONALITY_BASE_SHA" ]; then
+            git fetch --no-tags --depth=1 origin "$PERSONALITY_BASE_SHA"
+            pnpm run personas:check "$PERSONALITY_BASE_SHA"
+          else
+            pnpm run personas:check
+          fi
+
       - name: Lint
         run: pnpm run lint
 

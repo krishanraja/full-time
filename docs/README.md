@@ -26,6 +26,8 @@ Never convert a roadmap decision into a live claim. Never convert an implemented
 
 For scripts, voice performance and growth audio selection, read the [spoken production and listening standard](./24-listening-standard.md). It distinguishes an implementation candidate, an approved audition and a full-length listening verdict.
 
+For persona ownership, versioning and how creative feedback reaches the real pipeline, read the [product personality system](./25-personality-system.md).
+
 | Need                          | Read first                                               | Then                                                                                   |
 | ----------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | Know where it is right now    | [`../NOW.md`](../NOW.md)                                 | [`19-release-state.md`](./19-release-state.md), [`product-state.json`](./product-state.json) |
