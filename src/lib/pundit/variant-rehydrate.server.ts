@@ -1,6 +1,7 @@
 import type { GeneratedPunditVariant } from "./pundit-generator.server";
 import { serviceRest } from "./service-rest.server";
 import type { BeatOutline, PerformanceBeat, PunditId, PunditThesis } from "./types";
+import type { PersonalityBaselineRef } from "./personality/registry";
 
 type StoredVariant = {
   id: string;
@@ -42,6 +43,13 @@ export async function rehydrateVariantForProduction(variantId: string): Promise<
   const coverageDate = stored.daily_drops?.coverage_date;
   if (!coverageDate) throw new Error(`Variant ${variantId} has no coverage date.`);
 
+  const baselineRows = await serviceRest<Array<{ evidence_span: string | null }>>(
+    `harness_runs?variant_id=eq.${encodeURIComponent(variantId)}&harness_name=eq.personality_baseline&select=evidence_span&order=attempt.desc&limit=1`,
+  );
+  const personalityBaseline = baselineRows[0]?.evidence_span
+    ? (JSON.parse(baselineRows[0].evidence_span) as PersonalityBaselineRef)
+    : undefined;
+
   const packs = await serviceRest<Array<{ match_id: string }>>(
     `evidence_packs?drop_id=eq.${encodeURIComponent(stored.drop_id)}&select=match_id&limit=1`,
   );
@@ -59,6 +67,7 @@ export async function rehydrateVariantForProduction(variantId: string): Promise<
       candidate: {
         punditId: stored.pundit_id,
         specVersion: stored.spec_version,
+        personalityBaseline,
         thesis: stored.thesis,
         outline: stored.beat_outline,
         displayScript: stored.display_script,
@@ -72,9 +81,8 @@ export async function rehydrateVariantForProduction(variantId: string): Promise<
       attemptResults: [],
       // Published counts as approved: the editorial verdict was reached once
       // and re-narration does not revisit it.
-      status: stored.status === "quarantined" || stored.status === "failed"
-        ? "quarantined"
-        : "approved",
+      status:
+        stored.status === "quarantined" || stored.status === "failed" ? "quarantined" : "approved",
     },
   };
 }

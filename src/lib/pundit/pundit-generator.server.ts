@@ -12,6 +12,7 @@ import {
 import { getPunditSpec, PUNDIT_SPECS } from "./specs";
 import { spokenWordRange } from "./spoken-length";
 import { LISTENING_STANDARD_VERSION, spokenStyleBrief } from "./spoken-style";
+import { compilePersonalityBaseline, getSharedPersonality } from "./personality/registry";
 import { sha256Hex } from "./hash";
 import { maxSourceSimilarity } from "./research-originality";
 import { loadRightsClearedOriginalityCorpus } from "./research-originality.server";
@@ -421,6 +422,7 @@ async function writeDraft(input: {
   recentlyUsedLines?: string[];
 }): Promise<z.infer<typeof draftSchema>> {
   const spec = getPunditSpec(input.punditId);
+  const personalityBaseline = await compilePersonalityBaseline(input.punditId);
   const claims = claimReferences(input.claims);
   const priorThesis = input.prior
     ? {
@@ -452,6 +454,8 @@ async function writeDraft(input: {
       // the same cache entry as its spec instead of making a third.
       {
         punditSpec: spec,
+        personalityBaseline,
+        sharedHumourChecks: getSharedPersonality().humourChecks,
         judgedDimensions: DIMENSION_STANDARDS,
         ...(input.recentlyUsedLines?.length
           ? { linesYouHaveAlreadyUsed: input.recentlyUsedLines }
@@ -602,6 +606,9 @@ async function judgeOne(
         // Fixed for this variant, shared by all twelve of its judges.
         {
           punditSpec: getPunditSpec(candidate.punditId),
+          personalityBaseline: await compilePersonalityBaseline(candidate.punditId),
+          spokenDelivery: spokenStyleBrief(candidate.punditId),
+          sharedHumourChecks: getSharedPersonality().humourChecks,
           predictionRegistration: predictionContext(predictionTiming),
           thesis: proseOnly ? PROSE_ONLY_THESIS : candidate.thesis,
           script: candidate.displayScript,
@@ -699,6 +706,7 @@ async function judgeHardOne(
       cachedContext: [{ evidencePack: compactEvidence(pack), licensedClaims: claims }],
       user: JSON.stringify({
         punditSpec: getPunditSpec(candidate.punditId),
+        personalityBaseline: await compilePersonalityBaseline(candidate.punditId),
         thesis: proseOnly ? PROSE_ONLY_THESIS : candidate.thesis,
         beats: candidate.outline,
         outputContract: {
@@ -878,7 +886,10 @@ export async function generatePunditVariant(input: {
       prior,
       failures,
     );
-    const candidate = assembleCandidate(input.punditId, draft, input.predictionTiming);
+    const candidate = {
+      ...assembleCandidate(input.punditId, draft, input.predictionTiming),
+      personalityBaseline: await compilePersonalityBaseline(input.punditId),
+    };
     const hardResults = runHardGates({
       pack: input.pack,
       claims: input.claims,

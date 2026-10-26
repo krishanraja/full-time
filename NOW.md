@@ -1,18 +1,42 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-10-23
+as_of: 2026-10-26
 head: 21a8708
 lifecycle: beta
 production_url: https://fulltime.fm
 state_doc: docs/19-release-state.md
 history_log: docs/history/LOG.md
 truth_files: [docs/product-state.json]
-authority_order: [code and migrations and live readback, docs/product-state.json, docs/00-product.md, docs/18-world-class-pundit-system.md, docs/19-release-state.md, the role-specific current guide in docs/README.md, historical and proposed records never direct current work]
+authority_order:
+  [
+    code and migrations and live readback,
+    docs/product-state.json,
+    docs/00-product.md,
+    docs/18-world-class-pundit-system.md,
+    docs/19-release-state.md,
+    the role-specific current guide in docs/README.md,
+    historical and proposed records never direct current work,
+  ]
 steward: https://github.com/krishanraja/ai-harness/blob/main/docs/steward/RUNBOOK.md
-never_publish: [the product name Full Time and the domain fulltime.fm, the sport (football) and any league or competition, any team or player or fixture named in this repo or its commits, the match data providers (API-Football and football-data), the voice vendor (ElevenLabs), the Supabase project id, any credential or environment variable name, the six AI Pundit names, the Google Drive folder id and Drive folder name used for private evidence intake, the names of the evidence-intake secrets]
+never_publish:
+  [
+    the product name Full Time and the domain fulltime.fm,
+    the sport (football) and any league or competition,
+    any team or player or fixture named in this repo or its commits,
+    the match data providers (API-Football and football-data),
+    the voice vendor (ElevenLabs),
+    the Supabase project id,
+    any credential or environment variable name,
+    the six AI Pundit names,
+    the Google Drive folder id and Drive folder name used for private evidence intake,
+    the names of the evidence-intake secrets,
+  ]
 ---
+
 # Full Time: where it is right now
+
+The 26 October personality architecture is implemented on this branch, awaiting Linux CI and merge. The product now owns independent versioned profiles and shared delivery; the writer, judges, persisted script and narrator carry the same exact baseline. Growth imports a pinned product core rather than maintaining a competing definition. No new media was generated, and current ad video remains rejected. See `docs/25-personality-system.md`.
 
 ## What it is
 
@@ -87,7 +111,8 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 - Next: the 00:15 UTC ingest against the two 2026-09-21 migrations is the first evidence for the league table, the drift ledger and the second expected-goals opinion; nothing about them is proven until it runs (`docs/product-state.json`, `currentGaps.Pipeline`).
 - Waiting on Krish: the licence basis for the standings endpoint is still unrecorded in `release_signoffs`, and that table's gate check constraint has no slot for a data-rights basis; recording it needs either a `gate='legal'` row whose notes carry it or a migration widening the enum (`docs/product-state.json`, `currentGaps.Pipeline`).
 - Waiting on Krish: whether the OpenAI judge floor translation and the `factual_entailment` advisory posture should extend past 2026-10-01 if the OpenAI bench keeps judging, or were only ever meant to bridge the Anthropic cap. The code already expires both the moment `PUNDIT_JUDGE_MODEL` points back at Anthropic; nothing forces that switch to happen on schedule.
-- North Star check (2026-10-23): holds.
+- Next for the personality core: prepare short controlled product auditions under separate generation approval, preserving Reporter B and comparing all non-target profiles. This work improves consistency of the six performances that must earn the morning ritual; it does not prove new listener retention or approve any new recording.
+- North Star check (2026-10-26): holds.
 
 ## Read next
 

@@ -18,6 +18,8 @@ A loudness-range measurement is a warning signal, not an intonation or enjoyment
 
 ## Six distinct performances
 
+The executable owner is now the versioned product [personality registry](./25-personality-system.md). Writer, judges, performance and narration read its selected profile. Growth imports a pinned product core and keeps ad-only exaggeration and dialogue scoped to the creative. This does not turn any pending audition into a listening approval.
+
 | AI Pundit | Argument and delivery | Next proof |
 |---|---|---|
 | Reporter | Brisk, animated, opinionated, wry confidence; clear contrast rather than recital | Full-length B remake approved by Krish on 22 October; retain that exact recording |

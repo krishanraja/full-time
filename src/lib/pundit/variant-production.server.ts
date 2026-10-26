@@ -10,6 +10,7 @@ import { renderPunditShareCard } from "./share-card.server";
 import { serviceRest } from "./service-rest.server";
 import type { GeneratedPunditVariant } from "./pundit-generator.server";
 import { spokenIdentity } from "@/lib/api/narration.server";
+import { assertNarrationPersonality } from "./personality/registry";
 
 type ExistingProducedVariant = {
   pundit_id: string;
@@ -100,6 +101,7 @@ export async function producePunditVariant(input: {
   }
 
   try {
+    await assertNarrationPersonality(candidate.punditId, candidate.personalityBaseline);
     const pronunciation = await loadPronunciationPlan({
       punditId: candidate.punditId,
       displayScript: candidate.displayScript,
@@ -113,6 +115,7 @@ export async function producePunditVariant(input: {
       pronunciation.usedEntities,
       {
         punditId: candidate.punditId,
+        personalityBaseline: candidate.personalityBaseline,
         performancePlan: candidate.performancePlan,
         maxTakes: input.maxNarrationTakes,
         voiceId: pronunciation.providerVoiceRef,

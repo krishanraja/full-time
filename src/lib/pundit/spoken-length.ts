@@ -1,11 +1,10 @@
 import type { PunditId } from "./types";
+import { getPersonalityProfile } from "./personality/registry";
 
-/** Krish, 21 October 2026: Reporter editions may be concise. The other
- * personas retain their existing full-show range. Shared by writer and gate. */
 export function spokenWordRange(punditId: PunditId) {
-  return punditId === "zen" ? { min: 550, max: 800 } : { min: 750, max: 1100 };
+  return getPersonalityProfile(punditId).spoken.wordRange;
 }
 
 export function spokenDurationRange(punditId?: PunditId) {
-  return punditId === "zen" ? { min: 180, max: 360 } : { min: 300, max: 480 };
+  return punditId ? getPersonalityProfile(punditId).spoken.durationRange : { min: 300, max: 480 };
 }

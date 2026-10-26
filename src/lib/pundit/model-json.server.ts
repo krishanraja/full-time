@@ -356,7 +356,7 @@ export async function modelJson<T>(input: {
   cachedContext?: readonly unknown[];
   /** The part that varies between requests. Never cached. */
   user: string;
-  schema: z.ZodType<T, z.ZodTypeDef, unknown>;
+  schema: z.ZodType<T, unknown>;
   model: string;
   maxTokens: number;
   /** Names this call in the cache log, so a lost hit rate is traceable. */

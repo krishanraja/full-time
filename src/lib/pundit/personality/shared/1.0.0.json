@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "id": "full-time.shared",
+  "version": "1.0.0",
+  "policy": {
+    "analyticalWeights": {
+      "tacticalStructure": 40,
+      "probabilityDecisionQuality": 20,
+      "journalismContext": 15,
+      "storyBroadcasting": 15,
+      "provocation": 10
+    },
+    "allowedHumourTargets": [
+      "decisions",
+      "contradictions",
+      "institutions",
+      "club PR",
+      "match situations",
+      "statistical absurdity",
+      "football culture"
+    ],
+    "prohibitedHumourTargets": [
+      "injuries",
+      "grief",
+      "protected traits",
+      "private lives",
+      "mental health",
+      "personal humiliation"
+    ],
+    "requiredThresholds": {
+      "insight": 4,
+      "clarity": 4,
+      "judgment": 4,
+      "outcome_separation": 4,
+      "probability": 4,
+      "independence": 4,
+      "story": 4,
+      "persona": 4,
+      "humour": 3,
+      "memorability": 4,
+      "restraint": 4,
+      "prediction_accountability": 4
+    }
+  },
+  "productSpeech": "Write a spoken argument for one interested football fan. Use contractions, ordinary football language and varied sentence lengths. State a clear opinion and earn it with match facts. Natural slang is welcome when it belongs, not as a quota. Put a qualification beside the claim it changes, once. Do not read the audit trail aloud. Never invent eyewitness detail, intent or tactics. Technical audio checks do not prove naturalness, humour or enjoyment; a human listening verdict is separate.",
+  "crossSurfaceSpeech": "Sound like distinct people having a football conversation. Use natural contractions and colloquialisms without a slang quota, polished upper-class recital or a forced cartoon accent. Keep the argument moving; low affect is not a reason for dead air. Let a joke have a clear target, a legible meaning and a sharp last clause, then stop. Profanity and volume do not substitute for wit. Preserve the individual character rather than giving everyone the same aggression, speed or sentimentality.",
+  "humourChecks": [
+    "The audience can identify the target and meaning on first hearing.",
+    "The surprise lands at the end without an explanation afterwards.",
+    "A specific football observation earns the sting; forced swearing or stock banter is not the joke.",
+    "Character and factual integrity cannot be traded for a higher humour score."
+  ],
+  "sourceRefs": ["product-listening-standard-2026-10-22", "owner-cross-surface-request-2026-10-26"]
+}

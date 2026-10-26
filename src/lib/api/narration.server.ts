@@ -16,23 +16,20 @@
 // the gate AND a DB CHECK constraint). `spoken_script` is TTS-only and never
 // reaches a screen or the RSS feed.
 
+import {
+  assertNarrationPersonality,
+  compilePersonalityBaseline,
+  getPersonalityProfile,
+  type PersonalityBaselineRef,
+} from "@/lib/pundit/personality/registry";
 import { assertPerformanceIdentity } from "@/lib/pundit/performance";
 import { concatenateNarrationMp3 } from "@/lib/pundit/audio-mastering.server";
 import type { PerformanceBeat, PunditId } from "@/lib/pundit/types";
 
 const MP3_BITRATE = 128_000; // matches ?output_format=mp3_44100_128
 
-const VOICE_ENV: Record<PunditId, string> = {
-  zen: "ELEVENLABS_VOICE_REPORTER",
-  gaffer: "ELEVENLABS_VOICE_GAFFER",
-  stats: "ELEVENLABS_VOICE_NUMBERS",
-  romantic: "ELEVENLABS_VOICE_ROMANTIC",
-  doomer: "ELEVENLABS_VOICE_DOOMER",
-  banter: "ELEVENLABS_VOICE_WINDUP",
-};
-
 function voiceIdFor(punditId: PunditId, candidate: "A" | "B" | "selected" = "selected") {
-  const base = VOICE_ENV[punditId];
+  const base = getPersonalityProfile(punditId).voice.envKey;
   const selected = process.env[base];
   const audition = candidate === "selected" ? undefined : process.env[`${base}_${candidate}`];
   const fallback = punditId === "zen" ? process.env.ELEVENLABS_VOICE_ID : undefined;
@@ -192,56 +189,8 @@ export function applyHouseCadence(spoken: string, magicSpoken: string): string {
   return out.join(" ");
 }
 
-const PERSONA_TAGS: Record<
-  PunditId,
-  { setup: string; evidence: string; verdict: string; punchline: string; close: string }
-> = {
-  zen: {
-    setup: "measured",
-    evidence: "matter of fact",
-    verdict: "dry",
-    punchline: "wry",
-    close: "warmer",
-  },
-  gaffer: {
-    setup: "matter of fact",
-    evidence: "measured",
-    verdict: "dry",
-    punchline: "wry",
-    close: "resigned",
-  },
-  stats: {
-    setup: "measured",
-    evidence: "excited",
-    verdict: "thoughtful",
-    punchline: "wry",
-    close: "warmer",
-  },
-  romantic: {
-    setup: "warmer",
-    evidence: "curious",
-    verdict: "thoughtful",
-    punchline: "wry",
-    close: "warmer",
-  },
-  doomer: {
-    setup: "quietly",
-    evidence: "measured",
-    verdict: "resigned",
-    punchline: "dry",
-    close: "quietly",
-  },
-  banter: {
-    setup: "mischievously",
-    evidence: "matter of fact",
-    verdict: "dry",
-    punchline: "sarcastic",
-    close: "measured",
-  },
-};
-
 function tagForBeat(punditId: PunditId, beat: PerformanceBeat, index: number, total: number) {
-  const tags = PERSONA_TAGS[punditId];
+  const tags = getPersonalityProfile(punditId).voice.tags;
   if (index === total - 1) return tags.close;
   if (beat.pace === "slow" || beat.energy <= 2) return "thoughtful";
   if (beat.intent === "evidence" || beat.intent === "explanation") return tags.evidence;
@@ -339,7 +288,7 @@ export function applyPerformanceCadence(
 ): string {
   if (!plan?.length) {
     const base = applyHouseCadence(speakNumbers(displayScript.trim()), speakNumbers(magicSentence));
-    const houseTags = PERSONA_TAGS[punditId];
+    const houseTags = getPersonalityProfile(punditId).voice.tags;
     return base
       .replace("[measured]", `[${houseTags.setup}]`)
       .replace("[slower]", `[${houseTags.evidence}]`)
@@ -644,6 +593,7 @@ export function narrationTakeLimit(requested?: number) {
 }
 
 export type NarrationOptions = {
+  personalityBaseline?: PersonalityBaselineRef;
   maxTakes?: number;
   punditId?: PunditId;
   performancePlan?: readonly PerformanceBeat[];
@@ -667,6 +617,9 @@ export async function narrate(
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("ELEVENLABS_API_KEY missing");
   const punditId = options.punditId ?? "zen";
+  await compilePersonalityBaseline(punditId);
+  if (options.personalityBaseline)
+    await assertNarrationPersonality(punditId, options.personalityBaseline);
   const voiceId = options.voiceId ?? voiceIdFor(punditId, options.voiceCandidate);
 
   const q = await quotaState(apiKey, displayScript.length);
