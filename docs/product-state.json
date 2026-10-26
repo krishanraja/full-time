@@ -272,7 +272,7 @@
     "storedProvenance": "existing harness_runs personality_baseline metadata",
     "freshNarration": "holds missing or mismatched script baseline; existing audio reuse preserved",
     "humanListening": "Reporter B reference remains approved; five other product voices need auditions",
-    "deployed": "not yet verified for this change",
+    "deployed": "PR #99 merged at 43c4ae20846eb6039220ae1fffb2af497a430ba8; Linux production build passed and GitHub reports successful Vercel deployment status; new episode generation not exercised",
     "newGeneration": "not run; no new audio approved"
   }
 }
