@@ -36,7 +36,7 @@ never_publish:
 
 # Full Time: where it is right now
 
-The 26 October personality architecture is implemented on this branch, awaiting Linux CI and merge. The product now owns independent versioned profiles and shared delivery; the writer, judges, persisted script and narrator carry the same exact baseline. Growth imports a pinned product core rather than maintaining a competing definition. No new media was generated, and current ad video remains rejected. See `docs/25-personality-system.md`.
+The 26 October personality architecture is merged in PR #99 at `43c4ae2`; Linux CI passed the production build and the merge commit has a successful Vercel deployment status. The product owns independent versioned profiles and shared delivery; the writer, judges, persisted script and narrator carry the same exact baseline. Growth PRs #10 and #11 are merged, and its active private baseline pins this exact product core. No new episode or media was generated to verify a changed performance, and the current ad video remains rejected. See `docs/25-personality-system.md`. Local proof: 561 tests passed, two skipped, typecheck/docs/integrity passed, audit clean, lint zero errors with six existing warnings.
 
 ## What it is
 
