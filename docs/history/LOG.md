@@ -4,6 +4,10 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-10-26
+
+- reconciled at `975360d`: `NOW.md`. A session closeout had written the frontmatter lists across several lines, which the validator cannot parse; flattened them to one line each with no change of content, and re-stamped `head` and the section date. Personality system (PR #99, #100) was already recorded by the session in `NOW.md`, `docs/25-personality-system.md` and `docs/product-state.json`.
+
 ## 2026-10-23
 
 - rolled from NOW.md: bullets more than 30 days old (the steward's window):

@@ -2,36 +2,15 @@
 repo: krishanraja/full-time
 product: Full Time
 as_of: 2026-10-26
-head: 21a8708
+head: 975360d
 lifecycle: beta
 production_url: https://fulltime.fm
 state_doc: docs/19-release-state.md
 history_log: docs/history/LOG.md
 truth_files: [docs/product-state.json]
-authority_order:
-  [
-    code and migrations and live readback,
-    docs/product-state.json,
-    docs/00-product.md,
-    docs/18-world-class-pundit-system.md,
-    docs/19-release-state.md,
-    the role-specific current guide in docs/README.md,
-    historical and proposed records never direct current work,
-  ]
+authority_order: [code and migrations and live readback, docs/product-state.json, docs/00-product.md, docs/18-world-class-pundit-system.md, docs/19-release-state.md, the role-specific current guide in docs/README.md, historical and proposed records never direct current work]
 steward: https://github.com/krishanraja/ai-harness/blob/main/docs/steward/RUNBOOK.md
-never_publish:
-  [
-    the product name Full Time and the domain fulltime.fm,
-    the sport (football) and any league or competition,
-    any team or player or fixture named in this repo or its commits,
-    the match data providers (API-Football and football-data),
-    the voice vendor (ElevenLabs),
-    the Supabase project id,
-    any credential or environment variable name,
-    the six AI Pundit names,
-    the Google Drive folder id and Drive folder name used for private evidence intake,
-    the names of the evidence-intake secrets,
-  ]
+never_publish: [the product name Full Time and the domain fulltime.fm, the sport (football) and any league or competition, any team or player or fixture named in this repo or its commits, the match data providers (API-Football and football-data), the voice vendor (ElevenLabs), the Supabase project id, any credential or environment variable name, the six AI Pundit names, the Google Drive folder id and Drive folder name used for private evidence intake, the names of the evidence-intake secrets]
 ---
 
 # Full Time: where it is right now
@@ -55,7 +34,7 @@ It is also proof, and that part survives anonymisation. The room_face buyer (`co
 
 Objection it answers: "AI-generated editorial cannot be held to a standard." Here is one held to twenty-five of them, daily, with the ledger open.
 
-## Where it is right now (as of 2026-10-23)
+## Where it is right now (as of 2026-10-26)
 
 <!-- north-star-state {"week_of": "2026-10-26", "week_target": 10, "current": 0, "current_as_of": "2026-10-23", "current_source": "Supabase FullTime listens table (0 rows)", "urgency": 4, "urgency_reason": "at 0% of this week's target"} --> **North Star number: U4, far behind.** Listeners who come back within the same week: 0, against 10 this week, on the way to 10,000 by 31 May 2027. A bold swing every day; work that does not move the number waits.
 
