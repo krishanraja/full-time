@@ -4,6 +4,124 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-10-27
+
+- reconciled at `0bbe707`: `NOW.md`. Head moved from `975360d` (PR #102). NOW.md had grown to 239 lines against a 200 line limit; the opening status narrative is archived verbatim below and replaced by a short summary, and a "What changed recently" bullet was added from the commit record.
+- not changed: no `Last verified` stamp was bumped and `docs/product-state.json` was not touched; the older stamps the digest lists were not re-read against the new code.
+- rolled from NOW.md: the opening status narrative, moved verbatim because NOW.md exceeded its 200 line limit; replaced there by a short summary:
+  > The 26 October personality architecture is merged in PR #99 at `43c4ae2`; Linux CI passed the production build and the merge commit has a successful Vercel deployment status. The product owns independent versioned profiles and shared delivery; the writer, judges, persisted script and narrator carry the same exact baseline. Growth PRs #10 and #11 are merged, and its active private baseline pins this exact product core. No new episode or media was generated to verify a changed performance, and the current ad video remains rejected. See `docs/25-personality-system.md`. Local proof: 561 tests passed, two skipped, typecheck/docs/integrity passed, audit clean, lint zero errors with six existing warnings.
+  >
+  > The five-voice private product audition batch was generated on 26 October after Krish approved the frozen requests: one take each, five calls and exactly 20 observed Runway credits, with no retries or requested substitutions. The private pointer is `_corpus/personality-system/audition-pack-current.json`. All five files decode fully; local transcription preserves the arguments and numbers but flags the Doomer opening and Romantic/Gaffer player-name pronunciation for human listening. Volume-matched review copies preserve the original timings and dynamics; raw recordings and all approved reference hashes remain intact. The provider accepted the exact casting parameters; that is not perceptual voice identification or product approval. All listening verdicts remain unassessed. No profile change, paid editorial review, publication or deployment occurred. The ten non-length script checks passed; short auditions still fail the unchanged full-show length gate by design.
+  >
+  > Owner feedback after listening (26 October): all five casts sound acceptable,
+  > but delivery remains synthetic and insufficiently fluid. Growth should be blunt,
+  > highly comic and designed to travel; the alpha product should deliver quick,
+  > sharp analysis and opinion from one pundit, with less personality exhibition. See
+  > `docs/25-personality-system.md` and the private
+  > `_corpus/personality-system/audition-feedback-current.json` pointer. The earlier
+  > batch's unassessed state is superseded by this dimensional feedback; finished
+  > performances and exact pronunciation are not approved. Krish clarified the
+  > governing sequence in `docs/12-roadmap.md`: reliable solo quality and adoption
+  > first, pundit conversations as a paid expansion later. A solo review is drafted;
+  > the earlier immediate dialogue proposal is superseded. Runtime profiles and
+  > production remain unchanged. Krish confirmed a two-to-three-minute alpha target;
+  > the complete solo draft is linked from `_corpus/personality-system/solo-review-current.json`.
+  > Additional model spend: 0.
+  >
+  > Krish rejected the first full solo draft as stiff written prose that depended
+  > on strong intonation. Krish judged the second spoken draft "much better" and
+  > asked that the improvement be retained for future work. The exact before/after
+  > pair and feedback are linked from `_corpus/personality-system/solo-review-current.json`.
+  > Writing improvement is accepted; first-hearing clarity under plain delivery is
+  > the reusable criterion. Local candidate `product-personas-2026-10-26.2` now
+  > implements that criterion in shared speech `1.1.0`, including anonymised
+  > before/after examples and the same clarity standard in writer and reviewer
+  > requests. No new audio was generated or deployed. Individual profiles,
+  > thresholds and duration gates remain unchanged; the two-to-three-minute target
+  > still needs a coordinated length-policy change. Growth's existing pin is intact.
+  >
+  > Local verification for the spoken-writing candidate: 568 tests passed, two
+  > skipped; typecheck, docs and personality integrity passed; lint has zero errors
+  > and six existing warnings. All ten protected audio reference hashes match.
+  > The app and workflow bundles built, but production packaging stopped because
+  > the Windows checkout lacks the expected `ffmpeg-static/ffmpeg` binary. A full
+  > production build remains unverified; nothing was deployed or generated.
+  >
+  > Local alpha-format candidate `product-personas-2026-10-26.3` supersedes the
+  > uncommitted `.2` candidate above. It retains shared speech `1.1.0` and adds six
+  > profile `1.1.0` files: every new recording must run 120-180 seconds; Reporter
+  > drafts use 420-500 words and the other five use 330-450. Writer, deterministic
+  > length checks, audio checks and publication eligibility agree. Full human audio
+  > reviews must cover the complete stored recording within that duration. Historical
+  > longer reviews stay stored but do not certify the alpha format. Writer and reviewer
+  > no longer impose a joke quota or require character exhibition. Casting, character
+  > specs, rate calibration and numerical safety/quality floors remain unchanged.
+  >
+  > Verification: 596 tests passed, two skipped; typecheck, documentation and
+  > personality integrity passed; lint has zero errors and six existing warnings.
+  > All ten protected audio reference hashes still match. The complete production
+  > command passed in isolated WSL Linux ARM64 with Node 24.19.0 and frozen dependencies,
+  > including ffmpeg packaging and the workflow manifest. Readback matched 344 source
+  > and configuration files and executed the packaged binary; production-platform
+  > deployment still needs its own build and readback. No deployment, publication or paid
+  > generation occurred. These checks establish implementation, not better writing,
+  > natural audio or returning listeners.
+  >
+  > The approved sealed-pack Gaffer retry ran on 27 October after the earlier claim-schema failure. Its claim lab succeeded, but the 314-word writer script was quarantined by numeric-licence and minimum-length gates before paid reviewers. The numeric gate misread spoken fractions that represented licensed xG decimals; independent text review found unsupported match-phase claims, a forced future prediction and written-sounding beat transitions. Two Opus calls used $0.22276125 at local listed rates, with no audio, database write, deployment or publication. Both paid approvals are now spent; exact outputs and the independent verdict are in the private `outputs/fulltime-gaffer-sealed-match-retry` workspace. The claim-type prompt correction has one successful model response, while alpha editorial quality remains unproven.
+  >
+  > The 27 October no-spend local correction now gives the solo writer one connected,
+  > match-specific spoken argument, with no required joke, slogan or next-fixture
+  > forecast. Stored beat fields remain required but should join invisibly. The
+  > review standards now reward that restraint, and the numeric gate accepts exact
+  > pack-licensed "nought point" decimals while continuing to refuse other values.
+  > The accepted Gaffer v2 is the writing reference; it is not a fact-certified
+  > script. At this local-correction stage, no new model, audio, database,
+  > deployment or publication call was made.
+  > Local checks: 605 tests passed, two skipped; typecheck, documentation and persona
+  > integrity passed; lint has zero errors and six existing warnings. The Windows
+  > client, SSR and Nitro bundles built, but production packaging again stopped at
+  > the missing `ffmpeg-static/ffmpeg` binary in this checkout. That partial build
+  > does not establish production readiness.
+  >
+  > Krish then approved one exact private Gaffer diagnostic on the same sealed pack.
+  > It completed on 27 October with 16 paid Messages calls and $0.4138398 exact
+  > local model usage, below the $3 ceiling; no repair or retry. The 385-word script
+  > passed all eleven deterministic gates, including the earlier number and length
+  > failures, but was quarantined by factual entailment, insight (3/5) and restraint
+  > (3/5). The claim lab invented that both the late scorer and assister were
+  > substitutes; the writer repeated it and the reviewer caught it. Independently,
+  > the script and reviewer both used an after-match six-point table snapshot as if
+  > it described both teams before kickoff. The piece repeats a generic xG/finishing
+  > verdict, announces internal turns and buries Coventry's 11-inside-box-shots,
+  > one-on-target observation. Exact private receipt and text review are in
+  > `outputs/fulltime-gaffer-solo-contract-diagnostic`. This approval is exhausted;
+  > no audio, database write, deployment or publication occurred. The revised
+  > contract improved mechanical passage on one match, not alpha editorial quality
+  > or returning listeners.
+  >
+  > After the run, a no-spend local semantic correction added claim and script
+  > checks for post-match table figures narrated as pre-match context and for a
+  > goal described as substitute-to-substitute without two incoming substitution
+  > events. Prompt and factual-review instructions now call out the same timestamp
+  > and player-role boundaries, and the writer is told to develop a specific
+  > match question without announcing the stored counterpoint or receipt fields.
+  > Synthetic regression tests and a private replay of the exact quarantined
+  > script confirm the two new checks catch this failure. No new model or audio
+  > call has tested whether the revised instructions produce better writing.
+  > Local checks after this correction: 609 tests passed, two skipped; typecheck,
+  > documentation and persona integrity passed; lint had zero errors and six
+  > existing warnings. Client, SSR, Nitro and workflow bundles built on Windows,
+  > but final production packaging again stopped at the missing
+  > `ffmpeg-static/ffmpeg` binary in this checkout.
+  >
+  > A separate 334-word, no-spend human-written Gaffer candidate now puts that
+  > specific question into one spoken review: Spurs responded at one-all, while
+  > Coventry still took 11 shots from inside the box and put only one on target.
+  > It keeps the quality of those chances unresolved and avoids the paid script's
+  > table and substitute errors. The exact private draft and source audit are in
+  > `outputs/fulltime-gaffer-solo-review-v3`. It is a first-hearing candidate,
+  > not owner-accepted writing, generated runtime output or audio proof.
+
 ## 2026-10-26
 
 - reconciled at `975360d`: `NOW.md`. A session closeout had written the frontmatter lists across several lines, which the validator cannot parse; flattened them to one line each with no change of content, and re-stamped `head` and the section date. Personality system (PR #99, #100) was already recorded by the session in `NOW.md`, `docs/25-personality-system.md` and `docs/product-state.json`.
