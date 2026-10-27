@@ -1,7 +1,7 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-10-26
+as_of: 2026-10-27
 head: 975360d
 lifecycle: beta
 production_url: https://fulltime.fm
@@ -16,6 +16,117 @@ never_publish: [the product name Full Time and the domain fulltime.fm, the sport
 # Full Time: where it is right now
 
 The 26 October personality architecture is merged in PR #99 at `43c4ae2`; Linux CI passed the production build and the merge commit has a successful Vercel deployment status. The product owns independent versioned profiles and shared delivery; the writer, judges, persisted script and narrator carry the same exact baseline. Growth PRs #10 and #11 are merged, and its active private baseline pins this exact product core. No new episode or media was generated to verify a changed performance, and the current ad video remains rejected. See `docs/25-personality-system.md`. Local proof: 561 tests passed, two skipped, typecheck/docs/integrity passed, audit clean, lint zero errors with six existing warnings.
+
+The five-voice private product audition batch was generated on 26 October after Krish approved the frozen requests: one take each, five calls and exactly 20 observed Runway credits, with no retries or requested substitutions. The private pointer is `_corpus/personality-system/audition-pack-current.json`. All five files decode fully; local transcription preserves the arguments and numbers but flags the Doomer opening and Romantic/Gaffer player-name pronunciation for human listening. Volume-matched review copies preserve the original timings and dynamics; raw recordings and all approved reference hashes remain intact. The provider accepted the exact casting parameters; that is not perceptual voice identification or product approval. All listening verdicts remain unassessed. No profile change, paid editorial review, publication or deployment occurred. The ten non-length script checks passed; short auditions still fail the unchanged full-show length gate by design.
+
+Owner feedback after listening (26 October): all five casts sound acceptable,
+but delivery remains synthetic and insufficiently fluid. Growth should be blunt,
+highly comic and designed to travel; the alpha product should deliver quick,
+sharp analysis and opinion from one pundit, with less personality exhibition. See
+`docs/25-personality-system.md` and the private
+`_corpus/personality-system/audition-feedback-current.json` pointer. The earlier
+batch's unassessed state is superseded by this dimensional feedback; finished
+performances and exact pronunciation are not approved. Krish clarified the
+governing sequence in `docs/12-roadmap.md`: reliable solo quality and adoption
+first, pundit conversations as a paid expansion later. A solo review is drafted;
+the earlier immediate dialogue proposal is superseded. Runtime profiles and
+production remain unchanged. Krish confirmed a two-to-three-minute alpha target;
+the complete solo draft is linked from `_corpus/personality-system/solo-review-current.json`.
+Additional model spend: 0.
+
+Krish rejected the first full solo draft as stiff written prose that depended
+on strong intonation. Krish judged the second spoken draft "much better" and
+asked that the improvement be retained for future work. The exact before/after
+pair and feedback are linked from `_corpus/personality-system/solo-review-current.json`.
+Writing improvement is accepted; first-hearing clarity under plain delivery is
+the reusable criterion. Local candidate `product-personas-2026-10-26.2` now
+implements that criterion in shared speech `1.1.0`, including anonymised
+before/after examples and the same clarity standard in writer and reviewer
+requests. No new audio was generated or deployed. Individual profiles,
+thresholds and duration gates remain unchanged; the two-to-three-minute target
+still needs a coordinated length-policy change. Growth's existing pin is intact.
+
+Local verification for the spoken-writing candidate: 568 tests passed, two
+skipped; typecheck, docs and personality integrity passed; lint has zero errors
+and six existing warnings. All ten protected audio reference hashes match.
+The app and workflow bundles built, but production packaging stopped because
+the Windows checkout lacks the expected `ffmpeg-static/ffmpeg` binary. A full
+production build remains unverified; nothing was deployed or generated.
+
+Local alpha-format candidate `product-personas-2026-10-26.3` supersedes the
+uncommitted `.2` candidate above. It retains shared speech `1.1.0` and adds six
+profile `1.1.0` files: every new recording must run 120-180 seconds; Reporter
+drafts use 420-500 words and the other five use 330-450. Writer, deterministic
+length checks, audio checks and publication eligibility agree. Full human audio
+reviews must cover the complete stored recording within that duration. Historical
+longer reviews stay stored but do not certify the alpha format. Writer and reviewer
+no longer impose a joke quota or require character exhibition. Casting, character
+specs, rate calibration and numerical safety/quality floors remain unchanged.
+
+Verification: 596 tests passed, two skipped; typecheck, documentation and
+personality integrity passed; lint has zero errors and six existing warnings.
+All ten protected audio reference hashes still match. The complete production
+command passed in isolated WSL Linux ARM64 with Node 24.19.0 and frozen dependencies,
+including ffmpeg packaging and the workflow manifest. Readback matched 344 source
+and configuration files and executed the packaged binary; production-platform
+deployment still needs its own build and readback. No deployment, publication or paid
+generation occurred. These checks establish implementation, not better writing,
+natural audio or returning listeners.
+
+The approved sealed-pack Gaffer retry ran on 27 October after the earlier claim-schema failure. Its claim lab succeeded, but the 314-word writer script was quarantined by numeric-licence and minimum-length gates before paid reviewers. The numeric gate misread spoken fractions that represented licensed xG decimals; independent text review found unsupported match-phase claims, a forced future prediction and written-sounding beat transitions. Two Opus calls used $0.22276125 at local listed rates, with no audio, database write, deployment or publication. Both paid approvals are now spent; exact outputs and the independent verdict are in the private `outputs/fulltime-gaffer-sealed-match-retry` workspace. The claim-type prompt correction has one successful model response, while alpha editorial quality remains unproven.
+
+The 27 October no-spend local correction now gives the solo writer one connected,
+match-specific spoken argument, with no required joke, slogan or next-fixture
+forecast. Stored beat fields remain required but should join invisibly. The
+review standards now reward that restraint, and the numeric gate accepts exact
+pack-licensed "nought point" decimals while continuing to refuse other values.
+The accepted Gaffer v2 is the writing reference; it is not a fact-certified
+script. At this local-correction stage, no new model, audio, database,
+deployment or publication call was made.
+Local checks: 605 tests passed, two skipped; typecheck, documentation and persona
+integrity passed; lint has zero errors and six existing warnings. The Windows
+client, SSR and Nitro bundles built, but production packaging again stopped at
+the missing `ffmpeg-static/ffmpeg` binary in this checkout. That partial build
+does not establish production readiness.
+
+Krish then approved one exact private Gaffer diagnostic on the same sealed pack.
+It completed on 27 October with 16 paid Messages calls and $0.4138398 exact
+local model usage, below the $3 ceiling; no repair or retry. The 385-word script
+passed all eleven deterministic gates, including the earlier number and length
+failures, but was quarantined by factual entailment, insight (3/5) and restraint
+(3/5). The claim lab invented that both the late scorer and assister were
+substitutes; the writer repeated it and the reviewer caught it. Independently,
+the script and reviewer both used an after-match six-point table snapshot as if
+it described both teams before kickoff. The piece repeats a generic xG/finishing
+verdict, announces internal turns and buries Coventry's 11-inside-box-shots,
+one-on-target observation. Exact private receipt and text review are in
+`outputs/fulltime-gaffer-solo-contract-diagnostic`. This approval is exhausted;
+no audio, database write, deployment or publication occurred. The revised
+contract improved mechanical passage on one match, not alpha editorial quality
+or returning listeners.
+
+After the run, a no-spend local semantic correction added claim and script
+checks for post-match table figures narrated as pre-match context and for a
+goal described as substitute-to-substitute without two incoming substitution
+events. Prompt and factual-review instructions now call out the same timestamp
+and player-role boundaries, and the writer is told to develop a specific
+match question without announcing the stored counterpoint or receipt fields.
+Synthetic regression tests and a private replay of the exact quarantined
+script confirm the two new checks catch this failure. No new model or audio
+call has tested whether the revised instructions produce better writing.
+Local checks after this correction: 609 tests passed, two skipped; typecheck,
+documentation and persona integrity passed; lint had zero errors and six
+existing warnings. Client, SSR, Nitro and workflow bundles built on Windows,
+but final production packaging again stopped at the missing
+`ffmpeg-static/ffmpeg` binary in this checkout.
+
+A separate 334-word, no-spend human-written Gaffer candidate now puts that
+specific question into one spoken review: Spurs responded at one-all, while
+Coventry still took 11 shots from inside the box and put only one on target.
+It keeps the quality of those chances unresolved and avoids the paid script's
+table and substitute errors. The exact private draft and source audit are in
+`outputs/fulltime-gaffer-solo-review-v3`. It is a first-hearing candidate,
+not owner-accepted writing, generated runtime output or audio proof.
 
 ## What it is
 
@@ -34,9 +145,17 @@ It is also proof, and that part survives anonymisation. The room_face buyer (`co
 
 Objection it answers: "AI-generated editorial cannot be held to a standard." Here is one held to twenty-five of them, daily, with the ledger open.
 
-## Where it is right now (as of 2026-10-26)
+## Where it is right now (as of 2026-10-27)
 
-<!-- north-star-state {"week_of": "2026-10-26", "week_target": 10, "current": 0, "current_as_of": "2026-10-23", "current_source": "Supabase FullTime listens table (0 rows)", "urgency": 4, "urgency_reason": "at 0% of this week's target"} --> **North Star number: U4, far behind.** Listeners who come back within the same week: 0, against 10 this week, on the way to 10,000 by 31 May 2027. A bold swing every day; work that does not move the number waits.
+<!-- north-star-state {"week_of": "2026-10-26", "week_target": 10, "current": 0, "current_as_of": "2026-10-27", "current_source": "Supabase FullTime listens HEAD count=exact, Content-Range */0", "urgency": 4, "urgency_reason": "at 0% of this week's target"} --> **North Star number: U4, far behind.** Listeners who come back within the same week: 0, against 10 this week, on the way to 10,000 by 31 May 2027. A bold swing every day; work that does not move the number waits.
+
+**Alpha sprint handoff:** `docs/26-alpha-readiness-handoff.md` records Krish's
+solo spoken-review decision, the failed paid diagnostic, the revised local
+gates, the two API feeds and the GitHub collection failure. The two newest
+scheduled intake runs were partial with no Drive delivery. Restoring a
+corroborated sealed Premier League window and proving adapter consumption is
+the next action before another editorial quality run. This dated observation
+must be refreshed from GitHub and the product when work resumes.
 
 - **Evidence intake v2 activated and production-verified (2026-10-20):** PRs #88-90 merged; the Vercel adapter is enabled with sensitive server-only Drive credentials. Normal scheduled-window execution 39407984999 verified ten matches, 394 counted facts/events, both Drive hashes and the actual deployed match loader: 116 measurements consumed and four disputed observations withheld with their dependent calculations. No model calls, publication or database writes. Runtime proof, historical replay, schedule and rollback are in `docs/premier-league-evidence-actions.md`. Future intake runs also verify the live product; the existing backup schedule remains enabled.
 
@@ -78,7 +197,7 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 
 ## What is next and what is waiting on Krish
 
-- Next for the evidence intake: watch the first real scheduled trigger (configured for Thursday 22 October, 08:00 London) complete with both Drive readbacks and the live product check, then Krish disables the old ChatGPT schedule (`docs/premier-league-evidence-actions.md`, "Cutover"). Waiting on Krish: whether and when these files ever feed the product; the doc says that needs separate tests and permission.
+- Next for the evidence intake and alpha: diagnose scheduled failures `39781515115` and `40195599277` (API-Football fixture schema/provider errors and missing football-data.org details), restore two-source corroboration, verify both Drive hashes and live adapter consumption, then use an eligible sealed Premier League pack for one sharp solo review. The adapter was enabled and consumed a historical window on 20 October; the recent partial windows were withheld. See `docs/26-alpha-readiness-handoff.md`.
 - Next for the beta: merge and deploy the pilot-beta documentation, open fulltime.fm with `?utm_source=beta` once and confirm PostHog records the tag, then Krish invites the first testers (`docs/22-vision-and-beta.md`).
 - Waiting on Krish: the Reporter RSS feed's `itunes:owner` email is still the Mindmake address chosen on 2026-10-03 (`src/lib/pundit/reporter-rss.ts`). Whether krish@fulltime.fm, now the product inbox, replaces it there is his call. The push-notification sender in `src/lib/api/push-fanout.server.ts` defaults to hello@fulltime.app, a different domain.
 - Next, from the 2026-10-02 build: a landscape layout for phones held sideways (proposed in PR #74, not built), and a check on physical iOS Safari and Android devices.
@@ -90,8 +209,8 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 - Next: the 00:15 UTC ingest against the two 2026-09-21 migrations is the first evidence for the league table, the drift ledger and the second expected-goals opinion; nothing about them is proven until it runs (`docs/product-state.json`, `currentGaps.Pipeline`).
 - Waiting on Krish: the licence basis for the standings endpoint is still unrecorded in `release_signoffs`, and that table's gate check constraint has no slot for a data-rights basis; recording it needs either a `gate='legal'` row whose notes carry it or a migration widening the enum (`docs/product-state.json`, `currentGaps.Pipeline`).
 - Waiting on Krish: whether the OpenAI judge floor translation and the `factual_entailment` advisory posture should extend past 2026-10-01 if the OpenAI bench keeps judging, or were only ever meant to bridge the Anthropic cap. The code already expires both the moment `PUNDIT_JUDGE_MODEL` points back at Anthropic; nothing forces that switch to happen on schedule.
-- Next for the personality core: prepare short controlled product auditions under separate generation approval, preserving Reporter B and comparing all non-target profiles. This work improves consistency of the six performances that must earn the morning ritual; it does not prove new listener retention or approve any new recording.
-- North Star check (2026-10-26): holds.
+- Next for the personality core: take Krish's first-hearing judgment on the 334-word Gaffer v3 candidate and use it to sharpen the written benchmark; then assess the revised runtime contract on a held-out match before proposing any further paid generation. The current semantic checks catch the frozen double-substitute and pre-match-table errors; they do not prove broader player-role or temporal understanding. A further paid run needs a new exact approval here in chat; no audio or release is authorised.
+- North Star check (2026-10-27): holds.
 
 ## Read next
 

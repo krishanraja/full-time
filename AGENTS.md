@@ -14,6 +14,11 @@ This repository's North Star is [`docs/NORTH_STAR.md`](docs/NORTH_STAR.md): an a
 
 Read `NOW.md` first.
 
+For alpha product work, read `docs/26-alpha-readiness-handoff.md` immediately
+after `NOW.md`. It records Krish's solo-pundit decision, the latest editorial
+failure, the two-feed intake state, and the next verified actions. Recheck its
+dated external observations before treating them as current.
+
 Rules: `docs/19-release-state.md`.
 
 ## Pundit personality and creative continuity

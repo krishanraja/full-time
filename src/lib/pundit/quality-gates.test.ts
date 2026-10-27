@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
+import { PUNDIT_IDS } from "./types";
 import { evaluateAudioQuality } from "./audio-quality";
 import { EVALUATION_SCENARIOS, validateEvaluationManifest } from "./evaluation";
 
 describe("launch evaluation gates", () => {
-  it("admits a four-minute Reporter while preserving other duration and safety gates", () => {
+  it.each([...PUNDIT_IDS])("enforces measured alpha duration and safety for %s", (punditId) => {
     const metrics = {
       integratedLufs: -16,
       truePeakDb: -1.2,
-      durationSec: 240,
-      speakingRateWpm: 192,
+      durationSec: 150,
+      speakingRateWpm: punditId === "zen" ? 192 : 150,
       pauseVariationMs: 120,
       dynamicRangeDb: 4,
       properNamesVerified: 10,
@@ -23,13 +24,28 @@ describe("launch evaluation gates", () => {
       overactedPunchlines: false,
       synthesisArtifacts: false,
     };
-    expect(evaluateAudioQuality(metrics, "zen").passed).toBe(true);
-    expect(evaluateAudioQuality({ ...metrics, speakingRateWpm: 119 }, "zen").passed).toBe(false);
-    expect(evaluateAudioQuality({ ...metrics, speakingRateWpm: 211 }, "zen").passed).toBe(false);
-    expect(evaluateAudioQuality(metrics, "gaffer").passed).toBe(false);
-    expect(evaluateAudioQuality({ ...metrics, durationSec: 179 }, "zen").passed).toBe(false);
-    expect(evaluateAudioQuality({ ...metrics, durationSec: 361 }, "zen").passed).toBe(false);
-    expect(evaluateAudioQuality({ ...metrics, numbersVerified: false }, "zen").passed).toBe(false);
+    expect(evaluateAudioQuality(metrics, punditId).passed).toBe(true);
+    for (const durationSec of [120, 180]) {
+      expect(evaluateAudioQuality({ ...metrics, durationSec }, punditId).passed).toBe(true);
+    }
+    for (const durationSec of [119.99, 180.01, 199, 360, NaN, Infinity]) {
+      const result = evaluateAudioQuality({ ...metrics, durationSec }, punditId);
+      expect(result.passed).toBe(false);
+      expect(result.failures).toContain("Narration must run for 2 to 3 minutes.");
+    }
+    expect(evaluateAudioQuality({ ...metrics, speakingRateWpm: 211 }, punditId).passed).toBe(false);
+    expect(evaluateAudioQuality({ ...metrics, numbersVerified: false }, punditId).passed).toBe(
+      false,
+    );
+    expect(
+      evaluateAudioQuality({ ...metrics, performanceProfileVerified: false }, punditId).passed,
+    ).toBe(false);
+    expect(evaluateAudioQuality({ ...metrics, transcriptVerified: false }, punditId).passed).toBe(
+      false,
+    );
+    expect(evaluateAudioQuality({ ...metrics, synthesisArtifacts: true }, punditId).passed).toBe(
+      false,
+    );
   });
   it("requires exactly 60 matches and produces 360 scripts", () => {
     const matches = Array.from({ length: 60 }, (_, index) => ({
@@ -47,7 +63,7 @@ describe("launch evaluation gates", () => {
     const result = evaluateAudioQuality({
       integratedLufs: -16,
       truePeakDb: -1.2,
-      durationSec: 360,
+      durationSec: 150,
       speakingRateWpm: 150,
       pauseVariationMs: 120,
       dynamicRangeDb: 4,

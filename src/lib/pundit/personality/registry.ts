@@ -1,13 +1,13 @@
 import { z } from "zod";
 import { sha256Hex } from "../hash.ts";
 import { PUNDIT_IDS, type PunditId, type PunditSpec } from "../types.ts";
-import sharedData from "./shared/1.0.0.json" with { type: "json" };
-import reporter from "./profiles/zen/1.0.0.json" with { type: "json" };
-import gaffer from "./profiles/gaffer/1.0.0.json" with { type: "json" };
-import numbers from "./profiles/stats/1.0.0.json" with { type: "json" };
-import romantic from "./profiles/romantic/1.0.0.json" with { type: "json" };
-import doomer from "./profiles/doomer/1.0.0.json" with { type: "json" };
-import windup from "./profiles/banter/1.0.0.json" with { type: "json" };
+import sharedData from "./shared/1.1.0.json" with { type: "json" };
+import reporter from "./profiles/zen/1.1.0.json" with { type: "json" };
+import gaffer from "./profiles/gaffer/1.1.0.json" with { type: "json" };
+import numbers from "./profiles/stats/1.1.0.json" with { type: "json" };
+import romantic from "./profiles/romantic/1.1.0.json" with { type: "json" };
+import doomer from "./profiles/doomer/1.1.0.json" with { type: "json" };
+import windup from "./profiles/banter/1.1.0.json" with { type: "json" };
 import releaseData from "./release.json" with { type: "json" };
 
 const nonempty = z.string().min(1);
@@ -73,6 +73,16 @@ export const SharedPersonalitySchema = z
       .strict(),
     productSpeech: nonempty,
     crossSurfaceSpeech: nonempty,
+    spokenWriting: z
+      .object({
+        referenceUse: nonempty,
+        examples: z
+          .array(z.object({ written: nonempty, spoken: nonempty, lesson: nonempty }).strict())
+          .min(1),
+        reviewStandard: nonempty,
+      })
+      .strict()
+      .optional(),
     humourChecks: strings,
     sourceRefs: strings,
   })

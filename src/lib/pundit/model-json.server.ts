@@ -123,6 +123,50 @@ type ContentBlock = {
  *  the judges keep separate entries even when they send the same pack. */
 const MAX_CACHED_CONTEXT_BLOCKS = 3;
 
+type DiagnosticBudget = {
+  ceilingUsd: number;
+  maxCalls: number;
+  maxInputTokens: number;
+  reservedUsd: number;
+  calls: number;
+  closed: boolean;
+};
+
+let diagnosticBudget: DiagnosticBudget | null = null;
+
+/** Opt-in private diagnostic only. A whole claim/writer/judge sequence shares
+ * one reservation ledger, including failed or ambiguous HTTP requests. */
+export async function withDiagnosticBudget<T>(
+  limits: Pick<DiagnosticBudget, "ceilingUsd" | "maxCalls" | "maxInputTokens">,
+  work: () => Promise<T>,
+): Promise<{ result: T; reservedUsd: number; calls: number }> {
+  if (diagnosticBudget || activeRequests || permitQueue.length) {
+    throw new Error("A diagnostic budget cannot overlap another model run.");
+  }
+  if (
+    !Number.isFinite(limits.ceilingUsd) || limits.ceilingUsd <= 0 ||
+    !Number.isSafeInteger(limits.maxCalls) || limits.maxCalls <= 0 ||
+    !Number.isSafeInteger(limits.maxInputTokens) || limits.maxInputTokens <= 0
+  ) {
+    throw new Error("Diagnostic budget limits must be positive and finite.");
+  }
+  const budget: DiagnosticBudget = { ...limits, reservedUsd: 0, calls: 0, closed: false };
+  diagnosticBudget = budget;
+  try {
+    const result = await withConcurrency(1, work);
+    return { result, reservedUsd: budget.reservedUsd, calls: budget.calls };
+  } catch (error) {
+    // A Promise.all of judges can reject while other calls still wait for the
+    // permit. Deny those queued calls and keep the guard installed until every
+    // in-flight modelJson has observed it.
+    budget.closed = true;
+    throw error;
+  } finally {
+    while (activeRequests || permitQueue.length) await sleep(10);
+    diagnosticBudget = null;
+  }
+}
+
 export function requestContent(cachedContext: readonly unknown[], user: string): ContentBlock[] {
   const cached: ContentBlock[] = cachedContext.map((segment) => ({
     type: "text",
@@ -200,16 +244,74 @@ async function callAnthropic(
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
     },
-    body: JSON.stringify({
-      model: input.model,
-      max_tokens: input.maxTokens,
-      // The system prompt is the same bytes on every call of a given kind,
-      // so it is the outermost thing worth caching.
-      system: [{ type: "text", text: input.system, cache_control: { type: "ephemeral" } }],
-      messages: [{ role: "user", content: requestContent(cachedContext, input.user) }],
-    }),
+    body: JSON.stringify(anthropicPayload(input, cachedContext)),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS.anthropic),
   });
+}
+
+function anthropicPayload(
+  input: { system: string; user: string; model: string; maxTokens: number },
+  cachedContext: readonly unknown[],
+) {
+  return {
+    model: input.model,
+    max_tokens: input.maxTokens,
+    // The token-count preflight and paid request must share these exact bytes.
+    system: [{ type: "text", text: input.system, cache_control: { type: "ephemeral" } }],
+    messages: [{ role: "user", content: requestContent(cachedContext, input.user) }],
+  };
+}
+
+const DIAGNOSTIC_PRICES: Record<string, { input: number; output: number }> = {
+  "claude-opus-4-8": { input: 5, output: 25 },
+  "claude-sonnet-4-6": { input: 3, output: 15 },
+};
+
+async function reserveDiagnosticCall(
+  input: { system: string; user: string; model: string; maxTokens: number },
+  cachedContext: readonly unknown[],
+): Promise<void> {
+  const budget = diagnosticBudget;
+  if (!budget) return;
+  if (budget.closed) throw new Error("Diagnostic run stopped after an earlier failure.");
+  const price = DIAGNOSTIC_PRICES[input.model];
+  if (!price || !Number.isSafeInteger(input.maxTokens) || input.maxTokens <= 0) {
+    throw new Error("Diagnostic budget accepts only the pinned Claude models and positive token limits.");
+  }
+  if (budget.calls >= budget.maxCalls) throw new Error("Diagnostic model call limit reached.");
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
+  const { max_tokens: _maxTokens, ...countPayload } = anthropicPayload(input, cachedContext);
+  const response = await fetch("https://api.anthropic.com/v1/messages/count_tokens", {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(countPayload),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS.anthropic),
+  });
+  if (!response.ok) throw new Error(`Diagnostic token count failed (${response.status}).`);
+  const counted = (await response.json()) as { input_tokens?: unknown };
+  const inputTokens = counted.input_tokens;
+  if (!Number.isSafeInteger(inputTokens) || Number(inputTokens) < 0) {
+    throw new Error("Diagnostic token count returned an invalid value.");
+  }
+  if (Number(inputTokens) > budget.maxInputTokens) {
+    throw new Error(`Diagnostic input exceeds ${budget.maxInputTokens} tokens.`);
+  }
+  // All input is priced as a fresh five-minute cache write, including text
+  // normally billed at the lower uncached rate. The 10% margin covers a small
+  // provider count/billing difference; output reserves the full max_tokens.
+  const reserved =
+    (Math.ceil(Number(inputTokens) * 1.1) * price.input * 1.25 + input.maxTokens * price.output) /
+    1_000_000;
+  if (budget.reservedUsd + reserved > budget.ceilingUsd + 1e-9) {
+    throw new Error("Diagnostic dollar ceiling would be exceeded by the next model call.");
+  }
+  budget.reservedUsd += reserved;
+  budget.calls += 1;
 }
 
 async function callOpenAi(
@@ -381,10 +483,12 @@ export async function modelJson<T>(input: {
   const release = await acquirePermit();
   try {
     let lastError: unknown;
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    const maxAttempts = diagnosticBudget ? 1 : 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       // Checked before every request, including retries, so a loop that keeps
       // failing cannot keep spending.
       assertWithinBudget();
+      await reserveDiagnosticCall(input, cachedContext);
       const startedAt = Date.now();
       const response =
         provider === "openai"
@@ -398,7 +502,7 @@ export async function modelJson<T>(input: {
         lastError = new Error(
           `${PROVIDER_LABEL[provider]} ${response.status}: ${body.slice(0, 180)}`,
         );
-        if ([429, 500, 502, 503, 529].includes(response.status) && attempt < 3) {
+        if ([429, 500, 502, 503, 529].includes(response.status) && attempt < maxAttempts) {
           await sleep(attempt * 2_000);
           continue;
         }
@@ -446,10 +550,15 @@ export async function modelJson<T>(input: {
       } catch (error: unknown) {
         lastError = error;
         if (error instanceof Error && error.message.includes("cut off at the")) throw error;
-        if (attempt < 3) await sleep(300 * attempt);
+        if (attempt < maxAttempts) await sleep(300 * attempt);
       }
     }
     throw lastError instanceof Error ? lastError : new Error("Model JSON generation failed.");
+  } catch (error) {
+    // Mark failure before releasing the permit: otherwise a queued judge can
+    // start its next paid request before Promise.all reaches the outer guard.
+    if (diagnosticBudget) diagnosticBudget.closed = true;
+    throw error;
   } finally {
     release();
   }

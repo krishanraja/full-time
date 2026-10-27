@@ -28,6 +28,8 @@ For scripts, voice performance and growth audio selection, read the [spoken prod
 
 For persona ownership, versioning and how creative feedback reaches the real pipeline, read the [product personality system](./25-personality-system.md).
 
+For the current alpha sprint, read the [alpha readiness handoff](./26-alpha-readiness-handoff.md) before changing the writer or evidence intake. It connects the product decision, the latest run evidence, and the next actions; `NOW.md` remains the current status router.
+
 | Need                          | Read first                                               | Then                                                                                   |
 | ----------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | Know where it is right now    | [`../NOW.md`](../NOW.md)                                 | [`19-release-state.md`](./19-release-state.md), [`product-state.json`](./product-state.json) |
@@ -70,6 +72,9 @@ For persona ownership, versioning and how creative feedback reaches the real pip
 | [`21-go-to-market-agent.md`](./21-go-to-market-agent.md)               | Current and binding              | Autonomous marketing and sales briefing, proof map, objections, and action limits      |
 | [`22-vision-and-beta.md`](./22-vision-and-beta.md)                     | Current                          | Why Full Time exists, where it is going, the pilot beta, feedback, and the December release bar |
 | [`23-answer-hub.md`](./23-answer-hub.md)                               | Current                          | The `/answers` hub: quality bar, question sourcing, weekly brief, and how to add a post |
+| [`24-listening-standard.md`](./24-listening-standard.md)               | Current                          | Spoken writing, audition, recording and complete listening review bar                 |
+| [`25-personality-system.md`](./25-personality-system.md)               | Current                          | Versioned product persona ownership, voice continuity and growth boundary            |
+| [`26-alpha-readiness-handoff.md`](./26-alpha-readiness-handoff.md)     | Current continuation route       | Alpha decisions, latest failed evidence intake, editorial limits and next sequence   |
 | [`premier-league-evidence-actions.md`](./premier-league-evidence-actions.md) | Current, internal only | Scheduled private evidence intake to Drive: cadence, secrets by name, failure modes, cutover |
 | [`history/LOG.md`](./history/LOG.md)                                   | Append-only log                  | Dated record of reconciliations, moves, and archived documents; never describes current behavior |
 

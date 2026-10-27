@@ -62,12 +62,12 @@ export function evaluateAudioQuality(metrics: AudioQualityMetrics, punditId?: Pu
     failures.push("Delivery dynamic range is too narrow.");
   }
   const duration = spokenDurationRange(punditId);
-  if (metrics.durationSec < duration.min || metrics.durationSec > duration.max) {
-    failures.push(
-      punditId === "zen"
-        ? "Reporter narration must run for three to six minutes."
-        : "Narration must run for five to eight minutes.",
-    );
+  if (
+    !Number.isFinite(metrics.durationSec) ||
+    metrics.durationSec < duration.min ||
+    metrics.durationSec > duration.max
+  ) {
+    failures.push(`Narration must run for ${duration.min / 60} to ${duration.max / 60} minutes.`);
   }
   const pronunciationRate =
     metrics.properNamesTotal === 0 ? 1 : metrics.properNamesVerified / metrics.properNamesTotal;

@@ -1,3 +1,6 @@
+import { spokenWordRange } from "./spoken-length";
+import type { PunditId } from "./types";
+
 /** A fake model, for exercising the pipeline without paying for it.
  *
  *  Most of the faults this pipeline has had were structural rather than
@@ -88,9 +91,10 @@ function stubBeatText(
   return `${words.join(" ").replace(/[.,]$/, "")}.`;
 }
 
-function stubDraft(cachedContext: readonly unknown[], user: string) {
+function stubDraft(cachedContext: readonly unknown[], user: string, punditId: PunditId) {
   const { homeTeam, awayTeam } = licensedMaterial(cachedContext);
-  const range = JSON.parse(user).outputContract?.words ?? [750, 1100];
+  const defaults = spokenWordRange(punditId);
+  const range = JSON.parse(user).outputContract?.words ?? [defaults.min, defaults.max];
   const wordsPerBeat = Math.floor((range[0] + range[1]) / 20);
   // The writer is handed short claim references; echo the first one back so the
   // thesis points at something that exists.
@@ -132,7 +136,8 @@ function stubClaims(cachedContext: readonly unknown[]) {
  *  programming error rather than something to guess at. */
 export function stubResponse(label: string, cachedContext: readonly unknown[], user: string) {
   if (label === "claim-lab") return stubClaims(cachedContext);
-  if (label.startsWith("writer:")) return stubDraft(cachedContext, user);
+  if (label.startsWith("writer:"))
+    return stubDraft(cachedContext, user, label.slice("writer:".length) as PunditId);
   if (label.startsWith("judge:")) return { score: 5, failedBeats: [] };
   if (label.startsWith("hard-judge:")) return { passed: true, failedBeats: [] };
   throw new Error(`The stub model has no canned response for "${label}".`);

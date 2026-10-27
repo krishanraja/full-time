@@ -26,10 +26,9 @@ describe("six complete pundit specifications", () => {
 /** Six pundits share one evidence pack and one claim set. Nothing made them
  *  diverge: preferredClaimTypes was defined for all six and read by nothing, so
  *  on 2026-09-04 all six built on the same mechanism and five of six were failed
- *  for a truism. Divergence needs two things, and both are pinned here: the
- *  preferences have to actually differ, and the writer has to be told to use
- *  them. */
-describe("six pundits that can write six different shows", () => {
+ *  for a truism. Each solo voice keeps its own lens, while the alpha writer
+ *  still chooses the clearest match argument for the listener. */
+describe("six distinct lenses for solo reviews", () => {
   it("gives the six meaningfully different claim preferences", () => {
     const lists = PUNDIT_IDS.map((id) => getPunditSpec(id).preferredClaimTypes);
     for (const list of lists) expect(list.length).toBeGreaterThan(2);
@@ -44,8 +43,8 @@ describe("six pundits that can write six different shows", () => {
     const source = await import("node:fs").then((fs) =>
       fs.readFileSync("src/lib/pundit/pundit-generator.server.ts", "utf8"),
     );
-    expect(source).toContain("preferredClaimTypes: build your argument on claims of those types");
-    expect(source).toContain("the one every other pundit is already taking");
+    expect(source).toContain("Use the selected punditSpec.preferredClaimTypes to find a useful angle");
+    expect(source).toContain("Do not sacrifice the clearest reading of the match");
   });
 });
 

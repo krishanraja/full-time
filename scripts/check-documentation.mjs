@@ -89,9 +89,10 @@ for (const path of currentDocs) {
   // 2026-10-16 is the pilot beta, the December release target and its bar, and
   // the feedback inbox.
   // 2026-10-21 is the answer hub, the favicon set and the social card.
+  // 2026-10-26 records solo analysis before adoption-gated paid conversation.
   requireText(
     path,
-    /\*\*Last (?:reviewed|verified):\*\* 2026-(?:0(?:8-11|9-04|9-07|9-21|9-22|9-27)|10-(?:02|16|21))/,
+    /\*\*Last (?:reviewed|verified):\*\* 2026-(?:0(?:8-11|9-04|9-07|9-21|9-22|9-27)|10-(?:02|16|21|26))/,
     "review date is stale",
   );
 }

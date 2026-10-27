@@ -1,3 +1,24 @@
+import { spokenDurationRange } from "./spoken-length";
+import type { PunditId } from "./types";
+
+/** Reviews store whole seconds; count only a whole current-format recording,
+ * never a short excerpt of a longer show. Historical reviews stay stored. */
+export function isFullAlphaAudioReview(
+  sampleSeconds: number,
+  variant?: { pundit_id: PunditId; audio_duration_sec: number | null },
+) {
+  if (!variant || variant.audio_duration_sec === null) return false;
+  const duration = variant.audio_duration_sec;
+  const range = spokenDurationRange(variant.pundit_id);
+  return (
+    Number.isFinite(duration) &&
+    Number.isFinite(sampleSeconds) &&
+    duration >= range.min &&
+    duration <= range.max &&
+    sampleSeconds >= Math.ceil(duration)
+  );
+}
+
 export type ReleaseGate = {
   name: string;
   passed: boolean;

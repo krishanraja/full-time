@@ -1,55 +1,55 @@
 {
   "schemaVersion": 1,
-  "id": "product-personas-2026-10-26.1",
+  "id": "product-personas-2026-10-26.3",
   "changes": {
-    "baselineReleaseId": null,
+    "baselineReleaseId": "product-personas-2026-10-26.1",
     "owners": ["shared", "zen", "gaffer", "stats", "romantic", "doomer", "banter"],
-    "reason": "Initial product-owned migration with shared speech and three persona directions updated; existing safeguards and recording approvals retained."
+    "reason": "Cumulative local candidate over committed .1, superseding uncommitted .2: accepted spoken-writing guidance plus two-to-three-minute alpha word/duration ranges for all six pundits. Writer and reviewer prioritise earned humour over a joke quota. Casting, rate calibration and safety thresholds preserved."
   },
   "shared": {
     "id": "full-time.shared",
-    "version": "1.0.0",
-    "path": "shared/1.0.0.json",
-    "sha256": "3ef5f4187493c9eaed9df2b9aa004209fbfe03e5c13ad99e827de6c9bbd25c2f"
+    "version": "1.1.0",
+    "path": "shared/1.1.0.json",
+    "sha256": "f4737d04bfdc3407a511ce5d2a77ca73cdc981f91dda689036abdc2308b26505"
   },
   "profiles": [
     {
       "id": "zen",
-      "version": "1.0.0",
-      "path": "profiles/zen/1.0.0.json",
-      "sha256": "bf566e7aa64a95ad4782296117ba6b4418b6fa1a9c6ec0fbf6ab6acaa5f60425"
+      "version": "1.1.0",
+      "path": "profiles/zen/1.1.0.json",
+      "sha256": "65b7011f58c55d164b4376edecfdbf34a3ab786fd64451ffdd4c13ea718b15a3"
     },
     {
       "id": "gaffer",
-      "version": "1.0.0",
-      "path": "profiles/gaffer/1.0.0.json",
-      "sha256": "2feb456ee8e7e71bbb2decf53efd7232942fc0fb031313ab1cd022cbc62e8a38"
+      "version": "1.1.0",
+      "path": "profiles/gaffer/1.1.0.json",
+      "sha256": "6feb4029460646eda8f5bbe3aa9c8d64b94355cd44798573740c8c6f38e2c417"
     },
     {
       "id": "stats",
-      "version": "1.0.0",
-      "path": "profiles/stats/1.0.0.json",
-      "sha256": "bda738c0ce454b9347546f443051d54f60ee71d7bc37cc96677dfbb341b23645"
+      "version": "1.1.0",
+      "path": "profiles/stats/1.1.0.json",
+      "sha256": "20083a18a215f462f9f7bb38c5f639394b3b6360fe40dc2d9e9beed63c840c14"
     },
     {
       "id": "romantic",
-      "version": "1.0.0",
-      "path": "profiles/romantic/1.0.0.json",
-      "sha256": "d4af9abc402c1d4fc309814f4eabdbfcf169dfa3fa9c01824e5cfd5d59e410c4"
+      "version": "1.1.0",
+      "path": "profiles/romantic/1.1.0.json",
+      "sha256": "c1b8d4146adcebfb14b9c48af223a934d625b8e8ffbfce820befa4e8daee06a1"
     },
     {
       "id": "doomer",
-      "version": "1.0.0",
-      "path": "profiles/doomer/1.0.0.json",
-      "sha256": "47d390fffc926f032dffb43a23ac39420f8b9cd5d0d07b1d318b3d0732f0c5c1"
+      "version": "1.1.0",
+      "path": "profiles/doomer/1.1.0.json",
+      "sha256": "1e705096addcd00c753c0ecdba1a6b307c108885ffc78ade32e23d51803c9ff4"
     },
     {
       "id": "banter",
-      "version": "1.0.0",
-      "path": "profiles/banter/1.0.0.json",
-      "sha256": "b73f600b402b8d971f8c59b2173d54a3b9bfb72f2c2d3ff90432c59ef81989c1"
+      "version": "1.1.0",
+      "path": "profiles/banter/1.1.0.json",
+      "sha256": "1925304e85db284dfc4e348592952eedeaf2fe49cf8680727184e93cc96fb98b"
     }
   ],
   "authority": "full-time owns reusable pundit identity and product speech. Growth owns scoped advertising/story variants.",
-  "humanListening": "Reporter B reference is approved; five other product performances require auditions. No new audio is approved by this architecture."
+  "humanListening": "Reporter B reference remains approved. Five short casts were found acceptable; synthetic delivery remains under revision. The solo rewrite was accepted as a writing improvement only. No new audio is approved by this release."
 }

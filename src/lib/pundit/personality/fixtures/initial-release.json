@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "id": "product-personas-2026-10-26.1",
+  "changes": {
+    "baselineReleaseId": null,
+    "owners": ["shared", "zen", "gaffer", "stats", "romantic", "doomer", "banter"],
+    "reason": "Initial product-owned migration with shared speech and three persona directions updated; existing safeguards and recording approvals retained."
+  },
+  "shared": {
+    "id": "full-time.shared",
+    "version": "1.0.0",
+    "path": "shared/1.0.0.json",
+    "sha256": "3ef5f4187493c9eaed9df2b9aa004209fbfe03e5c13ad99e827de6c9bbd25c2f"
+  },
+  "profiles": [
+    {
+      "id": "zen",
+      "version": "1.0.0",
+      "path": "profiles/zen/1.0.0.json",
+      "sha256": "bf566e7aa64a95ad4782296117ba6b4418b6fa1a9c6ec0fbf6ab6acaa5f60425"
+    },
+    {
+      "id": "gaffer",
+      "version": "1.0.0",
+      "path": "profiles/gaffer/1.0.0.json",
+      "sha256": "2feb456ee8e7e71bbb2decf53efd7232942fc0fb031313ab1cd022cbc62e8a38"
+    },
+    {
+      "id": "stats",
+      "version": "1.0.0",
+      "path": "profiles/stats/1.0.0.json",
+      "sha256": "bda738c0ce454b9347546f443051d54f60ee71d7bc37cc96677dfbb341b23645"
+    },
+    {
+      "id": "romantic",
+      "version": "1.0.0",
+      "path": "profiles/romantic/1.0.0.json",
+      "sha256": "d4af9abc402c1d4fc309814f4eabdbfcf169dfa3fa9c01824e5cfd5d59e410c4"
+    },
+    {
+      "id": "doomer",
+      "version": "1.0.0",
+      "path": "profiles/doomer/1.0.0.json",
+      "sha256": "47d390fffc926f032dffb43a23ac39420f8b9cd5d0d07b1d318b3d0732f0c5c1"
+    },
+    {
+      "id": "banter",
+      "version": "1.0.0",
+      "path": "profiles/banter/1.0.0.json",
+      "sha256": "b73f600b402b8d971f8c59b2173d54a3b9bfb72f2c2d3ff90432c59ef81989c1"
+    }
+  ],
+  "authority": "full-time owns reusable pundit identity and product speech. Growth owns scoped advertising/story variants.",
+  "humanListening": "Reporter B reference is approved; five other product performances require auditions. No new audio is approved by this architecture."
+}

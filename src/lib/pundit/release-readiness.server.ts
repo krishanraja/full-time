@@ -2,7 +2,13 @@ import { createHash } from "node:crypto";
 import { validateEvaluationManifest, type EvaluationMatch } from "./evaluation";
 import { extractSourceLanguageSpans } from "./research-originality.server";
 import { PUNDIT_SPECS } from "./specs";
-import { areConsecutiveDates, median, percentage, type ReleaseGate } from "./release-readiness";
+import {
+  areConsecutiveDates,
+  median,
+  percentage,
+  isFullAlphaAudioReview,
+  type ReleaseGate,
+} from "./release-readiness";
 import { serviceRest } from "./service-rest.server";
 import { PUNDIT_IDS, type PunditId, type QualitativeHarness } from "./types";
 
@@ -129,7 +135,9 @@ export async function evaluateReleaseReadiness(revision: string) {
     serviceRest<AudioReview[]>(
       "audio_reviews?select=variant_id,sample_seconds,persona_guess,authority_rating,naturalness_rating,timing_rating,listenability_rating,pronunciation_errors,clipped_words,repeated_phrases,misplaced_emphasis,monotone,overacted_punchlines,synthesis_artifacts,approved",
     ),
-    serviceRest<Array<{ id: string; pundit_id: PunditId }>>("pundit_variants?select=id,pundit_id"),
+    serviceRest<Array<{ id: string; pundit_id: PunditId; audio_duration_sec: number | null }>>(
+      "pundit_variants?select=id,pundit_id,audio_duration_sec",
+    ),
     serviceRest<
       Array<{
         version: string;
@@ -366,7 +374,10 @@ export async function evaluateReleaseReadiness(revision: string) {
   );
 
   const variantPundit = new Map(variants.map((variant) => [variant.id, variant.pundit_id]));
-  const fullAudioReviews = audioReviews.filter((review) => review.sample_seconds >= 300);
+  const variantById = new Map(variants.map((variant) => [variant.id, variant]));
+  const fullAudioReviews = audioReviews.filter((review) =>
+    isFullAlphaAudioReview(review.sample_seconds, variantById.get(review.variant_id)),
+  );
   const ratingKeys = [
     "authority_rating",
     "naturalness_rating",

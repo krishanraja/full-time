@@ -1,9 +1,10 @@
 import { expect, it } from "vitest";
 import { runHardGates } from "./harness";
 import type { EvidencePack, PunditVariantCandidate } from "./types";
-import { spokenWordRange } from "./spoken-length";
+import { PUNDIT_IDS } from "./types";
+import { spokenWordRange, spokenDurationRange } from "./spoken-length";
 
-it("admits a concise Reporter without shortening the other personas", () => {
+it("enforces alpha word boundaries for every pundit", () => {
   const candidate = {
     punditId: "zen",
     specVersion: 1,
@@ -29,10 +30,16 @@ it("admits a concise Reporter without shortening the other personas", () => {
       pack,
       claims: [],
     }).find((row) => row.harness === "spoken_length")?.passed;
-  expect(length("zen", 570)).toBe(true);
-  expect(length("zen", 549)).toBe(false);
-  expect(length("zen", 801)).toBe(false);
-  expect(length("gaffer", 570)).toBe(false);
-  expect(length("gaffer", 750)).toBe(true);
-  expect(spokenWordRange("zen")).toEqual({ min: 550, max: 800 });
+  for (const id of PUNDIT_IDS) {
+    const expected = id === "zen" ? { min: 420, max: 500 } : { min: 330, max: 450 };
+    expect(spokenWordRange(id)).toEqual(expected);
+    expect(spokenDurationRange(id)).toEqual({ min: 120, max: 180 });
+    expect(length(id, expected.min)).toBe(true);
+    expect(length(id, expected.max)).toBe(true);
+    expect(length(id, expected.min - 1)).toBe(false);
+    expect(length(id, expected.max + 1)).toBe(false);
+    expect(length(id, 750)).toBe(false);
+  }
+  expect(length("gaffer", 352)).toBe(true);
+  expect(spokenDurationRange()).toEqual({ min: 120, max: 180 });
 });
