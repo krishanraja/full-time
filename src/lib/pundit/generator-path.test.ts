@@ -217,10 +217,9 @@ describe("the probability instruction and the numeric gate agreeing", () => {
     expect(source).toContain("Never state a distance in yards or metres");
     // Home and away: one pundit gave Ipswich Liverpool's possession figure.
     expect(source).toContain("says home or away and name the team that id belongs to");
-    // Restraint: the judges rejected five of six for restating one point.
-    expect(source).toContain(
-      "State your central point in full in the judgment beat and nowhere else",
-    );
+    // A take can open the review; later beats deepen it without rephrasing it.
+    expect(source).toContain("The hook can state the take");
+    expect(source).toContain("Do not repeat your main point as a fresh metaphor");
   });
 });
 

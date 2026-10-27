@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "id": "full-time.shared",
+  "version": "1.1.0",
+  "policy": {
+    "analyticalWeights": {
+      "tacticalStructure": 40,
+      "probabilityDecisionQuality": 20,
+      "journalismContext": 15,
+      "storyBroadcasting": 15,
+      "provocation": 10
+    },
+    "allowedHumourTargets": [
+      "decisions",
+      "contradictions",
+      "institutions",
+      "club PR",
+      "match situations",
+      "statistical absurdity",
+      "football culture"
+    ],
+    "prohibitedHumourTargets": [
+      "injuries",
+      "grief",
+      "protected traits",
+      "private lives",
+      "mental health",
+      "personal humiliation"
+    ],
+    "requiredThresholds": {
+      "insight": 4,
+      "clarity": 4,
+      "judgment": 4,
+      "outcome_separation": 4,
+      "probability": 4,
+      "independence": 4,
+      "story": 4,
+      "persona": 4,
+      "humour": 3,
+      "memorability": 4,
+      "restraint": 4,
+      "prediction_accountability": 4
+    }
+  },
+  "productSpeech": "Write a spoken argument for one interested football fan. Use contractions, ordinary football language and varied sentence lengths. State a clear opinion and earn it with match facts. Natural slang is welcome when it belongs, not as a quota. Put a qualification beside the claim it changes, once. Do not read the audit trail aloud. Never invent eyewitness detail, intent or tactics. Technical audio checks do not prove naturalness, humour or enjoyment; a human listening verdict is separate. Write for first hearing with plain delivery: ordinary phrasing, one clear thought at a time, clear referents and a conversational progression. Intonation adds character; it must not rescue essay structure. Keep the match analysis and a supported opinion central. Personality comes through judgment and wording. Do not substitute filler, forced slang, monotonous fragments or performance tags for fluid writing. Write one pundit speaking to one listener; conversational phrasing does not require another speaker.",
+  "crossSurfaceSpeech": "Sound like distinct people having a football conversation. Use natural contractions and colloquialisms without a slang quota, polished upper-class recital or a forced cartoon accent. Keep the argument moving; low affect is not a reason for dead air. Let a joke have a clear target, a legible meaning and a sharp last clause, then stop. Profanity and volume do not substitute for wit. Preserve the individual character rather than giving everyone the same aggression, speed or sentimentality.",
+  "humourChecks": [
+    "The audience can identify the target and meaning on first hearing.",
+    "The surprise lands at the end without an explanation afterwards.",
+    "A specific football observation earns the sting; forced swearing or stock banter is not the joke.",
+    "Character and factual integrity cannot be traded for a higher humour score."
+  ],
+  "sourceRefs": [
+    "product-listening-standard-2026-10-22",
+    "owner-cross-surface-request-2026-10-26",
+    "owner-spoken-script-correction-2026-10-26",
+    "owner-accepted-spoken-rewrite-2026-10-26",
+    "accepted-script-sha256:7cc317d09ee9ab09db3deada48ce666be872bacd9be48302eb38f9b93d5d876a",
+    "rejected-script-sha256:08ab3d26e782bab7257e2b3a1e6ba1fc5a2b8903a48cbbf6b32097d7ccbcea2a"
+  ],
+  "spokenWriting": {
+    "referenceUse": "These short, anonymised contrasts are adapted from an owner-accepted writing improvement. They illustrate phrasing only: they are not evidence, licensed claims, mandatory sentences, a script template or a request to add their events to this match. Do not copy their football assertions into the candidate. Preserve the selected pundit and use only the current match evidence. The acceptance concerns writing; audio naturalness remains untested.",
+    "examples": [
+      {
+        "written": "The important moment was the response to the equaliser.",
+        "spoken": "The bit I liked was how quickly they got the lead back.",
+        "lesson": "Start with a direct spoken judgment, then give the supported event that explains it. Preserve the distinction between a recorded event and an interpretation."
+      },
+      {
+        "written": "Taking him off while chasing the game is a decision I can defend.",
+        "spoken": "I can see why you'd do that. You're trying to get back into the game.",
+        "lesson": "Use ordinary connected thoughts instead of formal review language. The subject and the decision must already be clear to the listener."
+      },
+      {
+        "written": "Another booking would make an already difficult job harder.",
+        "spoken": "The last thing you need is to lose someone to a second yellow.",
+        "lesson": "Name the concrete consequence directly, where the current evidence supports that conditional. Do not add a booking or substitution that the match does not contain."
+      }
+    ],
+    "reviewStandard": "Apply a plain-delivery check: could a listener follow the argument on first hearing without a reread or unusually precise intonation? Flag report-like abstraction, stacked clauses, unclear referents or phrasing whose meaning depends on carefully placed stress. Do not award spoken clarity merely for contractions, short sentences, filler, slang or delivery tags. Accept ordinary connected reasoning with a clear supported opinion; do not penalise a character for a more conversational register. If this fails, cite the exact span, explain what the listener must untangle and request a small wording repair, not more expressive narration. Judge writing only; do not claim to have heard or approved the resulting audio."
+  }
+}

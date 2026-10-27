@@ -3,9 +3,43 @@
 - **Status:** Current
 - **Owner:** Founder and product
 - **Purpose:** Show what remains, what is deliberately deferred, and which product decisions govern the work.
-- **Last reviewed:** 2026-10-16
+- **Last reviewed:** 2026-10-26
 
 ## Current objective
+
+The governing pundit evolution sequence is the 26 October founder ruling below:
+prove a quick, sharp, valuable single-pundit review, establish reliable quality
+and adoption, then introduce pundit-to-pundit conversation for paid users.
+Personality serves the match analysis and opinion. This is the alpha quality
+priority; the existing public beta's runtime and billing state are separate.
+
+### Pundit evolution: solo quality, adoption, paid conversation
+
+1. **Alpha: one pundit per listening experience, two to three minutes.**
+   Krish confirmed this duration target on 26 October. Deliver a concise match
+   review with a clear verdict, the decisive evidence, an explanation of why
+   the supported events mattered, and a useful opinion. Voice and analytical
+   priorities make the pundit recognisable. Personality exhibition, hedged
+   filler and performance of a character must not displace football value.
+2. **Prove reliability and adoption.** Check complete shows across different
+   matches, factual accuracy, fluid delivery and listener value; measure
+   returning use against the existing North Star. One successful audition
+   does not establish reliability. Exact acceptance samples and the adoption
+   threshold for expansion still need to be set; no numerical trigger is
+   invented by this ruling.
+3. **Paid expansion: pundit conversations.** Only after the solo experience
+   is reliably good and has adoption, add questions, disagreement and analysis
+   between pundits as a paid-user feature. It is future scope, not the next
+   alpha format or an enabled billing entitlement.
+
+Organic content and advertising have a different job: blunt, highly comic
+creative designed to travel. That execution stays in the growth system; the
+product's analysis is evaluated for insight, clarity and repeat listening.
+
+The accepted casts remain available for this work. No selector, voice roster,
+publication contract, price or runtime release changes merely because this
+roadmap was recorded. The next bounded proof is a solo written review, then
+an exactly quoted audio test after script acceptance.
 
 Get Full Time to a December 2026 release by meeting the bar in [`22-vision-and-beta.md`](./22-vision-and-beta.md) with invited Premier League fans: a show every match morning, no wrong facts reaching a listener, and testers who come back and try a second AI Pundit (Rulings, Krish, 2026-10-16). Underneath that sits the standing objective: prove, in public, that all six AI Pundits are consistently useful, distinct, funny, evidence-grounded, and listenable. Since the founder launch override of 2026-09-04 ([`19-release-state.md`](./19-release-state.md)) that proof happens on the live beta rather than before a launch.
 
@@ -106,6 +140,27 @@ The sequence below was written before the 2026-09-04 override. Steps 2 to 6 rema
 ## Decision log
 
 Use: **Decision - Context - Tradeoff - Reversible?** Add new entries at the top.
+
+### 2026-10-26 - Solo analysis first; paid conversation after quality and adoption
+
+- **Decision:** Ruling (Krish, 2026-10-26): the alpha delivers one pundit's
+  two-to-three-minute, sharp match analysis and opinion in their voice, without drowning the
+  review in personality. Conversations between pundits are a paid expansion
+  after adoption and proof that the solo experience is reliably good. This
+  governs the pundits' evolution.
+- **Context:** Krish found the audition casts acceptable but their delivery
+  synthetic and insufficiently fluid, and their writing insufficiently useful.
+  The agent proposed an immediate shared panel or a lead with a guest. Krish
+  rejected that timing and clarified the staged roadmap. His distinction
+  between blunt comic acquisition work and valuable product analysis remains.
+- **Tradeoff:** Delay ensemble novelty and its monetisation until one voice
+  earns repeat listening. A solo show must carry the insight on its own;
+  dialogue cannot be used to cover weak analysis. No dissent was recorded
+  against Krish's final call.
+- **Reversible?** By a new founder ruling. Revisit the paid conversation phase
+  when reviewed full solo shows establish reliable quality and measured
+  adoption supports expansion. Thresholds are not yet defined. Recording this
+  ruling authorises no spending, publication, deployment or billing activation.
 
 ### 2026-10-16 - A pilot beta for fans, a December target, one feedback inbox
 

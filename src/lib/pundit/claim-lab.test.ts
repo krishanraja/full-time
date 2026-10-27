@@ -29,6 +29,29 @@ const claim = (over: Partial<AnalysisClaim>): AnalysisClaim =>
     ...over,
   }) as AnalysisClaim;
 
+describe("semantic evidence context before a claim reaches the writer", () => {
+  const contextPack = {
+    ...pack,
+    facts: [
+      ...pack.facts,
+      { id: "match.kickoff", kind: "fact", label: "Kickoff", value: "2026-10-19T19:00:00Z", provenance: "matches.kickoff_at" },
+      { id: "table.home_points", kind: "fact", label: "Home points", value: 6, provenance: "standings_snapshots.captured_at=2026-10-20T00:15:00Z" },
+      { id: "event.goal", kind: "fact", label: "goal event: Davies, assisted by Solanke", value: [90, 6, "Home", "Davies", "Solanke"], provenance: "fixture.goal" },
+      { id: "event.sub", kind: "fact", label: "substitution event: Home bring on Davies", value: [69, null, "Home", "Davies", "Robertson"], provenance: "fixture.sub" },
+    ],
+  } as EvidencePack;
+
+  it("rejects post-match points presented as a pre-match position", () => {
+    const result = licenseClaim(claim({ thesis: "Home went into the match on six points.", evidenceRefs: ["table.home_points"] }), contextPack);
+    expect(result.failures.join(" ")).toMatch(/post-match table/);
+  });
+
+  it("rejects two substitutes when only the scorer came on", () => {
+    const result = licenseClaim(claim({ thesis: "The goal came from a substitute assisted by a substitute.", evidenceRefs: ["event.goal", "event.sub"] }), contextPack);
+    expect(result.failures.join(" ")).toMatch(/two incoming substitution events/);
+  });
+});
+
 describe("a claim must count its own evidence correctly", () => {
   it("rejects a thesis that states a count its citations contradict", () => {
     const result = licenseClaim(

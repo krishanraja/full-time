@@ -16,6 +16,11 @@ describe("spelled numbers found in a spoken script", () => {
     expect(found.map((item) => item.value)).toEqual([2.83, 1.08]);
   });
 
+  it("accepts ordinary British nought-point decimals as one licensed value", () => {
+    expect(spelledNumbersIn("Nought point nine to nought point seven nine.").map((item) => item.value))
+      .toEqual([0.9, 0.79]);
+  });
+
   it("takes a compound whole and leaves ordinary words alone", () => {
     const found = spelledNumbersIn(
       "Twenty-four shots, ten on target, in the fifty-seventh minute.",

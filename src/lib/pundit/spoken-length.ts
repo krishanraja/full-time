@@ -6,5 +6,7 @@ export function spokenWordRange(punditId: PunditId) {
 }
 
 export function spokenDurationRange(punditId?: PunditId) {
-  return punditId ? getPersonalityProfile(punditId).spoken.durationRange : { min: 300, max: 480 };
+  return punditId
+    ? getPersonalityProfile(punditId).spoken.durationRange
+    : getPersonalityProfile("gaffer").spoken.durationRange;
 }

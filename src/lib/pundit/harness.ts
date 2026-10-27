@@ -1,4 +1,9 @@
-import { licenseClaim, unsupportedTacticsSpans } from "./claim-lab";
+import {
+  licenseClaim,
+  unsupportedDoubleSubstituteGoalSpans,
+  unsupportedPrematchTableSpans,
+  unsupportedTacticsSpans,
+} from "./claim-lab";
 import { assertPerformanceIdentity } from "./performance";
 import { maxSourceSimilarity } from "./research-originality";
 import {
@@ -337,7 +342,9 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
   const unlicensedEntities = properNouns(candidate.displayScript).filter(
     (entity) => !entityLicensed(entity, licensed.entities),
   );
-  const consequences = consequenceSpans(candidate.displayScript, pack);
+  const prematchTableSpans = unsupportedPrematchTableSpans(candidate.displayScript, pack);
+  const doubleSubstituteSpans = unsupportedDoubleSubstituteGoalSpans(candidate.displayScript, pack);
+  const consequences = [...consequenceSpans(candidate.displayScript, pack), ...prematchTableSpans];
   const predictionIsValid =
     !candidate.thesis.predictionClaimId ||
     (Boolean(candidate.predictionLockedAt) &&
@@ -353,9 +360,12 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
   const results = [
     result(
       "evidence_to_claim_entailment",
-      missingClaims.length === 0 && claimFailures.length === 0,
-      [...missingClaims.map((id) => `Missing claim ${id}`), ...claimFailures].join(" ") ||
+      missingClaims.length === 0 && claimFailures.length === 0 && doubleSubstituteSpans.length === 0,
+      [...missingClaims.map((id) => `Missing claim ${id}`), ...claimFailures,
+        ...doubleSubstituteSpans.map(() => "Scorer and assister are both called substitutes without two incoming substitution events.")].join(" ") ||
         undefined,
+      doubleSubstituteSpans.join(", ") || undefined,
+      beatsContaining(candidate, doubleSubstituteSpans),
     ),
     result(
       "unsupported_tactics",
@@ -393,7 +403,9 @@ export function runHardGates(context: HardGateContext): HarnessResult[] {
       "consequence_licence",
       consequences.length === 0,
       consequences.length
-        ? consequenceLicensed(pack)
+        ? prematchTableSpans.length
+          ? "A post-match table snapshot cannot establish pre-match points or position."
+          : consequenceLicensed(pack)
           ? "Season-level consequences are unavailable in the structured evidence tier: a table says where a side sits, not what that position wins."
           : "Season-level consequences are unavailable in the structured evidence tier, and this pack carries no league table, so a position in it cannot be stated either."
         : undefined,

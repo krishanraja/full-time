@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { PUNDIT_IDS } from "../types";
 import { getPunditSpec } from "../specs";
 import { spokenStyleBrief, spokenRateRange } from "../spoken-style";
 import { applyPerformanceCadence, spokenIdentity } from "@/lib/api/narration.server";
+import initialRelease from "./fixtures/initial-release.json";
+import previousShared from "./shared/1.0.0.json";
 import {
   assertNarrationPersonality,
   compilePersonalityBaseline,
@@ -16,14 +19,29 @@ import {
 } from "./registry";
 
 describe("product-owned personality release", () => {
-  it("declares the initial migration and expands shared changes to all six profiles", () => {
-    expect(personalityChangeScope(undefined, getPersonalityRelease()).affectedProfiles).toEqual([
-      ...PUNDIT_IDS,
-    ]);
+  it.each([...PUNDIT_IDS])(
+    "preserves %s identity, casting and rate calibration in the duration revision",
+    (id) => {
+      const prior = JSON.parse(
+        readFileSync(new URL(`./profiles/${id}/1.0.0.json`, import.meta.url), "utf8"),
+      );
+      const current = getPersonalityProfile(id);
+      expect(current.spec).toEqual(prior.spec);
+      expect(current.specVersion).toBe(prior.specVersion);
+      expect(current.voice).toEqual(prior.voice);
+      expect(current.spoken.rateRange).toEqual(prior.spoken.rateRange);
+    },
+  );
+  it("declares the cumulative alpha revision against the committed baseline", () => {
+    const baseline = initialRelease;
+    const scope = personalityChangeScope(baseline, getPersonalityRelease());
+    expect(scope.changedOwners).toEqual(["shared", ...PUNDIT_IDS]);
+    expect(scope.affectedProfiles).toEqual([...PUNDIT_IDS]);
+    expect(getSharedPersonality().policy).toEqual(previousShared.policy);
     const previous = getPersonalityRelease(),
       next = getPersonalityRelease();
     next.id += ".next";
-    next.shared.version = "1.1.0";
+    next.shared.version = "1.2.0";
     next.shared.sha256 = "a".repeat(64);
     next.changes = {
       baselineReleaseId: previous.id,
@@ -45,7 +63,7 @@ describe("product-owned personality release", () => {
       reason: "Doomer delivery revision",
     };
     expect(() => personalityChangeScope(previous, next)).toThrow(/higher version/);
-    next.profiles.find((p) => p.id === "doomer")!.version = "1.0.1";
+    next.profiles.find((p) => p.id === "doomer")!.version = "1.1.1";
     expect(personalityChangeScope(previous, next).affectedProfiles).toEqual(["doomer"]);
     next.changes.baselineReleaseId = "wrong";
     expect(() => personalityChangeScope(previous, next)).toThrow(/wrong baseline/);
@@ -69,6 +87,18 @@ describe("product-owned personality release", () => {
     shared.crossSurfaceSpeech = "A new tone";
     await expect(
       verifyPersonalityInputs(getPersonalityProfile("doomer"), shared, getPersonalityRelease()),
+    ).rejects.toThrow(/Shared personality/);
+  });
+  it("pins the spoken review and examples, not only the general delivery text", async () => {
+    const shared = getSharedPersonality();
+    shared.spokenWriting!.examples[0].spoken = "An unreviewed replacement";
+    await expect(
+      verifyPersonalityInputs(getPersonalityProfile("gaffer"), shared, getPersonalityRelease()),
+    ).rejects.toThrow(/Shared personality/);
+    const review = getSharedPersonality();
+    review.spokenWriting!.reviewStandard = "Reward formal prose";
+    await expect(
+      verifyPersonalityInputs(getPersonalityProfile("gaffer"), review, getPersonalityRelease()),
     ).rejects.toThrow(/Shared personality/);
   });
   it("does not let a profile override shared policy or another character", () => {

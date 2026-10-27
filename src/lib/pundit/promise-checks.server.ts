@@ -152,7 +152,8 @@ export function decidePublication(input: {
     if ((variant.pronunciation_rate ?? 0) < 0.99) reasons.push("pronunciation");
     const seconds = variant.audio_duration_sec ?? 0;
     const duration = spokenDurationRange(variant.pundit_id);
-    if (seconds < duration.min || seconds > duration.max) reasons.push(`duration ${seconds}s`);
+    if (!Number.isFinite(seconds) || seconds < duration.min || seconds > duration.max)
+      reasons.push(`duration ${seconds}s`);
     if (!variant.audio_url) reasons.push("no audio");
     if (!variant.share_image_url) reasons.push("no share card");
     if (!variant.transcript?.trim()) reasons.push("no transcript");

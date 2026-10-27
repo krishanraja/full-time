@@ -1,4 +1,5 @@
 import type { QualitativeHarness } from "./types";
+import { getSharedPersonality } from "./personality/registry";
 
 /** What each judged dimension actually requires.
  *
@@ -18,27 +19,28 @@ export const DIMENSION_STANDARDS: Record<QualitativeHarness, string> = {
   insight:
     "A non-obvious inference this match's own numbers support. A football truism (conversion beats volume, early goals settle games) is not an insight however well phrased, and neither is a standard mechanism applied to any match. Raising a possibility and then retreating from it without committing is not an insight either: name what you think is happening and say what would change your mind.",
   clarity:
-    "A listener resolves every image the first time they hear it, with no rewinding. A metaphor whose parts cannot be mapped onto the football (who is holding whom, and what does that stand for) costs more than it gives. Prefer the concrete. Assess spoken language, not polished report prose: contractions and short fragments are welcome, while repeated methodology caveats interrupt the listen. Do not mistake formal wording for clarity.",
+    "A listener resolves every image the first time they hear it, with no rewinding. A metaphor whose parts cannot be mapped onto the football (who is holding whom, and what does that stand for) costs more than it gives. Prefer the concrete. Assess spoken language, not polished report prose: contractions and short fragments are welcome, while repeated methodology caveats interrupt the listen. Do not mistake formal wording for clarity. " +
+    (getSharedPersonality().spokenWriting?.reviewStandard ?? ""),
   judgment:
     "One defensible editorial call, made in your own voice, with the reason attached. Surveying both sides and declining to choose is not judgment.",
   outcome_separation:
     "Tell the causes of the result apart from each other, and apart from luck. Two distinct drivers merged into one undifferentiated cause is the common failure. Surface the symmetric figure that would weaken your reading rather than leaving it out.",
   probability:
-    "Attach an explicit likelihood to a named outcome, in words: more likely than not, roughly even, comfortably against. A stated likelihood in words is the expected form and is not a weakness, because a percentage the evidence does not carry is refused by an earlier gate; judge what the likelihood is attached to, not whether it has digits. What it attaches to has to be genuinely contestable: a confident call on a near-certainty carries no information and is not judgement. Conditional English is not a probability. Where two readings compete, say which is the more probable and why, even tentatively; parking in symmetry is a refusal to judge. Never upgrade an uncertain inference into a confident verdict, and never state as near-fact something a licensed claim holds at low confidence.",
+    "Calibrate the strength of a match reading to the evidence. Choose the better-supported explanation and name the uncertainty that matters; do not claim that a full-match aggregate proves how play unfolded in a particular spell. An explicit likelihood is optional. If one clarifies a genuinely contestable outcome, state it in words; that is not a weakness, because a percentage the pack does not carry is refused by an earlier gate. A forced next-match forecast, empty coin-toss phrase, or confident near-certainty is weaker than a clear present-tense judgment. Never upgrade a low-confidence licensed claim into fact.",
   independence:
     "Your own weighing of the evidence. Building on a licensed claim is expected and is not the failure; stopping at it is. Bring at least one figure the claim itself does not cite, use it to test the claim rather than to decorate it, and say what that figure would have to show for your verdict to be wrong. Repeating the pack's own alternative explanation or counterpoint as though it were your own is not independence, and neither is the most conventional reading of the scoreline.",
   story:
-    "One arc that holds for ten beats. Consecutive paragraphs of sequential statistics flatten it, and abandoning your own premise halfway to process figures in list form breaks the momentum you built.",
+    "One spoken argument that a listener follows on first hearing. The ten stored beats must join invisibly; a hook, evidence, counterpoint and close should sound like one pundit thinking through this match. Consecutive statistics, announced pivots and repeated verdicts break that flow.",
   persona:
-    "The cadence, vocabulary and mechanisms your own spec lists, sustained across the script rather than sampled once. A measured analytical register in a playful persona is a miss even when the analysis is sound.",
+    "A recognisable analytical lens and natural register, sustained through what the pundit notices, argues and says. Personality serves the match analysis. A playful persona can make a measured point; do not demand catchphrases, exaggerated character performance or comic detours to prove identity.",
   humour:
-    "Two to four separate moments, each built from a mechanism your own spec lists. The surprise lands in the final clause. Never announce a joke and never explain one afterwards.",
+    "Humour is optional in a two-to-three-minute product review. A relevant, safe joke can sharpen a specific football observation, but a review with no joke is not weaker when a joke would interrupt useful analysis. Judge restraint as well as effect; forced comic detours, punchline labels and explanatory tags weaken the listen.",
   memorability:
-    "One portable line a listener could repeat word for word, placed where it lands and left to stand. Several candidate lines competing in the same beat dilute each other, and wordy restatement around a good line buries it.",
+    "A clear match-specific idea remains with the listener because it was explained well. A plain sentence can be memorable; a manufactured slogan, portable-line performance or repeated metaphor is not required and can bury the argument.",
   restraint:
     "Say less than you could. Every sentence earns its place, no observation is made twice in different words, and a claim the evidence cannot carry is not made at all.",
   prediction_accountability:
-    "The forward-looking call is specific enough to be settled later: a named outcome, a measurable condition, and a window. A prediction nobody could mark is not accountable.",
+    "If a pre-kickoff prediction exists, settle it honestly. If the pundit volunteers a forward-looking call, it must name a measurable outcome and window that the evidence makes useful to discuss. With no prior prediction and no useful new forecast, a precise receipt about this match is fully accountable; do not penalise the absence of a forced next-match call.",
 };
 
 /** What each score on the one-to-five scale means.

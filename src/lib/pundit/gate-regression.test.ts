@@ -518,3 +518,93 @@ describe("saying which number was refused", () => {
     expect(numeric).not.toMatch(/vanished|went off at sixty-four, and I/);
   });
 });
+
+describe("spoken expected-goals decimals", () => {
+  const decimalMatch: StructuredMatchInput = {
+    ...barcelonaRayo,
+    stats: { ...barcelonaRayo.stats, homeXg: 0.9, awayXg: 0.79, source: "provider-a" },
+  };
+
+  it("licenses ordinary spoken forms of the pack values but still refuses a different value", () => {
+    const licensed = gateFailures(
+      "Barcelona had nought point nine expected goals and Rayo had nought point seven nine.",
+      decimalMatch,
+    );
+    expect(licensed.join(" ")).not.toMatch(/numeric_licence/);
+
+    const unlicensed = gateFailures("Barcelona had nought point eight expected goals.", decimalMatch);
+    expect(unlicensed.join(" ")).toMatch(/numeric_licence/);
+  });
+});
+
+describe("role and table timing from the sealed-run failure", () => {
+  const base = buildEvidencePack(barcelonaRayo);
+  const factClaim: AnalysisClaim = {
+    id: "context-claim",
+    matchId: base.matchId,
+    type: "fact",
+    thesis: "The match was played.",
+    evidenceRefs: ["match.home_team"],
+    confidence: 1,
+  };
+
+  it("refuses to narrate an after-match table as the pre-match points", () => {
+    const pack = {
+      ...base,
+      facts: [...base.facts, {
+        id: "table.home_points",
+        kind: "fact" as const,
+        label: "Barcelona points",
+        value: 6,
+        source: "fixture",
+        provenance: "standings_snapshots.captured_at=2026-09-01T00:00:00Z",
+      }],
+    };
+    const results = runHardGates({
+      pack,
+      claims: [factClaim],
+      candidate: candidateSaying("Barcelona went into this game on six points.", factClaim),
+    });
+    expect(results.find((item) => item.harness === "consequence_licence")?.passed).toBe(false);
+    const after = runHardGates({
+      pack,
+      claims: [factClaim],
+      candidate: candidateSaying("Barcelona finished this game on six points.", factClaim),
+    });
+    expect(after.find((item) => item.harness === "consequence_licence")?.passed).toBe(true);
+  });
+
+  it("requires both scorer and assister to have incoming substitution events", () => {
+    const goal = {
+      id: "event.goal",
+      kind: "fact" as const,
+      label: "goal event: Ayase Ueda of Barcelona, assisted by Hakon Haraldsson",
+      value: [73, null, "Barcelona", "Ayase Ueda", "Hakon Haraldsson"],
+      source: "fixture",
+      provenance: "fixture.goal",
+    };
+    const incoming = (id: string, player: string) => ({
+      id,
+      kind: "fact" as const,
+      label: `substitution event: Barcelona bring on ${player}`,
+      value: [57, null, "Barcelona", player, "Another Player"],
+      source: "fixture",
+      provenance: id,
+    });
+    const sentence = "The substitute scored from a substitute.";
+    const oneArrival = { ...base, facts: [...base.facts, goal, incoming("event.sub-a", "Ayase Ueda")] };
+    const rejected = runHardGates({
+      pack: oneArrival,
+      claims: [factClaim],
+      candidate: candidateSaying(sentence, factClaim),
+    });
+    expect(rejected.find((item) => item.harness === "evidence_to_claim_entailment")?.passed).toBe(false);
+    const bothArrived = { ...oneArrival, facts: [...oneArrival.facts, incoming("event.sub-b", "Hakon Haraldsson")] };
+    const accepted = runHardGates({
+      pack: bothArrived,
+      claims: [factClaim],
+      candidate: candidateSaying(sentence, factClaim),
+    });
+    expect(accepted.find((item) => item.harness === "evidence_to_claim_entailment")?.passed).toBe(true);
+  });
+});

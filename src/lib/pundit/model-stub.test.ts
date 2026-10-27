@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { stubEnabled, stubResponse } from "./model-stub.server";
+import { PUNDIT_IDS } from "./types";
+import { spokenWordRange } from "./spoken-length";
 import { judgeSchema } from "./pundit-generator.server";
 
 const cachedContext = [
@@ -50,8 +52,8 @@ describe("the stub model", () => {
     expect(script).not.toMatch(/\d/);
   });
 
-  it("clears the spoken-length floor", () => {
-    const draft = stubResponse("writer:zen", cachedContext, '{"id":"c1"}') as {
+  it.each([...PUNDIT_IDS])("clears the alpha word budget for %s", (id) => {
+    const draft = stubResponse(`writer:${id}`, cachedContext, '{"id":"c1"}') as {
       beats: Array<{ text: string }>;
     };
     const words = draft.beats
@@ -59,8 +61,8 @@ describe("the stub model", () => {
       .join(" ")
       .split(/\s+/)
       .filter(Boolean).length;
-    expect(words).toBeGreaterThanOrEqual(750);
-    expect(words).toBeLessThanOrEqual(1100);
+    expect(words).toBeGreaterThanOrEqual(spokenWordRange(id).min);
+    expect(words).toBeLessThanOrEqual(spokenWordRange(id).max);
   });
 
   it("echoes back a claim reference the writer was given", () => {

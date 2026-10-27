@@ -17,6 +17,13 @@ Full Time is a B2C product for football fans, in a pilot beta since 2026-10-16, 
 
 ## The first experience
 
+The current quality priority is the [26 October pundit evolution roadmap](./12-roadmap.md#pundit-evolution-solo-quality-adoption-paid-conversation):
+one pundit gives a two-to-three-minute, sharp, useful match review and opinion in their voice.
+Personality is expressed through analytical judgment and delivery, without
+dominating the football. Reliable solo quality and adoption precede a later
+paid conversation feature. The interface described below is the existing
+implemented shape, not evidence that those quality or adoption gates are met.
+
 A listener should be able to:
 
 1. open Today without an account or autoplay;

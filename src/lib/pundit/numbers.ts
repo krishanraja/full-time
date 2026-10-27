@@ -11,6 +11,7 @@
 const SPELLED_UNITS: Record<string, number> = {
   nil: 0,
   zero: 0,
+  nought: 0,
   one: 1,
   two: 2,
   three: 3,

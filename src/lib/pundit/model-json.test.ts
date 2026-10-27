@@ -1,13 +1,155 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 import {
   extractJson,
+  modelJson,
   providerFor,
   readGoogle,
   readOpenAi,
   requestContent,
   withConcurrency,
+  withDiagnosticBudget,
 } from "./model-json.server";
-import { callCostUsd } from "./model-cost";
+import { callCostUsd, resetSpend } from "./model-cost";
+
+describe("private diagnostic spend reservation", () => {
+  const originalKey = process.env.ANTHROPIC_API_KEY;
+  const originalStub = process.env.PUNDIT_MODEL_STUB;
+  const request = {
+    system: "Review the match",
+    user: "Return a verdict",
+    model: "claude-sonnet-4-6",
+    maxTokens: 4_000,
+    schema: z.object({ ok: z.boolean() }),
+  };
+  const message = () =>
+    new Response(JSON.stringify({
+      content: [{ text: '{"ok":true}' }],
+      stop_reason: "end_turn",
+      usage: { input_tokens: 100, output_tokens: 5 },
+    }), { status: 200 });
+
+  beforeEach(() => {
+    resetSpend();
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    delete process.env.PUNDIT_MODEL_STUB;
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    resetSpend();
+    if (originalKey === undefined) delete process.env.ANTHROPIC_API_KEY;
+    else process.env.ANTHROPIC_API_KEY = originalKey;
+    if (originalStub === undefined) delete process.env.PUNDIT_MODEL_STUB;
+    else process.env.PUNDIT_MODEL_STUB = originalStub;
+  });
+
+  it("counts the exact request and reserves a bounded single model attempt", async () => {
+    const fetchMock = vi.fn(async (url: string, _options?: RequestInit) =>
+      new Response(JSON.stringify(url.endsWith("/count_tokens") ? { input_tokens: 100 } : {
+        content: [{ text: '{"ok":true}' }],
+        usage: { input_tokens: 100, output_tokens: 5 },
+      }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await withDiagnosticBudget(
+      { ceilingUsd: 0.1, maxCalls: 1, maxInputTokens: 20_000 },
+      () => modelJson(request),
+    );
+    expect(result.result).toEqual({ ok: true });
+    expect(result.calls).toBe(1);
+    expect(result.reservedUsd).toBeGreaterThan(0.06);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const countBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    const messageBody = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body));
+    expect(countBody).toEqual({ model: messageBody.model, system: messageBody.system, messages: messageBody.messages });
+  });
+
+  it("refuses an oversized prompt before a paid message", async () => {
+    const fetchMock = vi.fn(async () =>
+      new Response(JSON.stringify({ input_tokens: 20_001 }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(withDiagnosticBudget(
+      { ceilingUsd: 3, maxCalls: 16, maxInputTokens: 20_000 },
+      () => modelJson(request),
+    )).rejects.toThrow(/exceeds 20000 tokens/);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses a request whose maximum charge exceeds the remaining dollars", async () => {
+    const fetchMock = vi.fn(async () =>
+      new Response(JSON.stringify({ input_tokens: 100 }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(withDiagnosticBudget(
+      { ceilingUsd: 0.01, maxCalls: 16, maxInputTokens: 20_000 },
+      () => modelJson(request),
+    )).rejects.toThrow(/dollar ceiling/);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("makes one paid attempt even after a retryable provider error", async () => {
+    const fetchMock = vi.fn(async (url: string) =>
+      url.endsWith("/count_tokens")
+        ? new Response(JSON.stringify({ input_tokens: 100 }), { status: 200 })
+        : new Response("busy", { status: 503 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(withDiagnosticBudget(
+      { ceilingUsd: 0.1, maxCalls: 1, maxInputTokens: 20_000 },
+      () => modelJson(request),
+    )).rejects.toThrow(/503/);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps a successful reservation when a later call hits the call limit", async () => {
+    const fetchMock = vi.fn(async (url: string) =>
+      url.endsWith("/count_tokens")
+        ? new Response(JSON.stringify({ input_tokens: 100 }), { status: 200 })
+        : message(),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(withDiagnosticBudget(
+      { ceilingUsd: 0.1, maxCalls: 1, maxInputTokens: 20_000 },
+      async () => { await modelJson(request); await modelJson(request); },
+    )).rejects.toThrow(/call limit/);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("stops queued parallel judges after the first failed paid attempt", async () => {
+    const fetchMock = vi.fn(async (url: string) =>
+      url.endsWith("/count_tokens")
+        ? new Response(JSON.stringify({ input_tokens: 100 }), { status: 200 })
+        : new Response("busy", { status: 503 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(withDiagnosticBudget(
+      { ceilingUsd: 0.3, maxCalls: 3, maxInputTokens: 20_000 },
+      () => Promise.all([modelJson(request), modelJson(request), modelJson(request)]),
+    )).rejects.toThrow(/503/);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("fits the quoted one-lab, one-writer, fourteen-judge maximum inside $3", async () => {
+    const fetchMock = vi.fn(async (url: string) =>
+      url.endsWith("/count_tokens")
+        ? new Response(JSON.stringify({ input_tokens: 20_000 }), { status: 200 })
+        : message(),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await withDiagnosticBudget(
+      { ceilingUsd: 3, maxCalls: 16, maxInputTokens: 20_000 },
+      async () => {
+        await modelJson({ ...request, model: "claude-opus-4-8", maxTokens: 8_000 });
+        await modelJson({ ...request, model: "claude-opus-4-8", maxTokens: 16_000 });
+        for (let index = 0; index < 14; index++) await modelJson(request);
+      },
+    );
+    expect(result.calls).toBe(16);
+    expect(result.reservedUsd).toBeCloseTo(2.87, 8);
+    expect(fetchMock).toHaveBeenCalledTimes(32);
+  });
+});
 
 describe("reading one JSON object out of a model response", () => {
   it("reads a bare object", () => {

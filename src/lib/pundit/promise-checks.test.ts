@@ -5,7 +5,7 @@ import {
   type HarnessRow,
   type VariantRow,
 } from "./promise-checks.server";
-import type { PunditId } from "./types";
+import { PUNDIT_IDS, type PunditId } from "./types";
 
 /** The decision that puts a show in front of a listener.
  *
@@ -26,7 +26,7 @@ const ready = (punditId: PunditId, over: Partial<VariantRow> = {}): VariantRow =
     performance_plan: [],
     audio_url: `https://cdn/${punditId}.mp3`,
     audio_bytes: 5_000_000,
-    audio_duration_sec: 332,
+    audio_duration_sec: 150,
     share_image_url: `https://cdn/${punditId}.png`,
     transcript: "a verified transcript",
     published_at: null,
@@ -55,16 +55,17 @@ const passing = (name: string) => (checks: ReturnType<typeof decide>["checks"]) 
   checks.find((check) => check.name === name)?.passed;
 
 describe("deciding which pundits publish", () => {
-  it("accepts a concise Reporter without shortening other pundits", () => {
-    expect(
-      decide([ready("zen", { audio_duration_sec: 199 })], allPassed("v-zen")).publishable,
-    ).toHaveLength(1);
-    expect(
-      decide([ready("zen", { audio_duration_sec: 179 })], allPassed("v-zen")).publishable,
-    ).toHaveLength(0);
-    expect(
-      decide([ready("gaffer", { audio_duration_sec: 199 })], allPassed("v-gaffer")).publishable,
-    ).toHaveLength(0);
+  it.each([...PUNDIT_IDS])("applies the same alpha duration at publication for %s", (id) => {
+    for (const seconds of [120, 150, 180]) {
+      expect(
+        decide([ready(id, { audio_duration_sec: seconds })], allPassed(`v-${id}`)).publishable,
+      ).toHaveLength(1);
+    }
+    for (const seconds of [119.99, 180.01, 199, 360, NaN, Infinity]) {
+      const result = decide([ready(id, { audio_duration_sec: seconds })], allPassed(`v-${id}`));
+      expect(result.publishable).toHaveLength(0);
+      expect(result.withheld.join(" ")).toContain("duration");
+    }
   });
   it("publishes the one that passed and withholds the rest, with reasons", () => {
     const romantic = ready("romantic");
@@ -92,7 +93,7 @@ describe("deciding which pundits publish", () => {
       ready("zen", { transcript: null }),
       ready("gaffer", { audio_url: null }),
       ready("stats", { share_image_url: null }),
-      ready("doomer", { audio_duration_sec: 120 }),
+      ready("doomer", { audio_duration_sec: 119 }),
       ready("banter", { voice_candidate_id: null }),
     ];
     const result = decide(
@@ -101,7 +102,7 @@ describe("deciding which pundits publish", () => {
     );
     expect(result.publishable.map((v) => v.pundit_id)).toEqual(["romantic"]);
     expect(result.withheld).toHaveLength(5);
-    expect(result.withheld.join(" ")).toContain("duration 120s");
+    expect(result.withheld.join(" ")).toContain("duration 119s");
   });
 
   it("withholds a variant that failed one required harness", () => {

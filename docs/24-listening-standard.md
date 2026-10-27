@@ -8,6 +8,35 @@ Ruling (Krish, 2026-10-22): Reporter audition B is closer. Use its pace and deli
 
 The show sounds like a person making an interesting football argument to one listener. Contractions, ordinary football language, varied sentence lengths and earned slang belong. A clear opinion needs a specific reason. A qualification belongs beside the claim it changes, once. Repeated methodology explanations and forced catchphrases fail the writing review.
 
+Ruling (Krish, 2026-10-26, solo-script feedback): a concise factual review can
+still fail because it reads like stiff written prose and requires exceptional
+intonation to deliver. Draft for first hearing: ordinary spoken phrasing, one
+thought at a time, clear referents and a conversational progression. The core
+meaning must survive a plain delivery without emphasis tags. Shortening essay
+sentences, adding filler or asking the narrator to supply more expression is
+not sufficient. Local candidate release `product-personas-2026-10-26.3` now
+carries this criterion in shared version `1.1.0`, with anonymised contrast
+examples and a clarity-review instruction. The writer and reviewer consume
+the same pinned source. This is implemented locally, not deployed or proven
+effective by a fresh generated script or recording.
+
+The same candidate aligns new alpha reviews to 120-180 seconds for every pundit.
+Drafting budgets are 330-450 words, or 420-500 for the faster calibrated Reporter.
+Actual duration and the existing speaking-rate checks both have to pass; never
+race, pad or insert dead air to satisfy the limits. Human review must cover the
+complete recording. Earned humour serves analysis, with no joke-count quota.
+Approved historical recordings remain unchanged; their approval does not certify
+a fresh alpha narration.
+
+Owner readback, 26 October 2026: Krish judged the second solo-script draft
+"much better" and explicitly requested that the improvement be retained for
+future work. The private current pointer
+`_corpus/personality-system/solo-review-current.json` links the accepted writing
+example, rejected predecessor, exact hashes and feedback comparison. Reuse
+this pair when assessing spoken writing; it is a disclosed regression example,
+not an untouched evaluation case. This accepts the writing improvement only;
+no recording or deployed prompt change is approved by that verdict.
+
 Facts, numbers, names, scope and source disagreements still pass their existing checks. Expressive language cannot invent tactics, intent, eyewitness detail or season outcomes. The fixed alias Spurs is licensed only when Tottenham is a participating club in the evidence pack.
 
 `src/lib/pundit/spoken-style.ts` is the executable writing brief used by the generator. Reporter spec version 2 carries the revised persona. The clarity judge also assesses prose as speech. The Reporter measured rate range is 175 to 210 words per minute; the working centre is near 192, the selected audition's approximate rate. Names and numbers must remain clear. Other personas retain their existing audio gates until their auditions establish their own ranges.

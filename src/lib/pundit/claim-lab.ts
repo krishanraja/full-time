@@ -33,6 +33,43 @@ export function unsupportedTacticsSpans(text: string): string[] {
   return UNSUPPORTED_TACTICS.flatMap((pattern) => text.match(pattern)?.[0] ?? []);
 }
 
+/** A standings snapshot captured after kickoff cannot describe how teams entered
+ * the match. Keep the time qualifier attached to the table number. */
+export function unsupportedPrematchTableSpans(text: string, pack: EvidencePack): string[] {
+  const kickoff = pack.facts.find((item) => item.id === "match.kickoff")?.value;
+  const kickoffMs = typeof kickoff === "string" ? Date.parse(kickoff) : NaN;
+  const hasPrematchTable = Number.isFinite(kickoffMs) && pack.facts.some((item) => {
+    if (!item.id.startsWith("table.")) return false;
+    const captured = item.provenance.match(/captured_at=([^\s]+)/)?.[1];
+    return captured && Number.isFinite(Date.parse(captured)) && Date.parse(captured) < kickoffMs;
+  });
+  if (hasPrematchTable) return [];
+  return (text.match(/[^.!?]+[.!?]?/g) ?? [])
+    .map((sentence) => sentence.trim())
+    .filter((sentence) =>
+      /\b(?:went into|came into|entered|heading into|before kickoff|before the (?:match|game)|prior to (?:kickoff|the match|the game))\b/i.test(sentence) &&
+      /\b(?:points?|position|place|rank|table)\b/i.test(sentence),
+    );
+}
+
+/** A claim that both scorer and assister came off the bench needs two incoming
+ * substitution events for one recorded goal. A real scorer's and assister's
+ * names alone cannot license their substitute status. */
+export function unsupportedDoubleSubstituteGoalSpans(text: string, pack: EvidencePack): string[] {
+  const candidates = (text.match(/\b(?:substitute|sub)\b[^.!?]{0,100}\b(?:assisted by|from)\s+(?:a\s+)?(?:substitute|sub)\b/gi) ?? []);
+  if (!candidates.length) return [];
+  const arrivals = new Set(pack.facts
+    .filter((item) => item.label.startsWith("substitution event:") && Array.isArray(item.value))
+    .map((item) => String((item.value as Array<unknown>)[3] ?? "").toLowerCase()));
+  const supported = pack.facts.some((item) => {
+    if (!item.label.startsWith("goal event:") || !Array.isArray(item.value)) return false;
+    const scorer = String(item.value[3] ?? "").toLowerCase();
+    const assister = String(item.value[4] ?? "").toLowerCase();
+    return Boolean(scorer && assister && arrivals.has(scorer) && arrivals.has(assister));
+  });
+  return supported ? [] : candidates;
+}
+
 function numericValuesWithin(value: unknown, found: Set<number>): void {
   if (typeof value === "number" && Number.isFinite(value)) found.add(value);
   else if (typeof value === "string") {
@@ -196,6 +233,12 @@ export function licenseClaim(claim: AnalysisClaim, pack: EvidencePack): ClaimLic
   }
   if (OUTCOME_AS_JUSTIFICATION.some((pattern) => pattern.test(claim.thesis))) {
     failures.push("Confuses a successful outcome with decision quality.");
+  }
+  if (unsupportedPrematchTableSpans(claim.thesis, pack).length) {
+    failures.push("A post-match table snapshot cannot establish pre-match points or position.");
+  }
+  if (unsupportedDoubleSubstituteGoalSpans(claim.thesis, pack).length) {
+    failures.push("Both scorer and assister are called substitutes without two incoming substitution events.");
   }
   // A prediction at exactly even odds licenses no direction, so there is no
   // honest sentence a pundit can build on it. On the 2026-09-20 drop the
