@@ -144,10 +144,10 @@ it.
 Before this, nothing in the database held a cost. Answering "what did that
 run cost" meant reconstructing it from log lines that age out of the window.
 
-<!-- krish-canon:start release=v2026.10.27.2 sha=c5e2c9276020 rendered=2026-10-27 -->
+<!-- krish-canon:start release=v2026.10.30.1 sha=2673d6af5098 rendered=2026-10-31 -->
 ## Krish canon
 
-Rendered from `krishanraja/ai-harness` at release v2026.10.27.2. Nothing inside these
+Rendered from `krishanraja/ai-harness`; the start marker names the release. Nothing inside these
 markers is hand-maintained: an edit here is detected and proposed back to the canon,
 never silently overwritten, and never lost. This sync preserves all other text.
 Separately approved repository administration owns only its declared regions and context file.
@@ -187,7 +187,7 @@ lives only in a chat window teaches nothing.
 **Route.** principles, then context, then `strategy-brief`, then the producer, then
 `verification-loop`, then the approval gate, then delivery. The narrowest applicable
 skill wins; a broad "always" or "mandatory" claim inside a skill never overrides the
-router. One primary writer; validators may stack after it, competing writers may not. **North Star:** before any work, read the North Star linked from the `north-star` block in `AGENTS.md` or `CLAUDE.md`, say which part of it the task moves, and say so first when it moves nothing; only Krish changes it, and a repository with none asks him for one. Then read the number's urgency (U1 to U5) in `NOW.md` and push at the intensity `contract/north-star-metric.md` sets for it; urgency never widens authority. **Close out:** before a session that changed the repository ends, update `NOW.md` (status, the single next step, and one dated North Star check line: holds, or recalibration proposed for Krish). **One home per fact:** read a venture's state from its repository, doctrine from ai-harness; never keep a copy. **Taste:** where the Control Center connector offers them, before writing or designing for Krish read his approved rules with `get_approved_taste` (form only; empty means none yet, never invent one; without the connector, the `krish-voice` and `krish-design` copies), and when he corrects voice, design, a piece or an idea, send his exact typed words to `report_to_taste_engine` with where and when he typed them; anything else you noticed goes only as an observation. A report writes only to his own taste ledger and is exempt from the approval wall above (Ruling, Krish, 2026-10-26: "reports to my taste ledger are exempt from the approval wall"); it is never a send, post or publish to anyone. Never answer a card or approve a rule for him.
+router. One primary writer; validators may stack after it, competing writers may not. **North Star:** before any work, read the North Star linked from the `north-star` block in `AGENTS.md` or `CLAUDE.md`, say which part of it the task moves, and say so first when it moves nothing; only Krish changes it, and a repository with none asks him for one. Then read the number's urgency (U1 to U5) in `NOW.md` and push at the intensity `contract/north-star-metric.md` sets for it; urgency never widens authority. A growth engine also follows that file's Engines section. **Close out:** before a session that changed the repository ends, write `now-notes/YYYY-MM-DD-<slug>.md` (`Status:`, `Next:` the single next step, and one dated North Star check line: holds, or recalibration proposed for Krish), folded into `NOW.md` on main. **One home per fact:** read a venture's state from its repository, doctrine from ai-harness; never keep a copy. **Taste:** where the Control Center connector offers them, before writing or designing for Krish read his approved rules with `get_approved_taste` (form only; empty means none yet, never invent one; without the connector, the `krish-voice` and `krish-design` copies), giving the repository you are in (owner/name) and, from a repository that serves several ventures, the venture the work is for; it returns only that venture's rules, never another's (Ruling, Krish, 2026-10-28: the taste ledger is keyed by venture, not repository), and when he corrects voice, design, a piece or an idea, send his exact typed words to `report_to_taste_engine` with where and when he typed them and the repository you are in (naming the venture from a repository that serves several); anything else you noticed goes only as an observation. A report writes only to his own taste ledger and is exempt from the approval wall above (Ruling, Krish, 2026-10-26: "reports to my taste ledger are exempt from the approval wall"); it is never a send, post or publish to anyone. Never answer a card or approve a rule for him.
 
 **Who Krish is.** Purpose: "I see what is coming before it is obvious and make it
 legible to people while it still counts." Mindmake is his mission and his one company;
@@ -198,9 +198,8 @@ in the harness. What he works on is live, never copied here; read it from Contro
 https://controlcenter.krishraja.com/api/canon/KRISH.md (and `PORTFOLIO.md` beside it).
 
 **Where the rest lives.** The operating contract, the routing contract and the
-29 curated skills are in `krishanraja/ai-harness`. On a machine with the
-harness installed the same skills are under the user skills root, and the local copy is
-authoritative for reading; the repository is authoritative for what is correct.
+30 curated skills are in `krishanraja/ai-harness`. On a machine with the harness installed the same skills are under the user skills root, and the local copy is
+authoritative for reading; the repository is authoritative for what is correct. Where none is installed (claude.ai, a cloud session), read each skill live with Control Center `get_skill`.
 
 **This repository's own rules:** `AGENTS.md`, `docs/19-release-state.md`
 <!-- krish-canon:end -->
