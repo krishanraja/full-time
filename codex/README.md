@@ -23,6 +23,29 @@ Codex runs only on Krish's home computer, inside WSL Ubuntu. That computer's rec
 
 A card is built once: the branch `codex/<id>` marks it done. To run it again, use a new id.
 
+## Direction first: Krish sees it before anything is built
+
+Every video, ad or animated asset starts as a direction pack, and nothing is built until Krish says yes to it
+(Krish, 2026-11-01: "see the creative direction early on through mocks presented and a rough idea of the
+storyboard. Then I can approve it, and building can begin from there").
+
+1. **Pack.** In `design/<piece>/`: `direction.json` (format, goal, each shot's time, words on screen, what it
+   shows, which tool makes it and its credits; music; sources; `status: awaiting_krish`), one rough frame per
+   shot (`f1.jpg`...), `index.html` and `storyboard.jpg`, one image of every frame with its note.
+   heartside's `design/launch-reel-2026-11-02/` is the worked example.
+2. **Mocks are cheap.** Frames come from approved product photos composed in code, plus at most a few
+   generated stills (Higgsfield GPT Image, about 2.75 credits each) for shots with no product in them, each
+   booked with `reserve_credit_spend` first and settled after. No video is generated for a mock.
+3. **Show him.** Send `storyboard.jpg` to Krish as a file in the session, with the words on screen in the message.
+4. **His yes** goes in `direction.json` (`status: approved`, `approved` holding his exact words and the date).
+   A change he asks for is a new version of the pack, shown again.
+5. **Build** from the approved file only, choosing the tool by the rules in ai-harness `tool-router`: Runway for
+   controlled motion from an approved still, Higgsfield for range and variants, Epidemic Sound for the music,
+   and Codex (the card below) for everything in code: type, end cards, the real product's printed design,
+   and the assembly. Generators never touch a real product's printed design, type or logos.
+6. **Check** the finished file at full size and with sound against `direction.json` before calling it ready.
+   Publishing stays with Krish.
+
 ## Card template
 
 ```markdown

@@ -70,7 +70,7 @@ Earlier bullets (2026-09-27 to 2026-10-02: Premier League only, Google Analytics
 ## What is next and what is waiting on Krish
 
 - Next: diagnose the scheduled intake failures `39781515115` and `40195599277`, restore two-source corroboration, verify both Drive hashes and live adapter consumption, then use an eligible sealed pack for one sharp solo review (`docs/26-alpha-readiness-handoff.md`). A further paid run needs a new exact approval from Krish in chat.
-- Waiting on Krish (2026-11-01): release the growth-fulltime engine in Control Center and place a Codex share, so the Codex lane can book cards.
+- Waiting on Krish (2026-11-01): release the growth-fulltime engine in Control Center, so the Codex lane can book cards (its Codex share is placed by control-center#646). Every video or animated asset starts as a direction pack he approves first (codex/README.md, "Direction first").
 - Waiting on Krish: the questions archived in `docs/history/LOG.md` under 2026-10-29: the RSS `itunes:owner` address, whether a subset diagnostic run may publish (`docs/06-ops.md` says it cannot; the code says it can), the standings licence basis, and whether the OpenAI judge posture outlasts 2026-10-01.
 - North Star check (2026-11-01): holds.
 
