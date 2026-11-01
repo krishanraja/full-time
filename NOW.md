@@ -1,7 +1,7 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-10-29
+as_of: 2026-11-01
 head: 88378a1
 lifecycle: beta
 production_url: https://fulltime.fm
@@ -38,10 +38,11 @@ It is also proof, and that part survives anonymisation. The room_face buyer (`co
 Objection it answers: "AI-generated editorial cannot be held to a standard." Here is one held to twenty-five of them, daily, with the ledger open.
 
 
-## Where it is right now (as of 2026-10-29)
+## Where it is right now (as of 2026-11-01)
 
 <!-- north-star-state {"week_of": "2026-10-26", "week_target": 10, "current": 0, "current_as_of": "2026-10-27", "current_source": "Supabase FullTime listens HEAD count=exact, Content-Range */0", "urgency": 4, "urgency_reason": "at 0% of this week's target"} --> **North Star number: U4, far behind.** Listeners who come back within the same week: 0, against 10 this week, on the way to 10,000 by 31 May 2027. A bold swing every day; work that does not move the number waits.
 
+- **Codex lane set up, not yet usable** (2026-11-01): a session queues asset, motion and animation work as a card in `codex/queue/`, and Krish's home computer builds it and pushes `codex/<id>` (`codex/README.md`). Control Center holds this engine (`held: true`, no credits), so no card can be booked until he releases it and places a Codex share.
 - **Alpha handoff:** `docs/26-alpha-readiness-handoff.md` records the solo spoken-review decision, the failed paid diagnostic, the two API feeds and the GitHub collection failure. The two newest scheduled intake runs observed on 2026-10-27 were partial with no Drive delivery; refresh from GitHub before relying on that.
 - **Evidence intake v2:** adapter enabled and production-verified on 2026-10-20 (ten matches, 394 facts, 116 measurements consumed, four disputed observations withheld, no model calls). Proof and rollback: `docs/premier-league-evidence-actions.md`.
 - **Pilot beta, December target, one feedback inbox** since 2026-10-16 (Rulings, Krish; `docs/22-vision-and-beta.md`). No tester has been invited; nobody has confirmed the `utm_source=beta` tag reaches PostHog.
@@ -69,8 +70,9 @@ Earlier bullets (2026-09-27 to 2026-10-02: Premier League only, Google Analytics
 ## What is next and what is waiting on Krish
 
 - Next: diagnose the scheduled intake failures `39781515115` and `40195599277`, restore two-source corroboration, verify both Drive hashes and live adapter consumption, then use an eligible sealed pack for one sharp solo review (`docs/26-alpha-readiness-handoff.md`). A further paid run needs a new exact approval from Krish in chat.
+- Waiting on Krish (2026-11-01): release the growth-fulltime engine in Control Center and place a Codex share, so the Codex lane can book cards.
 - Waiting on Krish: the questions archived in `docs/history/LOG.md` under 2026-10-29: the RSS `itunes:owner` address, whether a subset diagnostic run may publish (`docs/06-ops.md` says it cannot; the code says it can), the standings licence basis, and whether the OpenAI judge posture outlasts 2026-10-01.
-- North Star check (2026-10-27): holds.
+- North Star check (2026-11-01): holds.
 
 ## Read next
 

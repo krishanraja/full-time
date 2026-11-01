@@ -144,6 +144,12 @@ it.
 Before this, nothing in the database held a cost. Answering "what did that
 run cost" meant reconstructing it from log lines that age out of the window.
 
+## Assets, motion and animation: Codex makes them
+
+Claude directs and checks; Codex makes this venture's assets, motion design and animation, on Krish's home computer,
+from a card in `codex/queue/`. Never ask Krish how to reach Codex: follow [`codex/README.md`](codex/README.md).
+Claude, not Codex, calls Runway and Higgsfield, inside this venture's Control Center share.
+
 <!-- krish-canon:start release=v2026.10.27.2 sha=c5e2c9276020 rendered=2026-10-27 -->
 ## Krish canon
 
