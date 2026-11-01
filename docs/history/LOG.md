@@ -4,6 +4,14 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-11-01
+
+- reconciled at `d07d963`: `NOW.md` was 16142 characters against a 16000 limit with 9 "Where it is right now" bullets against 8. The publication bullet folded into the live bullet; two old bullets rolled out.
+- rolled from NOW.md:
+  > - 2026-10-18 **The repo gained a North Star and a harness canon block; no product behaviour changed** (PRs #81 and #82). Model spend: $0.
+- rolled from NOW.md:
+  > - 2026-10-03 **The podcast feed's contact address moved to the Mindmake domain** (`8f1c95b`, PR #75; Ruling, Krish, 2026-10-03). It merged with only the `pnpm audit` step red on an advisory with no published fix; "No gate was weakened."
+
 ## 2026-10-29
 
 - reconciled at `88378a1`: `NOW.md`. It had grown to 40201 characters against a 16000 limit, with 16 "What changed recently" bullets, 17 "Where it is right now" bullets and 6 "Next" lines; everything cut is archived verbatim below and the live file keeps short current versions.

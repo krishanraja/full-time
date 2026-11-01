@@ -2,7 +2,7 @@
 repo: krishanraja/full-time
 product: Full Time
 as_of: 2026-11-01
-head: 88378a1
+head: d07d963
 lifecycle: beta
 production_url: https://fulltime.fm
 state_doc: docs/19-release-state.md
@@ -46,8 +46,7 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 - **Alpha handoff:** `docs/26-alpha-readiness-handoff.md` records the solo spoken-review decision, the failed paid diagnostic, the two API feeds and the GitHub collection failure. The two newest scheduled intake runs observed on 2026-10-27 were partial with no Drive delivery; refresh from GitHub before relying on that.
 - **Evidence intake v2:** adapter enabled and production-verified on 2026-10-20 (ten matches, 394 facts, 116 measurements consumed, four disputed observations withheld, no model calls). Proof and rollback: `docs/premier-league-evidence-actions.md`.
 - **Pilot beta, December target, one feedback inbox** since 2026-10-16 (Rulings, Krish; `docs/22-vision-and-beta.md`). No tester has been invited; nobody has confirmed the `utm_source=beta` tag reaches PostHog.
-- **Live at fulltime.fm** as a beta by founder override (2026-09-04): three tabs, six AI Pundits free, Premier League only, one match, no scroll. Last live readback in `docs/19-release-state.md` is 2026-09-04; nothing here confirms production flags since. The TanStack XSS patch (`5894eca`) is in the tree and unread on production.
-- **Publication is per edition** since 2026-09-05; a drop publishes each edition that passed all gates. How many of the six published on any day is a database fact this reconciliation could not read.
+- **Live at fulltime.fm** as a beta by founder override (2026-09-04): three tabs, six AI Pundits free, Premier League only, one match, no scroll. Publication is per edition since 2026-09-05; how many of the six published on any day is a database fact not read here. Last live readback in `docs/19-release-state.md` is 2026-09-04; nothing here confirms production flags since. The TanStack XSS patch (`5894eca`) is in the tree and unread on production.
 - **Cost controls are live in code:** per-step spend ceiling, repair-round limits, prompt caching, per-run spend on `editorial_runs.promise_checks.spend` (`docs/06-ops.md`). The writer and judges run on OpenAI models while the Anthropic cap bridge stands (`docs/06-ops.md`).
 - **Built but not live** (flags false): checkout, prediction registration, forecast training, public forecast scores, evaluation runs, release snapshot writes, legacy on-demand narration. Gaps: `docs/product-state.json`, `currentGaps`.
 - **Unproven:** the league table, drift ledger and second expected-goals opinion are wired and empty until an ingest runs against them; the match data provider stopped sending expected goals on 1 September 2026 (`5329ec4`).
@@ -61,11 +60,9 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 - 2026-10-21 **A concise Reporter edition was enabled** (`864a8fa`, `322fd11`, PRs #92 and #93). Ruling (Krish, 2026-10-21): run one final review within USD 0.35, then narrate and publish if it passes. Whether that edition published is a production fact not observed here.
 - 2026-10-20 **The evidence intake was read back through the live product, and the readback found four disagreements that were withheld rather than settled** (PRs #88 to #91). Provider numbers for two blocked-shot counts and both possession percentages differed from the archived ones; both observations and dependent calculations were withheld. Model spend: $0.
 - 2026-10-19 **A scheduled evidence intake runs on GitHub Actions and the app names the companies behind it** (PRs #84 to #86). The first live run found what mocked tests could not: a fixture feed returning HTTP 404, a missing key, and a Drive 403 with no reason. Ruling (Krish, 2026-10-19): the files are internal-only. Mindmaker LLC and Mindmaker Ltd now appear in the footer note, terms and privacy.
-- 2026-10-18 **The repo gained a North Star and a harness canon block; no product behaviour changed** (PRs #81 and #82). Model spend: $0.
 - 2026-10-16 **The docs described a contract, not a product, and had no room for testers.** Krish ruled a B2C pilot beta, a December release target with a written bar, and krish@fulltime.fm as the feedback inbox (`docs/22-vision-and-beta.md`). Model spend: $0.
-- 2026-10-03 **The podcast feed's contact address moved to the Mindmake domain** (`8f1c95b`, PR #75; Ruling, Krish, 2026-10-03). It merged with only the `pnpm audit` step red on an advisory with no published fix; "No gate was weakened."
 
-Earlier bullets (2026-09-27 to 2026-10-02: Premier League only, Google Analytics, the premium visual system, the XSS patch, the play-button fix) are archived verbatim in `docs/history/LOG.md` under 2026-10-29.
+Earlier bullets (2026-09-27 to 2026-10-03, and 2026-10-18: Premier League only, Google Analytics, the premium visual system, the XSS patch, the play-button fix) are archived verbatim in `docs/history/LOG.md` under 2026-10-29 and 2026-11-01.
 
 ## What is next and what is waiting on Krish
 
