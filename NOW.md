@@ -1,7 +1,7 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-11-11
+as_of: 2026-11-12
 head: 02a4af5
 lifecycle: beta
 production_url: https://fulltime.fm
@@ -38,7 +38,7 @@ It is also proof, and that part survives anonymisation. The room_face buyer (`co
 Objection it answers: "AI-generated editorial cannot be held to a standard." Here is one held to twenty-five of them, daily, with the ledger open.
 
 
-## Where it is right now (as of 2026-11-11)
+## Where it is right now (as of 2026-11-12)
 
 <!-- north-star-state {"week_of":"2026-11-02","week_target":24,"current":0,"current_as_of":"2026-11-02","current_source":"Supabase FullTime listens: listeners with listens on two or more days in the last 7, read-only","urgency":5,"urgency_reason":"under 40% of the week's target two weeks running (0% now)"} --> **North Star number: U5, stalled.** Listeners who come back within the same week: 0, against 24 this week, on the way to 10,000 by 31 May 2027. Everything else pauses unless it moves the number.
 
