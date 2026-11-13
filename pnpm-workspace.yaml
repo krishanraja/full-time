@@ -57,3 +57,12 @@ overrides:
   # so the 9 (@swc/cli) and 10 (@vercel/queue, @oclif/core) lines move to 11.
   # 3.x and 5.x are outside the advisory and stay where they are.
   "minimatch@>=9.0.0 <11.0.1": 11.0.8
+  # 13 November dev-dependency audit. All dev-only, none reach production.
+  # brace-expansion 1.x (eslint's minimatch 3): GHSA-6j4f-fj2g-mc7p,
+  # GHSA-qhr7-859c-m2p7 and GHSA-q2hr-2g5m-vwhr, latest patch on the 1.1 line.
+  "brace-expansion@<1.1.22": 1.1.22
+  # launch-editor GHSA-587h-7wmj-h5pm, GHSA-698v-4r3x-3vcv, GHSA-r825-w8mm-5pxw
+  # and shell-quote GHSA-pqg4-j6r4-53mv (critical), both reached through the
+  # TanStack devtools under @lovable.dev/vite-tanstack-config.
+  launch-editor: 2.14.2
+  shell-quote: 1.11.0
