@@ -42,6 +42,7 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 
 <!-- north-star-state {"week_of":"2026-11-02","week_target":24,"current":0,"current_as_of":"2026-11-02","current_source":"Supabase FullTime listens: listeners with listens on two or more days in the last 7, read-only","urgency":5,"urgency_reason":"under 40% of the week's target two weeks running (0% now)"} --> **North Star number: U5, stalled.** Listeners who come back within the same week: 0, against 24 this week, on the way to 10,000 by 31 May 2027. Everything else pauses unless it moves the number.
 
+- The production dependency audit passes on main again: seroval and seroval-plugins 1.6.12, qs 6.16.2 and minimatch 11.0.8 are pinned as exact overrides, clearing the four moderate advisories that blocked the repository-administration pull request #103. (2026-11-13)
 - **Codex lane set up, not yet usable** (2026-11-01): a session queues asset, motion and animation work as a card in `codex/queue/`, and Krish's home computer builds it and pushes `codex/<id>` (`codex/README.md`). Control Center holds this engine (`held: true`, no credits), so no card can be booked until he releases it and places a Codex share.
 - **Alpha handoff:** `docs/26-alpha-readiness-handoff.md` records the solo spoken-review decision, the failed paid diagnostic, the two API feeds and the GitHub collection failure. The two newest scheduled intake runs observed on 2026-10-27 were partial with no Drive delivery; refresh from GitHub before relying on that.
 - **Evidence intake v2:** adapter enabled and production-verified on 2026-10-20 (ten matches, 394 facts, 116 measurements consumed, four disputed observations withheld, no model calls). Proof and rollback: `docs/premier-league-evidence-actions.md`.
@@ -67,7 +68,7 @@ Earlier bullets (2026-09-27 to 2026-10-03, and 2026-10-18: Premier League only, 
 
 ## What is next and what is waiting on Krish
 
-- Next: diagnose the scheduled intake failures `39781515115` and `40195599277`, restore two-source corroboration, verify both Drive hashes and live adapter consumption, then use an eligible sealed pack for one sharp solo review (`docs/26-alpha-readiness-handoff.md`). A further paid run needs a new exact approval from Krish in chat.
+- Next (2026-11-13): diagnose the scheduled intake failures 39781515115 and 40195599277 and restore two-source corroboration, per docs/26-alpha-readiness-handoff.md.
 - Waiting on Krish (2026-11-01): release the growth-fulltime engine in Control Center, so the Codex lane can book cards (its Codex share is placed by control-center#646). Every video or animated asset starts as a direction pack he approves first (codex/README.md, "Direction first").
 - Waiting on Krish: the questions archived in `docs/history/LOG.md` under 2026-10-29: the RSS `itunes:owner` address, whether a subset diagnostic run may publish (`docs/06-ops.md` says it cannot; the code says it can), the standings licence basis, and whether the OpenAI judge posture outlasts 2026-10-01.
 - North Star check (2026-11-13): holds.
