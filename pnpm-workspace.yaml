@@ -28,7 +28,8 @@ overrides:
   "brace-expansion@>=2.0.0 <3.0.0": 2.1.7
   "brace-expansion@>=5.0.0 <6.0.0": 5.0.12
   "piscina@>=4.0.0 <5.0.0": 4.9.4
-  qs: ">=6.16.0"
+  # 13 November audit: GHSA-6pq8-jhm2-2vcw. Patch release on the 6.16 line, pinned exactly.
+  qs: 6.16.2
   # GHSA-ch52-4w7c-c8xp (high, 2026-09-18): max-stale handling can serve one
   # user's cached response to another. Reached only through got>cacheable-request
   # under @swc/cli's binary downloader. 4.3.0 is the first release after 4.2.0;
@@ -47,3 +48,12 @@ overrides:
   # and would do it quietly.
   devalue: 5.9.3
   js-yaml: 4.3.2
+  # 13 November audit. seroval GHSA-9wx9-5pv9-3349 and its sibling advisory are
+  # fixed in 1.6.11; 1.6.12 is the latest patch on the line @tanstack/router-core
+  # already pins. seroval-plugins moves with it so the pair stays in lockstep.
+  seroval: 1.6.12
+  seroval-plugins: 1.6.12
+  # minimatch GHSA-g3hv-75wg-m249 covers >=7 <11.0.1 with no 9.x or 10.x patch,
+  # so the 9 (@swc/cli) and 10 (@vercel/queue, @oclif/core) lines move to 11.
+  # 3.x and 5.x are outside the advisory and stay where they are.
+  "minimatch@>=9.0.0 <11.0.1": 11.0.8
