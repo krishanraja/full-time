@@ -110,11 +110,68 @@ and whether the problem is provider, key entitlement, season/date mapping or
 our schema handling remain undiagnosed. Inspect exact sanitized response
 shape and code path before making a fix; never expose key values.
 
+### Intake diagnosis (13 November 2026)
+
+Read from stored logs, receipts and artifacts only: no provider calls, no model
+spend. It supersedes the "remain undiagnosed" sentence above.
+
+**Scope is wider than recorded.** Every scheduled run from run 21 (22 October)
+to run 30 (12 November) failed; the last good run is `39407984999` on
+20 October. The 12 November run (window 9-11 November) found zero fixtures
+and failed with "No complete fixtures verified; cannot treat empty output as
+no games", so a week with no matches cannot be told apart from an outage.
+
+**Fault 1: API-Football refuses every fixture call, and the cause is outside
+our code.** The 20 October success ran at `21b37d7`, and no commit has touched
+`scripts/pl-evidence/` or `.github/workflows/premier-league-evidence.yml`
+since. The computed `season` is 2026 on both sides of the break, so season or
+date mapping is ruled out. The receipt error proves the provider answered HTTP
+200: `requestText` throws `HTTP <status>` for any non-200
+(`scripts/pl-evidence/collect.mjs`), while "Invalid API-Football fixture schema
+or provider error" is thrown only inside `apiFootballFixtures`
+(`scripts/pl-evidence/core.mjs`) after a successful parse, when `response` is
+not an array or `errors` is non-empty. That is API-Football's convention for an
+invalid key, a plan that does not cover the request, or an exhausted request
+quota. Network failure, an HTTP block and a schema change are ruled out. Which
+of the three it is cannot be recovered from stored evidence, because the code
+discards `payload.errors` and throws a fixed string.
+
+**Fault 2: the fallback cannot replace it, which is the architectural
+problem.** The 20 October raw file records 23 `api-football.com` calls (3
+fixture lists, 10 statistics, 10 events) and exactly one `football-data.org`
+call, the fixture list. `collectMatchDetails` picks its detail branch by
+`fixture.source_domain`, so the football-data match-detail path never ran while
+API-Football was healthy. When it did run (22 and 25 October), all six detail
+calls returned `status: "partial", items: 0` without throwing: the response
+carried the right teams and score, which the code checks, but no statistics,
+goals or bookings. The most likely cause is the football-data plan's
+entitlement; that is inferred, not yet verified. **API-Football is therefore
+the single source of every statistic the product uses, and football-data has
+only ever corroborated the scoreline.** "Two-source agreement" in this pipeline
+means score corroboration, not statistics corroboration. Restoring the
+API-Football key alone would hide this again, not fix it.
+
+**Fault 3: the receipt cannot say why a provider refused.** It stores the
+generic message only, which is why the fault stayed undiagnosed from
+27 October to 13 November.
+
+**What settles the remaining unknowns:**
+
+1. The API-Football dashboard shows whether the key, the plan or the quota is
+   at fault. This is free and only Krish can see it.
+2. Alternatively, record the provider's sanitized `errors` keys and messages
+   (never the key) in `source_status`, then run `workflow_dispatch` once on a
+   known-completed window. The intake makes no model calls, so this costs $0
+   in API credits; it spends only Actions minutes and provider quota.
+3. A real second statistics source needs a paid football-data tier or a
+   different provider. That is a spend decision for Krish.
+
 ## Relentless next sequence
 
-1. **Restore trustworthy collection first.** Read both failed run receipts and
-   the intake parser. Diagnose API-Football's fixture failure and the missing
-   football-data.org details. Run the smallest safe smoke check over a known
+1. **Restore trustworthy collection first.** The failure is diagnosed (see
+   "Intake diagnosis (13 November 2026)"): restore API-Football access, make
+   the receipt record the provider's sanitized refusal reason, and decide how a
+   second source can supply statistics, not only scores. Run the smallest safe smoke check over a known
    completed Premier League window, then prove two-source agreement, complete
    receipt, both Drive JSON hashes and the live adapter's actual consumption.
    A green workflow or accessible folder alone is insufficient. Keep partial
@@ -138,8 +195,9 @@ shape and code path before making a fix; never expose key values.
    before quoting a new value. The December release bar and tester questions
    are in `docs/22-vision-and-beta.md`.
 
-**Immediate next action:** diagnose the two failed scheduled intake runs,
-restore a corroborated sealed Premier League window, and prove the product
+**Immediate next action:** restore API-Football access once Krish has read
+its dashboard (key, plan or quota), make the receipt record the provider's
+sanitized refusal reason, restore a corroborated sealed Premier League window, and prove the product
 adapter consumes it. Then resume the solo pundit quality loop on that pack.
 This sequence is the alpha sprint, not a request for another personality or ad
 exploration round.
