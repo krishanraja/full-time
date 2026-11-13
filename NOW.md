@@ -1,7 +1,7 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-11-12
+as_of: 2026-11-13
 head: 02a4af5
 lifecycle: beta
 production_url: https://fulltime.fm
@@ -53,6 +53,7 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 
 ## What changed recently
 
+- 2026-11-13 **The production dependency audit on main is green again** (PR #109). Four moderate advisories (seroval, qs, minimatch) had failed `pnpm audit --prod` since late October, which kept the harness watchdog red and blocked the repository-administration PR #103. Exact overrides: seroval and seroval-plugins 1.6.12, qs 6.16.2, minimatch 9.x/10.x to 11.0.8. Typecheck, tests, lint and build pass. Model spend: $0.
 - 2026-10-27 **A paid solo diagnostic passed every mechanical gate and still failed on facts, so the alpha was re-aligned to spoken quality and an evidence handoff** (`ce10e52`, PR #102; `docs/26-alpha-readiness-handoff.md`). The 385-word Gaffer script cleared all eleven deterministic gates, then was quarantined by factual entailment, insight (3/5) and restraint (3/5): the claim lab invented that both the late scorer and assister were substitutes, and the script and reviewer used an after-match table as if it described both teams before kickoff. The fix added checks for those two errors, a 120-180 second alpha format, shared speech and profile `1.1.0` files, and a numeric gate for exact pack-licensed spoken decimals. The commit does not claim better writing.
 - 2026-10-23 **The North Star now has a number, a weekly ladder and an urgency rating** (Ruling, Krish, 2026-10-23). Every repository chases one aggressive number on a weekly ladder, and urgency U1 to U5 sets intensity. See `docs/NORTH_STAR.md`.
 - 2026-10-22 **The Reporter now writes to be heard, and a listening standard separates "passed the gates" from "sounds right"** (PR #95; `docs/24-listening-standard.md`). The failure it answers: automated editorial and audio success had been read as listening approval. Not verified: the production narrator does not yet reproduce the approved take B.
@@ -69,7 +70,7 @@ Earlier bullets (2026-09-27 to 2026-10-03, and 2026-10-18: Premier League only, 
 - Next: diagnose the scheduled intake failures `39781515115` and `40195599277`, restore two-source corroboration, verify both Drive hashes and live adapter consumption, then use an eligible sealed pack for one sharp solo review (`docs/26-alpha-readiness-handoff.md`). A further paid run needs a new exact approval from Krish in chat.
 - Waiting on Krish (2026-11-01): release the growth-fulltime engine in Control Center, so the Codex lane can book cards (its Codex share is placed by control-center#646). Every video or animated asset starts as a direction pack he approves first (codex/README.md, "Direction first").
 - Waiting on Krish: the questions archived in `docs/history/LOG.md` under 2026-10-29: the RSS `itunes:owner` address, whether a subset diagnostic run may publish (`docs/06-ops.md` says it cannot; the code says it can), the standings licence basis, and whether the OpenAI judge posture outlasts 2026-10-01.
-- North Star check (2026-11-01): holds.
+- North Star check (2026-11-13): holds.
 
 ## Read next
 
