@@ -1,8 +1,8 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-11-13
-head: 02a4af5
+as_of: 2026-11-14
+head: 1af0c02
 lifecycle: beta
 production_url: https://fulltime.fm
 state_doc: docs/19-release-state.md
@@ -38,7 +38,7 @@ It is also proof, and that part survives anonymisation. The room_face buyer (`co
 Objection it answers: "AI-generated editorial cannot be held to a standard." Here is one held to twenty-five of them, daily, with the ledger open.
 
 
-## Where it is right now (as of 2026-11-12)
+## Where it is right now (as of 2026-11-14)
 
 <!-- north-star-state {"week_of":"2026-11-02","week_target":24,"current":0,"current_as_of":"2026-11-02","current_source":"Supabase FullTime listens: listeners with listens on two or more days in the last 7, read-only","urgency":5,"urgency_reason":"under 40% of the week's target two weeks running (0% now)"} --> **North Star number: U5, stalled.** Listeners who come back within the same week: 0, against 24 this week, on the way to 10,000 by 31 May 2027. Everything else pauses unless it moves the number.
 
@@ -75,7 +75,7 @@ Earlier bullets (2026-09-27 to 2026-10-03, and 2026-10-18: Premier League only, 
 - Next (2026-11-13): restore API-Football access after Krish reads its dashboard, make the receipt record the provider's sanitized refusal reason, then run the intake once on a known-completed window.
 - Waiting on Krish (2026-11-13): read the API-Football dashboard and say whether the key, the plan or the request quota is at fault; and decide whether to pay for a second statistics source (a football-data tier with match statistics, or another provider), since football-data currently corroborates scores only.
 - Waiting on Krish (2026-11-01): release the growth-fulltime engine in Control Center, so the Codex lane can book cards (its Codex share is placed by control-center#646). Every video or animated asset starts as a direction pack he approves first (codex/README.md, "Direction first").
-- Waiting on Krish: the questions archived in `docs/history/LOG.md` under 2026-10-29: the RSS `itunes:owner` address, whether a subset diagnostic run may publish (`docs/06-ops.md` says it cannot; the code says it can), the standings licence basis, and whether the OpenAI judge posture outlasts 2026-10-01.
+- Waiting on Krish (asked 2026-10-29, still open 2026-11-14): the questions archived in `docs/history/LOG.md` under 2026-10-29: the RSS `itunes:owner` address, whether a subset diagnostic run may publish (`docs/06-ops.md` says it cannot; the code says it can), the standings licence basis, and whether the OpenAI judge posture outlasts 2026-10-01.
 - North Star check (2026-11-13): holds.
 
 ## Read next
