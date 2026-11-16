@@ -1,7 +1,7 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-11-14
+as_of: 2026-11-16
 head: 47c1acd
 lifecycle: beta
 production_url: https://fulltime.fm
@@ -16,9 +16,9 @@ never_publish: [the product name Full Time and the domain fulltime.fm, the sport
 
 # Full Time: where it is right now
 
-The solo pundit alpha is mid-build and none of it is proven on listeners or in published audio. Merged 2026-10-27 (PR #102, `ce10e52`): the alpha format (120-180 seconds per recording), spoken-first standards in shared speech `1.1.0` and six profile `1.1.0` files, a numeric gate that accepts pack-licensed spoken decimals, and checks for post-match table figures narrated as pre-match context and for invented substitute-to-substitute goals. Details: `docs/25-personality-system.md`, `docs/24-listening-standard.md`, `docs/26-alpha-readiness-handoff.md`.
+The solo pundit alpha is mid-build and none of it is proven on listeners or in published audio. Merged 2026-10-27 (PR #102, `ce10e52`): the alpha format (120-180 seconds per recording), spoken-first standards in shared speech `1.1.0` and six profile `1.1.0` files, a numeric gate that accepts pack-licensed spoken decimals, and checks for post-match table figures narrated as pre-match context and for invented substitute-to-substitute goals. Details: `docs/26-alpha-readiness-handoff.md`.
 
-Editorial quality is unproven. The 27 October paid Gaffer diagnostic (16 calls, $0.4138398 local usage) passed all eleven deterministic gates and was quarantined by factual entailment, insight and restraint. No new model or audio call has tested the revised instructions, and both paid approvals are spent. Last local verification (27 October): 609 tests passed, two skipped; typecheck, documentation and persona checks passed. No deployment, publication or audio generation occurred. The longer 26 to 27 October narrative is in `docs/history/LOG.md` under 2026-10-27.
+Editorial quality is unproven. The 27 October paid Gaffer diagnostic (16 calls, $0.4138398 local usage) passed all eleven deterministic gates and was quarantined by factual entailment, insight and restraint. No new model or audio call has tested the revised instructions, and both paid approvals are spent. Last local verification (27 October): 609 tests passed, two skipped; typecheck, documentation and persona checks passed. No deployment, publication or audio generation occurred.
 
 ## What it is
 
@@ -38,21 +38,17 @@ It is also proof, and that part survives anonymisation. The room_face buyer (`co
 Objection it answers: "AI-generated editorial cannot be held to a standard." Here is one held to twenty-five of them, daily, with the ledger open.
 
 
-## Where it is right now (as of 2026-11-14)
+## Where it is right now (as of 2026-11-16)
 
 <!-- north-star-state {"week_of":"2026-11-02","week_target":24,"current":0,"current_as_of":"2026-11-02","current_source":"Supabase FullTime listens: listeners with listens on two or more days in the last 7, read-only","urgency":5,"urgency_reason":"under 40% of the week's target two weeks running (0% now)"} --> **North Star number: U5, stalled.** Listeners who come back within the same week: 0, against 24 this week, on the way to 10,000 by 31 May 2027. Everything else pauses unless it moves the number.
 
-- The evidence intake failure is diagnosed and written into docs/26-alpha-readiness-handoff.md: all ten scheduled runs since 22 October failed on unchanged code because API-Football answers HTTP 200 with an error object (key, plan or quota), and the football-data fallback has never supplied statistics, so API-Football is the only statistics source. (2026-11-13)
-- The full dependency audit (dev included) is now clean: vitest and @vitest/mocker 4.1.12, brace-expansion 1.1.22, launch-editor 2.14.2 and shell-quote 1.11.0 clear the ten advisories pnpm audit reported outside production. CI only gates production deps, so this was housekeeping on top of the already-green prod audit. (2026-11-13)
-- The production dependency audit passes on main again: seroval and seroval-plugins 1.6.12, qs 6.16.2 and minimatch 11.0.8 are pinned as exact overrides, clearing the four moderate advisories that blocked the repository-administration pull request #103. (2026-11-13)
-- **Codex lane set up, not yet usable** (2026-11-01): a session queues asset, motion and animation work as a card in `codex/queue/`, and Krish's home computer builds it and pushes `codex/<id>` (`codex/README.md`). Control Center holds this engine (`held: true`, no credits), so no card can be booked until he releases it and places a Codex share.
-- **Alpha handoff:** `docs/26-alpha-readiness-handoff.md` records the solo spoken-review decision, the failed paid diagnostic, the two API feeds and the GitHub collection failure. The two newest scheduled intake runs observed on 2026-10-27 were partial with no Drive delivery; refresh from GitHub before relying on that.
-- **Evidence intake v2:** adapter enabled and production-verified on 2026-10-20 (ten matches, 394 facts, 116 measurements consumed, four disputed observations withheld, no model calls). Proof and rollback: `docs/premier-league-evidence-actions.md`.
+- **Dependencies:** the full audit, dev included, is clean (exact overrides for seroval, qs, minimatch, vitest, brace-expansion, launch-editor, shell-quote; 2026-11-13). Nothing has been built since 2026-11-14.
+- **Codex lane set up, not yet usable** (still held 2026-11-16): a session queues asset, motion and animation work as a card in `codex/queue/`, and Krish's home computer builds it and pushes `codex/<id>` (`codex/README.md`). Control Center holds this engine (`held: true`), so no card can be booked until he releases it.
+- **Alpha handoff:** `docs/26-alpha-readiness-handoff.md` records the solo spoken-review decision, the failed paid diagnostic, the two API feeds and the intake diagnosis: all ten scheduled runs since 22 October failed on unchanged code because API-Football answers HTTP 200 with an error object, and the football-data fallback has never supplied statistics (2026-11-13). Intake v2 was production-verified on 2026-10-20 (`docs/premier-league-evidence-actions.md`).
 - **Pilot beta, December target, one feedback inbox** since 2026-10-16 (Rulings, Krish; `docs/22-vision-and-beta.md`). No tester has been invited; nobody has confirmed the `utm_source=beta` tag reaches PostHog.
-- **Live at fulltime.fm** as a beta by founder override (2026-09-04): three tabs, six AI Pundits free, Premier League only, one match, no scroll. Publication is per edition since 2026-09-05; how many of the six published on any day is a database fact not read here. Last live readback in `docs/19-release-state.md` is 2026-09-04; nothing here confirms production flags since. The TanStack XSS patch (`5894eca`) is in the tree and unread on production.
+- **Live at fulltime.fm** as a beta by founder override (2026-09-04): three tabs, six AI Pundits free, Premier League only, one match, no scroll. Publication is per edition since 2026-09-05; how many of the six published on any day is a database fact not read here. Last live readback in `docs/19-release-state.md` is 2026-09-04; nothing here confirms production flags since.
 - **Cost controls are live in code:** per-step spend ceiling, repair-round limits, prompt caching, per-run spend on `editorial_runs.promise_checks.spend` (`docs/06-ops.md`). The writer and judges run on OpenAI models while the Anthropic cap bridge stands (`docs/06-ops.md`).
-- **Built but not live** (flags false): checkout, prediction registration, forecast training, public forecast scores, evaluation runs, release snapshot writes, legacy on-demand narration. Gaps: `docs/product-state.json`, `currentGaps`.
-- **Unproven:** the league table, drift ledger and second expected-goals opinion are wired and empty until an ingest runs against them; the match data provider stopped sending expected goals on 1 September 2026 (`5329ec4`).
+- **Built but not live** (flags false): checkout, prediction registration, forecast training, public forecast scores, evaluation runs, release snapshot writes, legacy on-demand narration. Gaps: `docs/product-state.json`, `currentGaps`. Unproven: the league table, drift ledger and second expected-goals opinion are wired and empty until an ingest runs against them; the match data provider stopped sending expected goals on 1 September 2026 (`5329ec4`).
 
 ## What changed recently
 
@@ -63,18 +59,14 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 - 2026-10-23 **The North Star now has a number, a weekly ladder and an urgency rating** (Ruling, Krish, 2026-10-23). Every repository chases one aggressive number on a weekly ladder, and urgency U1 to U5 sets intensity. See `docs/NORTH_STAR.md`.
 - 2026-10-22 **The Reporter now writes to be heard, and a listening standard separates "passed the gates" from "sounds right"** (PR #95; `docs/24-listening-standard.md`). The failure it answers: automated editorial and audio success had been read as listening approval. Not verified: the production narrator does not yet reproduce the approved take B.
 - 2026-10-21 **A public answer hub and a true-size brand set exist in the tree** (`c499a0a`, PR #94). The favicons and icons "were five copies of one 2000x2000 PNG (145 KB each)"; each is now its true size. Five seed posts, `llms-full.txt` and an Atom feed were added; the hub is deliberately unlinked from the app's navigation (`docs/23-answer-hub.md`). Dev-server readback only, model spend $0.
-- 2026-10-21 **A concise Reporter edition was enabled** (`864a8fa`, `322fd11`, PRs #92 and #93). Ruling (Krish, 2026-10-21): run one final review within USD 0.35, then narrate and publish if it passes. Whether that edition published is a production fact not observed here.
-- 2026-10-20 **The evidence intake was read back through the live product, and the readback found four disagreements that were withheld rather than settled** (PRs #88 to #91). Provider numbers for two blocked-shot counts and both possession percentages differed from the archived ones; both observations and dependent calculations were withheld. Model spend: $0.
-- 2026-10-19 **A scheduled evidence intake runs on GitHub Actions and the app names the companies behind it** (PRs #84 to #86). The first live run found what mocked tests could not: a fixture feed returning HTTP 404, a missing key, and a Drive 403 with no reason. Ruling (Krish, 2026-10-19): the files are internal-only. Mindmaker LLC and Mindmaker Ltd now appear in the footer note, terms and privacy.
-- 2026-10-16 **The docs described a contract, not a product, and had no room for testers.** Krish ruled a B2C pilot beta, a December release target with a written bar, and krish@fulltime.fm as the feedback inbox (`docs/22-vision-and-beta.md`). Model spend: $0.
 
-Earlier bullets (2026-09-27 to 2026-10-03, and 2026-10-18: Premier League only, Google Analytics, the premium visual system, the XSS patch, the play-button fix) are archived verbatim in `docs/history/LOG.md` under 2026-10-29 and 2026-11-01.
+Earlier bullets (2026-10-16 to 2026-10-21 are in `docs/history/LOG.md` under 2026-11-16; 2026-09-27 to 2026-10-03, and 2026-10-18: Premier League only, Google Analytics, the premium visual system, the XSS patch, the play-button fix) are archived verbatim in `docs/history/LOG.md` under 2026-10-29 and 2026-11-01.
 
 ## What is next and what is waiting on Krish
 
 - Next (2026-11-13): restore API-Football access after Krish reads its dashboard, make the receipt record the provider's sanitized refusal reason, then run the intake once on a known-completed window.
 - Waiting on Krish (2026-11-13): read the API-Football dashboard and say whether the key, the plan or the request quota is at fault; and decide whether to pay for a second statistics source (a football-data tier with match statistics, or another provider), since football-data currently corroborates scores only.
-- Waiting on Krish (2026-11-01): release the growth-fulltime engine in Control Center, so the Codex lane can book cards (its Codex share is placed by control-center#646). Every video or animated asset starts as a direction pack he approves first (codex/README.md, "Direction first").
+- Waiting on Krish (asked 2026-11-01, still open 2026-11-16): release the growth-fulltime engine in Control Center, so the Codex lane can book cards (its Codex share is placed by control-center#646). Every video or animated asset starts as a direction pack he approves first (codex/README.md, "Direction first").
 - Waiting on Krish (asked 2026-10-29, still open 2026-11-14): the questions archived in `docs/history/LOG.md` under 2026-10-29: the RSS `itunes:owner` address, whether a subset diagnostic run may publish (`docs/06-ops.md` says it cannot; the code says it can), the standings licence basis, and whether the OpenAI judge posture outlasts 2026-10-01.
 - North Star check (2026-11-13): holds.
 

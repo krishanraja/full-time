@@ -4,6 +4,22 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-11-16
+
+- reconciled at `3fbe8a9`: `NOW.md` was 18189 characters against a 16000 limit, with 11 "Where it is right now" bullets against 8 and a "What changed recently" bullet older than 30 days. The three dependency and intake bullets folded into the alpha handoff and dependency bullets; four old bullets rolled out. No product commit landed since 2026-11-14.
+- rolled from NOW.md:
+  > - 2026-10-21 **A concise Reporter edition was enabled** (`864a8fa`, `322fd11`, PRs #92 and #93). Ruling (Krish, 2026-10-21): run one final review within USD 0.35, then narrate and publish if it passes. Whether that edition published is a production fact not observed here.
+- rolled from NOW.md:
+  > - 2026-10-20 **The evidence intake was read back through the live product, and the readback found four disagreements that were withheld rather than settled** (PRs #88 to #91). Provider numbers for two blocked-shot counts and both possession percentages differed from the archived ones; both observations and dependent calculations were withheld. Model spend: $0.
+- rolled from NOW.md:
+  > - 2026-10-19 **A scheduled evidence intake runs on GitHub Actions and the app names the companies behind it** (PRs #84 to #86). The first live run found what mocked tests could not: a fixture feed returning HTTP 404, a missing key, and a Drive 403 with no reason. Ruling (Krish, 2026-10-19): the files are internal-only. Mindmaker LLC and Mindmaker Ltd now appear in the footer note, terms and privacy.
+- rolled from NOW.md:
+  > - 2026-10-16 **The docs described a contract, not a product, and had no room for testers.** Krish ruled a B2C pilot beta, a December release target with a written bar, and krish@fulltime.fm as the feedback inbox (`docs/22-vision-and-beta.md`). Model spend: $0.
+- rolled from NOW.md: "Where it is right now" bullets, moved verbatim:
+  > - The evidence intake failure is diagnosed and written into docs/26-alpha-readiness-handoff.md: all ten scheduled runs since 22 October failed on unchanged code because API-Football answers HTTP 200 with an error object (key, plan or quota), and the football-data fallback has never supplied statistics, so API-Football is the only statistics source. (2026-11-13)
+  > - The full dependency audit (dev included) is now clean: vitest and @vitest/mocker 4.1.12, brace-expansion 1.1.22, launch-editor 2.14.2 and shell-quote 1.11.0 clear the ten advisories pnpm audit reported outside production. CI only gates production deps, so this was housekeeping on top of the already-green prod audit. (2026-11-13)
+  > - The production dependency audit passes on main again: seroval and seroval-plugins 1.6.12, qs 6.16.2 and minimatch 11.0.8 are pinned as exact overrides, clearing the four moderate advisories that blocked the repository-administration pull request #103. (2026-11-13)
+
 ## 2026-11-01
 
 - reconciled at `d07d963`: `NOW.md` was 16142 characters against a 16000 limit with 9 "Where it is right now" bullets against 8. The publication bullet folded into the live bullet; two old bullets rolled out.
