@@ -4,6 +4,16 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-11-25
+
+- reconciled at `3f8b4d3`: `NOW.md` re-stamped; the 2026-11-20 closeout note was folded by hand because the fold rejected its free-form layout (it stays in `now-notes/` for a person to reformat or remove). Docs-only commits since 2026-11-16; no code moved.
+- rolled from NOW.md:
+  > - 2026-10-23 **The North Star now has a number, a weekly ladder and an urgency rating** (Ruling, Krish, 2026-10-23). Every repository chases one aggressive number on a weekly ladder, and urgency U1 to U5 sets intensity. See `docs/NORTH_STAR.md`.
+- rolled from NOW.md:
+  > - 2026-10-22 **The Reporter now writes to be heard, and a listening standard separates "passed the gates" from "sounds right"** (PR #95; `docs/24-listening-standard.md`). The failure it answers: automated editorial and audio success had been read as listening approval. Not verified: the production narrator does not yet reproduce the approved take B.
+- rolled from NOW.md:
+  > - 2026-10-21 **A public answer hub and a true-size brand set exist in the tree** (`c499a0a`, PR #94). The favicons and icons "were five copies of one 2000x2000 PNG (145 KB each)"; each is now its true size. Five seed posts, `llms-full.txt` and an Atom feed were added; the hub is deliberately unlinked from the app's navigation (`docs/23-answer-hub.md`). Dev-server readback only, model spend $0.
+
 ## 2026-11-16
 
 - reconciled at `3fbe8a9`: `NOW.md` was 18189 characters against a 16000 limit, with 11 "Where it is right now" bullets against 8 and a "What changed recently" bullet older than 30 days. The three dependency and intake bullets folded into the alpha handoff and dependency bullets; four old bullets rolled out. No product commit landed since 2026-11-14.

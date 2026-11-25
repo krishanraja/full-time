@@ -1,8 +1,8 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-11-17
-head: ea0e4a2
+as_of: 2026-11-25
+head: 3f8b4d3
 lifecycle: beta
 production_url: https://fulltime.fm
 state_doc: docs/19-release-state.md
@@ -38,7 +38,7 @@ It is also proof, and that part survives anonymisation. The room_face buyer (`co
 Objection it answers: "AI-generated editorial cannot be held to a standard." Here is one held to twenty-five of them, daily, with the ledger open.
 
 
-## Where it is right now (as of 2026-11-17)
+## Where it is right now (as of 2026-11-25)
 
 <!-- north-star-state {"week_of":"2026-11-02","week_target":24,"current":0,"current_as_of":"2026-11-02","current_source":"Supabase FullTime listens: listeners with listens on two or more days in the last 7, read-only","urgency":5,"urgency_reason":"under 40% of the week's target two weeks running (0% now)"} --> **North Star number: U5, stalled.** Listeners who come back within the same week: 0, against 24 this week, on the way to 10,000 by 31 May 2027. Everything else pauses unless it moves the number.
 
@@ -52,15 +52,13 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 
 ## What changed recently
 
+- 2026-11-20 **A page-reading key (Firecrawl) and a web-search key (Parallel) were added to the edge function secrets of the Supabase project this repo runs on** (PR #118, `cefc404`). Checked by name only, no value read; nothing uses them yet and no spend has happened. They are readable only from that project's edge functions, not from GitHub Actions or Vercel without a secret write that needs Krish's approval. Candidate use: fresher match context for evidence packs, which must quote its cost before and after and must not feed an unlicensed number into a script.
 - 2026-11-13 **The evidence intake failure is diagnosed** (`docs/26-alpha-readiness-handoff.md`, "Intake diagnosis"). All ten scheduled runs since 22 October failed, on unchanged code: API-Football answers HTTP 200 with an error object (key, plan or quota), and the football-data fallback has never supplied statistics, so API-Football is a single point of failure for every statistic. Read from stored evidence only. Model spend: $0.
 - 2026-11-13 **The dev-dependency audit is now clean too** (PR after #109). `pnpm audit` (all deps) had 10 advisories (1 critical, 3 high, 6 moderate), none reaching production and none CI-gated. Exact/scoped overrides: vitest and @vitest/mocker 4.1.12, brace-expansion 1.x to 1.1.22, launch-editor 2.14.2, shell-quote 1.11.0. Typecheck, 609 tests, personas, lint and build pass. Model spend: $0.
 - 2026-11-13 **The production dependency audit on main is green again** (PR #109). Four moderate advisories (seroval, qs, minimatch) had failed `pnpm audit --prod` since late October, which kept the harness watchdog red and blocked the repository-administration PR #103. Exact overrides: seroval and seroval-plugins 1.6.12, qs 6.16.2, minimatch 9.x/10.x to 11.0.8. Typecheck, tests, lint and build pass. Model spend: $0.
 - 2026-10-27 **A paid solo diagnostic passed every mechanical gate and still failed on facts, so the alpha was re-aligned to spoken quality and an evidence handoff** (`ce10e52`, PR #102; `docs/26-alpha-readiness-handoff.md`). The 385-word Gaffer script cleared all eleven deterministic gates, then was quarantined by factual entailment, insight (3/5) and restraint (3/5): the claim lab invented that both the late scorer and assister were substitutes, and the script and reviewer used an after-match table as if it described both teams before kickoff. The fix added checks for those two errors, a 120-180 second alpha format, shared speech and profile `1.1.0` files, and a numeric gate for exact pack-licensed spoken decimals. The commit does not claim better writing.
-- 2026-10-23 **The North Star now has a number, a weekly ladder and an urgency rating** (Ruling, Krish, 2026-10-23). Every repository chases one aggressive number on a weekly ladder, and urgency U1 to U5 sets intensity. See `docs/NORTH_STAR.md`.
-- 2026-10-22 **The Reporter now writes to be heard, and a listening standard separates "passed the gates" from "sounds right"** (PR #95; `docs/24-listening-standard.md`). The failure it answers: automated editorial and audio success had been read as listening approval. Not verified: the production narrator does not yet reproduce the approved take B.
-- 2026-10-21 **A public answer hub and a true-size brand set exist in the tree** (`c499a0a`, PR #94). The favicons and icons "were five copies of one 2000x2000 PNG (145 KB each)"; each is now its true size. Five seed posts, `llms-full.txt` and an Atom feed were added; the hub is deliberately unlinked from the app's navigation (`docs/23-answer-hub.md`). Dev-server readback only, model spend $0.
 
-Earlier bullets (2026-10-16 to 2026-10-21 are in `docs/history/LOG.md` under 2026-11-16; 2026-09-27 to 2026-10-03, and 2026-10-18: Premier League only, Google Analytics, the premium visual system, the XSS patch, the play-button fix) are archived verbatim in `docs/history/LOG.md` under 2026-10-29 and 2026-11-01.
+Earlier bullets (2026-10-16 to 2026-10-23 are in `docs/history/LOG.md` under 2026-11-16 and 2026-11-25; 2026-09-27 to 2026-10-03, and 2026-10-18: Premier League only, Google Analytics, the premium visual system, the XSS patch, the play-button fix) are archived verbatim in `docs/history/LOG.md` under 2026-10-29 and 2026-11-01.
 
 ## What is next and what is waiting on Krish
 
@@ -68,7 +66,7 @@ Earlier bullets (2026-10-16 to 2026-10-21 are in `docs/history/LOG.md` under 202
 - Waiting on Krish (2026-11-13): read the API-Football dashboard and say whether the key, the plan or the request quota is at fault; and decide whether to pay for a second statistics source (a football-data tier with match statistics, or another provider), since football-data currently corroborates scores only.
 - Waiting on Krish (asked 2026-11-01, still open 2026-11-16): release the growth-fulltime engine in Control Center, so the Codex lane can book cards (its Codex share is placed by control-center#646). Every video or animated asset starts as a direction pack he approves first (codex/README.md, "Direction first").
 - Waiting on Krish (asked 2026-10-29, still open 2026-11-14): the questions archived in `docs/history/LOG.md` under 2026-10-29: the RSS `itunes:owner` address, whether a subset diagnostic run may publish (`docs/06-ops.md` says it cannot; the code says it can), the standings licence basis, and whether the OpenAI judge posture outlasts 2026-10-01.
-- North Star check (2026-11-13): holds.
+- North Star check (2026-11-20): holds, no movement.
 
 ## Read next
 
