@@ -4,6 +4,12 @@ Newest first. Entries are written by the docs steward (see the steward link in
 NOW.md) and by humans doing the same job by hand. Nothing in this file
 describes current behaviour; NOW.md and `docs/19-release-state.md` do.
 
+## 2026-11-27
+
+- reconciled at `785515a`: the only commit since `3480ffc` was a canon sync; no code or docs moved. NOW.md re-stamped.
+- rolled from NOW.md:
+  > 2026-10-27 **A paid solo diagnostic passed every mechanical gate and still failed on facts, so the alpha was re-aligned to spoken quality and an evidence handoff** (`ce10e52`, PR #102; `docs/26-alpha-readiness-handoff.md`). The 385-word Gaffer script cleared all eleven deterministic gates, then was quarantined by factual entailment, insight (3/5) and restraint (3/5): the claim lab invented that both the late scorer and assister were substitutes, and the script and reviewer used an after-match table as if it described both teams before kickoff. The fix added checks for those two errors, a 120-180 second alpha format, shared speech and profile `1.1.0` files, and a numeric gate for exact pack-licensed spoken decimals. The commit does not claim better writing.
+
 ## 2026-11-26
 
 - reconciled at `3480ffc`: no code moved since 2026-11-17; the four commits were canon syncs and one docs note. NOW.md re-stamped, the 2026-11-20 closeout note (malformed for the fold, left in place for a person) summarised as a bullet.

@@ -1,8 +1,8 @@
 ---
 repo: krishanraja/full-time
 product: Full Time
-as_of: 2026-11-26
-head: 3480ffc
+as_of: 2026-11-27
+head: 785515a
 lifecycle: beta
 production_url: https://fulltime.fm
 state_doc: docs/19-release-state.md
@@ -38,7 +38,7 @@ It is also proof, and that part survives anonymisation. The room_face buyer (`co
 Objection it answers: "AI-generated editorial cannot be held to a standard." Here is one held to twenty-five of them, daily, with the ledger open.
 
 
-## Where it is right now (as of 2026-11-26)
+## Where it is right now (as of 2026-11-27)
 
 <!-- north-star-state {"week_of":"2026-11-02","week_target":24,"current":0,"current_as_of":"2026-11-02","current_source":"Supabase FullTime listens: listeners with listens on two or more days in the last 7, read-only","urgency":5,"urgency_reason":"under 40% of the week's target two weeks running (0% now)"} --> **North Star number: U5, stalled.** Listeners who come back within the same week: 0, against 24 this week, on the way to 10,000 by 31 May 2027. Everything else pauses unless it moves the number.
 
@@ -56,9 +56,8 @@ Objection it answers: "AI-generated editorial cannot be held to a standard." Her
 - 2026-11-13 **The evidence intake failure is diagnosed** (`docs/26-alpha-readiness-handoff.md`, "Intake diagnosis"). All ten scheduled runs since 22 October failed, on unchanged code: API-Football answers HTTP 200 with an error object (key, plan or quota), and the football-data fallback has never supplied statistics, so API-Football is a single point of failure for every statistic. Read from stored evidence only. Model spend: $0.
 - 2026-11-13 **The dev-dependency audit is now clean too** (PR after #109). `pnpm audit` (all deps) had 10 advisories (1 critical, 3 high, 6 moderate), none reaching production and none CI-gated. Exact/scoped overrides: vitest and @vitest/mocker 4.1.12, brace-expansion 1.x to 1.1.22, launch-editor 2.14.2, shell-quote 1.11.0. Typecheck, 609 tests, personas, lint and build pass. Model spend: $0.
 - 2026-11-13 **The production dependency audit on main is green again** (PR #109). Four moderate advisories (seroval, qs, minimatch) had failed `pnpm audit --prod` since late October, which kept the harness watchdog red and blocked the repository-administration PR #103. Exact overrides: seroval and seroval-plugins 1.6.12, qs 6.16.2, minimatch 9.x/10.x to 11.0.8. Typecheck, tests, lint and build pass. Model spend: $0.
-- 2026-10-27 **A paid solo diagnostic passed every mechanical gate and still failed on facts, so the alpha was re-aligned to spoken quality and an evidence handoff** (`ce10e52`, PR #102; `docs/26-alpha-readiness-handoff.md`). The 385-word Gaffer script cleared all eleven deterministic gates, then was quarantined by factual entailment, insight (3/5) and restraint (3/5): the claim lab invented that both the late scorer and assister were substitutes, and the script and reviewer used an after-match table as if it described both teams before kickoff. The fix added checks for those two errors, a 120-180 second alpha format, shared speech and profile `1.1.0` files, and a numeric gate for exact pack-licensed spoken decimals. The commit does not claim better writing.
 
-Earlier bullets (2026-10-21 to 2026-10-23 are in `docs/history/LOG.md` under 2026-11-26; 2026-10-16 to 2026-10-21 under 2026-11-16; 2026-09-27 to 2026-10-03, and 2026-10-18: Premier League only, Google Analytics, the premium visual system, the XSS patch, the play-button fix) are archived verbatim in `docs/history/LOG.md` under 2026-10-29 and 2026-11-01.
+Earlier bullets (2026-10-27 to 2026-10-23 are in `docs/history/LOG.md` under 2026-11-27 and 2026-11-26; 2026-10-16 to 2026-10-21 under 2026-11-16; 2026-09-27 to 2026-10-03, and 2026-10-18: Premier League only, Google Analytics, the premium visual system, the XSS patch, the play-button fix) are archived verbatim in `docs/history/LOG.md` under 2026-10-29 and 2026-11-01.
 
 ## What is next and what is waiting on Krish
 
